@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="window_background">#FAFCFE</color>
+    <!--
+        The ground the launcher's mask cuts the icon's shape out of, which is
+        why it is the add-on's own near-black rather than a colour picked for a
+        logo: the shape it becomes is the picture the two traces are measured
+        from. Not in values-night: a launcher icon is one icon, whatever the
+        phone's theme is doing.
+    -->
     <color name="ic_launcher_background">#0B0F14</color>
 </resources>

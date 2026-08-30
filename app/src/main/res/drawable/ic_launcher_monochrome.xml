@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The same shape as a silhouette, for the themed icon a launcher tints itself.
-    Only the outline carries here - a panel and its readings in one colour would
-    be a solid block - so the panel is drawn as an outline too and its readings
-    are cut out of nothing rather than filled.
+    The same two lines for the themed icon a launcher tints itself.
+
+    Identical geometry rather than a redrawn silhouette, because nothing here
+    depended on colour to be read: the two lines were told apart by weight and
+    position, and the one thing colour did carry - which of them is the peak -
+    survives as opacity. A themed icon is a single colour plus alpha, which is
+    exactly what this design already was.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -12,25 +15,17 @@
     android:viewportHeight="108">
 
     <path
-        android:pathData="M26,30 L82,30 A6,6 0 0 1 88,36 L88,72 A6,6 0 0 1 82,78 L26,78 A6,6 0 0 1 20,72 L20,36 A6,6 0 0 1 26,30 Z"
+        android:pathData="M26,70 L40,67 L52,61 L66,65 L82,60"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="5"
+        android:strokeAlpha="0.42"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
         android:strokeLineJoin="round" />
 
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M64,38 L78,45.5 L64,53 Z" />
-
-    <path
-        android:pathData="M30,50 L58,50 A3,3 0 0 1 61,53 L61,68 A3,3 0 0 1 58,71 L30,71 A3,3 0 0 1 27,68 L27,53 A3,3 0 0 1 30,50 Z"
+        android:pathData="M26,64 L38,59 L50,31 L58,53 L70,43 L82,58"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="3"
+        android:strokeWidth="5.5"
+        android:strokeLineCap="round"
         android:strokeLineJoin="round" />
-
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M32.5,55 L55.5,55 A1.5,1.5 0 0 1 55.5,58 L32.5,58 A1.5,1.5 0 0 1 32.5,55 Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M32.5,64 L44.5,64 A1.5,1.5 0 0 1 44.5,67 L32.5,67 A1.5,1.5 0 0 1 32.5,64 Z" />
 </vector>

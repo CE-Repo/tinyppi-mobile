@@ -1,57 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    What the add-on is, drawn: a picture with a small panel of readings over one
-    corner of it. That is TinyPPI - an overlay on a running video - and it is
-    the one thing about it that is recognisable at the size of a launcher icon.
+    The two lines the history screen draws: the scene's peak luminance, bright,
+    and its average, dimmed, underneath. That pair is what TinyPPI is for, and
+    the distance between them is the reading - so it is the one thing about the
+    add-on worth putting on a launcher.
 
-    Only the middle 72 of the 108x108 adaptive canvas is ever shown, so the
-    screen is sized against that rather than against the canvas; a round mask
-    would otherwise take its corners with it.
+    No frame around them, because there already is one. An adaptive icon's
+    background layer fills the whole canvas and the launcher's mask cuts the
+    shape out of it, so the dark ground *is* the picture - drawing a second
+    frame inside it would only be a screen within a screen, and would cost the
+    room these two lines need.
+
+    Everything sits within a radius of 33 of the centre, which is the part every
+    mask keeps: the circle crops hardest, at 36, and the strokes end well inside
+    it. Nothing here is thinner than 4 of the 108, so at a 40dp launcher size the
+    finest stroke is still a pixel and a half.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- The picture, as an outline in the accent the dashboard uses. -->
+    <!--
+        The average. Below the peak at every sample, which is not a drawing
+        decision - an average cannot exceed the maximum it is taken from.
+    -->
     <path
-        android:pathData="M26,30 L82,30 A6,6 0 0 1 88,36 L88,72 A6,6 0 0 1 82,78 L26,78 A6,6 0 0 1 20,72 L20,36 A6,6 0 0 1 26,30 Z"
-        android:strokeWidth="5"
-        android:strokeLineJoin="round">
-        <aapt:attr name="android:strokeColor">
-            <gradient
-                android:startX="20"
-                android:startY="30"
-                android:endX="88"
-                android:endY="78"
-                android:type="linear">
-                <item android:offset="0" android:color="#FF4FC3F7" />
-                <item android:offset="1" android:color="#FF3B82F6" />
-            </gradient>
-        </aapt:attr>
-    </path>
+        android:pathData="M26,70 L40,67 L52,61 L66,65 L82,60"
+        android:strokeColor="#2C6A8C"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
 
-    <!-- Something playing inside it, kept faint: the readings are the subject. -->
+    <!-- The peak, with the one spike a graded scene actually produces. -->
     <path
-        android:fillColor="#4FC3F7"
-        android:fillAlpha="0.32"
-        android:pathData="M64,38 L78,45.5 L64,53 Z" />
-
-    <!-- The overlay panel itself, over the lower-left corner as it is drawn. -->
-    <path
-        android:fillColor="#F2F6FA"
-        android:pathData="M30,50 L58,50 A3,3 0 0 1 61,53 L61,68 A3,3 0 0 1 58,71 L30,71 A3,3 0 0 1 27,68 L27,53 A3,3 0 0 1 30,50 Z" />
-
-    <!-- Three readings on it, longest first, the way a panel of them reads. -->
-    <path
-        android:fillColor="#0B0F14"
-        android:pathData="M32.5,55 L55.5,55 A1.5,1.5 0 0 1 55.5,58 L32.5,58 A1.5,1.5 0 0 1 32.5,55 Z" />
-    <path
-        android:fillColor="#0B0F14"
-        android:pathData="M32.5,59.5 L49.5,59.5 A1.5,1.5 0 0 1 49.5,62.5 L32.5,62.5 A1.5,1.5 0 0 1 32.5,59.5 Z" />
-    <path
-        android:fillColor="#3B82F6"
-        android:pathData="M32.5,64 L44.5,64 A1.5,1.5 0 0 1 44.5,67 L32.5,67 A1.5,1.5 0 0 1 32.5,64 Z" />
+        android:pathData="M26,64 L38,59 L50,31 L58,53 L70,43 L82,58"
+        android:strokeColor="#7DD8FF"
+        android:strokeWidth="5.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
 </vector>
