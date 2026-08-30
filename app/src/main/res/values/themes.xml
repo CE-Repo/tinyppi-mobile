@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Compose paints everything itself; the platform theme only has to hand
+        over a window without an action bar and with the right background, so
+        the very first frame does not flash white on a dark device.
+    -->
+    <style name="Theme.TinyPpiMobile" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!--
+            The light window is painted underneath a transparent status bar, so
+            the clock and the icons on it have to be dark to be seen at all.
+            The app sets this again once it knows which theme it is showing;
+            this is only for the frames before it does.
+        -->
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

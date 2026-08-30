@@ -1,0 +1,185 @@
+name: Android
+
+# Started by hand and only by hand. A push is not a request for a build, and
+# a branch that is pushed to a dozen times in an afternoon does not want a
+# release per commit; the button on the Actions tab decides when one is cut.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build, test and release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      # 21 rather than 17: 17 does build this project, but it is a version
+      # behind what AGP 9 and Gradle 9 are developed against and behind the JDK
+      # the app is built with locally, and a toolchain CI does not share is a
+      # class of failure nobody can reproduce.
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Named in full rather than left to the build to fetch on its own. The
+      # runner image carries nothing as new as 37, so every run downloads it
+      # anyway; naming it puts that where a failure is legible and pins which
+      # package it is. It is worth pinning: SDK 37 ships as
+      # `platforms;android-37.0`, not as the `android-37` that `compileSdk =
+      # 37` reads like.
+      - name: Install the Android SDK the build compiles against
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platforms;android-37.0 build-tools;37.0.0"
+
+      # The keystore never lives in the repository, so it arrives base64 in a
+      # secret and is written out for this run only. With the secrets unset the
+      # step writes nothing, and the build falls back to the debug key rather
+      # than failing -- a fork without the secrets still gets a working APK.
+      - name: Restore the release keystore
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_BASE64:-}" ]; then
+            echo "No KEYSTORE_BASE64 secret; the release build will be signed with the debug key."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+
+      # Still the debug variant: AGP 9 only wires a unit test task for the
+      # default variant, and there is no `release` source set here for it to
+      # test differently anyway. Lint does move to `release` -- that is lint on
+      # the configuration that actually ships, minification rules included.
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest --stacktrace
+
+      - name: Lint
+        run: ./gradlew lintRelease --stacktrace
+
+      - name: Assemble the release APK
+        env:
+          # The run number is baked into the APK as `BuildConfig.BUILD_NUMBER`
+          # and is what the app's update check compares against the `build-N`
+          # tag of the newest release. Without it a build carries 0 and simply
+          # never reports itself out of date.
+          BUILD_NUMBER: ${{ github.run_number }}
+          KEYSTORE_FILE: ${{ steps.signing.outputs.signed == 'true' && format('{0}/release.jks', runner.temp) || '' }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew assembleRelease --stacktrace
+
+      # A name that says which build it is once it has been downloaded, since
+      # every one of them is otherwise `app-release.apk` in the same folder.
+      - name: Name the APK after the build it came from
+        id: apk
+        run: |
+          set -euo pipefail
+          version=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
+          name="tinyppi-mobile-${version}-build${{ github.run_number }}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$name"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tinyppi-mobile-release
+          path: ${{ steps.apk.outputs.name }}
+          if-no-files-found: error
+
+      # The APK is minified, so a stack trace off one of these builds is
+      # unreadable without the mapping that produced it. Keep it with the run.
+      - name: Upload the R8 mapping
+        uses: actions/upload-artifact@v4
+        with:
+          name: mapping
+          path: app/build/outputs/mapping/release/
+          if-no-files-found: warn
+
+      # Every run that gets this far publishes one, so a build asked for is an
+      # install to hand - no run to find, no artifact zip to unpack. The tag is
+      # the run number rather than the version, because the version stands still
+      # across dozens of builds and a tag cannot.
+      #
+      # Only the default branch is marked latest: a release cut from a working
+      # branch is a build to try, not the one to point anyone at - and it is the
+      # latest release that the app's update check reads.
+      - name: Publish the build as a release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: build-${{ github.run_number }}
+          APK: ${{ steps.apk.outputs.name }}
+          VERSION: ${{ steps.apk.outputs.version }}
+          BRANCH: ${{ github.ref_name }}
+          SIGNED: ${{ steps.signing.outputs.signed }}
+        run: |
+          set -euo pipefail
+
+          # A re-run of the same build carries the same number, and a tag that
+          # is already there would fail the step rather than replace it.
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+
+          commit="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA"
+          {
+            echo "Release build of \`$BRANCH\` at [\`${GITHUB_SHA:0:7}\`]($commit)."
+            echo
+            git log -1 --pretty=%B
+            echo
+            echo '---'
+            echo
+            echo 'Shrunk and obfuscated by R8. The mapping file for this build is'
+            echo 'attached to the workflow run it came from.'
+            if [ "$SIGNED" = "true" ]; then
+              echo
+              echo 'Signed with the project release key and installed as'
+              echo '`com.jamal2367.tinyppimobile`.'
+            else
+              echo
+              echo 'No release keystore was configured for this run, so it is signed'
+              echo 'with the standard debug key. Installable, but it will not upgrade'
+              echo 'an install that carries the release signature.'
+            fi
+          } > release-notes.md
+
+          latest=false
+          prerelease=true
+          if [ "$BRANCH" = "${{ github.event.repository.default_branch }}" ]; then
+            latest=true
+            prerelease=false
+          fi
+
+          gh release create "$TAG" "$APK" \
+            --title "TinyPPI $VERSION - build ${{ github.run_number }}" \
+            --notes-file release-notes.md \
+            --target "$GITHUB_SHA" \
+            --latest="$latest" \
+            --prerelease="$prerelease"
+
+      - name: Upload the reports of a failed run
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          if-no-files-found: ignore

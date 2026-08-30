@@ -1,0 +1,19 @@
+# Gradle
+.gradle/
+build/
+captures/
+.cxx/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+local.properties
+
+# Keystores and signing material
+*.jks
+*.keystore
+keystore.properties
+
+# OS noise
+.DS_Store
+Thumbs.db

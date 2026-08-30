@@ -1,0 +1,1851 @@
+[
+  {
+    "base": {
+      "seq": 1,
+      "playing": true,
+      "paused": false,
+      "title": "Dune",
+      "filename": "/media/dune.mkv",
+      "hdr_type": "dolbyvision",
+      "effective": "dolbyvision",
+      "output_type": "hdr10",
+      "time": "0:12:03",
+      "duration": "2:35:00",
+      "metrics": {
+        "l1": {
+          "min": 0,
+          "max": 1200.5,
+          "avg": 98
+        },
+        "bars": [
+          0,
+          0,
+          138,
+          138
+        ],
+        "frame": {
+          "w": 3840,
+          "h": 2160
+        },
+        "aspect": 2.39,
+        "fps_in": 23.976,
+        "fps_drop": 0.0,
+        "fps_out": 23.976,
+        "progress": 7.8,
+        "cpu": 31,
+        "cpu_temp": 58,
+        "memory": 42,
+        "cache": 100
+      },
+      "groups": [
+        {
+          "id": "video",
+          "title": "Video",
+          "rows": [
+            {
+              "id": "video.32000",
+              "label": "Display mode",
+              "value": "3840x2160p23",
+              "detail": ""
+            },
+            {
+              "id": "video.32099",
+              "label": "Bit depth",
+              "value": "10 bit",
+              "detail": "(dv)"
+            }
+          ]
+        },
+        {
+          "id": "audio",
+          "title": "Audio",
+          "rows": [
+            {
+              "id": "audio.32045",
+              "label": "Codec",
+              "value": "TrueHD 7.1",
+              "detail": "(Atmos)"
+            }
+          ]
+        }
+      ],
+      "metadata": [
+        {
+          "kind": "section",
+          "name": "L1",
+          "value": ""
+        },
+        {
+          "kind": "row",
+          "name": "Min PQ",
+          "value": "0"
+        },
+        {
+          "kind": "headings",
+          "name": "Trim",
+          "cells": [
+            "100",
+            "600",
+            "1000"
+          ]
+        },
+        {
+          "kind": "columns",
+          "name": "Slope",
+          "cells": [
+            "1",
+            "2",
+            "3"
+          ]
+        }
+      ],
+      "vs10": {
+        "options": [
+          {
+            "mode": "sdr8",
+            "label": "Dolby Vision -> SDR"
+          }
+        ],
+        "output": "DV-LL"
+      },
+      "logos": {
+        "video": "codecs/Dolby_Vision.png",
+        "audio": "codecs/Dolby_TrueHD_Atmos.png"
+      },
+      "art": {
+        "poster": "1a2b3c4d",
+        "fanart": ""
+      },
+      "media": {
+        "year": "2021",
+        "genre": "Sci-Fi",
+        "show": "",
+        "season": "",
+        "episode": ""
+      },
+      "controls": {
+        "audio": [
+          {
+            "index": 0,
+            "label": "ENG"
+          }
+        ],
+        "subtitle": [],
+        "audio_current": 0,
+        "subtitle_current": -1,
+        "subtitle_on": false,
+        "volume": 72,
+        "muted": false
+      },
+      "session": {
+        "seq": 4,
+        "switches": 2,
+        "warnings": 0
+      },
+      "control": true,
+      "streams_full": false
+    },
+    "delta": {
+      "seq": 2,
+      "set": {
+        "time": "0:12:04",
+        "metrics": {
+          "l1": {
+            "min": 0,
+            "max": 980.0,
+            "avg": 98
+          },
+          "bars": [
+            0,
+            0,
+            138,
+            138
+          ],
+          "frame": {
+            "w": 3840,
+            "h": 2160
+          },
+          "aspect": 2.39,
+          "fps_in": 23.976,
+          "fps_drop": 0.0,
+          "fps_out": 23.976,
+          "progress": 7.8,
+          "cpu": 31,
+          "cpu_temp": 58,
+          "memory": 42,
+          "cache": 100
+        }
+      }
+    },
+    "expected": {
+      "seq": 2,
+      "playing": true,
+      "paused": false,
+      "title": "Dune",
+      "filename": "/media/dune.mkv",
+      "hdr_type": "dolbyvision",
+      "effective": "dolbyvision",
+      "output_type": "hdr10",
+      "time": "0:12:04",
+      "duration": "2:35:00",
+      "metrics": {
+        "l1": {
+          "min": 0,
+          "max": 980.0,
+          "avg": 98
+        },
+        "bars": [
+          0,
+          0,
+          138,
+          138
+        ],
+        "frame": {
+          "w": 3840,
+          "h": 2160
+        },
+        "aspect": 2.39,
+        "fps_in": 23.976,
+        "fps_drop": 0.0,
+        "fps_out": 23.976,
+        "progress": 7.8,
+        "cpu": 31,
+        "cpu_temp": 58,
+        "memory": 42,
+        "cache": 100
+      },
+      "groups": [
+        {
+          "id": "video",
+          "title": "Video",
+          "rows": [
+            {
+              "id": "video.32000",
+              "label": "Display mode",
+              "value": "3840x2160p23",
+              "detail": ""
+            },
+            {
+              "id": "video.32099",
+              "label": "Bit depth",
+              "value": "10 bit",
+              "detail": "(dv)"
+            }
+          ]
+        },
+        {
+          "id": "audio",
+          "title": "Audio",
+          "rows": [
+            {
+              "id": "audio.32045",
+              "label": "Codec",
+              "value": "TrueHD 7.1",
+              "detail": "(Atmos)"
+            }
+          ]
+        }
+      ],
+      "metadata": [
+        {
+          "kind": "section",
+          "name": "L1",
+          "value": ""
+        },
+        {
+          "kind": "row",
+          "name": "Min PQ",
+          "value": "0"
+        },
+        {
+          "kind": "headings",
+          "name": "Trim",
+          "cells": [
+            "100",
+            "600",
+            "1000"
+          ]
+        },
+        {
+          "kind": "columns",
+          "name": "Slope",
+          "cells": [
+            "1",
+            "2",
+            "3"
+          ]
+        }
+      ],
+      "vs10": {
+        "options": [
+          {
+            "mode": "sdr8",
+            "label": "Dolby Vision -> SDR"
+          }
+        ],
+        "output": "DV-LL"
+      },
+      "logos": {
+        "video": "codecs/Dolby_Vision.png",
+        "audio": "codecs/Dolby_TrueHD_Atmos.png"
+      },
+      "art": {
+        "poster": "1a2b3c4d",
+        "fanart": ""
+      },
+      "media": {
+        "year": "2021",
+        "genre": "Sci-Fi",
+        "show": "",
+        "season": "",
+        "episode": ""
+      },
+      "controls": {
+        "audio": [
+          {
+            "index": 0,
+            "label": "ENG"
+          }
+        ],
+        "subtitle": [],
+        "audio_current": 0,
+        "subtitle_current": -1,
+        "subtitle_on": false,
+        "volume": 72,
+        "muted": false
+      },
+      "session": {
+        "seq": 4,
+        "switches": 2,
+        "warnings": 0
+      },
+      "control": true,
+      "streams_full": false
+    }
+  },
+  {
+    "base": {
+      "seq": 2,
+      "playing": true,
+      "paused": false,
+      "title": "Dune",
+      "filename": "/media/dune.mkv",
+      "hdr_type": "dolbyvision",
+      "effective": "dolbyvision",
+      "output_type": "hdr10",
+      "time": "0:12:04",
+      "duration": "2:35:00",
+      "metrics": {
+        "l1": {
+          "min": 0,
+          "max": 980.0,
+          "avg": 98
+        },
+        "bars": [
+          0,
+          0,
+          138,
+          138
+        ],
+        "frame": {
+          "w": 3840,
+          "h": 2160
+        },
+        "aspect": 2.39,
+        "fps_in": 23.976,
+        "fps_drop": 0.0,
+        "fps_out": 23.976,
+        "progress": 7.8,
+        "cpu": 31,
+        "cpu_temp": 58,
+        "memory": 42,
+        "cache": 100
+      },
+      "groups": [
+        {
+          "id": "video",
+          "title": "Video",
+          "rows": [
+            {
+              "id": "video.32000",
+              "label": "Display mode",
+              "value": "3840x2160p23",
+              "detail": ""
+            },
+            {
+              "id": "video.32099",
+              "label": "Bit depth",
+              "value": "10 bit",
+              "detail": "(dv)"
+            }
+          ]
+        },
+        {
+          "id": "audio",
+          "title": "Audio",
+          "rows": [
+            {
+              "id": "audio.32045",
+              "label": "Codec",
+              "value": "TrueHD 7.1",
+              "detail": "(Atmos)"
+            }
+          ]
+        }
+      ],
+      "metadata": [
+        {
+          "kind": "section",
+          "name": "L1",
+          "value": ""
+        },
+        {
+          "kind": "row",
+          "name": "Min PQ",
+          "value": "0"
+        },
+        {
+          "kind": "headings",
+          "name": "Trim",
+          "cells": [
+            "100",
+            "600",
+            "1000"
+          ]
+        },
+        {
+          "kind": "columns",
+          "name": "Slope",
+          "cells": [
+            "1",
+            "2",
+            "3"
+          ]
+        }
+      ],
+      "vs10": {
+        "options": [
+          {
+            "mode": "sdr8",
+            "label": "Dolby Vision -> SDR"
+          }
+        ],
+        "output": "DV-LL"
+      },
+      "logos": {
+        "video": "codecs/Dolby_Vision.png",
+        "audio": "codecs/Dolby_TrueHD_Atmos.png"
+      },
+      "art": {
+        "poster": "1a2b3c4d",
+        "fanart": ""
+      },
+      "media": {
+        "year": "2021",
+        "genre": "Sci-Fi",
+        "show": "",
+        "season": "",
+        "episode": ""
+      },
+      "controls": {
+        "audio": [
+          {
+            "index": 0,
+            "label": "ENG"
+          }
+        ],
+        "subtitle": [],
+        "audio_current": 0,
+        "subtitle_current": -1,
+        "subtitle_on": false,
+        "volume": 72,
+        "muted": false
+      },
+      "session": {
+        "seq": 4,
+        "switches": 2,
+        "warnings": 0
+      },
+      "control": true,
+      "streams_full": false
+    },
+    "delta": {
+      "seq": 3,
+      "set": {
+        "time": "0:12:05",
+        "metrics": {
+          "l1": {
+            "min": 0,
+            "max": 4000.0,
+            "avg": 98
+          },
+          "bars": [
+            0,
+            0,
+            138,
+            138
+          ],
+          "frame": {
+            "w": 3840,
+            "h": 2160
+          },
+          "aspect": 2.39,
+          "fps_in": 23.976,
+          "fps_drop": 0.0,
+          "fps_out": 23.976,
+          "progress": 7.8,
+          "cpu": 31,
+          "cpu_temp": 58,
+          "memory": 42,
+          "cache": 100
+        }
+      },
+      "groups": {
+        "rows": [
+          [
+            "video.32000",
+            "3840x2160p59",
+            ""
+          ],
+          [
+            "video.32099",
+            "12 bit",
+            "(dv)"
+          ]
+        ]
+      }
+    },
+    "expected": {
+      "seq": 3,
+      "playing": true,
+      "paused": false,
+      "title": "Dune",
+      "filename": "/media/dune.mkv",
+      "hdr_type": "dolbyvision",
+      "effective": "dolbyvision",
+      "output_type": "hdr10",
+      "time": "0:12:05",
+      "duration": "2:35:00",
+      "metrics": {
+        "l1": {
+          "min": 0,
+          "max": 4000.0,
+          "avg": 98
+        },
+        "bars": [
+          0,
+          0,
+          138,
+          138
+        ],
+        "frame": {
+          "w": 3840,
+          "h": 2160
+        },
+        "aspect": 2.39,
+        "fps_in": 23.976,
+        "fps_drop": 0.0,
+        "fps_out": 23.976,
+        "progress": 7.8,
+        "cpu": 31,
+        "cpu_temp": 58,
+        "memory": 42,
+        "cache": 100
+      },
+      "groups": [
+        {
+          "id": "video",
+          "title": "Video",
+          "rows": [
+            {
+              "id": "video.32000",
+              "label": "Display mode",
+              "value": "3840x2160p59",
+              "detail": ""
+            },
+            {
+              "id": "video.32099",
+              "label": "Bit depth",
+              "value": "12 bit",
+              "detail": "(dv)"
+            }
+          ]
+        },
+        {
+          "id": "audio",
+          "title": "Audio",
+          "rows": [
+            {
+              "id": "audio.32045",
+              "label": "Codec",
+              "value": "TrueHD 7.1",
+              "detail": "(Atmos)"
+            }
+          ]
+        }
+      ],
+      "metadata": [
+        {
+          "kind": "section",
+          "name": "L1",
+          "value": ""
+        },
+        {
+          "kind": "row",
+          "name": "Min PQ",
+          "value": "0"
+        },
+        {
+          "kind": "headings",
+          "name": "Trim",
+          "cells": [
+            "100",
+            "600",
+            "1000"
+          ]
+        },
+        {
+          "kind": "columns",
+          "name": "Slope",
+          "cells": [
+            "1",
+            "2",
+            "3"
+          ]
+        }
+      ],
+      "vs10": {
+        "options": [
+          {
+            "mode": "sdr8",
+            "label": "Dolby Vision -> SDR"
+          }
+        ],
+        "output": "DV-LL"
+      },
+      "logos": {
+        "video": "codecs/Dolby_Vision.png",
+        "audio": "codecs/Dolby_TrueHD_Atmos.png"
+      },
+      "art": {
+        "poster": "1a2b3c4d",
+        "fanart": ""
+      },
+      "media": {
+        "year": "2021",
+        "genre": "Sci-Fi",
+        "show": "",
+        "season": "",
+        "episode": ""
+      },
+      "controls": {
+        "audio": [
+          {
+            "index": 0,
+            "label": "ENG"
+          }
+        ],
+        "subtitle": [],
+        "audio_current": 0,
+        "subtitle_current": -1,
+        "subtitle_on": false,
+        "volume": 72,
+        "muted": false
+      },
+      "session": {
+        "seq": 4,
+        "switches": 2,
+        "warnings": 0
+      },
+      "control": true,
+      "streams_full": false
+    }
+  },
+  {
+    "base": {
+      "seq": 3,
+      "playing": true,
+      "paused": false,
+      "title": "Dune",
+      "filename": "/media/dune.mkv",
+      "hdr_type": "dolbyvision",
+      "effective": "dolbyvision",
+      "output_type": "hdr10",
+      "time": "0:12:05",
+      "duration": "2:35:00",
+      "metrics": {
+        "l1": {
+          "min": 0,
+          "max": 4000.0,
+          "avg": 98
+        },
+        "bars": [
+          0,
+          0,
+          138,
+          138
+        ],
+        "frame": {
+          "w": 3840,
+          "h": 2160
+        },
+        "aspect": 2.39,
+        "fps_in": 23.976,
+        "fps_drop": 0.0,
+        "fps_out": 23.976,
+        "progress": 7.8,
+        "cpu": 31,
+        "cpu_temp": 58,
+        "memory": 42,
+        "cache": 100
+      },
+      "groups": [
+        {
+          "id": "video",
+          "title": "Video",
+          "rows": [
+            {
+              "id": "video.32000",
+              "label": "Display mode",
+              "value": "3840x2160p59",
+              "detail": ""
+            },
+            {
+              "id": "video.32099",
+              "label": "Bit depth",
+              "value": "12 bit",
+              "detail": "(dv)"
+            }
+          ]
+        },
+        {
+          "id": "audio",
+          "title": "Audio",
+          "rows": [
+            {
+              "id": "audio.32045",
+              "label": "Codec",
+              "value": "TrueHD 7.1",
+              "detail": "(Atmos)"
+            }
+          ]
+        }
+      ],
+      "metadata": [
+        {
+          "kind": "section",
+          "name": "L1",
+          "value": ""
+        },
+        {
+          "kind": "row",
+          "name": "Min PQ",
+          "value": "0"
+        },
+        {
+          "kind": "headings",
+          "name": "Trim",
+          "cells": [
+            "100",
+            "600",
+            "1000"
+          ]
+        },
+        {
+          "kind": "columns",
+          "name": "Slope",
+          "cells": [
+            "1",
+            "2",
+            "3"
+          ]
+        }
+      ],
+      "vs10": {
+        "options": [
+          {
+            "mode": "sdr8",
+            "label": "Dolby Vision -> SDR"
+          }
+        ],
+        "output": "DV-LL"
+      },
+      "logos": {
+        "video": "codecs/Dolby_Vision.png",
+        "audio": "codecs/Dolby_TrueHD_Atmos.png"
+      },
+      "art": {
+        "poster": "1a2b3c4d",
+        "fanart": ""
+      },
+      "media": {
+        "year": "2021",
+        "genre": "Sci-Fi",
+        "show": "",
+        "season": "",
+        "episode": ""
+      },
+      "controls": {
+        "audio": [
+          {
+            "index": 0,
+            "label": "ENG"
+          }
+        ],
+        "subtitle": [],
+        "audio_current": 0,
+        "subtitle_current": -1,
+        "subtitle_on": false,
+        "volume": 72,
+        "muted": false
+      },
+      "session": {
+        "seq": 4,
+        "switches": 2,
+        "warnings": 0
+      },
+      "control": true,
+      "streams_full": false
+    },
+    "delta": {
+      "seq": 4,
+      "set": {
+        "time": "0:12:06"
+      },
+      "groups": [
+        {
+          "id": "video",
+          "title": "Video",
+          "rows": [
+            {
+              "id": "video.32000",
+              "label": "Display mode",
+              "value": "3840x2160p59",
+              "detail": ""
+            },
+            {
+              "id": "video.32099",
+              "label": "Bit depth",
+              "value": "12 bit",
+              "detail": "(dv)"
+            },
+            {
+              "id": "video.32287",
+              "label": "Decoder",
+              "value": "am-h265",
+              "detail": ""
+            }
+          ]
+        },
+        {
+          "id": "audio",
+          "title": "Audio",
+          "rows": [
+            {
+              "id": "audio.32045",
+              "label": "Codec",
+              "value": "TrueHD 7.1",
+              "detail": "(Atmos)"
+            }
+          ]
+        }
+      ]
+    },
+    "expected": {
+      "seq": 4,
+      "playing": true,
+      "paused": false,
+      "title": "Dune",
+      "filename": "/media/dune.mkv",
+      "hdr_type": "dolbyvision",
+      "effective": "dolbyvision",
+      "output_type": "hdr10",
+      "time": "0:12:06",
+      "duration": "2:35:00",
+      "metrics": {
+        "l1": {
+          "min": 0,
+          "max": 4000.0,
+          "avg": 98
+        },
+        "bars": [
+          0,
+          0,
+          138,
+          138
+        ],
+        "frame": {
+          "w": 3840,
+          "h": 2160
+        },
+        "aspect": 2.39,
+        "fps_in": 23.976,
+        "fps_drop": 0.0,
+        "fps_out": 23.976,
+        "progress": 7.8,
+        "cpu": 31,
+        "cpu_temp": 58,
+        "memory": 42,
+        "cache": 100
+      },
+      "groups": [
+        {
+          "id": "video",
+          "title": "Video",
+          "rows": [
+            {
+              "id": "video.32000",
+              "label": "Display mode",
+              "value": "3840x2160p59",
+              "detail": ""
+            },
+            {
+              "id": "video.32099",
+              "label": "Bit depth",
+              "value": "12 bit",
+              "detail": "(dv)"
+            },
+            {
+              "id": "video.32287",
+              "label": "Decoder",
+              "value": "am-h265",
+              "detail": ""
+            }
+          ]
+        },
+        {
+          "id": "audio",
+          "title": "Audio",
+          "rows": [
+            {
+              "id": "audio.32045",
+              "label": "Codec",
+              "value": "TrueHD 7.1",
+              "detail": "(Atmos)"
+            }
+          ]
+        }
+      ],
+      "metadata": [
+        {
+          "kind": "section",
+          "name": "L1",
+          "value": ""
+        },
+        {
+          "kind": "row",
+          "name": "Min PQ",
+          "value": "0"
+        },
+        {
+          "kind": "headings",
+          "name": "Trim",
+          "cells": [
+            "100",
+            "600",
+            "1000"
+          ]
+        },
+        {
+          "kind": "columns",
+          "name": "Slope",
+          "cells": [
+            "1",
+            "2",
+            "3"
+          ]
+        }
+      ],
+      "vs10": {
+        "options": [
+          {
+            "mode": "sdr8",
+            "label": "Dolby Vision -> SDR"
+          }
+        ],
+        "output": "DV-LL"
+      },
+      "logos": {
+        "video": "codecs/Dolby_Vision.png",
+        "audio": "codecs/Dolby_TrueHD_Atmos.png"
+      },
+      "art": {
+        "poster": "1a2b3c4d",
+        "fanart": ""
+      },
+      "media": {
+        "year": "2021",
+        "genre": "Sci-Fi",
+        "show": "",
+        "season": "",
+        "episode": ""
+      },
+      "controls": {
+        "audio": [
+          {
+            "index": 0,
+            "label": "ENG"
+          }
+        ],
+        "subtitle": [],
+        "audio_current": 0,
+        "subtitle_current": -1,
+        "subtitle_on": false,
+        "volume": 72,
+        "muted": false
+      },
+      "session": {
+        "seq": 4,
+        "switches": 2,
+        "warnings": 0
+      },
+      "control": true,
+      "streams_full": false
+    }
+  },
+  {
+    "base": {
+      "seq": 4,
+      "playing": true,
+      "paused": false,
+      "title": "Dune",
+      "filename": "/media/dune.mkv",
+      "hdr_type": "dolbyvision",
+      "effective": "dolbyvision",
+      "output_type": "hdr10",
+      "time": "0:12:06",
+      "duration": "2:35:00",
+      "metrics": {
+        "l1": {
+          "min": 0,
+          "max": 4000.0,
+          "avg": 98
+        },
+        "bars": [
+          0,
+          0,
+          138,
+          138
+        ],
+        "frame": {
+          "w": 3840,
+          "h": 2160
+        },
+        "aspect": 2.39,
+        "fps_in": 23.976,
+        "fps_drop": 0.0,
+        "fps_out": 23.976,
+        "progress": 7.8,
+        "cpu": 31,
+        "cpu_temp": 58,
+        "memory": 42,
+        "cache": 100
+      },
+      "groups": [
+        {
+          "id": "video",
+          "title": "Video",
+          "rows": [
+            {
+              "id": "video.32000",
+              "label": "Display mode",
+              "value": "3840x2160p59",
+              "detail": ""
+            },
+            {
+              "id": "video.32099",
+              "label": "Bit depth",
+              "value": "12 bit",
+              "detail": "(dv)"
+            },
+            {
+              "id": "video.32287",
+              "label": "Decoder",
+              "value": "am-h265",
+              "detail": ""
+            }
+          ]
+        },
+        {
+          "id": "audio",
+          "title": "Audio",
+          "rows": [
+            {
+              "id": "audio.32045",
+              "label": "Codec",
+              "value": "TrueHD 7.1",
+              "detail": "(Atmos)"
+            }
+          ]
+        }
+      ],
+      "metadata": [
+        {
+          "kind": "section",
+          "name": "L1",
+          "value": ""
+        },
+        {
+          "kind": "row",
+          "name": "Min PQ",
+          "value": "0"
+        },
+        {
+          "kind": "headings",
+          "name": "Trim",
+          "cells": [
+            "100",
+            "600",
+            "1000"
+          ]
+        },
+        {
+          "kind": "columns",
+          "name": "Slope",
+          "cells": [
+            "1",
+            "2",
+            "3"
+          ]
+        }
+      ],
+      "vs10": {
+        "options": [
+          {
+            "mode": "sdr8",
+            "label": "Dolby Vision -> SDR"
+          }
+        ],
+        "output": "DV-LL"
+      },
+      "logos": {
+        "video": "codecs/Dolby_Vision.png",
+        "audio": "codecs/Dolby_TrueHD_Atmos.png"
+      },
+      "art": {
+        "poster": "1a2b3c4d",
+        "fanart": ""
+      },
+      "media": {
+        "year": "2021",
+        "genre": "Sci-Fi",
+        "show": "",
+        "season": "",
+        "episode": ""
+      },
+      "controls": {
+        "audio": [
+          {
+            "index": 0,
+            "label": "ENG"
+          }
+        ],
+        "subtitle": [],
+        "audio_current": 0,
+        "subtitle_current": -1,
+        "subtitle_on": false,
+        "volume": 72,
+        "muted": false
+      },
+      "session": {
+        "seq": 4,
+        "switches": 2,
+        "warnings": 0
+      },
+      "control": true,
+      "streams_full": false
+    },
+    "delta": {
+      "seq": 5,
+      "set": {
+        "time": "0:12:07"
+      },
+      "metadata": {
+        "rows": [
+          [
+            1,
+            "7"
+          ],
+          [
+            3,
+            [
+              "4",
+              "5",
+              "6"
+            ]
+          ]
+        ]
+      }
+    },
+    "expected": {
+      "seq": 5,
+      "playing": true,
+      "paused": false,
+      "title": "Dune",
+      "filename": "/media/dune.mkv",
+      "hdr_type": "dolbyvision",
+      "effective": "dolbyvision",
+      "output_type": "hdr10",
+      "time": "0:12:07",
+      "duration": "2:35:00",
+      "metrics": {
+        "l1": {
+          "min": 0,
+          "max": 4000.0,
+          "avg": 98
+        },
+        "bars": [
+          0,
+          0,
+          138,
+          138
+        ],
+        "frame": {
+          "w": 3840,
+          "h": 2160
+        },
+        "aspect": 2.39,
+        "fps_in": 23.976,
+        "fps_drop": 0.0,
+        "fps_out": 23.976,
+        "progress": 7.8,
+        "cpu": 31,
+        "cpu_temp": 58,
+        "memory": 42,
+        "cache": 100
+      },
+      "groups": [
+        {
+          "id": "video",
+          "title": "Video",
+          "rows": [
+            {
+              "id": "video.32000",
+              "label": "Display mode",
+              "value": "3840x2160p59",
+              "detail": ""
+            },
+            {
+              "id": "video.32099",
+              "label": "Bit depth",
+              "value": "12 bit",
+              "detail": "(dv)"
+            },
+            {
+              "id": "video.32287",
+              "label": "Decoder",
+              "value": "am-h265",
+              "detail": ""
+            }
+          ]
+        },
+        {
+          "id": "audio",
+          "title": "Audio",
+          "rows": [
+            {
+              "id": "audio.32045",
+              "label": "Codec",
+              "value": "TrueHD 7.1",
+              "detail": "(Atmos)"
+            }
+          ]
+        }
+      ],
+      "metadata": [
+        {
+          "kind": "section",
+          "name": "L1",
+          "value": ""
+        },
+        {
+          "kind": "row",
+          "name": "Min PQ",
+          "value": "7"
+        },
+        {
+          "kind": "headings",
+          "name": "Trim",
+          "cells": [
+            "100",
+            "600",
+            "1000"
+          ]
+        },
+        {
+          "kind": "columns",
+          "name": "Slope",
+          "cells": [
+            "4",
+            "5",
+            "6"
+          ]
+        }
+      ],
+      "vs10": {
+        "options": [
+          {
+            "mode": "sdr8",
+            "label": "Dolby Vision -> SDR"
+          }
+        ],
+        "output": "DV-LL"
+      },
+      "logos": {
+        "video": "codecs/Dolby_Vision.png",
+        "audio": "codecs/Dolby_TrueHD_Atmos.png"
+      },
+      "art": {
+        "poster": "1a2b3c4d",
+        "fanart": ""
+      },
+      "media": {
+        "year": "2021",
+        "genre": "Sci-Fi",
+        "show": "",
+        "season": "",
+        "episode": ""
+      },
+      "controls": {
+        "audio": [
+          {
+            "index": 0,
+            "label": "ENG"
+          }
+        ],
+        "subtitle": [],
+        "audio_current": 0,
+        "subtitle_current": -1,
+        "subtitle_on": false,
+        "volume": 72,
+        "muted": false
+      },
+      "session": {
+        "seq": 4,
+        "switches": 2,
+        "warnings": 0
+      },
+      "control": true,
+      "streams_full": false
+    }
+  },
+  {
+    "base": {
+      "seq": 5,
+      "playing": true,
+      "paused": false,
+      "title": "Dune",
+      "filename": "/media/dune.mkv",
+      "hdr_type": "dolbyvision",
+      "effective": "dolbyvision",
+      "output_type": "hdr10",
+      "time": "0:12:07",
+      "duration": "2:35:00",
+      "metrics": {
+        "l1": {
+          "min": 0,
+          "max": 4000.0,
+          "avg": 98
+        },
+        "bars": [
+          0,
+          0,
+          138,
+          138
+        ],
+        "frame": {
+          "w": 3840,
+          "h": 2160
+        },
+        "aspect": 2.39,
+        "fps_in": 23.976,
+        "fps_drop": 0.0,
+        "fps_out": 23.976,
+        "progress": 7.8,
+        "cpu": 31,
+        "cpu_temp": 58,
+        "memory": 42,
+        "cache": 100
+      },
+      "groups": [
+        {
+          "id": "video",
+          "title": "Video",
+          "rows": [
+            {
+              "id": "video.32000",
+              "label": "Display mode",
+              "value": "3840x2160p59",
+              "detail": ""
+            },
+            {
+              "id": "video.32099",
+              "label": "Bit depth",
+              "value": "12 bit",
+              "detail": "(dv)"
+            },
+            {
+              "id": "video.32287",
+              "label": "Decoder",
+              "value": "am-h265",
+              "detail": ""
+            }
+          ]
+        },
+        {
+          "id": "audio",
+          "title": "Audio",
+          "rows": [
+            {
+              "id": "audio.32045",
+              "label": "Codec",
+              "value": "TrueHD 7.1",
+              "detail": "(Atmos)"
+            }
+          ]
+        }
+      ],
+      "metadata": [
+        {
+          "kind": "section",
+          "name": "L1",
+          "value": ""
+        },
+        {
+          "kind": "row",
+          "name": "Min PQ",
+          "value": "7"
+        },
+        {
+          "kind": "headings",
+          "name": "Trim",
+          "cells": [
+            "100",
+            "600",
+            "1000"
+          ]
+        },
+        {
+          "kind": "columns",
+          "name": "Slope",
+          "cells": [
+            "4",
+            "5",
+            "6"
+          ]
+        }
+      ],
+      "vs10": {
+        "options": [
+          {
+            "mode": "sdr8",
+            "label": "Dolby Vision -> SDR"
+          }
+        ],
+        "output": "DV-LL"
+      },
+      "logos": {
+        "video": "codecs/Dolby_Vision.png",
+        "audio": "codecs/Dolby_TrueHD_Atmos.png"
+      },
+      "art": {
+        "poster": "1a2b3c4d",
+        "fanart": ""
+      },
+      "media": {
+        "year": "2021",
+        "genre": "Sci-Fi",
+        "show": "",
+        "season": "",
+        "episode": ""
+      },
+      "controls": {
+        "audio": [
+          {
+            "index": 0,
+            "label": "ENG"
+          }
+        ],
+        "subtitle": [],
+        "audio_current": 0,
+        "subtitle_current": -1,
+        "subtitle_on": false,
+        "volume": 72,
+        "muted": false
+      },
+      "session": {
+        "seq": 4,
+        "switches": 2,
+        "warnings": 0
+      },
+      "control": true,
+      "streams_full": false
+    },
+    "delta": {
+      "seq": 6,
+      "set": {
+        "playing": false,
+        "metrics": {},
+        "vs10": {
+          "options": [],
+          "output": ""
+        },
+        "session": {
+          "seq": 0,
+          "switches": 0,
+          "warnings": 0
+        },
+        "last": {}
+      },
+      "del": [
+        "paused",
+        "title",
+        "filename",
+        "hdr_type",
+        "effective",
+        "output_type",
+        "time",
+        "duration",
+        "logos",
+        "art",
+        "media",
+        "controls"
+      ],
+      "groups": [],
+      "metadata": []
+    },
+    "expected": {
+      "seq": 6,
+      "playing": false,
+      "groups": [],
+      "metrics": {},
+      "metadata": [],
+      "vs10": {
+        "options": [],
+        "output": ""
+      },
+      "session": {
+        "seq": 0,
+        "switches": 0,
+        "warnings": 0
+      },
+      "last": {},
+      "control": true,
+      "streams_full": false
+    }
+  },
+  {
+    "base": {
+      "seq": 6,
+      "playing": false,
+      "groups": [],
+      "metrics": {},
+      "metadata": [],
+      "vs10": {
+        "options": [],
+        "output": ""
+      },
+      "session": {
+        "seq": 0,
+        "switches": 0,
+        "warnings": 0
+      },
+      "last": {},
+      "control": true,
+      "streams_full": false
+    },
+    "delta": {
+      "seq": 7,
+      "set": {
+        "playing": true,
+        "paused": false,
+        "title": "Dune",
+        "filename": "/media/dune.mkv",
+        "hdr_type": "dolbyvision",
+        "effective": "dolbyvision",
+        "output_type": "hdr10",
+        "time": "0:00:01",
+        "duration": "2:35:00",
+        "metrics": {
+          "l1": {
+            "min": 0,
+            "max": 100.0,
+            "avg": 98
+          },
+          "bars": [
+            0,
+            0,
+            138,
+            138
+          ],
+          "frame": {
+            "w": 3840,
+            "h": 2160
+          },
+          "aspect": 2.39,
+          "fps_in": 23.976,
+          "fps_drop": 0.0,
+          "fps_out": 23.976,
+          "progress": 7.8,
+          "cpu": 31,
+          "cpu_temp": 58,
+          "memory": 42,
+          "cache": 100
+        },
+        "vs10": {
+          "options": [
+            {
+              "mode": "sdr8",
+              "label": "Dolby Vision -> SDR"
+            }
+          ],
+          "output": "DV-LL"
+        },
+        "logos": {
+          "video": "codecs/Dolby_Vision.png",
+          "audio": "codecs/Dolby_TrueHD_Atmos.png"
+        },
+        "art": {
+          "poster": "1a2b3c4d",
+          "fanart": ""
+        },
+        "media": {
+          "year": "2021",
+          "genre": "Sci-Fi",
+          "show": "",
+          "season": "",
+          "episode": ""
+        },
+        "controls": {
+          "audio": [
+            {
+              "index": 0,
+              "label": "ENG"
+            }
+          ],
+          "subtitle": [],
+          "audio_current": 0,
+          "subtitle_current": -1,
+          "subtitle_on": false,
+          "volume": 72,
+          "muted": false
+        },
+        "session": {
+          "seq": 4,
+          "switches": 2,
+          "warnings": 0
+        }
+      },
+      "del": [
+        "last"
+      ],
+      "groups": [
+        {
+          "id": "video",
+          "title": "Video",
+          "rows": [
+            {
+              "id": "video.32000",
+              "label": "Display mode",
+              "value": "1920x1080p24",
+              "detail": ""
+            },
+            {
+              "id": "video.32099",
+              "label": "Bit depth",
+              "value": "8 bit",
+              "detail": "(dv)"
+            }
+          ]
+        },
+        {
+          "id": "audio",
+          "title": "Audio",
+          "rows": [
+            {
+              "id": "audio.32045",
+              "label": "Codec",
+              "value": "TrueHD 7.1",
+              "detail": "(Atmos)"
+            }
+          ]
+        }
+      ],
+      "metadata": [
+        {
+          "kind": "section",
+          "name": "L1",
+          "value": ""
+        },
+        {
+          "kind": "row",
+          "name": "Min PQ",
+          "value": "0"
+        },
+        {
+          "kind": "headings",
+          "name": "Trim",
+          "cells": [
+            "100",
+            "600",
+            "1000"
+          ]
+        },
+        {
+          "kind": "columns",
+          "name": "Slope",
+          "cells": [
+            "1",
+            "2",
+            "3"
+          ]
+        }
+      ]
+    },
+    "expected": {
+      "seq": 7,
+      "playing": true,
+      "paused": false,
+      "title": "Dune",
+      "filename": "/media/dune.mkv",
+      "hdr_type": "dolbyvision",
+      "effective": "dolbyvision",
+      "output_type": "hdr10",
+      "time": "0:00:01",
+      "duration": "2:35:00",
+      "metrics": {
+        "l1": {
+          "min": 0,
+          "max": 100.0,
+          "avg": 98
+        },
+        "bars": [
+          0,
+          0,
+          138,
+          138
+        ],
+        "frame": {
+          "w": 3840,
+          "h": 2160
+        },
+        "aspect": 2.39,
+        "fps_in": 23.976,
+        "fps_drop": 0.0,
+        "fps_out": 23.976,
+        "progress": 7.8,
+        "cpu": 31,
+        "cpu_temp": 58,
+        "memory": 42,
+        "cache": 100
+      },
+      "groups": [
+        {
+          "id": "video",
+          "title": "Video",
+          "rows": [
+            {
+              "id": "video.32000",
+              "label": "Display mode",
+              "value": "1920x1080p24",
+              "detail": ""
+            },
+            {
+              "id": "video.32099",
+              "label": "Bit depth",
+              "value": "8 bit",
+              "detail": "(dv)"
+            }
+          ]
+        },
+        {
+          "id": "audio",
+          "title": "Audio",
+          "rows": [
+            {
+              "id": "audio.32045",
+              "label": "Codec",
+              "value": "TrueHD 7.1",
+              "detail": "(Atmos)"
+            }
+          ]
+        }
+      ],
+      "metadata": [
+        {
+          "kind": "section",
+          "name": "L1",
+          "value": ""
+        },
+        {
+          "kind": "row",
+          "name": "Min PQ",
+          "value": "0"
+        },
+        {
+          "kind": "headings",
+          "name": "Trim",
+          "cells": [
+            "100",
+            "600",
+            "1000"
+          ]
+        },
+        {
+          "kind": "columns",
+          "name": "Slope",
+          "cells": [
+            "1",
+            "2",
+            "3"
+          ]
+        }
+      ],
+      "vs10": {
+        "options": [
+          {
+            "mode": "sdr8",
+            "label": "Dolby Vision -> SDR"
+          }
+        ],
+        "output": "DV-LL"
+      },
+      "logos": {
+        "video": "codecs/Dolby_Vision.png",
+        "audio": "codecs/Dolby_TrueHD_Atmos.png"
+      },
+      "art": {
+        "poster": "1a2b3c4d",
+        "fanart": ""
+      },
+      "media": {
+        "year": "2021",
+        "genre": "Sci-Fi",
+        "show": "",
+        "season": "",
+        "episode": ""
+      },
+      "controls": {
+        "audio": [
+          {
+            "index": 0,
+            "label": "ENG"
+          }
+        ],
+        "subtitle": [],
+        "audio_current": 0,
+        "subtitle_current": -1,
+        "subtitle_on": false,
+        "volume": 72,
+        "muted": false
+      },
+      "session": {
+        "seq": 4,
+        "switches": 2,
+        "warnings": 0
+      },
+      "control": true,
+      "streams_full": false
+    }
+  }
+]

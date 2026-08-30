@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Navigation -->
+    <string name="nav_live">Live</string>
+    <string name="nav_details">Werte</string>
+    <string name="nav_metadata">Dolby-Vision-Metadaten</string>
+    <string name="nav_metadata_tab">Metadaten</string>
+    <string name="nav_history">Verlauf</string>
+    <string name="nav_settings">Einstellungen</string>
+    <string name="nav_settings_tab">Optionen</string>
+
+    <!-- Aktionen -->
+    <string name="action_open_settings">Einstellungen öffnen</string>
+    <string name="action_retry">Erneut versuchen</string>
+    <string name="action_refresh">Aktualisieren</string>
+
+    <!-- Verbindungszeile -->
+    <string name="status_live">Live</string>
+    <string name="status_polling">Abfrage</string>
+    <string name="status_connecting">Verbinde…</string>
+    <string name="status_busy">Box ausgelastet</string>
+    <string name="status_unauthorized">Token abgelehnt</string>
+    <string name="status_offline">Offline</string>
+    <string name="status_not_configured">Keine Box eingerichtet</string>
+
+    <!-- Live -->
+    <string name="live_not_configured_title">Noch keine Box</string>
+    <string name="live_not_configured_text">Trage die Adresse der Box mit dem TinyPPI-Addon ein, dazu das Token aus den Addon-Einstellungen.</string>
+    <string name="live_waiting_title">Warte auf die Box</string>
+    <string name="live_waiting_text">Es hat noch nichts geantwortet. Prüfe, ob der Webserver des Addons in Kodi eingeschaltet ist.</string>
+    <string name="live_idle_title">Nichts läuft</string>
+    <string name="live_idle_text">TinyPPI liest aus, was ein laufendes Video ist – vorher gibt es nichts zu zeigen.</string>
+    <string name="live_now_playing">Läuft gerade</string>
+    <string name="live_untitled">Ohne Titel</string>
+    <string name="live_source">Quelle</string>
+
+    <string name="live_transport">Player</string>
+    <string name="live_playpause">Wiedergabe / Pause</string>
+    <string name="live_stop">Stopp</string>
+    <string name="live_seek_to">Springen zu</string>
+    <plurals name="live_seek_back">
+        <item quantity="one">%1$d Sekunde zurück</item>
+        <item quantity="other">%1$d Sekunden zurück</item>
+    </plurals>
+    <plurals name="live_seek_forward">
+        <item quantity="one">%1$d Sekunde vor</item>
+        <item quantity="other">%1$d Sekunden vor</item>
+    </plurals>
+    <string name="live_mute">Stummschalten</string>
+    <string name="live_unmute">Ton an</string>
+
+    <string name="live_tracks">Spuren</string>
+    <string name="live_audio_track">Tonspur</string>
+    <string name="live_subtitles">Untertitel</string>
+    <string name="live_subtitles_off">Aus</string>
+    <string name="live_track_unknown">Unbekannt</string>
+
+    <string name="live_vs10">VS10</string>
+    <string name="live_vs10_output">Ausgabe (Bild)</string>
+    <string name="live_control_disabled">Diese Box lässt keine Steuerung von außen zu. Schalte sie in den Addon-Einstellungen frei.</string>
+
+    <string name="live_metrics">Messwerte</string>
+    <string name="live_last_played">Zuletzt gespielt</string>
+    <string name="live_last_position">Gestoppt bei</string>
+    <string name="live_last_ago">Beendet vor</string>
+    <string name="live_switches">Wechsel</string>
+    <string name="live_warnings">Warnungen</string>
+
+    <!-- Messwerte -->
+    <string name="metric_peak">Spitze</string>
+    <string name="metric_average">Durchschnitt</string>
+    <string name="metric_fps">Bildrate</string>
+    <string name="metric_aspect">Seitenverhältnis</string>
+    <string name="metric_frame">Codiertes Bild</string>
+    <string name="metric_active_area">Aktive Fläche (L5)</string>
+    <string name="metric_active_area_value">L %1$d · R %2$d · O %3$d · U %4$d</string>
+    <string name="metric_cpu">Prozessor</string>
+    <string name="metric_temperature">Temperatur</string>
+    <string name="metric_memory">Speicher</string>
+    <string name="metric_cache">Player-Cache</string>
+
+    <!-- Werte -->
+    <string name="details_empty_title">Keine Werte</string>
+    <string name="details_empty_text">Die Zeilen des Overlays erscheinen hier, sobald ein Video läuft.</string>
+
+    <!-- Dolby-Vision-Metadaten -->
+    <string name="metadata_empty_title">Keine Metadaten</string>
+    <string name="metadata_empty_text">Nur eine Dolby-Vision-Quelle hat eine RPU zum Auslesen. Prüfe außerdem, ob die Metadatenansicht in den Addon-Einstellungen eingeschaltet ist.</string>
+
+    <!-- Verlauf -->
+    <string name="history_summary">Übersicht</string>
+    <string name="history_chart">Szenenhelligkeit</string>
+    <string name="history_events">Ereignisse</string>
+    <string name="history_events_empty">Bisher ist nichts passiert.</string>
+    <string name="history_empty_title">Kein Verlauf</string>
+    <string name="history_empty_text">Die Box hält Diagramm und Ereignisse des laufenden Titels. Ohne Wiedergabe gibt es keine.</string>
+    <string name="history_peak">Spitze</string>
+    <string name="history_average">Durchschnitt</string>
+    <string name="history_running">Läuft seit</string>
+    <string name="history_no_luminance">Nur eine Dolby-Vision-Quelle liefert die Helligkeit für dieses Diagramm.</string>
+    <string name="history_range_1m">1 Min.</string>
+    <string name="history_range_10m">10 Min.</string>
+    <string name="history_range_all">Alles</string>
+
+    <!-- Ereignisse -->
+    <string name="event_vs10">VS10-Ausgabe</string>
+    <string name="event_mode">Anzeigemodus</string>
+    <string name="event_audio">Tonspur</string>
+    <string name="event_subtitle">Untertitel</string>
+    <string name="event_cache_low">Player-Cache niedrig</string>
+    <string name="event_cache_recovered">Player-Cache erholt</string>
+    <string name="event_temperature">Temperatur</string>
+    <string name="event_cpu">Prozessor</string>
+    <string name="event_fps">Bildrate</string>
+    <string name="event_unknown">Ereignis</string>
+
+    <!-- Einstellungen: die zwei Adressen -->
+    <string name="settings_servers_hint">Zwei Adressen für dieselbe Box: die im eigenen Netz und die, die von außen dorthin führt.</string>
+    <string name="server_active_primary">Antwortet: lokal</string>
+    <string name="server_active_secondary">Antwortet: extern</string>
+    <string name="settings_server_primary">Lokale Adresse</string>
+    <string name="settings_server_secondary">Externe Adresse</string>
+    <string name="settings_server_enabled">Diese Adresse verwenden</string>
+    <string name="settings_host">Host</string>
+    <string name="settings_port">Port</string>
+    <string name="settings_https">HTTPS</string>
+    <string name="settings_token">Token</string>
+    <string name="settings_token_hint">Die acht Zeichen, die das Addon unter den Webserver-Einstellungen anzeigt.</string>
+    <string name="settings_token_show">Token anzeigen</string>
+    <string name="settings_token_hide">Token verbergen</string>
+    <string name="settings_test">Testen</string>
+    <string name="settings_test_running">Teste…</string>
+    <string name="settings_test_ok">TinyPPI %1$s hat geantwortet</string>
+    <string name="settings_test_token_bad">Erreichbar, aber das Token wurde abgelehnt.</string>
+    <string name="settings_test_no_control">Erreichbar, aber diese Box lässt keine Steuerung von außen zu.</string>
+    <string name="settings_save">Speichern</string>
+    <string name="settings_unsaved">Noch nicht gespeichert</string>
+    <string name="settings_invalid_host">Trage einen Hostnamen oder eine IP-Adresse ein.</string>
+    <string name="settings_invalid_port">Das Addon bedient einen Port zwischen 1024 und 65535.</string>
+
+    <!-- Einstellungen: welche Adresse -->
+    <string name="settings_mode">Welche Adresse</string>
+    <string name="settings_mode_auto">Automatisch</string>
+    <string name="settings_mode_auto_desc">Erst die lokale Adresse, die externe sobald sie nicht antwortet.</string>
+    <string name="settings_mode_primary">Nur lokal</string>
+    <string name="settings_mode_primary_desc">Nie nach der Adresse von außen greifen.</string>
+    <string name="settings_mode_secondary">Nur extern</string>
+    <string name="settings_mode_secondary_desc">Immer den veröffentlichten Weg nehmen.</string>
+
+    <!-- Einstellungen: wie die Werte ankommen -->
+    <string name="settings_updates">Werte</string>
+    <string name="settings_live_updates">Live-Stream</string>
+    <string name="settings_live_updates_desc">Eine Verbindung, über die die Box jeden Wert schickt – fünfmal pro Sekunde. Aus fragt die App stattdessen im Takt nach.</string>
+    <string name="settings_poll_interval">Wie oft fragen</string>
+    <string name="settings_poll_interval_desc">Nur solange der Live-Stream aus ist.</string>
+    <string name="settings_seconds">%1$d s</string>
+    <string name="settings_keep_screen_on">Bildschirm anlassen</string>
+    <string name="settings_keep_screen_on_desc">Für ein Handy, das am Fernseher lehnt.</string>
+
+    <!-- Einstellungen: Aussehen -->
+    <string name="settings_appearance">Aussehen</string>
+    <string name="settings_theme">Design</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Hell</string>
+    <string name="settings_theme_dark">Dunkel</string>
+    <string name="settings_dynamic_color">Hintergrundfarben</string>
+    <string name="settings_dynamic_color_desc">Die Palette vom Hintergrundbild nehmen, wo Android eine anbietet.</string>
+    <string name="settings_artwork">Cover anzeigen</string>
+    <string name="settings_artwork_desc">Das Poster des laufenden Titels laden. Nur ein Titel mit Bibliothekseintrag hat eines.</string>
+
+    <!-- Einstellungen: Über -->
+    <string name="settings_about">Über</string>
+    <string name="settings_about_version">App-Version</string>
+    <string name="settings_about_addon">Addon</string>
+    <string name="settings_about_default_port">Standard-Port</string>
+
+    <!-- Fehler -->
+    <string name="error_title">Etwas ist schiefgelaufen</string>
+    <string name="error_not_configured">Es ist noch keine Box eingerichtet.</string>
+    <string name="error_unreachable">Die Box hat nicht geantwortet.</string>
+    <string name="error_local_network_denied">Diese App darf keine Geräte im lokalen Netz erreichen. Erlaube TinyPPI den Zugriff aufs lokale Netzwerk in den Android-App-Einstellungen.</string>
+    <string name="api_error_timeout">%1$s hat nicht rechtzeitig geantwortet.</string>
+    <string name="api_error_network">%1$s war nicht erreichbar.</string>
+    <string name="api_error_unauthorized">Das Token wurde abgelehnt. Vergleiche es mit dem in den Addon-Einstellungen.</string>
+    <string name="api_error_control_disabled">Diese Box lässt keine Steuerung von außen zu.</string>
+    <string name="api_error_busy">Die Box hat gerade keine freie Verbindung. Schließe ein Dashboard, das anderswo offen steht.</string>
+    <string name="api_error_not_found">Diese Box kennt die Anfrage nicht. Vielleicht läuft dort ein älteres Addon.</string>
+    <string name="api_error_bad_request">Die Box hat die Anfrage abgelehnt.</string>
+    <string name="api_error_parse">Die Antwort war nicht lesbar.</string>
+
+    <!-- Updates -->
+    <string name="update_available">%1$s ist verfügbar</string>
+    <string name="update_show">Anzeigen</string>
+
+    <string name="exit_confirm">Zum Beenden erneut zurück drücken</string>
+
+</resources>

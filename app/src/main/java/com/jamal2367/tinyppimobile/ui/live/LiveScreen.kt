@@ -1,0 +1,761 @@
+@file:OptIn(
+    androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class,
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+)
+
+package com.jamal2367.tinyppimobile.ui.live
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.outlined.Forward10
+import androidx.compose.material.icons.outlined.Forward30
+import androidx.compose.material.icons.outlined.PlayCircle
+import androidx.compose.material.icons.outlined.Replay10
+import androidx.compose.material.icons.outlined.Replay30
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.jamal2367.tinyppimobile.R
+import com.jamal2367.tinyppimobile.data.model.PlayerControls
+import com.jamal2367.tinyppimobile.data.model.Snapshot
+import com.jamal2367.tinyppimobile.data.model.Track
+import com.jamal2367.tinyppimobile.data.model.Vs10State
+import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
+import com.jamal2367.tinyppimobile.ui.components.ConversionBadge
+import com.jamal2367.tinyppimobile.ui.components.EmptyState
+import com.jamal2367.tinyppimobile.ui.components.FormatBadge
+import com.jamal2367.tinyppimobile.ui.components.FormatLogo
+import com.jamal2367.tinyppimobile.ui.components.HdrGrade
+import com.jamal2367.tinyppimobile.ui.components.InfoRow
+import com.jamal2367.tinyppimobile.ui.components.PosterImage
+import com.jamal2367.tinyppimobile.ui.components.SectionCard
+import com.jamal2367.tinyppimobile.ui.components.StatTile
+import com.jamal2367.tinyppimobile.ui.components.StatusLine
+import com.jamal2367.tinyppimobile.util.Formatters
+import com.jamal2367.tinyppimobile.util.MediaUrls
+
+/**
+ * What the box is playing, and what can be done to it.
+ *
+ * The screen anyone opens this app for: the title with its poster, how it is
+ * graded, what is leaving the box, and - on a box that allows it - the
+ * transport row and the VS10 conversions.
+ */
+@Composable
+fun LiveScreen(
+    onOpenSettings: () -> Unit,
+    viewModel: LiveViewModel = viewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
+    val pendingVolume by viewModel.pendingVolume.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(message) {
+        val text = message ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(text)
+        viewModel.consumeMessage()
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.app_name)) },
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+    ) { padding ->
+        val snapshot = state.snapshot
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+        ) {
+            StatusLine(
+                connection = state.live.connection,
+                serverLabel = state.live.server?.label,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+
+            when {
+                !state.isConfigured -> EmptyState(
+                    icon = Icons.Outlined.PlayCircle,
+                    title = stringResource(R.string.live_not_configured_title),
+                    message = stringResource(R.string.live_not_configured_text),
+                    actionLabel = stringResource(R.string.action_open_settings),
+                    onAction = onOpenSettings,
+                )
+
+                snapshot == null -> EmptyState(
+                    icon = Icons.Outlined.PlayCircle,
+                    title = stringResource(R.string.live_waiting_title),
+                    message = stringResource(R.string.live_waiting_text),
+                )
+
+                else -> LiveContent(
+                    snapshot = snapshot,
+                    server = state.live.server,
+                    showArtwork = state.settings.showArtwork,
+                    canControl = state.canControlPlayback,
+                    pendingVolume = pendingVolume,
+                    viewModel = viewModel,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LiveContent(
+    snapshot: Snapshot,
+    server: ServerConfig?,
+    showArtwork: Boolean,
+    canControl: Boolean,
+    pendingVolume: Int?,
+    viewModel: LiveViewModel,
+) {
+    LazyColumn(
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        if (!snapshot.playing) {
+            item {
+                EmptyState(
+                    icon = Icons.Outlined.PlayCircle,
+                    title = stringResource(R.string.live_idle_title),
+                    message = stringResource(R.string.live_idle_text),
+                    modifier = Modifier.height(320.dp),
+                )
+            }
+            if (snapshot.last.isPresent) {
+                item { LastPlayedCard(snapshot) }
+            }
+            return@LazyColumn
+        }
+
+        item { NowPlayingCard(snapshot, server, showArtwork) }
+
+        if (canControl) {
+            item {
+                TransportCard(
+                    snapshot = snapshot,
+                    pendingVolume = pendingVolume,
+                    viewModel = viewModel,
+                )
+            }
+            if (!snapshot.controls.isEmpty) {
+                item { TrackCard(snapshot.controls, viewModel) }
+            }
+        }
+
+        if (snapshot.vs10.options.isNotEmpty()) {
+            item { Vs10Card(snapshot.vs10, canControl = snapshot.control, viewModel = viewModel) }
+        }
+
+        item { MetricsCard(snapshot) }
+    }
+}
+
+/**
+ * The title, with everything that names it and everything that grades it.
+ *
+ * The two badges are the point of the card and of the add-on itself: what the
+ * file is, and what the box is turning it into on the way out. They sit side by
+ * side so the answer to "is this being converted" is a glance rather than a
+ * comparison.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun NowPlayingCard(snapshot: Snapshot, server: ServerConfig?, showArtwork: Boolean) {
+    val poster = if (showArtwork) {
+        MediaUrls.art(server, snapshot.art, MediaUrls.ArtKind.POSTER)
+    } else {
+        null
+    }
+
+    SectionCard(title = stringResource(R.string.live_now_playing)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            if (showArtwork) {
+                PosterImage(
+                    url = poster,
+                    contentDescription = snapshot.title,
+                    modifier = Modifier
+                        .width(84.dp)
+                        .aspectRatio(2f / 3f),
+                )
+            }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = snapshot.title.ifBlank { stringResource(R.string.live_untitled) },
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                subtitleOf(snapshot)?.let { line ->
+                    Text(
+                        text = line,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(top = 4.dp),
+                ) {
+                    FormatBadge(
+                        token = snapshot.sourceType,
+                        prefix = stringResource(R.string.live_source),
+                    )
+                    if (snapshot.isConverting) {
+                        ConversionBadge(
+                            text = "→ ${HdrGrade.of(snapshot.outputType).label}",
+                        )
+                    }
+                }
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(top = 2.dp),
+                ) {
+                    FormatLogo(
+                        url = MediaUrls.logo(server, snapshot.logos.video),
+                        contentDescription = null,
+                    )
+                    FormatLogo(
+                        url = MediaUrls.logo(server, snapshot.logos.audio),
+                        contentDescription = null,
+                    )
+                }
+            }
+        }
+
+        if (snapshot.filename.isNotBlank()) {
+            Text(
+                text = snapshot.filename,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+
+        ProgressRow(snapshot)
+    }
+}
+
+@Composable
+private fun ProgressRow(snapshot: Snapshot) {
+    val progress = ((snapshot.metrics.progress ?: 0.0) / 100.0).toFloat().coerceIn(0f, 1f)
+
+    Column(modifier = Modifier.padding(top = 6.dp)) {
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = snapshot.time.ifBlank { "–" },
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = snapshot.duration.ifBlank { "–" },
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/**
+ * Play, stop, the four jumps, and the volume.
+ *
+ * Drawn only where the box allows control: the add-on gathers the track lists
+ * and the volume for this row alone, and a box that has control switched off
+ * sends none of it, so there would be nothing under the buttons anyway.
+ */
+@Composable
+private fun TransportCard(
+    snapshot: Snapshot,
+    pendingVolume: Int?,
+    viewModel: LiveViewModel,
+) {
+    SectionCard(title = stringResource(R.string.live_transport)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            FilledTonalIconButton(onClick = { viewModel.seekBy(-30) }) {
+                Icon(
+                    Icons.Outlined.Replay30,
+                    contentDescription = pluralStringResource(R.plurals.live_seek_back, 30, 30),
+                )
+            }
+            FilledTonalIconButton(onClick = { viewModel.seekBy(-10) }) {
+                Icon(
+                    Icons.Outlined.Replay10,
+                    contentDescription = pluralStringResource(R.plurals.live_seek_back, 10, 10),
+                )
+            }
+            FilledIconButton(
+                onClick = viewModel::playPause,
+                modifier = Modifier.size(56.dp),
+            ) {
+                Icon(
+                    imageVector = if (snapshot.paused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
+                    contentDescription = stringResource(R.string.live_playpause),
+                )
+            }
+            FilledTonalIconButton(onClick = { viewModel.seekBy(10) }) {
+                Icon(
+                    Icons.Outlined.Forward10,
+                    contentDescription = pluralStringResource(R.plurals.live_seek_forward, 10, 10),
+                )
+            }
+            FilledTonalIconButton(onClick = { viewModel.seekBy(30) }) {
+                Icon(
+                    Icons.Outlined.Forward30,
+                    contentDescription = pluralStringResource(R.plurals.live_seek_forward, 30, 30),
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp),
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            OutlinedButton(onClick = viewModel::stop) {
+                Icon(
+                    Icons.Filled.Stop,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    text = stringResource(R.string.live_stop),
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+        }
+
+        SeekBar(snapshot, viewModel)
+        VolumeRow(snapshot.controls, pendingVolume, viewModel)
+    }
+}
+
+/**
+ * Where in the film to jump to.
+ *
+ * Its own control rather than a draggable progress bar at the top: the bar up
+ * there is a reading and moves five times a second, and a reading that can be
+ * grabbed by accident is one nobody trusts.
+ */
+@Composable
+private fun SeekBar(snapshot: Snapshot, viewModel: LiveViewModel) {
+    val reported = (snapshot.metrics.progress ?: 0.0).toFloat().coerceIn(0f, 100f)
+
+    // While a finger is on it the slider is the truth, and the moment it comes
+    // off the box is again. Held as "dragged, or nothing" rather than as a
+    // position kept in step with the reading: the reading arrives five times a
+    // second, and a thumb that is followed by it is a thumb dragged out from
+    // under the finger holding it.
+    var dragged by remember { mutableStateOf<Float?>(null) }
+
+    Column(modifier = Modifier.padding(top = 4.dp)) {
+        Text(
+            text = stringResource(R.string.live_seek_to),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Slider(
+            value = dragged ?: reported,
+            onValueChange = { dragged = it },
+            onValueChangeFinished = {
+                dragged?.let(viewModel::seekTo)
+                // Handed back to the box: what it reports next is where the
+                // player actually landed, which is not always what was asked.
+                dragged = null
+            },
+            valueRange = 0f..100f,
+        )
+    }
+}
+
+@Composable
+private fun VolumeRow(
+    controls: PlayerControls,
+    pendingVolume: Int?,
+    viewModel: LiveViewModel,
+) {
+    val level = pendingVolume ?: controls.volume ?: return
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        FilledTonalIconButton(onClick = viewModel::toggleMute) {
+            Icon(
+                imageVector = if (controls.muted) {
+                    Icons.AutoMirrored.Filled.VolumeOff
+                } else {
+                    Icons.AutoMirrored.Filled.VolumeUp
+                },
+                contentDescription = stringResource(
+                    if (controls.muted) R.string.live_unmute else R.string.live_mute
+                ),
+            )
+        }
+        Slider(
+            value = level.toFloat(),
+            onValueChange = { viewModel.previewVolume(it.toInt()) },
+            onValueChangeFinished = { viewModel.commitVolume(level) },
+            valueRange = 0f..100f,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = "$level",
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.width(36.dp),
+        )
+    }
+}
+
+/** The audio and subtitle tracks, as two pickers. */
+@Composable
+private fun TrackCard(controls: PlayerControls, viewModel: LiveViewModel) {
+    SectionCard(title = stringResource(R.string.live_tracks)) {
+        if (controls.audio.isNotEmpty()) {
+            TrackPicker(
+                label = stringResource(R.string.live_audio_track),
+                tracks = controls.audio,
+                selected = controls.audioCurrent,
+                offLabel = null,
+                onSelect = { index -> index?.let(viewModel::selectAudio) },
+            )
+        }
+        if (controls.subtitle.isNotEmpty()) {
+            TrackPicker(
+                label = stringResource(R.string.live_subtitles),
+                tracks = controls.subtitle,
+                // Kodi goes on naming the track that was switched off, so the
+                // picker only follows the current index while they are on.
+                selected = if (controls.subtitleOn) controls.subtitleCurrent else null,
+                offLabel = stringResource(R.string.live_subtitles_off),
+                onSelect = viewModel::selectSubtitle,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TrackPicker(
+    label: String,
+    tracks: List<Track>,
+    selected: Int?,
+    offLabel: String?,
+    onSelect: (Int?) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    val current = tracks.firstOrNull { it.index == selected }?.label
+        ?: offLabel
+        ?: stringResource(R.string.live_track_unknown)
+
+    Column {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Box {
+            OutlinedButton(
+                onClick = { open = true },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = current,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                if (offLabel != null) {
+                    DropdownMenuItem(
+                        text = { Text(offLabel) },
+                        onClick = {
+                            open = false
+                            onSelect(null)
+                        },
+                    )
+                }
+                tracks.forEach { track ->
+                    DropdownMenuItem(
+                        text = { Text(track.label) },
+                        onClick = {
+                            open = false
+                            onSelect(track.index)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The conversions this source can be put through.
+ *
+ * The buttons are the box's own: it sends the group that applies to the grade
+ * that is playing, and the same set the on-screen dialog offers. HDR10+ and
+ * HLG carry none, and then the whole card is left out rather than offering a
+ * conversion nothing else offers either.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Vs10Card(vs10: Vs10State, canControl: Boolean, viewModel: LiveViewModel) {
+    SectionCard(title = stringResource(R.string.live_vs10)) {
+        InfoRow(
+            label = stringResource(R.string.live_vs10_output),
+            value = vs10.output.ifBlank { null },
+        )
+
+        if (!canControl) {
+            Text(
+                text = stringResource(R.string.live_control_disabled),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            return@SectionCard
+        }
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(top = 4.dp),
+        ) {
+            vs10.options.forEach { option ->
+                Button(onClick = { viewModel.setMode(option.mode) }) {
+                    Text(option.label)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The figures that arrive as numbers rather than as text.
+ *
+ * Everything the overlay prints is on the details screen, already formatted by
+ * the box. What is here is the other half of a snapshot: the readings the
+ * dashboard charts, which are worth a tile each because they move.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MetricsCard(snapshot: Snapshot) {
+    val metrics = snapshot.metrics
+
+    SectionCard(title = stringResource(R.string.live_metrics)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            // The luminance pair only exists inside a Dolby Vision RPU; the
+            // add-on leaves it out for every other grade rather than send the
+            // zeroes its own getter pads an absent block with.
+            Formatters.nits(metrics.l1.max)?.let {
+                StatTile(value = it, caption = stringResource(R.string.metric_peak))
+            }
+            Formatters.nits(metrics.l1.avg)?.let {
+                StatTile(
+                    value = it,
+                    caption = stringResource(R.string.metric_average),
+                    container = MaterialTheme.colorScheme.secondaryContainer,
+                    content = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+            }
+            Formatters.fps(metrics.fpsOut)?.let {
+                StatTile(
+                    value = it,
+                    caption = stringResource(R.string.metric_fps),
+                    container = MaterialTheme.colorScheme.tertiaryContainer,
+                    content = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(4.dp))
+
+        InfoRow(
+            label = stringResource(R.string.metric_aspect),
+            value = Formatters.aspect(metrics.aspect),
+        )
+        metrics.frame?.takeIf { it.isUsable }?.let { frame ->
+            InfoRow(
+                label = stringResource(R.string.metric_frame),
+                value = Formatters.frameSize(frame.w, frame.h),
+            )
+        }
+        metrics.activeArea?.let { area ->
+            InfoRow(
+                label = stringResource(R.string.metric_active_area),
+                value = stringResource(
+                    R.string.metric_active_area_value,
+                    area.left.toInt(),
+                    area.right.toInt(),
+                    area.top.toInt(),
+                    area.bottom.toInt(),
+                ),
+            )
+        }
+        InfoRow(
+            label = stringResource(R.string.metric_cpu),
+            value = Formatters.percent(metrics.cpu),
+        )
+        InfoRow(
+            label = stringResource(R.string.metric_temperature),
+            value = Formatters.celsius(metrics.cpuTemp),
+        )
+        InfoRow(
+            label = stringResource(R.string.metric_memory),
+            value = Formatters.percent(metrics.memory),
+        )
+        InfoRow(
+            label = stringResource(R.string.metric_cache),
+            value = Formatters.percent(metrics.cache),
+        )
+    }
+}
+
+/**
+ * What the title that has just ended came to.
+ *
+ * The figures are worth most in the minutes right after the credits, which is
+ * exactly when a dashboard that threw them away at the end of playback had
+ * already lost them. The box holds them for ten minutes and this is where they
+ * are read.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun LastPlayedCard(snapshot: Snapshot) {
+    val last = snapshot.last
+
+    SectionCard(title = stringResource(R.string.live_last_played)) {
+        Text(
+            text = last.title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(top = 8.dp),
+        ) {
+            Formatters.nits(last.peak)?.let {
+                StatTile(value = it, caption = stringResource(R.string.metric_peak))
+            }
+            StatTile(
+                value = last.switches.toString(),
+                caption = stringResource(R.string.live_switches),
+                container = MaterialTheme.colorScheme.secondaryContainer,
+                content = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+            StatTile(
+                value = last.warnings.toString(),
+                caption = stringResource(R.string.live_warnings),
+                container = MaterialTheme.colorScheme.tertiaryContainer,
+                content = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+        }
+        InfoRow(
+            label = stringResource(R.string.live_last_position),
+            value = last.position.ifBlank { null },
+        )
+        InfoRow(
+            label = stringResource(R.string.live_last_ago),
+            value = Formatters.elapsed(last.ago.toDouble()),
+        )
+    }
+}
+
+/** The line under the title: the show and episode, the year, the genre. */
+private fun subtitleOf(snapshot: Snapshot): String? {
+    val media = snapshot.media
+    val parts = listOfNotNull(
+        media.show.takeIf { it.isNotBlank() },
+        media.episodeLabel,
+        media.year.takeIf { it.isNotBlank() },
+        media.genre.takeIf { it.isNotBlank() },
+    )
+    return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
+}

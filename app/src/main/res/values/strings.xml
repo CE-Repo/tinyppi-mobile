@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- The add-on's own name, which is the same word in every language. -->
+    <string name="app_name" translatable="false">TinyPPI</string>
+
+    <!-- Navigation -->
+    <string name="nav_live">Live</string>
+    <string name="nav_details">Readings</string>
+    <string name="nav_metadata">Dolby Vision metadata</string>
+    <string name="nav_metadata_tab">Metadata</string>
+    <string name="nav_history">History</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_settings_tab">Settings</string>
+
+    <!-- Actions -->
+    <string name="action_open_settings">Open settings</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_refresh">Refresh</string>
+
+    <!-- The connection line -->
+    <string name="status_live">Live</string>
+    <string name="status_polling">Polling</string>
+    <string name="status_connecting">Connecting…</string>
+    <string name="status_busy">Box busy</string>
+    <string name="status_unauthorized">Token refused</string>
+    <string name="status_offline">Offline</string>
+    <string name="status_not_configured">No box configured</string>
+
+    <!-- Live -->
+    <string name="live_not_configured_title">No box yet</string>
+    <string name="live_not_configured_text">Enter the address of the box running the TinyPPI add-on, plus the token the add-on shows you.</string>
+    <string name="live_waiting_title">Waiting for the box</string>
+    <string name="live_waiting_text">Nothing has answered yet. Check that the add-on\'s web server is switched on in Kodi.</string>
+    <string name="live_idle_title">Nothing playing</string>
+    <string name="live_idle_text">TinyPPI reads what a running video is, so there is nothing to show until one starts.</string>
+    <string name="live_now_playing">Now playing</string>
+    <string name="live_untitled">Untitled</string>
+    <string name="live_source">Source</string>
+
+    <string name="live_transport">Player</string>
+    <string name="live_playpause">Play / pause</string>
+    <string name="live_stop">Stop</string>
+    <string name="live_seek_to">Jump to</string>
+    <plurals name="live_seek_back">
+        <item quantity="one">%1$d second back</item>
+        <item quantity="other">%1$d seconds back</item>
+    </plurals>
+    <plurals name="live_seek_forward">
+        <item quantity="one">%1$d second forward</item>
+        <item quantity="other">%1$d seconds forward</item>
+    </plurals>
+    <string name="live_mute">Mute</string>
+    <string name="live_unmute">Unmute</string>
+
+    <string name="live_tracks">Tracks</string>
+    <string name="live_audio_track">Audio track</string>
+    <string name="live_subtitles">Subtitles</string>
+    <string name="live_subtitles_off">Off</string>
+    <string name="live_track_unknown">Unknown</string>
+
+    <string name="live_vs10">VS10</string>
+    <string name="live_vs10_output">Output (picture)</string>
+    <string name="live_control_disabled">This box does not allow a client to switch anything. Turn control on in the add-on\'s settings.</string>
+
+    <string name="live_metrics">Measurements</string>
+    <string name="live_last_played">Last played</string>
+    <string name="live_last_position">Stopped at</string>
+    <string name="live_last_ago">Ended</string>
+    <string name="live_switches">Switches</string>
+    <string name="live_warnings">Warnings</string>
+
+    <!-- Measurements -->
+    <string name="metric_peak">Peak</string>
+    <string name="metric_average">Average</string>
+    <string name="metric_fps">Frame rate</string>
+    <string name="metric_aspect">Aspect ratio</string>
+    <string name="metric_frame">Coded frame</string>
+    <string name="metric_active_area">Active area (L5)</string>
+    <string name="metric_active_area_value">L %1$d · R %2$d · T %3$d · B %4$d</string>
+    <string name="metric_cpu">Processor</string>
+    <string name="metric_temperature">Temperature</string>
+    <string name="metric_memory">Memory</string>
+    <string name="metric_cache">Player cache</string>
+
+    <!-- Readings -->
+    <string name="details_empty_title">No readings</string>
+    <string name="details_empty_text">The overlay\'s rows appear here while a video is playing.</string>
+
+    <!-- Dolby Vision metadata -->
+    <string name="metadata_empty_title">No metadata</string>
+    <string name="metadata_empty_text">Only a Dolby Vision source carries an RPU to read. Check that the metadata view is switched on in the add-on\'s settings as well.</string>
+
+    <!-- History -->
+    <string name="history_summary">Summary</string>
+    <string name="history_chart">Scene luminance</string>
+    <string name="history_events">Events</string>
+    <string name="history_events_empty">Nothing has happened yet.</string>
+    <string name="history_empty_title">No history</string>
+    <string name="history_empty_text">The box keeps the running title\'s chart and events. There is none until something plays.</string>
+    <string name="history_peak">Peak</string>
+    <string name="history_average">Average</string>
+    <string name="history_running">Running for</string>
+    <string name="history_no_luminance">Only a Dolby Vision source carries the luminance this charts.</string>
+    <string name="history_range_1m">1 min</string>
+    <string name="history_range_10m">10 min</string>
+    <string name="history_range_all">All</string>
+
+    <!-- Events -->
+    <string name="event_vs10">VS10 output</string>
+    <string name="event_mode">Display mode</string>
+    <string name="event_audio">Audio track</string>
+    <string name="event_subtitle">Subtitles</string>
+    <string name="event_cache_low">Player cache low</string>
+    <string name="event_cache_recovered">Player cache recovered</string>
+    <string name="event_temperature">Temperature</string>
+    <string name="event_cpu">Processor</string>
+    <string name="event_fps">Frame rate</string>
+    <string name="event_unknown">Event</string>
+
+    <!-- Settings: the two addresses -->
+    <string name="settings_servers_hint">Two addresses for the same box: the one it has on your own network, and the one that reaches it from outside.</string>
+    <string name="server_active_primary">Answering: local</string>
+    <string name="server_active_secondary">Answering: remote</string>
+    <string name="settings_server_primary">Local address</string>
+    <string name="settings_server_secondary">Remote address</string>
+    <string name="settings_server_enabled">Use this address</string>
+    <string name="settings_host">Host</string>
+    <string name="settings_port">Port</string>
+    <string name="settings_https">HTTPS</string>
+    <string name="settings_token">Token</string>
+    <string name="settings_token_hint">The eight characters the add-on shows under its web-server settings.</string>
+    <string name="settings_token_show">Show token</string>
+    <string name="settings_token_hide">Hide token</string>
+    <string name="settings_test">Test</string>
+    <string name="settings_test_running">Testing…</string>
+    <string name="settings_test_ok">TinyPPI %1$s answered</string>
+    <string name="settings_test_token_bad">Reachable, but the token was refused.</string>
+    <string name="settings_test_no_control">Reachable, but this box does not allow a client to switch anything.</string>
+    <string name="settings_save">Save</string>
+    <string name="settings_unsaved">Not saved yet</string>
+    <string name="settings_invalid_host">Enter a host name or an IP address.</string>
+    <string name="settings_invalid_port">The add-on serves on a port between 1024 and 65535.</string>
+
+    <!-- Settings: which address -->
+    <string name="settings_mode">Which address</string>
+    <string name="settings_mode_auto">Automatic</string>
+    <string name="settings_mode_auto_desc">The local address first, the remote one whenever it does not answer.</string>
+    <string name="settings_mode_primary">Local only</string>
+    <string name="settings_mode_primary_desc">Never reach for the address from outside.</string>
+    <string name="settings_mode_secondary">Remote only</string>
+    <string name="settings_mode_secondary_desc">Always go the way in that was published.</string>
+
+    <!-- Settings: how the readings arrive -->
+    <string name="settings_updates">Readings</string>
+    <string name="settings_live_updates">Live stream</string>
+    <string name="settings_live_updates_desc">One connection the box pushes every reading down, five times a second. Off, the app asks on a timer instead.</string>
+    <string name="settings_poll_interval">How often to ask</string>
+    <string name="settings_poll_interval_desc">Only while the live stream is off.</string>
+    <string name="settings_seconds">%1$d s</string>
+    <string name="settings_keep_screen_on">Keep the screen on</string>
+    <string name="settings_keep_screen_on_desc">For a phone propped against the television.</string>
+
+    <!-- Settings: appearance -->
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_dynamic_color">Wallpaper colours</string>
+    <string name="settings_dynamic_color_desc">Take the palette from the wallpaper where Android offers one.</string>
+    <string name="settings_artwork">Show artwork</string>
+    <string name="settings_artwork_desc">Fetch the poster of what is playing. Only a title with a library entry has one.</string>
+
+    <!-- Settings: about -->
+    <string name="settings_about">About</string>
+    <string name="settings_about_version">App version</string>
+    <string name="settings_about_addon">Add-on</string>
+    <string name="settings_about_default_port">Default port</string>
+
+    <!-- Failures -->
+    <string name="error_title">Something went wrong</string>
+    <string name="error_not_configured">No box is configured yet.</string>
+    <string name="error_unreachable">The box did not answer.</string>
+    <string name="error_local_network_denied">This app may not reach devices on your local network. Allow local network access for TinyPPI in the Android app settings.</string>
+    <string name="api_error_timeout">%1$s did not answer in time.</string>
+    <string name="api_error_network">%1$s could not be reached.</string>
+    <string name="api_error_unauthorized">The token was refused. Check it against the one in the add-on\'s settings.</string>
+    <string name="api_error_control_disabled">This box does not allow a client to switch anything.</string>
+    <string name="api_error_busy">The box has no free connection right now. Close a dashboard you left open elsewhere.</string>
+    <string name="api_error_not_found">This box does not know that request. It may be running an older add-on.</string>
+    <string name="api_error_bad_request">The box refused the request.</string>
+    <string name="api_error_parse">The answer could not be read.</string>
+
+    <!-- Updates -->
+    <string name="update_available">%1$s is available</string>
+    <string name="update_show">Show</string>
+    <string name="update_releases_url" translatable="false">https://github.com/CE-Repo/tinyppi-mobile/releases/latest</string>
+    <string name="update_check_url" translatable="false">https://api.github.com/repos/CE-Repo/tinyppi-mobile/releases/latest</string>
+
+    <string name="exit_confirm">Press back again to exit</string>
+
+</resources>
