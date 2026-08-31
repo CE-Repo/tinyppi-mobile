@@ -62,6 +62,29 @@ class FormattersTest {
     }
 
     @Test
+    fun `a clock the box sent reads back as the seconds it stands for`() {
+        assertEquals(389.0, Formatters.clockSeconds("00:06:29"))
+        assertEquals(7214.0, Formatters.clockSeconds("02:00:14"))
+        assertEquals(389.0, Formatters.clockSeconds("6:29"))
+    }
+
+    @Test
+    fun `a clock that is not one reads back as nothing`() {
+        assertNull(Formatters.clockSeconds(""))
+        assertNull(Formatters.clockSeconds("live"))
+        assertNull(Formatters.clockSeconds("1:2:3:4"))
+    }
+
+    @Test
+    fun `a dragged position takes the shape of the reading it replaces`() {
+        // The hours are the box's own: a title counted in them keeps them, and
+        // one counted without them does not grow a leading 00 mid-gesture.
+        assertEquals("00:06:29", Formatters.positionLike(389.0, "02:00:14"))
+        assertEquals("06:29", Formatters.positionLike(389.0, "44:10"))
+        assertEquals("01:00:00", Formatters.positionLike(3600.0, "44:10"))
+    }
+
+    @Test
     fun `a frame size uses the multiplication sign, not an x`() {
         assertEquals("3840 × 2160", Formatters.frameSize(3840, 2160))
     }

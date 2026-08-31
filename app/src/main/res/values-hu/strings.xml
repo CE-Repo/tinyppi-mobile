@@ -41,7 +41,6 @@
     <string name="live_transport">Lejátszó</string>
     <string name="live_playpause">Lejátszás / szünet</string>
     <string name="live_stop">Stop</string>
-    <string name="live_seek_to">Ugrás</string>
     <plurals name="live_seek_back">
         <item quantity="one">%1$d másodperccel vissza</item>
         <item quantity="other">%1$d másodperccel vissza</item>
@@ -49,6 +48,14 @@
     <plurals name="live_seek_forward">
         <item quantity="one">%1$d másodperccel előre</item>
         <item quantity="other">%1$d másodperccel előre</item>
+    </plurals>
+    <plurals name="live_seek_back_minutes">
+        <item quantity="one">%1$d perccel vissza</item>
+        <item quantity="other">%1$d perccel vissza</item>
+    </plurals>
+    <plurals name="live_seek_forward_minutes">
+        <item quantity="one">%1$d perccel előre</item>
+        <item quantity="other">%1$d perccel előre</item>
     </plurals>
     <string name="live_mute">Némítás</string>
     <string name="live_unmute">Némítás feloldása</string>

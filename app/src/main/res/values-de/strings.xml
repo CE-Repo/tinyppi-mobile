@@ -38,7 +38,6 @@
     <string name="live_transport">Player</string>
     <string name="live_playpause">Wiedergabe / Pause</string>
     <string name="live_stop">Stopp</string>
-    <string name="live_seek_to">Springen zu</string>
     <plurals name="live_seek_back">
         <item quantity="one">%1$d Sekunde zurück</item>
         <item quantity="other">%1$d Sekunden zurück</item>
@@ -46,6 +45,14 @@
     <plurals name="live_seek_forward">
         <item quantity="one">%1$d Sekunde vor</item>
         <item quantity="other">%1$d Sekunden vor</item>
+    </plurals>
+    <plurals name="live_seek_back_minutes">
+        <item quantity="one">%1$d Minute zurück</item>
+        <item quantity="other">%1$d Minuten zurück</item>
+    </plurals>
+    <plurals name="live_seek_forward_minutes">
+        <item quantity="one">%1$d Minute vor</item>
+        <item quantity="other">%1$d Minuten vor</item>
     </plurals>
     <string name="live_mute">Stummschalten</string>
     <string name="live_unmute">Ton an</string>

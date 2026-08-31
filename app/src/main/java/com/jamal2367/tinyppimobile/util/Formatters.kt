@@ -69,6 +69,45 @@ object Formatters {
     }
 
     /**
+     * A clock the box sent - `00:06:29`, `6:29` - read back as seconds.
+     *
+     * The player's own position and duration arrive as text, already drawn the
+     * way the television draws them. Turning one back into a number is only
+     * worth doing where the app has to do arithmetic on it, which is the
+     * position a finger is dragging the bar to.
+     */
+    fun clockSeconds(text: String): Double? {
+        val parts = text.trim().split(':')
+        if (parts.size !in 2..3) return null
+        var total = 0.0
+        for (part in parts) {
+            val value = part.toIntOrNull()?.takeIf { it >= 0 } ?: return null
+            total = total * 60 + value
+        }
+        return total
+    }
+
+    /**
+     * Seconds as a clock shaped like [pattern] - the reading it stands in for.
+     *
+     * The drag readout sits in the same corner as the box's own position and
+     * replaces it mid-gesture, so it takes the same shape: a title the box
+     * counts in hours keeps the hours, and one it does not keep does not grow
+     * a leading `00:` the moment a finger touches the bar.
+     */
+    fun positionLike(seconds: Double, pattern: String): String {
+        val whole = abs(seconds).roundToInt()
+        val hours = whole / 3600
+        val minutes = (whole % 3600) / 60
+        val rest = whole % 60
+        return if (pattern.count { it == ':' } > 1 || hours > 0) {
+            String.format(Locale.ROOT, "%02d:%02d:%02d", hours, minutes, rest)
+        } else {
+            String.format(Locale.ROOT, "%02d:%02d", minutes, rest)
+        }
+    }
+
+    /**
      * A number with up to [decimals] places, and none where they are zeroes.
      *
      * `23.976` keeps all three, `24.0` prints as `24`. A trailing `.0` on a

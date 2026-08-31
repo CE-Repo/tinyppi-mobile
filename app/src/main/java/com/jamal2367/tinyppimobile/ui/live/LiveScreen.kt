@@ -8,6 +8,7 @@ package com.jamal2367.tinyppimobile.ui.live
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,16 +28,13 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.outlined.Forward10
-import androidx.compose.material.icons.outlined.Forward30
 import androidx.compose.material.icons.outlined.PlayCircle
-import androidx.compose.material.icons.outlined.Replay10
-import androidx.compose.material.icons.outlined.Replay30
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +55,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -184,19 +184,15 @@ private fun LiveContent(
             return@LazyColumn
         }
 
-        item { NowPlayingCard(snapshot, server, showArtwork) }
-
-        if (canControl) {
-            item {
-                TransportCard(
-                    snapshot = snapshot,
-                    pendingVolume = pendingVolume,
-                    viewModel = viewModel,
-                )
-            }
-            if (!snapshot.controls.isEmpty) {
-                item { TrackCard(snapshot.controls, viewModel) }
-            }
+        item {
+            NowPlayingCard(
+                snapshot = snapshot,
+                server = server,
+                showArtwork = showArtwork,
+                canControl = canControl,
+                pendingVolume = pendingVolume,
+                viewModel = viewModel,
+            )
         }
 
         if (snapshot.vs10.options.isNotEmpty()) {
@@ -208,7 +204,11 @@ private fun LiveContent(
 }
 
 /**
- * The title, with everything that names it and everything that grades it.
+ * The title, how it is graded, and everything that can be done to it.
+ *
+ * One card rather than three: the title, the transport and the track pickers
+ * are read and used in the same breath, and a card boundary between them only
+ * put scrolling between a button and the thing it moves.
  *
  * The two badges are the point of the card and of the add-on itself: what the
  * file is, and what the box is turning it into on the way out. They sit side by
@@ -217,7 +217,14 @@ private fun LiveContent(
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun NowPlayingCard(snapshot: Snapshot, server: ServerConfig?, showArtwork: Boolean) {
+private fun NowPlayingCard(
+    snapshot: Snapshot,
+    server: ServerConfig?,
+    showArtwork: Boolean,
+    canControl: Boolean,
+    pendingVolume: Int?,
+    viewModel: LiveViewModel,
+) {
     val poster = if (showArtwork) {
         MediaUrls.art(server, snapshot.art, MediaUrls.ArtKind.POSTER)
     } else {
@@ -300,31 +307,116 @@ private fun NowPlayingCard(snapshot: Snapshot, server: ServerConfig?, showArtwor
             )
         }
 
-        ProgressRow(snapshot)
+        ProgressRow(snapshot, canControl, viewModel)
+
+        if (canControl) {
+            CardSection(stringResource(R.string.live_transport)) {
+                TransportSection(
+                    snapshot = snapshot,
+                    pendingVolume = pendingVolume,
+                    viewModel = viewModel,
+                )
+            }
+            if (!snapshot.controls.isEmpty) {
+                CardSection(stringResource(R.string.live_tracks)) {
+                    TrackSection(snapshot.controls, viewModel)
+                }
+            }
+        }
     }
 }
 
+/**
+ * A titled run of rows inside a card, under a rule.
+ *
+ * The heading stays where a card of its own used to be: three stacked blocks
+ * need saying apart, and a rule alone leaves the reader to work out where the
+ * player ends and the tracks begin.
+ */
 @Composable
-private fun ProgressRow(snapshot: Snapshot) {
-    val progress = ((snapshot.metrics.progress ?: 0.0) / 100.0).toFloat().coerceIn(0f, 1f)
+private fun ColumnScope.CardSection(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    HorizontalDivider(
+        modifier = Modifier.padding(top = 6.dp),
+        color = MaterialTheme.colorScheme.outlineVariant,
+    )
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+    )
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        content = content,
+    )
+}
+
+/**
+ * Where the title has got to, and the handle that moves it.
+ *
+ * The bar is both the reading and the control. While a finger is on it the
+ * slider is the truth, and the moment it comes off the box is again - held as
+ * "dragged, or nothing" rather than as a position kept in step with the
+ * reading, because the reading arrives five times a second and a thumb
+ * followed by it is a thumb dragged out from under the finger holding it.
+ *
+ * The left-hand figure says where the drag has reached rather than where the
+ * player still is: a bar dragged half an hour on while the clock under it
+ * insists on the old position is a bar nobody can aim.
+ *
+ * On a box with control switched off the same bar is drawn as a plain reading,
+ * which is all it can be there.
+ */
+@Composable
+private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: LiveViewModel) {
+    val reported = (snapshot.metrics.progress ?: 0.0).toFloat().coerceIn(0f, 100f)
+    var dragged by remember { mutableStateOf<Float?>(null) }
+
+    val target = dragged?.let { percent ->
+        Formatters.clockSeconds(snapshot.duration)?.let { total ->
+            Formatters.positionLike(total * percent / 100.0, snapshot.duration)
+        }
+    }
 
     Column(modifier = Modifier.padding(top = 6.dp)) {
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp),
-        )
+        if (canControl) {
+            Slider(
+                value = dragged ?: reported,
+                onValueChange = { dragged = it },
+                onValueChangeFinished = {
+                    dragged?.let(viewModel::seekTo)
+                    // Handed back to the box: what it reports next is where the
+                    // player actually landed, which is not always what was asked.
+                    dragged = null
+                },
+                valueRange = 0f..100f,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else {
+            LinearProgressIndicator(
+                progress = { reported / 100f },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp),
+            )
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 6.dp),
+                .padding(top = if (canControl) 0.dp else 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = snapshot.time.ifBlank { "–" },
+                text = target ?: snapshot.time.ifBlank { "–" },
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (target != null) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                fontWeight = if (target != null) FontWeight.SemiBold else null,
             )
             Text(
                 text = snapshot.duration.ifBlank { "–" },
@@ -336,185 +428,178 @@ private fun ProgressRow(snapshot: Snapshot) {
 }
 
 /**
- * Play, stop, the four jumps, and the volume.
+ * Play, the six jumps, the volume and stop.
  *
  * Drawn only where the box allows control: the add-on gathers the track lists
- * and the volume for this row alone, and a box that has control switched off
+ * and the volume for these rows alone, and a box that has control switched off
  * sends none of it, so there would be nothing under the buttons anyway.
+ *
+ * Every jump is written rather than drawn. The icon set counts in seconds and
+ * stops at thirty, so half of these six would have had to be labelled anyway,
+ * and a row of three icons beside three labels reads as two kinds of button
+ * doing one kind of thing.
+ *
+ * Jumping to a point rather than by one is the bar at the top of the card.
  */
 @Composable
-private fun TransportCard(
+private fun TransportSection(
     snapshot: Snapshot,
     pendingVolume: Int?,
     viewModel: LiveViewModel,
 ) {
-    SectionCard(title = stringResource(R.string.live_transport)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        JumpButton(
+            label = "-10m",
+            description = pluralStringResource(R.plurals.live_seek_back_minutes, 10, 10),
+            onClick = { viewModel.seekBy(-600) },
+        )
+        JumpButton(
+            label = "-1m",
+            description = pluralStringResource(R.plurals.live_seek_back_minutes, 1, 1),
+            onClick = { viewModel.seekBy(-60) },
+        )
+        JumpButton(
+            label = "-10s",
+            description = pluralStringResource(R.plurals.live_seek_back, 10, 10),
+            onClick = { viewModel.seekBy(-10) },
+        )
+        FilledIconButton(
+            onClick = viewModel::playPause,
+            modifier = Modifier.size(54.dp),
         ) {
-            FilledTonalIconButton(onClick = { viewModel.seekBy(-30) }) {
-                Icon(
-                    Icons.Outlined.Replay30,
-                    contentDescription = pluralStringResource(R.plurals.live_seek_back, 30, 30),
-                )
-            }
-            FilledTonalIconButton(onClick = { viewModel.seekBy(-10) }) {
-                Icon(
-                    Icons.Outlined.Replay10,
-                    contentDescription = pluralStringResource(R.plurals.live_seek_back, 10, 10),
-                )
-            }
-            FilledIconButton(
-                onClick = viewModel::playPause,
-                modifier = Modifier.size(56.dp),
-            ) {
-                Icon(
-                    imageVector = if (snapshot.paused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
-                    contentDescription = stringResource(R.string.live_playpause),
-                )
-            }
-            FilledTonalIconButton(onClick = { viewModel.seekBy(10) }) {
-                Icon(
-                    Icons.Outlined.Forward10,
-                    contentDescription = pluralStringResource(R.plurals.live_seek_forward, 10, 10),
-                )
-            }
-            FilledTonalIconButton(onClick = { viewModel.seekBy(30) }) {
-                Icon(
-                    Icons.Outlined.Forward30,
-                    contentDescription = pluralStringResource(R.plurals.live_seek_forward, 30, 30),
-                )
-            }
+            Icon(
+                imageVector = if (snapshot.paused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
+                contentDescription = stringResource(R.string.live_playpause),
+            )
         }
+        JumpButton(
+            label = "+10s",
+            description = pluralStringResource(R.plurals.live_seek_forward, 10, 10),
+            onClick = { viewModel.seekBy(10) },
+        )
+        JumpButton(
+            label = "+1m",
+            description = pluralStringResource(R.plurals.live_seek_forward_minutes, 1, 1),
+            onClick = { viewModel.seekBy(60) },
+        )
+        JumpButton(
+            label = "+10m",
+            description = pluralStringResource(R.plurals.live_seek_forward_minutes, 10, 10),
+            onClick = { viewModel.seekBy(600) },
+        )
+    }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp),
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            OutlinedButton(onClick = viewModel::stop) {
-                Icon(
-                    Icons.Filled.Stop,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Text(
-                    text = stringResource(R.string.live_stop),
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-            }
-        }
+    VolumeRow(snapshot.controls, pendingVolume, viewModel)
+}
 
-        SeekBar(snapshot, viewModel)
-        VolumeRow(snapshot.controls, pendingVolume, viewModel)
+/**
+ * One jump, as far as it goes.
+ *
+ * The label carries the distance and the sign carries the direction, so the
+ * row reads left to right without counting buttons out from the middle. The
+ * screen reader is told the same thing in words.
+ */
+@Composable
+private fun JumpButton(label: String, description: String, onClick: () -> Unit) {
+    FilledTonalIconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(38.dp)
+            .semantics { contentDescription = description },
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            softWrap = false,
+        )
     }
 }
 
 /**
- * Where in the film to jump to.
+ * The volume, with stop at the end of it.
  *
- * Its own control rather than a draggable progress bar at the top: the bar up
- * there is a reading and moves five times a second, and a reading that can be
- * grabbed by accident is one nobody trusts.
+ * Stop takes the far right of the last row rather than a button of its own in
+ * the middle of the transport: it ends playback outright, and the far corner is
+ * the hardest place on the row to hit by accident. A box that sends no volume
+ * still gets the button - what goes missing is the slider, not the transport.
  */
-@Composable
-private fun SeekBar(snapshot: Snapshot, viewModel: LiveViewModel) {
-    val reported = (snapshot.metrics.progress ?: 0.0).toFloat().coerceIn(0f, 100f)
-
-    // While a finger is on it the slider is the truth, and the moment it comes
-    // off the box is again. Held as "dragged, or nothing" rather than as a
-    // position kept in step with the reading: the reading arrives five times a
-    // second, and a thumb that is followed by it is a thumb dragged out from
-    // under the finger holding it.
-    var dragged by remember { mutableStateOf<Float?>(null) }
-
-    Column(modifier = Modifier.padding(top = 4.dp)) {
-        Text(
-            text = stringResource(R.string.live_seek_to),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Slider(
-            value = dragged ?: reported,
-            onValueChange = { dragged = it },
-            onValueChangeFinished = {
-                dragged?.let(viewModel::seekTo)
-                // Handed back to the box: what it reports next is where the
-                // player actually landed, which is not always what was asked.
-                dragged = null
-            },
-            valueRange = 0f..100f,
-        )
-    }
-}
-
 @Composable
 private fun VolumeRow(
     controls: PlayerControls,
     pendingVolume: Int?,
     viewModel: LiveViewModel,
 ) {
-    val level = pendingVolume ?: controls.volume ?: return
+    val level = pendingVolume ?: controls.volume
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        FilledTonalIconButton(onClick = viewModel::toggleMute) {
-            Icon(
-                imageVector = if (controls.muted) {
-                    Icons.AutoMirrored.Filled.VolumeOff
-                } else {
-                    Icons.AutoMirrored.Filled.VolumeUp
-                },
-                contentDescription = stringResource(
-                    if (controls.muted) R.string.live_unmute else R.string.live_mute
-                ),
+        if (level == null) {
+            Spacer(Modifier.weight(1f))
+        } else {
+            FilledTonalIconButton(onClick = viewModel::toggleMute) {
+                Icon(
+                    imageVector = if (controls.muted) {
+                        Icons.AutoMirrored.Filled.VolumeOff
+                    } else {
+                        Icons.AutoMirrored.Filled.VolumeUp
+                    },
+                    contentDescription = stringResource(
+                        if (controls.muted) R.string.live_unmute else R.string.live_mute
+                    ),
+                )
+            }
+            Slider(
+                value = level.toFloat(),
+                onValueChange = { viewModel.previewVolume(it.toInt()) },
+                onValueChangeFinished = { viewModel.commitVolume(level) },
+                valueRange = 0f..100f,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = "$level",
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.width(36.dp),
             )
         }
-        Slider(
-            value = level.toFloat(),
-            onValueChange = { viewModel.previewVolume(it.toInt()) },
-            onValueChangeFinished = { viewModel.commitVolume(level) },
-            valueRange = 0f..100f,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            text = "$level",
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.width(36.dp),
-        )
+        FilledTonalIconButton(onClick = viewModel::stop) {
+            Icon(
+                Icons.Filled.Stop,
+                contentDescription = stringResource(R.string.live_stop),
+            )
+        }
     }
 }
 
 /** The audio and subtitle tracks, as two pickers. */
 @Composable
-private fun TrackCard(controls: PlayerControls, viewModel: LiveViewModel) {
-    SectionCard(title = stringResource(R.string.live_tracks)) {
-        if (controls.audio.isNotEmpty()) {
-            TrackPicker(
-                label = stringResource(R.string.live_audio_track),
-                tracks = controls.audio,
-                selected = controls.audioCurrent,
-                offLabel = null,
-                onSelect = { index -> index?.let(viewModel::selectAudio) },
-            )
-        }
-        if (controls.subtitle.isNotEmpty()) {
-            TrackPicker(
-                label = stringResource(R.string.live_subtitles),
-                tracks = controls.subtitle,
-                // Kodi goes on naming the track that was switched off, so the
-                // picker only follows the current index while they are on.
-                selected = if (controls.subtitleOn) controls.subtitleCurrent else null,
-                offLabel = stringResource(R.string.live_subtitles_off),
-                onSelect = viewModel::selectSubtitle,
-            )
-        }
+private fun TrackSection(controls: PlayerControls, viewModel: LiveViewModel) {
+    if (controls.audio.isNotEmpty()) {
+        TrackPicker(
+            label = stringResource(R.string.live_audio_track),
+            tracks = controls.audio,
+            selected = controls.audioCurrent,
+            offLabel = null,
+            onSelect = { index -> index?.let(viewModel::selectAudio) },
+        )
+    }
+    if (controls.subtitle.isNotEmpty()) {
+        TrackPicker(
+            label = stringResource(R.string.live_subtitles),
+            tracks = controls.subtitle,
+            // Kodi goes on naming the track that was switched off, so the
+            // picker only follows the current index while they are on.
+            selected = if (controls.subtitleOn) controls.subtitleCurrent else null,
+            offLabel = stringResource(R.string.live_subtitles_off),
+            onSelect = viewModel::selectSubtitle,
+        )
     }
 }
 
