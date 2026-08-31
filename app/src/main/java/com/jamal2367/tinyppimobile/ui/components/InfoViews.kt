@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -343,15 +344,26 @@ fun StatTile(
     content: Color = MaterialTheme.colorScheme.onPrimaryContainer,
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier.height(88.dp),
         colors = CardDefaults.cardColors(containerColor = container, contentColor = content),
     ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-            Text(text = value, style = MaterialTheme.typography.headlineSmall)
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center,
+            )
             Text(
                 text = caption,
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.padding(top = 2.dp),
+                textAlign = TextAlign.Center,
             )
         }
     }
