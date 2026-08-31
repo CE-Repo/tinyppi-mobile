@@ -17,33 +17,33 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jamal2367.tinyppimobile.ui.theme.BadgeConverted
-import com.jamal2367.tinyppimobile.ui.theme.BadgeDolbyVision
-import com.jamal2367.tinyppimobile.ui.theme.BadgeHdr10
-import com.jamal2367.tinyppimobile.ui.theme.BadgeHdr10Plus
-import com.jamal2367.tinyppimobile.ui.theme.BadgeHlg
-import com.jamal2367.tinyppimobile.ui.theme.BadgeSdr
 import com.jamal2367.tinyppimobile.ui.theme.PillShape
+import com.jamal2367.tinyppimobile.ui.theme.accentText
 
 /**
- * How a picture is graded, as one word in the colour of its grade.
+ * How a picture is graded, as one short line in the app's accent.
  *
- * The tokens are the add-on's own - `dolbyvision`, `hdr10`, `hdr10plus`,
- * `hlg`, and an empty string for SDR - and both the source and the output side
- * of a snapshot are written in them, which is what lets one badge draw either.
+ * In the accent rather than in a colour of its own per grade, so it belongs to
+ * the card it sits on: the card is washed in the colour of the poster beside
+ * it, and a violet pill on a red film was the one thing there that answered to
+ * nothing on screen.
+ *
+ * The [text] is the caller's, not a grade looked up here - a Dolby Vision
+ * source says which profile it is and whether a second layer came with it, and
+ * that is more than a grade knows about itself.
  */
 @Composable
 fun FormatBadge(
-    token: String,
+    text: String,
     modifier: Modifier = Modifier,
     prefix: String? = null,
 ) {
-    val grade = HdrGrade.of(token)
-    val (container, content) = grade.colors
+    val content = MaterialTheme.colorScheme.accentText
 
     Row(
         modifier = modifier
             .clip(PillShape)
-            .background(container)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
             .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -57,7 +57,7 @@ fun FormatBadge(
             )
         }
         Text(
-            text = grade.label,
+            text = text,
             color = content,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.SemiBold,
@@ -111,12 +111,12 @@ fun StatusDot(color: Color, modifier: Modifier = Modifier, size: Int = 8) {
  * Vision is Dolby Vision in every language the overlay speaks. The add-on
  * leaves its own mode labels untranslated for the same reason.
  */
-enum class HdrGrade(val label: String, val colors: Pair<Color, Color>) {
-    DOLBY_VISION("Dolby Vision", BadgeDolbyVision),
-    HDR10_PLUS("HDR10+", BadgeHdr10Plus),
-    HDR10("HDR10", BadgeHdr10),
-    HLG("HLG", BadgeHlg),
-    SDR("SDR", BadgeSdr);
+enum class HdrGrade(val label: String) {
+    DOLBY_VISION("Dolby Vision"),
+    HDR10_PLUS("HDR10+"),
+    HDR10("HDR10"),
+    HLG("HLG"),
+    SDR("SDR");
 
     companion object {
         /**

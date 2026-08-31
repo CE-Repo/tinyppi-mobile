@@ -39,6 +39,13 @@ import kotlinx.coroutines.withContext
  * poster with no colour in it - the caller falls back to the app's own palette
  * there rather than being handed a grey pretending to be an accent.
  *
+ * A colour outlives the title it came from. When a film ends, its poster goes
+ * with it and there is nothing to read a colour off - but the screen it left
+ * behind is still about that film, and draining the colour out of it at the
+ * closing credits would be the app announcing that it has stopped caring. The
+ * last colour read is held until another title replaces it, and the app opening
+ * again is what clears it: it is remembered for a sitting, not stored.
+ *
  * The picture is asked for at a size a thumbnail would be embarrassed by. It is
  * being averaged, not looked at, and forty-eight pixels square carries every
  * bit of the answer that a full poster does at a thousandth of the work.
@@ -50,7 +57,10 @@ fun rememberArtworkAccent(url: String?): Color? {
     var accent by remember { mutableStateOf<Color?>(null) }
 
     LaunchedEffect(url, dark) {
-        accent = url?.let { readAccent(context, it, dark) }
+        // Nothing to read is not the same as nothing to show: the colour on
+        // screen stays until a poster arrives to replace it.
+        val poster = url ?: return@LaunchedEffect
+        readAccent(context, poster, dark)?.let { accent = it }
     }
 
     return accent

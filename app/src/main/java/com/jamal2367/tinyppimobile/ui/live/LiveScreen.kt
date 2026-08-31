@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -70,8 +71,8 @@ import com.jamal2367.tinyppimobile.data.model.Vs10State
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.ui.components.ConversionBadge
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
-import com.jamal2367.tinyppimobile.ui.components.FoldChevron
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
+import com.jamal2367.tinyppimobile.ui.components.FoldChevron
 import com.jamal2367.tinyppimobile.ui.components.FormatLogo
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
 import com.jamal2367.tinyppimobile.ui.components.InfoRow
@@ -85,6 +86,7 @@ import com.jamal2367.tinyppimobile.ui.theme.accentText
 import com.jamal2367.tinyppimobile.ui.theme.artworkGradient
 import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.util.MediaUrls
+import com.jamal2367.tinyppimobile.util.SourceLabel
 
 /**
  * What the box is playing, and what can be done to it.
@@ -282,13 +284,19 @@ private fun NowPlayingCard(
                     url = poster,
                     contentDescription = snapshot.title,
                     modifier = Modifier
-                        .width(84.dp)
-                        .aspectRatio(2f / 3f),
+                        .width(POSTER_WIDTH)
+                        .aspectRatio(POSTER_RATIO),
                 )
             }
 
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    // As tall as the poster beside it, so the logos at its foot
+                    // land on the poster's bottom edge. A minimum rather than a
+                    // height: a long title and a long subtitle are allowed to
+                    // push past the poster rather than be cut off by it.
+                    .heightIn(min = if (showArtwork) POSTER_HEIGHT else 0.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
@@ -311,13 +319,18 @@ private fun NowPlayingCard(
                     )
                 }
 
+                // A gap of its own above and below, both of the same weight,
+                // so the badges sit halfway between the line that names the
+                // film and the logos at the foot of the poster rather than
+                // hanging off one of the two.
+                Spacer(Modifier.weight(1f))
+
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.padding(top = 4.dp),
                 ) {
                     FormatBadge(
-                        token = snapshot.sourceType,
+                        text = sourceLabelOf(snapshot),
                         prefix = stringResource(R.string.live_source),
                     )
                     if (snapshot.isConverting) {
@@ -327,13 +340,14 @@ private fun NowPlayingCard(
                     }
                 }
 
-                // Wider apart than the badges above them: the logos have
-                // lost the chips that used to hold them apart, and two bare
-                // wordmarks six points from each other read as one.
+                Spacer(Modifier.weight(1f))
+
+                // Wider apart than a badge would be: the logos have lost the
+                // chips that used to hold them apart, and two bare wordmarks
+                // six points from each other read as one.
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(top = 4.dp),
                 ) {
                     FormatLogo(
                         url = MediaUrls.logo(server, snapshot.logos.video),
@@ -899,4 +913,30 @@ private fun subtitleOf(snapshot: Snapshot): String? {
         media.genre.takeIf { it.isNotBlank() },
     )
     return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
+}
+
+/**
+ * How big the poster on the live card is drawn.
+ *
+ * Kept as three named figures rather than two numbers in a modifier, because
+ * the column of text beside it is measured against the same height - the logos
+ * at its foot are meant to land on the poster's bottom edge.
+ */
+private val POSTER_WIDTH = 84.dp
+private const val POSTER_RATIO = 2f / 3f
+private val POSTER_HEIGHT = POSTER_WIDTH / POSTER_RATIO
+
+/**
+ * What the source badge says: the grade, and for Dolby Vision rather more.
+ *
+ * Dolby Vision is abbreviated where the profile is spelled out beside it - the
+ * badge is a pill on a card, and `Dolby Vision P7.6 EL` written out in full is
+ * a pill the width of the screen saying what `DV P7.6 EL` says.
+ */
+private fun sourceLabelOf(snapshot: Snapshot): String {
+    val grade = HdrGrade.of(snapshot.sourceType)
+    if (grade != HdrGrade.DOLBY_VISION) return grade.label
+
+    val detail = SourceLabel.dolbyVisionSuffix(snapshot) ?: return "DV"
+    return "DV $detail"
 }

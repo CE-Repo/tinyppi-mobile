@@ -85,24 +85,6 @@ val DarkOutline = Color(0xFF8A9297)
 val DarkOutlineVariant = Color(0xFF40484D)
 
 /**
- * The accents the format badges use.
- *
- * A colour per grade, so a glance at the top of the screen says what is playing
- * without reading a word of it: violet for Dolby Vision, red for HDR10+, blue
- * for HDR10, amber for HLG, and a grey that stays out of the way for SDR.
- *
- * Each is a deep ground under a light face rather than a pair drawn from the
- * theme, because a badge sits over a poster: whatever the wallpaper or the time
- * of day has done to the rest of the screen, it has to hold up over a bright
- * frame and a dark one alike.
- */
-val BadgeDolbyVision = Color(0xFF1B1035) to Color(0xFFD9C7FF)
-val BadgeHdr10Plus = Color(0xFF3A0808) to Color(0xFFFFB3AC)
-val BadgeHdr10 = Color(0xFF07203D) to Color(0xFFA8CDFF)
-val BadgeHlg = Color(0xFF2E1B00) to Color(0xFFFFC98A)
-val BadgeSdr = Color(0xFF1E2226) to Color(0xFFC5CBD2)
-
-/**
  * The accent a conversion wears.
  *
  * Green, and used nowhere else: a picture that is being converted on the way
