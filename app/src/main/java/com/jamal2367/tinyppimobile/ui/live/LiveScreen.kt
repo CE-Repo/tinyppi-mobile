@@ -24,11 +24,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Stop
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -51,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -526,10 +527,11 @@ private fun TransportSection(
         )
         FilledIconButton(
             onClick = viewModel::playPause,
+            shape = CircleShape,
             modifier = Modifier.size(54.dp),
         ) {
             Icon(
-                imageVector = if (snapshot.paused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
+                imageVector = if (snapshot.paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
                 contentDescription = stringResource(R.string.live_playpause),
                 tint = MaterialTheme.colorScheme.secondaryContainer,
             )
@@ -602,9 +604,9 @@ private fun VolumeRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        FilledTonalIconButton(onClick = viewModel::stop) {
+        FilledTonalIconButton(onClick = viewModel::stop, shape = CircleShape) {
             Icon(
-                Icons.Filled.Stop,
+                Icons.Rounded.Stop,
                 contentDescription = stringResource(R.string.live_stop),
             )
         }
@@ -624,12 +626,12 @@ private fun VolumeRow(
                 color = MaterialTheme.colorScheme.accentText.copy(alpha = 0.8f),
                 modifier = Modifier.width(36.dp),
             )
-            FilledTonalIconButton(onClick = viewModel::toggleMute) {
+            FilledTonalIconButton(onClick = viewModel::toggleMute, shape = CircleShape) {
                 Icon(
                     imageVector = if (controls.muted) {
-                        Icons.AutoMirrored.Filled.VolumeOff
+                        Icons.AutoMirrored.Rounded.VolumeOff
                     } else {
-                        Icons.AutoMirrored.Filled.VolumeUp
+                        Icons.AutoMirrored.Rounded.VolumeUp
                     },
                     contentDescription = stringResource(
                         if (controls.muted) R.string.live_unmute else R.string.live_mute
