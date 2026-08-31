@@ -684,6 +684,7 @@ private fun TrackPicker(
     offLabel: String?,
     onSelect: (Int?) -> Unit,
     modifier: Modifier = Modifier,
+    labelTextAlign: TextAlign = TextAlign.Center,
 ) {
     var open by remember { mutableStateOf(false) }
     val current = tracks.firstOrNull { it.index == selected }?.label
@@ -696,6 +697,8 @@ private fun TrackPicker(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Medium,
+            textAlign = labelTextAlign,
+            modifier = Modifier.fillMaxWidth(),
         )
         Box {
             FilledTonalButton(
