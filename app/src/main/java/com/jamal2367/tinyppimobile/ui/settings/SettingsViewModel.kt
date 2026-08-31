@@ -152,6 +152,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { repository.setAdaptiveColor(enabled) }
     }
 
+    fun setAdaptiveColorIntensity(intensity: Float) {
+        viewModelScope.launch { repository.setAdaptiveColorIntensity(intensity) }
+    }
+
     /**
      * Try an address as it stands on the screen.
      *

@@ -118,6 +118,8 @@ data class AppSettings(
      * fetching one purely to average it is the thing that switch turns off.
      */
     val adaptiveColor: Boolean = true,
+    /** Strength of the poster-derived accent, from subtle to full. */
+    val adaptiveColorIntensity: Float = 1f,
     /**
      * The folds the reader has moved off where they start, by name.
      *

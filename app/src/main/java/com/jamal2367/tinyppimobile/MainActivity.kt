@@ -151,7 +151,10 @@ class MainActivity : ComponentActivity() {
                 // Nothing but the theme's background until then - the dialog is
                 // covering this anyway, and it is gone within a moment.
                 if (decided) {
-                    ArtworkAccentTheme(accent = playingColour(container, settings)) {
+                        ArtworkAccentTheme(
+                            accent = playingColour(container, settings),
+                            intensity = settings.adaptiveColorIntensity,
+                        ) {
                         CompositionLocalProvider(
                             LocalCardFolds provides rememberCardFolds(container, settings),
                         ) {

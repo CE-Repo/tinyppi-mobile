@@ -7,11 +7,15 @@
 package com.jamal2367.tinyppimobile.ui.settings
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -35,8 +39,11 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -45,6 +52,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -62,6 +70,7 @@ import com.jamal2367.tinyppimobile.data.prefs.ThemeMode
 import com.jamal2367.tinyppimobile.ui.components.InfoRow
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.theme.accentText
+import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 
 /**
  * Where the two addresses live.
@@ -488,6 +497,10 @@ private fun UpdatesCard(settings: AppSettings, viewModel: SettingsViewModel) {
 
 @Composable
 private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) {
+    var draftIntensity by rememberSaveable(settings.adaptiveColorIntensity) {
+        mutableStateOf(settings.adaptiveColorIntensity)
+    }
+
     SectionCard(
         title = stringResource(R.string.settings_appearance),
         foldId = "settings.appearance",
@@ -533,6 +546,77 @@ private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) 
             onCheckedChange = viewModel::setAdaptiveColor,
             enabled = settings.showArtwork,
         )
+
+        if (settings.showArtwork) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(
+                            LocalArtworkAccent.current ?: MaterialTheme.colorScheme.primary
+                        ),
+                )
+                Spacer(Modifier.size(8.dp))
+                Text(
+                    text = stringResource(R.string.settings_adaptive_color_intensity),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = stringResource(
+                        R.string.settings_adaptive_color_intensity_value,
+                        (draftIntensity * 100).toInt(),
+                    ),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.accentText,
+                )
+                TextButton(
+                    onClick = {
+                        draftIntensity = 1f
+                        viewModel.setAdaptiveColorIntensity(1f)
+                    },
+                    enabled = settings.adaptiveColor && draftIntensity < 1f,
+                ) {
+                    Text(stringResource(R.string.settings_adaptive_color_reset))
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Slider(
+                    value = draftIntensity,
+                    onValueChange = { draftIntensity = it },
+                    onValueChangeFinished = {
+                        viewModel.setAdaptiveColorIntensity(draftIntensity)
+                    },
+                    valueRange = 0.5f..1f,
+                    enabled = settings.adaptiveColor,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_adaptive_color_subtle),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = stringResource(R.string.settings_adaptive_color_intense),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 
@@ -585,7 +669,19 @@ private fun SwitchRow(
                 )
             }
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            enabled = enabled,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.secondaryContainer,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                checkedBorderColor = MaterialTheme.colorScheme.primary,
+                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                uncheckedBorderColor = MaterialTheme.colorScheme.outline,
+            ),
+        )
     }
 }
 

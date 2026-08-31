@@ -166,6 +166,11 @@
     <string name="settings_artwork_desc">Das Poster des laufenden Titels laden. Nur ein Titel mit Bibliothekseintrag hat eines.</string>
     <string name="settings_adaptive_color">Adaptive Farben</string>
     <string name="settings_adaptive_color_desc">Die App in der Farbe des laufenden Covers einfärben, wie im Dashboard.</string>
+    <string name="settings_adaptive_color_intensity">Akzentintensität</string>
+    <string name="settings_adaptive_color_intensity_value">%1$d %%</string>
+    <string name="settings_adaptive_color_reset">Zurücksetzen</string>
+    <string name="settings_adaptive_color_subtle">Dezent</string>
+    <string name="settings_adaptive_color_intense">Kräftig</string>
 
     <!-- Einstellungen: Über -->
     <string name="settings_about">Über</string>

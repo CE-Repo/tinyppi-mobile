@@ -169,6 +169,11 @@
     <string name="settings_artwork_desc">Fetch the poster of what is playing. Only a title with a library entry has one.</string>
     <string name="settings_adaptive_color">Adaptive colours</string>
     <string name="settings_adaptive_color_desc">Colour the app after the poster of what is playing, the way the dashboard does.</string>
+    <string name="settings_adaptive_color_intensity">Accent intensity</string>
+    <string name="settings_adaptive_color_intensity_value">%1$d%%</string>
+    <string name="settings_adaptive_color_reset">Reset</string>
+    <string name="settings_adaptive_color_subtle">Subtle</string>
+    <string name="settings_adaptive_color_intense">Strong</string>
 
     <!-- Settings: about -->
     <string name="settings_about">About</string>

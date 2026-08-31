@@ -94,9 +94,17 @@ val LocalArtworkAccent = staticCompositionLocalOf<Color?> { null }
  * decided light or dark, and a poster is not entitled to overturn that.
  */
 @Composable
-fun ArtworkAccentTheme(accent: Color?, content: @Composable () -> Unit) {
+fun ArtworkAccentTheme(
+    accent: Color?,
+    intensity: Float = 1f,
+    content: @Composable () -> Unit,
+) {
     val base = MaterialTheme.colorScheme
-    val scheme = remember(base, accent) { if (accent == null) base else base.accented(accent) }
+    val scheme = remember(base, accent, intensity) {
+        if (accent == null) base else base.accented(
+            lerp(base.primary, accent, intensity.coerceIn(0.5f, 1f))
+        )
+    }
 
     CompositionLocalProvider(LocalArtworkAccent provides accent) {
         MaterialExpressiveTheme(
