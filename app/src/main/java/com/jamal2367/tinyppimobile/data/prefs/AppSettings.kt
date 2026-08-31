@@ -119,7 +119,7 @@ data class AppSettings(
      */
     val adaptiveColor: Boolean = true,
     /** Strength of the poster-derived accent, from subtle to full. */
-    val adaptiveColorIntensity: Float = 1f,
+    val adaptiveColorIntensity: Float = 0.75f,
     /**
      * The folds the reader has moved off where they start, by name.
      *

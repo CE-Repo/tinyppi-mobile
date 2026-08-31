@@ -41,7 +41,6 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -578,10 +577,10 @@ private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) 
                 )
                 TextButton(
                     onClick = {
-                        draftIntensity = 1f
-                        viewModel.setAdaptiveColorIntensity(1f)
+                        draftIntensity = 0.75f
+                        viewModel.setAdaptiveColorIntensity(0.75f)
                     },
-                    enabled = settings.adaptiveColor && draftIntensity < 1f,
+                    enabled = settings.adaptiveColor && draftIntensity != 0.75f,
                 ) {
                     Text(stringResource(R.string.settings_adaptive_color_reset))
                 }
@@ -673,14 +672,6 @@ private fun SwitchRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             enabled = enabled,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.secondaryContainer,
-                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-            ),
         )
     }
 }
