@@ -142,6 +142,7 @@ fun LiveScreen(
             StatusLine(
                 connection = state.live.connection,
                 serverLabel = state.live.server?.label,
+                accented = state.snapshot?.playing == true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),

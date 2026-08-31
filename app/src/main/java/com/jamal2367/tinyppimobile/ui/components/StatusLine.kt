@@ -37,20 +37,27 @@ import com.jamal2367.tinyppimobile.ui.theme.artworkTint
  * The address is named beside it: in automatic mode that is the only way to
  * tell from the outside which of the two boxes answered.
  *
- * The pill takes the same tint as the card under it, so the two read as one
- * piece of the same screen rather than as a plain grey lozenge sitting on a
- * coloured one.
+ * While a title is playing the pill takes the same tint as the card under it,
+ * so the two read as one piece of the same screen rather than as a plain grey
+ * lozenge sitting on a coloured one. That is what [accented] is for, and why it
+ * is the caller's answer rather than a colour read from the theme: the colour
+ * of the last film outlives the film, and a line about the connection is about
+ * the box rather than about anything that was playing on it.
  */
 @Composable
 fun StatusLine(
     connection: LiveState.Connection,
     serverLabel: String?,
     modifier: Modifier = Modifier,
+    accented: Boolean = false,
 ) {
     val dot by animateColorAsState(targetValue = connection.dotColor(), label = "statusDot")
 
     val container = MaterialTheme.colorScheme.surfaceContainerLow
-    val ground = LocalArtworkAccent.current?.let { artworkTint(it, container) } ?: container
+    val ground = LocalArtworkAccent.current
+        ?.takeIf { accented }
+        ?.let { artworkTint(it, container) }
+        ?: container
 
     Row(
         modifier = modifier
