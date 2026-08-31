@@ -531,6 +531,7 @@ private fun TransportSection(
             Icon(
                 imageVector = if (snapshot.paused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
                 contentDescription = stringResource(R.string.live_playpause),
+                tint = MaterialTheme.colorScheme.secondaryContainer,
             )
         }
         JumpButton(
