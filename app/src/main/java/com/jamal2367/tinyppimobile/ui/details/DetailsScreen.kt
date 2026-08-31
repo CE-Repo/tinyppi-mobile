@@ -17,7 +17,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -55,9 +54,7 @@ fun DetailsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snapshot = state.snapshot
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_details)) }) },
-    ) { padding ->
+    Scaffold { padding ->
         val groups = snapshot?.groups.orEmpty()
 
         when {
@@ -79,7 +76,7 @@ fun DetailsScreen(
 
             else -> LazyColumn(
                 contentPadding = PaddingValues(12.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),

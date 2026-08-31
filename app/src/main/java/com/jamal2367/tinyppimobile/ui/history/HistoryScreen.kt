@@ -15,15 +15,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Timeline
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -104,21 +101,7 @@ fun HistoryScreen(
 
     ChartHeartbeat(playing = state.snapshot?.playing == true, onBeat = viewModel::refresh)
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.nav_history)) },
-                actions = {
-                    IconButton(onClick = viewModel::refresh) {
-                        Icon(
-                            Icons.Outlined.Refresh,
-                            contentDescription = stringResource(R.string.action_refresh),
-                        )
-                    }
-                },
-            )
-        },
-    ) { padding ->
+    Scaffold { padding ->
         val history = state.history
 
         when {
@@ -140,7 +123,7 @@ fun HistoryScreen(
 
             else -> LazyColumn(
                 contentPadding = PaddingValues(12.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),

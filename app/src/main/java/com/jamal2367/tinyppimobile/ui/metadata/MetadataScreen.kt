@@ -17,7 +17,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -55,9 +54,7 @@ fun MetadataScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val rows = state.snapshot?.metadata.orEmpty()
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_metadata)) }) },
-    ) { padding ->
+    Scaffold { padding ->
         when {
             !state.isConfigured -> EmptyState(
                 icon = Icons.Outlined.Tune,
@@ -99,7 +96,7 @@ private fun MetadataList(rows: List<MetadataRow>, modifier: Modifier = Modifier)
 
     LazyColumn(
         contentPadding = PaddingValues(12.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
         modifier = modifier,
     ) {
         items(sections.size) { index ->
