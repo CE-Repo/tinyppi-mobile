@@ -471,17 +471,13 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
             Text(
                 text = target ?: snapshot.time.ifBlank { "–" },
                 style = MaterialTheme.typography.labelSmall,
-                color = if (target != null) {
-                    MaterialTheme.colorScheme.accentText
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
+                color = MaterialTheme.colorScheme.accentText.copy(alpha = 0.8f),
                 fontWeight = if (target != null) FontWeight.SemiBold else null,
             )
             Text(
                 text = snapshot.duration.ifBlank { "–" },
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.accentText.copy(alpha = 0.8f),
             )
         }
     }
@@ -623,6 +619,7 @@ private fun VolumeRow(
             Text(
                 text = "$level",
                 style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.accentText.copy(alpha = 0.8f),
                 modifier = Modifier.width(36.dp),
             )
             FilledTonalIconButton(onClick = viewModel::toggleMute) {
@@ -695,7 +692,7 @@ private fun TrackPicker(
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.accentText.copy(alpha = 0.8f),
             fontWeight = FontWeight.Medium,
             textAlign = labelTextAlign,
             modifier = Modifier.fillMaxWidth(),
@@ -760,6 +757,7 @@ private fun Vs10Card(vs10: Vs10State, canControl: Boolean, viewModel: LiveViewMo
         InfoRow(
             label = stringResource(R.string.live_vs10_output),
             value = vs10.output.ifBlank { null },
+            valueColor = MaterialTheme.colorScheme.accentText.copy(alpha = 0.8f),
         )
 
         if (!canControl) {

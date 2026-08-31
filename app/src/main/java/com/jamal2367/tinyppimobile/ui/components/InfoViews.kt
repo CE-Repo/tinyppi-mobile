@@ -245,6 +245,7 @@ fun InfoRow(
     value: String?,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    valueColor: Color? = null,
 ) {
     if (value.isNullOrBlank()) return
 
@@ -264,6 +265,7 @@ fun InfoRow(
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
+            color = valueColor ?: MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.End,
             modifier = Modifier.weight(1.1f),
         )
