@@ -83,10 +83,10 @@ fun SectionCard(
                 MaterialTheme.colorScheme.surfaceContainerLow
             },
         ),
-        // The card's own ground, a step or two lighter - not the outline
-        // colour, which the poster's accent is mixed into: a hairline is there
-        // to say where a card ends, and a coloured one says rather more.
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerHighest),
+        // The card's own ground, one step lighter - not the outline colour,
+        // which the poster's accent is mixed into: a hairline is there to say
+        // where a card ends, and a coloured one says rather more.
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
         Column(
             modifier = Modifier
