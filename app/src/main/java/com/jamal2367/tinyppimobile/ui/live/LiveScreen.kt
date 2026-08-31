@@ -403,8 +403,10 @@ private fun NowPlayingCard(
                         pendingVolume = pendingVolume,
                         viewModel = viewModel,
                     )
+                    // No rule before the pickers: they carry their own
+                    // labels, and a line between the volume and the word
+                    // "audio track" separates two things nobody was confusing.
                     if (!snapshot.controls.isEmpty) {
-                        SectionRule()
                         TrackSection(snapshot.controls, viewModel)
                     }
                 }
