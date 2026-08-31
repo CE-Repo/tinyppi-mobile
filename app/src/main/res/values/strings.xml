@@ -72,7 +72,6 @@
     <string name="live_vs10_output">Output (picture)</string>
     <string name="live_control_disabled">This box does not allow a client to switch anything. Turn control on in the add-on\'s settings.</string>
 
-    <string name="live_metrics">Measurements</string>
     <string name="live_last_played">Last played</string>
     <string name="live_last_position">Stopped at</string>
     <string name="live_last_ago">Ended</string>
@@ -81,16 +80,6 @@
 
     <!-- Measurements -->
     <string name="metric_peak">Peak</string>
-    <string name="metric_average">Average</string>
-    <string name="metric_fps">Frame rate</string>
-    <string name="metric_aspect">Aspect ratio</string>
-    <string name="metric_frame">Coded frame</string>
-    <string name="metric_active_area">Active area (L5)</string>
-    <string name="metric_active_area_value">L %1$d · R %2$d · T %3$d · B %4$d</string>
-    <string name="metric_cpu">Processor</string>
-    <string name="metric_temperature">Temperature</string>
-    <string name="metric_memory">Memory</string>
-    <string name="metric_cache">Player cache</string>
 
     <!-- Readings -->
     <string name="details_empty_title">No readings</string>

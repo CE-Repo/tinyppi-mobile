@@ -45,6 +45,8 @@ import com.jamal2367.tinyppimobile.data.prefs.ChartRange
 import com.jamal2367.tinyppimobile.ui.components.ChartColors
 import com.jamal2367.tinyppimobile.ui.components.ChartSeries
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
+import com.jamal2367.tinyppimobile.ui.components.EventsCard
+import com.jamal2367.tinyppimobile.ui.components.EventsCard
 import com.jamal2367.tinyppimobile.ui.components.LuminanceChart
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.components.StatTile
@@ -144,7 +146,7 @@ fun HistoryScreen(
             ) {
                 item { SummaryCard(state, history) }
                 item { ChartCard(history, state.range, viewModel::setRange) }
-                item { EventsCard(history) }
+                item { EventsCard(events = history.events, foldId = "history.events") }
             }
         }
     }
@@ -242,98 +244,6 @@ private fun ChartCard(
             modifier = Modifier.padding(top = 8.dp),
         )
     }
-}
-
-@Composable
-private fun EventsCard(history: History) {
-    SectionCard(title = stringResource(R.string.history_events), foldId = "history.events") {
-        if (history.events.isEmpty()) {
-            Text(
-                text = stringResource(R.string.history_events_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            return@SectionCard
-        }
-
-        // Newest first: what just happened is what a screen opened mid-film is
-        // being opened to find out.
-        history.events.asReversed().forEach { event ->
-            EventRow(event)
-        }
-    }
-}
-
-@Composable
-private fun EventRow(event: PlaybackEvent) {
-    val kind = event.eventKind
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        StatusDot(
-            color = if (kind?.isWarning == true) EventWarning else EventSwitch,
-            modifier = Modifier.padding(top = 6.dp),
-        )
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(kind.labelRes()),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                text = event.describe(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Text(
-            text = event.pos.ifBlank { Formatters.elapsed(event.t) },
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-/**
- * What an event came to, in one line.
- *
- * A transition names where it went rather than both ends: the list is read
- * downwards and the row under it already says where it came from.
- */
-@Composable
-private fun PlaybackEvent.describe(): String {
-    val off = stringResource(R.string.live_subtitles_off)
-
-    fun state(value: String?): String = when {
-        value == null -> "–"
-        value == PlaybackEventKind.SUBTITLES_OFF -> off
-        else -> value
-    }
-
-    return when {
-        isTransition -> state(to)
-        eventKind == PlaybackEventKind.TEMPERATURE -> Formatters.celsius(value) ?: "–"
-        eventKind == PlaybackEventKind.CPU -> Formatters.percent(value) ?: "–"
-        eventKind == PlaybackEventKind.CACHE_LOW -> Formatters.percent(value) ?: "–"
-        eventKind == PlaybackEventKind.CACHE_RECOVERED -> Formatters.percent(value) ?: "–"
-        value != null -> Formatters.trimmed(value, 1)
-        else -> "–"
-    }
-}
-
-private fun PlaybackEventKind?.labelRes(): Int = when (this) {
-    PlaybackEventKind.VS10 -> R.string.event_vs10
-    PlaybackEventKind.MODE -> R.string.event_mode
-    PlaybackEventKind.AUDIO -> R.string.event_audio
-    PlaybackEventKind.SUBTITLE -> R.string.event_subtitle
-    PlaybackEventKind.CACHE_LOW -> R.string.event_cache_low
-    PlaybackEventKind.CACHE_RECOVERED -> R.string.event_cache_recovered
-    PlaybackEventKind.TEMPERATURE -> R.string.event_temperature
-    PlaybackEventKind.CPU -> R.string.event_cpu
-    PlaybackEventKind.FPS -> R.string.event_fps
-    null -> R.string.event_unknown
 }
 
 private fun ChartRange.labelRes(): Int = when (this) {

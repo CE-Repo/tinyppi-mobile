@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.R
+import com.jamal2367.tinyppimobile.data.model.PlaybackEvent
 import com.jamal2367.tinyppimobile.data.model.PlayerControls
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.model.Track
@@ -71,6 +72,7 @@ import com.jamal2367.tinyppimobile.data.model.Vs10State
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.ui.components.ConversionBadge
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
+import com.jamal2367.tinyppimobile.ui.components.EventsCard
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
 import com.jamal2367.tinyppimobile.ui.components.FoldChevron
 import com.jamal2367.tinyppimobile.ui.components.FormatLogo
@@ -81,6 +83,7 @@ import com.jamal2367.tinyppimobile.ui.components.PosterImage
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.components.StatTile
 import com.jamal2367.tinyppimobile.ui.components.StatusLine
+import com.jamal2367.tinyppimobile.ui.history.HistoryViewModel
 import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.accentText
 import com.jamal2367.tinyppimobile.ui.theme.artworkGradient
@@ -99,8 +102,14 @@ import com.jamal2367.tinyppimobile.util.SourceLabel
 fun LiveScreen(
     onOpenSettings: () -> Unit,
     viewModel: LiveViewModel = viewModel(),
+    // The events are the history endpoint's, not the snapshot's, and the view
+    // model that knows when to ask for them already exists. One of its own
+    // lives on this screen: it fetches when the box's event counter moves,
+    // which is exactly when this card has something new to show.
+    historyViewModel: HistoryViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val history by historyViewModel.state.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val pendingVolume by viewModel.pendingVolume.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -156,6 +165,7 @@ fun LiveScreen(
                 else -> LiveContent(
                     snapshot = snapshot,
                     server = state.live.server,
+                    events = history.history?.events.orEmpty(),
                     poster = poster,
                     showArtwork = state.settings.showArtwork,
                     canControl = state.canControlPlayback,
@@ -171,6 +181,7 @@ fun LiveScreen(
 private fun LiveContent(
     snapshot: Snapshot,
     server: ServerConfig?,
+    events: List<PlaybackEvent>,
     poster: String?,
     showArtwork: Boolean,
     canControl: Boolean,
@@ -213,7 +224,7 @@ private fun LiveContent(
             item { Vs10Card(snapshot.vs10, canControl = snapshot.control, viewModel = viewModel) }
         }
 
-        item { MetricsCard(snapshot) }
+        item { EventsCard(events = events, foldId = FOLD_EVENTS) }
     }
 }
 
@@ -781,90 +792,6 @@ private fun Vs10Card(vs10: Vs10State, canControl: Boolean, viewModel: LiveViewMo
 }
 
 /**
- * The figures that arrive as numbers rather than as text.
- *
- * Everything the overlay prints is on the details screen, already formatted by
- * the box. What is here is the other half of a snapshot: the readings the
- * dashboard charts, which are worth a tile each because they move.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun MetricsCard(snapshot: Snapshot) {
-    val metrics = snapshot.metrics
-
-    SectionCard(title = stringResource(R.string.live_metrics), foldId = FOLD_METRICS) {
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            // The luminance pair only exists inside a Dolby Vision RPU; the
-            // add-on leaves it out for every other grade rather than send the
-            // zeroes its own getter pads an absent block with.
-            Formatters.nits(metrics.l1.max)?.let {
-                StatTile(value = it, caption = stringResource(R.string.metric_peak))
-            }
-            Formatters.nits(metrics.l1.avg)?.let {
-                StatTile(
-                    value = it,
-                    caption = stringResource(R.string.metric_average),
-                    container = MaterialTheme.colorScheme.secondaryContainer,
-                    content = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-            }
-            Formatters.fps(metrics.fpsOut)?.let {
-                StatTile(
-                    value = it,
-                    caption = stringResource(R.string.metric_fps),
-                    container = MaterialTheme.colorScheme.tertiaryContainer,
-                    content = MaterialTheme.colorScheme.onTertiaryContainer,
-                )
-            }
-        }
-
-        Spacer(Modifier.height(4.dp))
-
-        InfoRow(
-            label = stringResource(R.string.metric_aspect),
-            value = Formatters.aspect(metrics.aspect),
-        )
-        metrics.frame?.takeIf { it.isUsable }?.let { frame ->
-            InfoRow(
-                label = stringResource(R.string.metric_frame),
-                value = Formatters.frameSize(frame.w, frame.h),
-            )
-        }
-        metrics.activeArea?.let { area ->
-            InfoRow(
-                label = stringResource(R.string.metric_active_area),
-                value = stringResource(
-                    R.string.metric_active_area_value,
-                    area.left.toInt(),
-                    area.right.toInt(),
-                    area.top.toInt(),
-                    area.bottom.toInt(),
-                ),
-            )
-        }
-        InfoRow(
-            label = stringResource(R.string.metric_cpu),
-            value = Formatters.percent(metrics.cpu),
-        )
-        InfoRow(
-            label = stringResource(R.string.metric_temperature),
-            value = Formatters.celsius(metrics.cpuTemp),
-        )
-        InfoRow(
-            label = stringResource(R.string.metric_memory),
-            value = Formatters.percent(metrics.memory),
-        )
-        InfoRow(
-            label = stringResource(R.string.metric_cache),
-            value = Formatters.percent(metrics.cache),
-        )
-    }
-}
-
-/**
  * What the title that has just ended came to.
  *
  * The figures are worth most in the minutes right after the credits, which is
@@ -923,7 +850,7 @@ private fun LastPlayedCard(snapshot: Snapshot) {
  */
 private const val FOLD_CONTROLS = "live.controls"
 private const val FOLD_VS10 = "live.vs10"
-private const val FOLD_METRICS = "live.metrics"
+private const val FOLD_EVENTS = "live.events"
 private const val FOLD_LAST_PLAYED = "live.last_played"
 
 /** The line under the title: the show and episode, the year, the genre. */

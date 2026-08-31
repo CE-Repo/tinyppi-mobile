@@ -69,7 +69,6 @@
     <string name="live_vs10_output">Ausgabe (Bild)</string>
     <string name="live_control_disabled">Diese Box lässt keine Steuerung von außen zu. Schalte sie in den Addon-Einstellungen frei.</string>
 
-    <string name="live_metrics">Messwerte</string>
     <string name="live_last_played">Zuletzt gespielt</string>
     <string name="live_last_position">Gestoppt bei</string>
     <string name="live_last_ago">Beendet vor</string>
@@ -78,16 +77,6 @@
 
     <!-- Messwerte -->
     <string name="metric_peak">Spitze</string>
-    <string name="metric_average">Durchschnitt</string>
-    <string name="metric_fps">Bildrate</string>
-    <string name="metric_aspect">Seitenverhältnis</string>
-    <string name="metric_frame">Codiertes Bild</string>
-    <string name="metric_active_area">Aktive Fläche (L5)</string>
-    <string name="metric_active_area_value">L %1$d · R %2$d · O %3$d · U %4$d</string>
-    <string name="metric_cpu">Prozessor</string>
-    <string name="metric_temperature">Temperatur</string>
-    <string name="metric_memory">Speicher</string>
-    <string name="metric_cache">Player-Cache</string>
 
     <!-- Werte -->
     <string name="details_empty_title">Keine Werte</string>

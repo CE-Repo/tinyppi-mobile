@@ -72,7 +72,6 @@
     <string name="live_vs10_output">Kimenet (kép)</string>
     <string name="live_control_disabled">A lejátszó nem teszi lehetővé a kliens számára, hogy bármit is váltson. Kapcsold be a vezérlést aa kiegészítő beállításaiban.</string>
 
-    <string name="live_metrics">Mért adatok</string>
     <string name="live_last_played">Legutóbb lejátszva</string>
     <string name="live_last_position">Abbahagyva</string>
     <string name="live_last_ago">Véget ért</string>
@@ -81,16 +80,6 @@
 
     <!-- Measurements -->
     <string name="metric_peak">Csúcs</string>
-    <string name="metric_average">Átlag</string>
-    <string name="metric_fps">Képkocka sebesség</string>
-    <string name="metric_aspect">Képarány</string>
-    <string name="metric_frame">Kódolás</string>
-    <string name="metric_active_area">Aktív terület (L5)</string>
-    <string name="metric_active_area_value">L %1$d · R %2$d · T %3$d · B %4$d</string>
-    <string name="metric_cpu">Processzor</string>
-    <string name="metric_temperature">Hőmérséklet</string>
-    <string name="metric_memory">Memória</string>
-    <string name="metric_cache">Lejátszó gyorsítótár</string>
 
     <!-- Readings -->
     <string name="details_empty_title">Nincs adat</string>
