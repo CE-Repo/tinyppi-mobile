@@ -47,6 +47,7 @@ import com.jamal2367.tinyppimobile.ui.components.ChartSeries
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.EventsCard
 import com.jamal2367.tinyppimobile.ui.components.EventsCard
+import com.jamal2367.tinyppimobile.ui.components.HdrGrade
 import com.jamal2367.tinyppimobile.ui.components.LuminanceChart
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.components.StatTile
@@ -145,7 +146,9 @@ fun HistoryScreen(
                     .padding(padding),
             ) {
                 item { SummaryCard(state, history) }
-                item { ChartCard(history, state.range, viewModel::setRange) }
+                if (HdrGrade.of(state.snapshot?.sourceType.orEmpty()) == HdrGrade.DOLBY_VISION) {
+                    item { ChartCard(history, state.range, viewModel::setRange) }
+                }
                 item { EventsCard(events = history.events, foldId = "history.events") }
             }
         }

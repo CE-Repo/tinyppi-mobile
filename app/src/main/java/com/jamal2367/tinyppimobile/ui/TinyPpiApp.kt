@@ -39,6 +39,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.net.toUri
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -51,6 +53,8 @@ import com.jamal2367.tinyppimobile.data.remote.ReleaseId
 import com.jamal2367.tinyppimobile.di.AppContainer
 import com.jamal2367.tinyppimobile.ui.navigation.TinyPpiNavHost
 import com.jamal2367.tinyppimobile.ui.navigation.TopLevelDestination
+import com.jamal2367.tinyppimobile.ui.components.HdrGrade
+import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
 import com.jamal2367.tinyppimobile.ui.theme.accentText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -59,6 +63,9 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun TinyPpiApp(container: AppContainer) {
     val navController = rememberNavController()
+    val liveViewModel: LiveViewModel = viewModel()
+    val liveState by liveViewModel.state.collectAsStateWithLifecycle()
+    val showMetadata = HdrGrade.of(liveState.snapshot?.sourceType.orEmpty()) == HdrGrade.DOLBY_VISION
 
     // Wide enough for a rail: a tablet or an unfolded phone should not waste a
     // whole edge on a bar the height of a thumb.
@@ -86,7 +93,7 @@ fun TinyPpiApp(container: AppContainer) {
 
     if (useRail) {
         Row(Modifier.fillMaxSize()) {
-            TinyPpiNavigationRail(navController)
+            TinyPpiNavigationRail(navController, showMetadata)
             Box(Modifier.weight(1f)) {
                 TinyPpiNavHost(navController = navController)
                 // No scaffold on this branch to hand the host to, so it is
@@ -108,7 +115,7 @@ fun TinyPpiApp(container: AppContainer) {
             // counted twice and every screen would start a status bar's height
             // too low.
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            bottomBar = { TinyPpiNavigationBar(navController) },
+            bottomBar = { TinyPpiNavigationBar(navController, showMetadata) },
             // Above the navigation bar rather than over it, which is what the
             // scaffold does with a host it is given.
             snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -220,9 +227,11 @@ private fun DoubleBackToExit(enabled: Boolean, snackbarHostState: SnackbarHostSt
 }
 
 @Composable
-private fun TinyPpiNavigationBar(navController: NavHostController) {
+private fun TinyPpiNavigationBar(navController: NavHostController, showMetadata: Boolean) {
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val destinations = remember { TopLevelDestination.entries }
+    val destinations = remember(showMetadata) {
+        TopLevelDestination.entries.filter { it != TopLevelDestination.METADATA || showMetadata }
+    }
 
     // Material's short bar rather than the tall one: 64dp with the label under
     // the icon, instead of 80dp with a strip of nothing above it. The system's
@@ -257,9 +266,11 @@ private fun TinyPpiNavigationBar(navController: NavHostController) {
 }
 
 @Composable
-private fun TinyPpiNavigationRail(navController: NavHostController) {
+private fun TinyPpiNavigationRail(navController: NavHostController, showMetadata: Boolean) {
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val destinations = remember { TopLevelDestination.entries }
+    val destinations = remember(showMetadata) {
+        TopLevelDestination.entries.filter { it != TopLevelDestination.METADATA || showMetadata }
+    }
 
     WideNavigationRail {
         destinations.forEach { destination ->
