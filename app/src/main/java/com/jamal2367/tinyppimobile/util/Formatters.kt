@@ -34,6 +34,23 @@ object Formatters {
         return "$figure nits"
     }
 
+    /**
+     * A figure the box abbreviated, written out: `1.9 k` becomes `1900`.
+     *
+     * The one place this app rewrites something the add-on already formatted,
+     * and it does it for the same reason the app writes its own luminances out
+     * in full: a trim value is compared against figures a reader knows, and a
+     * column of `1.9 k` beside `850` is a column that has to be converted in
+     * the head before it can be read down.
+     *
+     * Only a number wearing a `k` is touched. Everything else in the string -
+     * units, brackets, words - comes back as it went in.
+     */
+    fun expandThousands(text: String): String = THOUSANDS.replace(text) { match ->
+        val figure = match.groupValues[1].toDoubleOrNull() ?: return@replace match.value
+        (figure * 1000).roundToInt().toString()
+    }
+
     /** A percentage, whole. */
     fun percent(value: Double?): String? = value?.let { "${it.roundToInt()} %" }
 
@@ -130,4 +147,11 @@ object Formatters {
         if (!text.contains('.')) return text
         return text.trimEnd('0').trimEnd('.')
     }
+
+    /**
+     * A number followed by a `k`, and nothing else that looks like one.
+     *
+     * The `k` has to end the word, so the one in `4kbps` is left where it is.
+     */
+    private val THOUSANDS = Regex("""(\d+(?:\.\d+)?)\s*[kK](?![A-Za-z0-9])""")
 }

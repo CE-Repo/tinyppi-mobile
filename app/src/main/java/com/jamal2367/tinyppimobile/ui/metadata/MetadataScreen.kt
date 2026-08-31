@@ -2,16 +2,15 @@
 
 package com.jamal2367.tinyppimobile.ui.metadata
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.HorizontalDivider
@@ -33,6 +32,7 @@ import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.MetadataRow
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
+import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.ui.components.flashOnChange
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
 
@@ -177,51 +177,72 @@ private fun WideRow(row: MetadataRow) {
 }
 
 /**
- * A row of a trim table: a name and a fixed set of cells.
+ * A row of a trim table: a name over a grid of cells.
  *
- * Scrolled sideways rather than wrapped. A trim table is read down its columns
- * - the same slot means the same thing on every row, which is the only reason
- * the cells travel as a list rather than as one string - and a row that wraps
- * onto a second line breaks exactly that.
+ * A trim table has six columns of figures and a phone has room for three, so
+ * something has to give. What gives is the line, not the alignment: the name
+ * takes a line of its own and the cells run underneath it in a fixed number of
+ * columns, so the second line of one row sits under the second line of the row
+ * above and a column can still be read down.
+ *
+ * The alternative was scrolling the row sideways, which kept every figure on
+ * one line and put half of them off the screen - a table nobody could read
+ * without dragging it, and one where the heading scrolled separately from the
+ * figures it named.
+ *
+ * A short last line is padded rather than allowed to spread: three figures in
+ * the width of six would sit under the wrong headings.
  */
 @Composable
 private fun CellRow(row: MetadataRow, heading: Boolean) {
     val cells = row.cells.orEmpty()
+    val weight = if (heading) FontWeight.SemiBold else FontWeight.Normal
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             text = row.name,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = if (heading) FontWeight.SemiBold else FontWeight.Normal,
-            modifier = Modifier.width(96.dp),
+            fontWeight = weight,
         )
-        cells.forEach { cell ->
-            Text(
-                text = cell.ifBlank { "–" },
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (heading) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
-                fontWeight = if (heading) FontWeight.SemiBold else FontWeight.Normal,
-                textAlign = TextAlign.End,
-                // A heading names the columns and never moves; only the cells
-                // under it are worth lighting up, and each on its own.
-                modifier = if (heading) {
-                    Modifier.width(76.dp)
-                } else {
-                    Modifier
-                        .width(76.dp)
-                        .flashOnChange(cell)
-                },
-            )
+
+        cells.chunked(TRIM_COLUMNS).forEach { line ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                line.forEach { cell ->
+                    Text(
+                        // Written out, the way this app writes every other
+                        // luminance: a column of `1.9 k` beside `850` has to be
+                        // converted in the head before it can be read down.
+                        // Column names are left alone.
+                        text = (if (heading) cell else Formatters.expandThousands(cell))
+                            .ifBlank { "–" },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (heading) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                        fontWeight = weight,
+                        textAlign = TextAlign.End,
+                        // A heading names the columns and never moves; only the
+                        // cells under it are worth lighting up, one at a time.
+                        modifier = if (heading) {
+                            Modifier.weight(1f)
+                        } else {
+                            Modifier
+                                .weight(1f)
+                                .flashOnChange(cell)
+                        },
+                    )
+                }
+
+                repeat(TRIM_COLUMNS - line.size) {
+                    Spacer(Modifier.weight(1f))
+                }
+            }
         }
     }
 }
@@ -291,3 +312,11 @@ private fun List<MetadataRow>.toSections(): List<MetadataSection> {
 
 /** The kinds of row that draw nothing, and so are not rows at all here. */
 private val SKIPPED = setOf(MetadataKind.SPACE, MetadataKind.SECTION)
+
+/**
+ * How many figures of a trim table go on one line.
+ *
+ * Three is what a phone holds at a size that can be read; the sixteen-hundredth
+ * of a nit in the last column is not worth squinting at.
+ */
+private const val TRIM_COLUMNS = 3

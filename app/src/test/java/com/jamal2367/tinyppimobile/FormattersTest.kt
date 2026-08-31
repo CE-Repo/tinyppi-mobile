@@ -88,6 +88,21 @@ class FormattersTest {
     }
 
     @Test
+    fun `a figure the box abbreviated is written out again`() {
+        assertEquals("1900", Formatters.expandThousands("1.9 k"))
+        assertEquals("4000 nits", Formatters.expandThousands("4k nits"))
+        assertEquals("850", Formatters.expandThousands("850"))
+    }
+
+    @Test
+    fun `only a number wearing a k is touched`() {
+        // The k has to end the word: a rate and a resolution keep theirs.
+        assertEquals("4kbps", Formatters.expandThousands("4kbps"))
+        assertEquals("OK", Formatters.expandThousands("OK"))
+        assertEquals("L2 trim", Formatters.expandThousands("L2 trim"))
+    }
+
+    @Test
     fun `a frame size uses the multiplication sign, not an x`() {
         assertEquals("3840 × 2160", Formatters.frameSize(3840, 2160))
     }
