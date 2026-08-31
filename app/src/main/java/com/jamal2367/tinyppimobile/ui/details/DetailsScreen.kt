@@ -108,11 +108,15 @@ private fun GroupCard(group: InfoGroup) {
 
 /**
  * One reading: its name on the left, its value on the right, and the
- * parenthesised extra under the value.
+ * parenthesised extra beside the value rather than under it.
  *
  * The extra is what the overlay draws in its accent colour - a decoder behind
- * a codec, an average behind a live bitrate - and it is dimmed here for the
- * same reason: it qualifies the reading rather than being one.
+ * a codec, an average behind a live bitrate. On one line with the reading it
+ * qualifies, because that is what it does: read down a column of two-line rows
+ * it looked like a second reading of its own.
+ *
+ * The two sit on a common baseline, which is what keeps a small word beside a
+ * larger one from looking dropped.
  *
  * The reading itself lights up as it moves, where it is one of the two that
  * move at all - see [movesWithThePicture].
@@ -132,19 +136,26 @@ private fun ReadingRow(label: String, value: String, detail: String) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(0.9f),
         )
-        Column(
+        Row(
             modifier = Modifier.weight(1.1f),
-            horizontalAlignment = Alignment.End,
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
         ) {
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.End,
-                modifier = if (label.movesWithThePicture()) {
-                    Modifier.flashOnChange(value)
-                } else {
-                    Modifier
-                },
+                modifier = Modifier
+                    .alignByBaseline()
+                    // Yields to the extra beside it rather than pushing it off
+                    // the card: a long value wraps in the room that is left.
+                    .weight(1f, fill = false)
+                    .then(
+                        if (label.movesWithThePicture()) {
+                            Modifier.flashOnChange(value)
+                        } else {
+                            Modifier
+                        }
+                    ),
             )
             if (detail.isNotBlank()) {
                 Text(
@@ -152,7 +163,7 @@ private fun ReadingRow(label: String, value: String, detail: String) {
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.accentText,
                     textAlign = TextAlign.End,
-                    modifier = Modifier.padding(top = 2.dp),
+                    modifier = Modifier.alignByBaseline(),
                 )
             }
         }
