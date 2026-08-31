@@ -185,20 +185,27 @@ private fun LiveContent(
         verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
         modifier = Modifier.fillMaxSize(),
     ) {
-        item {
-            StatusLine(
-                connection = connection,
-                serverLabel = serverLabel,
-                accented = snapshot.playing,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-            )
+        if (snapshot.playing) {
+            item {
+                StatusLine(
+                    connection = connection,
+                    serverLabel = serverLabel,
+                    accented = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                )
+            }
         }
 
         if (!snapshot.playing) {
-            if (snapshot.last.isPresent) {
-                item { LastPlayedCard(snapshot) }
+            item {
+                EmptyState(
+                    icon = Icons.Outlined.PlayCircle,
+                    title = stringResource(R.string.live_idle_title),
+                    message = stringResource(R.string.live_idle_text),
+                    modifier = Modifier.height(320.dp),
+                )
             }
             return@LazyColumn
         }
