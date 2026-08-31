@@ -150,11 +150,8 @@ fun SectionCard(
                             Text(
                                 text = title,
                                 style = MaterialTheme.typography.titleMedium,
-                                // The same quiet as the arrow beside it, and
-                                // not the accent: a heading names the block
-                                // under it, and the colour of the film belongs
-                                // to the film.
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                // Match the film title's accent colour.
+                                color = MaterialTheme.colorScheme.accentText,
                             )
                         }
                     }
@@ -218,9 +215,8 @@ fun FoldChevron(
         contentDescription = contentDescription ?: stringResource(
             if (expanded) R.string.card_collapse else R.string.card_expand
         ),
-        // Quieter than the heading it sits beside: the arrow is a handle, and
-        // a handle that outshouts the word next to it is read first.
-        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        // Match the heading and the film title's accent colour.
+        tint = MaterialTheme.colorScheme.accentText,
         modifier = Modifier
             // Back out over the card's own padding: the room the ripple needs
             // is room the arrow would otherwise be indented by.
