@@ -319,10 +319,13 @@ private fun NowPlayingCard(
                     }
                 }
 
+                // Wider apart than the badges above them: the logos have
+                // lost the chips that used to hold them apart, and two bare
+                // wordmarks six points from each other read as one.
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.padding(top = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(top = 4.dp),
                 ) {
                     FormatLogo(
                         url = MediaUrls.logo(server, snapshot.logos.video),
