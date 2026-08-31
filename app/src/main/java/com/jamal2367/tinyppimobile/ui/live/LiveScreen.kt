@@ -707,6 +707,7 @@ private fun TrackPicker(
                     text = current,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1f),
                 )
             }
