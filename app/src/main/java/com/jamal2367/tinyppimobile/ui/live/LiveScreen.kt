@@ -67,7 +67,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.R
-import com.jamal2367.tinyppimobile.data.model.PlaybackEvent
 import com.jamal2367.tinyppimobile.data.model.PlayerControls
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.model.Track
@@ -75,7 +74,6 @@ import com.jamal2367.tinyppimobile.data.model.Vs10State
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
-import com.jamal2367.tinyppimobile.ui.components.EventsCard
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
 import com.jamal2367.tinyppimobile.ui.components.FormatLogo
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
@@ -84,7 +82,6 @@ import com.jamal2367.tinyppimobile.ui.components.PosterImage
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.components.StatTile
 import com.jamal2367.tinyppimobile.ui.components.StatusLine
-import com.jamal2367.tinyppimobile.ui.history.HistoryViewModel
 import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.accentText
 import com.jamal2367.tinyppimobile.ui.theme.artworkGradient
@@ -103,14 +100,8 @@ import com.jamal2367.tinyppimobile.util.SourceLabel
 fun LiveScreen(
     onOpenSettings: () -> Unit,
     viewModel: LiveViewModel = viewModel(),
-    // The events are the history endpoint's, not the snapshot's, and the view
-    // model that knows when to ask for them already exists. One of its own
-    // lives on this screen: it fetches when the box's event counter moves,
-    // which is exactly when this card has something new to show.
-    historyViewModel: HistoryViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val history by historyViewModel.state.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val pendingVolume by viewModel.pendingVolume.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -155,7 +146,6 @@ fun LiveScreen(
                     server = state.live.server,
                     connection = state.live.connection,
                     serverLabel = state.live.server?.label,
-                    events = history.history?.events.orEmpty(),
                     poster = poster,
                     showArtwork = state.settings.showArtwork,
                     canControl = state.canControlPlayback,
@@ -173,7 +163,6 @@ private fun LiveContent(
     server: ServerConfig?,
     connection: LiveState.Connection,
     serverLabel: String?,
-    events: List<PlaybackEvent>,
     poster: String?,
     showArtwork: Boolean,
     canControl: Boolean,
@@ -241,7 +230,6 @@ private fun LiveContent(
             }
         }
 
-        item { EventsCard(events = events, foldId = FOLD_EVENTS) }
     }
 }
 

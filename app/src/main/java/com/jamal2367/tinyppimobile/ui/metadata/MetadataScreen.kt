@@ -28,9 +28,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jamal2367.tinyppimobile.R
+import com.jamal2367.tinyppimobile.data.model.History
 import com.jamal2367.tinyppimobile.data.model.MetadataRow
+import com.jamal2367.tinyppimobile.data.prefs.ChartRange
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
+import com.jamal2367.tinyppimobile.ui.history.ChartCard
+import com.jamal2367.tinyppimobile.ui.history.HistoryViewModel
 import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.ui.components.flashOnChange
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
@@ -50,8 +54,10 @@ import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
 fun MetadataScreen(
     onOpenSettings: () -> Unit,
     viewModel: LiveViewModel,
+    historyViewModel: HistoryViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val historyState by historyViewModel.state.collectAsStateWithLifecycle()
     val rows = state.snapshot?.metadata.orEmpty()
 
     Scaffold { padding ->
@@ -74,6 +80,9 @@ fun MetadataScreen(
 
             else -> MetadataList(
                 rows = rows,
+                chartHistory = historyState.history,
+                chartRange = historyState.range,
+                onChartRangeChange = historyViewModel::setRange,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
@@ -91,7 +100,13 @@ fun MetadataScreen(
  * happens here, where a card is a thing that exists.
  */
 @Composable
-private fun MetadataList(rows: List<MetadataRow>, modifier: Modifier = Modifier) {
+private fun MetadataList(
+    rows: List<MetadataRow>,
+    chartHistory: History? = null,
+    chartRange: ChartRange = ChartRange.TEN_MINUTES,
+    onChartRangeChange: (ChartRange) -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
     val sections = remember(rows) { rows.toSections() }
 
     LazyColumn(
@@ -99,6 +114,9 @@ private fun MetadataList(rows: List<MetadataRow>, modifier: Modifier = Modifier)
         verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
         modifier = modifier,
     ) {
+        chartHistory?.let { history ->
+            item { ChartCard(history, chartRange, onChartRangeChange) }
+        }
         items(sections.size) { index ->
             val section = sections[index]
             // The box names its own sections. The first block of a view can

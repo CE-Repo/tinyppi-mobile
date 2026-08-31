@@ -129,9 +129,6 @@ fun HistoryScreen(
                     .padding(padding),
             ) {
                 item { SummaryCard(state, history) }
-                if (HdrGrade.of(state.snapshot?.sourceType.orEmpty()) == HdrGrade.DOLBY_VISION) {
-                    item { ChartCard(history, state.range, viewModel::setRange) }
-                }
                 item { EventsCard(events = history.events, foldId = "history.events") }
             }
         }
@@ -191,7 +188,7 @@ private fun SummaryCard(state: HistoryUiState, history: History) {
 }
 
 @Composable
-private fun ChartCard(
+fun ChartCard(
     history: History,
     range: ChartRange,
     onRangeChange: (ChartRange) -> Unit,
