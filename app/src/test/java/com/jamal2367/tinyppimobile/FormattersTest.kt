@@ -20,8 +20,11 @@ class FormattersTest {
         // very different pictures.
         assertEquals("4.2 nits", Formatters.nits(4.2))
         assertEquals("120 nits", Formatters.nits(120.0))
-        assertEquals("1 k nits", Formatters.nits(1000.0))
-        assertEquals("4 k nits", Formatters.nits(4000.0))
+        // Written out rather than abbreviated: a peak is compared against
+        // figures people know, and `1.9 k` is no shorter than `1900`.
+        assertEquals("1000 nits", Formatters.nits(1000.0))
+        assertEquals("1900 nits", Formatters.nits(1900.0))
+        assertEquals("4000 nits", Formatters.nits(4000.0))
     }
 
     @Test

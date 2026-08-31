@@ -15,15 +15,21 @@ import kotlin.math.roundToInt
  */
 object Formatters {
 
-    /** A luminance in nits, as the chart's axis and its tiles print one. */
+    /**
+     * A luminance in nits, as the chart's axis and its tiles print one.
+     *
+     * Written out in full. A peak is a figure people compare against numbers
+     * they know - a thousand-nit master, a four-thousand-nit one - and `1.9 k`
+     * is both harder to read at a glance and no shorter than `1900`.
+     */
     fun nits(value: Double?): String? {
         val number = value ?: return null
-        val figure = when {
-            number >= 1000 -> "${trimmed(number / 1000, 1)} k"
-            number >= 10 -> number.roundToInt().toString()
+        val figure = if (number >= 10) {
+            number.roundToInt().toString()
+        } else {
             // Below ten a whole number is most of the reading: 0 and 4 are
             // very different pictures, and rounding them together hides that.
-            else -> trimmed(number, 1)
+            trimmed(number, 1)
         }
         return "$figure nits"
     }
