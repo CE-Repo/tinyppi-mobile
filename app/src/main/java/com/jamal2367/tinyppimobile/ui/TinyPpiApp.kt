@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.ShortNavigationBarItem
@@ -50,6 +51,7 @@ import com.jamal2367.tinyppimobile.data.remote.ReleaseId
 import com.jamal2367.tinyppimobile.di.AppContainer
 import com.jamal2367.tinyppimobile.ui.navigation.TinyPpiNavHost
 import com.jamal2367.tinyppimobile.ui.navigation.TopLevelDestination
+import com.jamal2367.tinyppimobile.ui.theme.accentText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -241,6 +243,11 @@ private fun TinyPpiNavigationBar(navController: NavHostController) {
                 label = {
                     Text(
                         text = stringResource(destination.tabLabelRes),
+                        color = if (selected) {
+                            MaterialTheme.colorScheme.accentText
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                         maxLines = 1,
                     )
                 },

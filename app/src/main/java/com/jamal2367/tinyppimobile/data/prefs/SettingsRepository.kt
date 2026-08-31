@@ -48,6 +48,7 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setAdaptiveColor(enabled: Boolean) = edit { it[KEY_ADAPTIVE_COLOR] = enabled }
 
+
     /**
      * Note that one fold has been moved off where it starts, or put back.
      *

@@ -6,7 +6,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -37,6 +40,7 @@ fun FormatBadge(
     text: String,
     modifier: Modifier = Modifier,
     prefix: String? = null,
+    arrowSuffix: String? = null,
 ) {
     val content = MaterialTheme.colorScheme.accentText
 
@@ -63,6 +67,21 @@ fun FormatBadge(
             fontWeight = FontWeight.SemiBold,
             fontSize = 11.sp,
         )
+        if (arrowSuffix != null) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowRightAlt,
+                contentDescription = null,
+                tint = content,
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                text = arrowSuffix,
+                color = content,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 11.sp,
+            )
+        }
     }
 }
 

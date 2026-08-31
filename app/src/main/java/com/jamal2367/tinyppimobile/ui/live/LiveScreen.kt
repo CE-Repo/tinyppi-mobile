@@ -73,7 +73,6 @@ import com.jamal2367.tinyppimobile.data.model.Track
 import com.jamal2367.tinyppimobile.data.model.Vs10State
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.data.repository.LiveState
-import com.jamal2367.tinyppimobile.ui.components.ConversionBadge
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.EventsCard
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
@@ -179,7 +178,7 @@ private fun LiveContent(
     canControl: Boolean,
     pendingVolume: Int?,
     viewModel: LiveViewModel,
-    ) {
+) {
     LazyColumn(
         contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -233,7 +232,13 @@ private fun LiveContent(
         }
 
         if (snapshot.vs10.options.isNotEmpty()) {
-            item { Vs10Card(snapshot.vs10, canControl = snapshot.control, viewModel = viewModel) }
+            item {
+                Vs10Card(
+                    snapshot.vs10,
+                    canControl = snapshot.control,
+                    viewModel = viewModel,
+                )
+            }
         }
 
         item { EventsCard(events = events, foldId = FOLD_EVENTS) }
@@ -335,12 +340,8 @@ private fun NowPlayingCard(
                     FormatBadge(
                         text = sourceLabelOf(snapshot),
                         prefix = stringResource(R.string.live_source),
+                        arrowSuffix = conversionTargetOf(snapshot),
                     )
-                    if (snapshot.isConverting) {
-                        ConversionBadge(
-                            text = "→ ${HdrGrade.of(snapshot.outputType).label}",
-                        )
-                    }
                 }
 
                 Spacer(Modifier.weight(1f))
@@ -752,14 +753,12 @@ private fun TrackPicker(
  * takes the line to itself.
  */
 @Composable
-private fun Vs10Card(vs10: Vs10State, canControl: Boolean, viewModel: LiveViewModel) {
+private fun Vs10Card(
+    vs10: Vs10State,
+    canControl: Boolean,
+    viewModel: LiveViewModel,
+) {
     SectionCard(title = stringResource(R.string.live_vs10), foldId = FOLD_VS10) {
-        InfoRow(
-            label = stringResource(R.string.live_vs10_output),
-            value = vs10.output.ifBlank { null },
-            valueColor = MaterialTheme.colorScheme.accentText.copy(alpha = 0.8f),
-        )
-
         if (!canControl) {
             Text(
                 text = stringResource(R.string.live_control_disabled),
@@ -914,6 +913,24 @@ private fun sourceLabelOf(snapshot: Snapshot): String {
 
     val detail = SourceLabel.dolbyVisionSuffix(snapshot) ?: return "DV"
     return "DV $detail"
+}
+
+/** The source badge also shows the active output conversion, if any. */
+private fun conversionTargetOf(snapshot: Snapshot): String? =
+    snapshot.outputType.takeIf { snapshot.isConverting }
+        ?.let { HdrGrade.of(it).label }
+        ?: vs10ConversionTarget(snapshot.vs10.output)
+
+/** Read the active conversion from the VS10 output string when output_type is stale. */
+private fun vs10ConversionTarget(output: String): String? {
+    val normalized = output.trim().lowercase()
+    return when {
+        normalized.contains("sdr") -> "SDR"
+        normalized.contains("hdr10+") || normalized.contains("hdr10plus") -> "HDR10+"
+        normalized.contains("hdr10") -> "HDR10"
+        normalized.contains("hlg") -> "HLG"
+        else -> null
+    }
 }
 
 /** How many conversions the VS10 card puts on one line. */
