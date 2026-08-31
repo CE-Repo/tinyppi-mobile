@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Assessment
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -93,10 +94,22 @@ fun DetailsScreen(
 
 @Composable
 private fun GroupCard(group: InfoGroup) {
+    // A row the box sent with nothing in it is dropped here rather than inside
+    // the row: a rule is drawn between one row and the next, and a row that
+    // draws nothing would leave its rule behind.
+    val rows = group.rows.filter { it.value.isNotBlank() }
+
     // The box names its own groups, and the name is what the fold is filed
     // under - a group that comes back next week comes back folded as it was.
     SectionCard(title = group.title, foldId = "details.${group.id}") {
-        group.rows.forEach { row ->
+        rows.forEachIndexed { index, row ->
+            // Ruled between the rows and not around them: what makes a list of
+            // name-and-value pairs read as a table is the line between one pair
+            // and the next, and a card already draws the outside edge.
+            if (index > 0) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
+            }
+
             ReadingRow(
                 label = row.label,
                 value = row.value,
@@ -123,8 +136,6 @@ private fun GroupCard(group: InfoGroup) {
  */
 @Composable
 private fun ReadingRow(label: String, value: String, detail: String) {
-    if (value.isBlank()) return
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp),

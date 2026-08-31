@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -108,16 +109,27 @@ private fun MetadataList(rows: List<MetadataRow>, modifier: Modifier = Modifier)
             // it sits instead - there is only ever one of it.
             val foldId = "metadata.${section.title.ifBlank { "section$index" }}"
 
+            // A blank row is the overlay's way of setting a heading apart in
+            // a list of fixed-height items, and a section row has already been
+            // read as the card's own title. Both are dropped here rather than
+            // inside the loop: a rule goes between one row and the next, and a
+            // row that draws nothing would leave its rule behind.
+            val drawn = section.rows.filter { MetadataKind.of(it.kind) !in SKIPPED }
+
             SectionCard(title = section.title, foldId = foldId) {
-                section.rows.forEach { row ->
+                drawn.forEachIndexed { position, row ->
+                    // Ruled between the rows and not around them: what makes a
+                    // list of name-and-value pairs read as a table is the line
+                    // between one pair and the next, and a card already draws
+                    // the outside edge.
+                    if (position > 0) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
+                    }
+
                     when (MetadataKind.of(row.kind)) {
                         MetadataKind.HEADINGS -> CellRow(row, heading = true)
                         MetadataKind.COLUMNS -> CellRow(row, heading = false)
                         MetadataKind.WIDE -> WideRow(row)
-                        // A blank row is the overlay's way of setting a heading
-                        // apart in a list of fixed-height items; a card already
-                        // has air around its title, so it is dropped rather
-                        // than drawn as an empty line.
                         MetadataKind.SPACE, MetadataKind.SECTION -> Unit
                         MetadataKind.ROW -> ValueRow(row)
                     }
@@ -276,3 +288,6 @@ private fun List<MetadataRow>.toSections(): List<MetadataSection> {
     flush()
     return sections
 }
+
+/** The kinds of row that draw nothing, and so are not rows at all here. */
+private val SKIPPED = setOf(MetadataKind.SPACE, MetadataKind.SECTION)

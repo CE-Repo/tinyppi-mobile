@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,7 +43,14 @@ fun EventsCard(events: List<PlaybackEvent>, foldId: String) {
 
         // Newest first: what just happened is what a screen opened mid-film is
         // being opened to find out.
-        events.asReversed().forEach { event ->
+        events.asReversed().forEachIndexed { position, event ->
+            // Ruled between the events and not around them: a list of things
+            // that happened one after another is read as a table of them, and
+            // the card already draws the outside edge.
+            if (position > 0) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
+            }
+
             EventRow(event)
         }
     }
