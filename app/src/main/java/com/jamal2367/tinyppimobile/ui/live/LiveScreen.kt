@@ -57,6 +57,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -764,12 +765,18 @@ private fun Vs10Card(vs10: Vs10State, canControl: Boolean, viewModel: LiveViewMo
                             modifier = Modifier.weight(1f),
                         ) {
                             Text(
-                                text = option.label,
+                                text = shortened(option.label),
                                 // A button is one line tall whatever is written
                                 // on it, so a name too long for its share is cut
                                 // rather than wrapped out of sight.
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
+                                // Centred in the button rather than left in it:
+                                // a label that has to be cut fills the width it
+                                // was given, and a filled label is aligned by
+                                // its own setting rather than by the button.
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
                     }
@@ -881,3 +888,13 @@ private fun sourceLabelOf(snapshot: Snapshot): String {
 
 /** How many conversions the VS10 card puts on one line. */
 private const val VS10_PER_ROW = 2
+
+/**
+ * A conversion's name, short enough for half a card.
+ *
+ * The box spells Dolby Vision out, and two buttons side by side have room for
+ * about eight characters each before a name has to be cut. `DV` is what the
+ * badge on the card above calls it anyway.
+ */
+private fun shortened(label: String): String =
+    label.replace("Dolby Vision", "DV", ignoreCase = true)
