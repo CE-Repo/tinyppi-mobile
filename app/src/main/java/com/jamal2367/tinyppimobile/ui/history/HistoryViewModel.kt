@@ -10,6 +10,7 @@ import com.jamal2367.tinyppimobile.data.prefs.ChartRange
 import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.util.toUserMessage
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,12 +33,17 @@ data class HistoryUiState(
 /**
  * The playing title's chart and its event list.
  *
- * Fetched rather than streamed, and only when there is something new in it. The
- * snapshot carries an event counter for exactly this: it counts events, not
- * passes, so a number that has not moved means nothing has been written down
- * and the hour of samples already on screen is still the whole story. Asking
- * five times a second for three arrays of 3600 numbers would be the most
- * expensive thing this app does, and almost all of it would be the same answer.
+ * Fetched rather than streamed. Asking five times a second for three arrays of
+ * 3600 numbers would be the most expensive thing this app does, and almost all
+ * of it would be the same answer.
+ *
+ * Two things ask for it. The snapshot's event counter, the moment it moves - it
+ * counts events rather than passes, so it moves exactly when something has been
+ * written down and a switch or a warning appears without waiting. And a slow
+ * beat from the screen, because the chart is the half of this that the counter
+ * says nothing about: it gains a sample a second whether anything happens or
+ * not, and a film that runs an hour without one event would otherwise leave the
+ * chart standing where it was when the last one did.
  */
 class HistoryViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -46,6 +52,9 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
 
     private val _state = MutableStateFlow(HistoryUiState())
     val state: StateFlow<HistoryUiState> = _state.asStateFlow()
+
+    /** The fetch in flight, if one is. Declared above [init], which starts one. */
+    private var fetch: Job? = null
 
     init {
         container.liveState
@@ -83,8 +92,17 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
             .launchIn(viewModelScope)
     }
 
+    /**
+     * Ask the box for the history again.
+     *
+     * One at a time: the beat is faster than a request to a box that has gone
+     * quiet takes to give up, and a queue of those would each land with an
+     * older answer than the one before it.
+     */
     fun refresh() {
-        viewModelScope.launch {
+        if (fetch?.isActive == true) return
+
+        fetch = viewModelScope.launch {
             _state.value = _state.value.copy(loading = true)
             try {
                 val history = repository.history()
