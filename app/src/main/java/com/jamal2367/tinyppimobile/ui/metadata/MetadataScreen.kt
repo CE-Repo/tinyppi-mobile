@@ -32,6 +32,7 @@ import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.MetadataRow
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
+import com.jamal2367.tinyppimobile.ui.components.flashOnChange
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
 
 /**
@@ -143,7 +144,9 @@ private fun ValueRow(row: MetadataRow) {
             text = row.value.ifBlank { "–" },
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .flashOnChange(row.value),
         )
     }
 }
@@ -155,7 +158,9 @@ private fun WideRow(row: MetadataRow) {
         text = listOf(row.name, row.value).filter { it.isNotBlank() }.joinToString(" "),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .flashOnChange(row.value),
     )
 }
 
@@ -195,7 +200,15 @@ private fun CellRow(row: MetadataRow, heading: Boolean) {
                 },
                 fontWeight = if (heading) FontWeight.SemiBold else FontWeight.Normal,
                 textAlign = TextAlign.End,
-                modifier = Modifier.width(76.dp),
+                // A heading names the columns and never moves; only the cells
+                // under it are worth lighting up, and each on its own.
+                modifier = if (heading) {
+                    Modifier.width(76.dp)
+                } else {
+                    Modifier
+                        .width(76.dp)
+                        .flashOnChange(cell)
+                },
             )
         }
     }

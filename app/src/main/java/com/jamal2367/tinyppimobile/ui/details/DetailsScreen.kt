@@ -29,6 +29,7 @@ import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.InfoGroup
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
+import com.jamal2367.tinyppimobile.ui.components.flashOnChange
 import com.jamal2367.tinyppimobile.ui.theme.accentText
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
 
@@ -112,6 +113,9 @@ private fun GroupCard(group: InfoGroup) {
  * The extra is what the overlay draws in its accent colour - a decoder behind
  * a codec, an average behind a live bitrate - and it is dimmed here for the
  * same reason: it qualifies the reading rather than being one.
+ *
+ * The reading itself lights up as it moves, where it is one of the two that
+ * move at all - see [movesWithThePicture].
  */
 @Composable
 private fun ReadingRow(label: String, value: String, detail: String) {
@@ -136,6 +140,11 @@ private fun ReadingRow(label: String, value: String, detail: String) {
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.End,
+                modifier = if (label.movesWithThePicture()) {
+                    Modifier.flashOnChange(value)
+                } else {
+                    Modifier
+                },
             )
             if (detail.isNotBlank()) {
                 Text(
@@ -149,3 +158,20 @@ private fun ReadingRow(label: String, value: String, detail: String) {
         }
     }
 }
+
+/**
+ * Whether a reading changes with the frame on screen rather than with the file.
+ *
+ * The two L1 pairs are read out of the picture itself and move several times a
+ * second. Everything else here is a property of the file, of the output or of
+ * the box, and changes once a film if at all - a reading that lights up twice
+ * an hour is not being watched for it, and one that lights up on every scene
+ * is.
+ *
+ * Matched on the name rather than on the row's id, because the ids are the
+ * numbers of Kodi's own strings and these two rows are known by what they are
+ * called. A box that renames them stops lighting them up, which is a screen
+ * gone quiet rather than one gone wrong.
+ */
+private fun String.movesWithThePicture(): Boolean =
+    startsWith("L1 Lum", ignoreCase = true) || startsWith("L1 PQ", ignoreCase = true)
