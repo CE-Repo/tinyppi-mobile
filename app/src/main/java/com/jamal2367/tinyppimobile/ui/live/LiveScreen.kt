@@ -38,7 +38,6 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
@@ -645,25 +644,35 @@ private fun VolumeRow(
 /** The audio and subtitle tracks, as two pickers. */
 @Composable
 private fun TrackSection(controls: PlayerControls, viewModel: LiveViewModel) {
-    if (controls.audio.isNotEmpty()) {
-        TrackPicker(
-            label = stringResource(R.string.live_audio_track),
-            tracks = controls.audio,
-            selected = controls.audioCurrent,
-            offLabel = null,
-            onSelect = { index -> index?.let(viewModel::selectAudio) },
-        )
-    }
-    if (controls.subtitle.isNotEmpty()) {
-        TrackPicker(
-            label = stringResource(R.string.live_subtitles),
-            tracks = controls.subtitle,
-            // Kodi goes on naming the track that was switched off, so the
-            // picker only follows the current index while they are on.
-            selected = if (controls.subtitleOn) controls.subtitleCurrent else null,
-            offLabel = stringResource(R.string.live_subtitles_off),
-            onSelect = viewModel::selectSubtitle,
-        )
+    val hasAudio = controls.audio.isNotEmpty()
+    val hasSubtitles = controls.subtitle.isNotEmpty()
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        if (hasAudio) {
+            TrackPicker(
+                label = stringResource(R.string.live_audio_track),
+                tracks = controls.audio,
+                selected = controls.audioCurrent,
+                offLabel = null,
+                onSelect = { index -> index?.let(viewModel::selectAudio) },
+                modifier = if (hasSubtitles) Modifier.weight(1f) else Modifier.fillMaxWidth(),
+            )
+        }
+        if (hasSubtitles) {
+            TrackPicker(
+                label = stringResource(R.string.live_subtitles),
+                tracks = controls.subtitle,
+                // Kodi goes on naming the track that was switched off, so the
+                // picker only follows the current index while they are on.
+                selected = if (controls.subtitleOn) controls.subtitleCurrent else null,
+                offLabel = stringResource(R.string.live_subtitles_off),
+                onSelect = viewModel::selectSubtitle,
+                modifier = if (hasAudio) Modifier.weight(1f) else Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
@@ -674,20 +683,22 @@ private fun TrackPicker(
     selected: Int?,
     offLabel: String?,
     onSelect: (Int?) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var open by remember { mutableStateOf(false) }
     val current = tracks.firstOrNull { it.index == selected }?.label
         ?: offLabel
         ?: stringResource(R.string.live_track_unknown)
 
-    Column {
+    Column(modifier = modifier) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Medium,
         )
         Box {
-            OutlinedButton(
+            FilledTonalButton(
                 onClick = { open = true },
                 modifier = Modifier.fillMaxWidth(),
             ) {
