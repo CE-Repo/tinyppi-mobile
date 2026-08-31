@@ -124,6 +124,16 @@ fun artworkGradient(accent: Color, container: Color): Brush {
     }
 }
 
+/**
+ * The head of that wash, held flat.
+ *
+ * For a shape too small to fade anything across: the status pill is one line
+ * tall and sits directly above the live card, so it takes the colour the card
+ * starts with rather than a gradient of its own that would be over before it
+ * began.
+ */
+fun artworkTint(accent: Color, container: Color): Color = lerp(container, accent, TOP_TINT)
+
 private suspend fun readAccent(context: Context, url: String, dark: Boolean): Color? {
     val request = ImageRequest.Builder(context)
         .data(url)

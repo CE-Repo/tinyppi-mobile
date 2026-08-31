@@ -18,10 +18,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.repository.LiveState
+import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.PillShape
 import com.jamal2367.tinyppimobile.ui.theme.StatusDown
 import com.jamal2367.tinyppimobile.ui.theme.StatusLive
 import com.jamal2367.tinyppimobile.ui.theme.StatusWaiting
+import com.jamal2367.tinyppimobile.ui.theme.artworkTint
 
 /**
  * How the app is getting its readings, in one line.
@@ -34,6 +36,10 @@ import com.jamal2367.tinyppimobile.ui.theme.StatusWaiting
  *
  * The address is named beside it: in automatic mode that is the only way to
  * tell from the outside which of the two boxes answered.
+ *
+ * The pill takes the same tint as the card under it, so the two read as one
+ * piece of the same screen rather than as a plain grey lozenge sitting on a
+ * coloured one.
  */
 @Composable
 fun StatusLine(
@@ -43,10 +49,13 @@ fun StatusLine(
 ) {
     val dot by animateColorAsState(targetValue = connection.dotColor(), label = "statusDot")
 
+    val container = MaterialTheme.colorScheme.surfaceContainerLow
+    val ground = LocalArtworkAccent.current?.let { artworkTint(it, container) } ?: container
+
     Row(
         modifier = modifier
             .clip(PillShape)
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .background(ground)
             .padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
