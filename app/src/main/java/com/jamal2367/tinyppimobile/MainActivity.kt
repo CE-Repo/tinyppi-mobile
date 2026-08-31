@@ -7,9 +7,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -17,6 +20,8 @@ import androidx.lifecycle.lifecycleScope
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.di.AppContainer
 import com.jamal2367.tinyppimobile.ui.TinyPpiApp
+import com.jamal2367.tinyppimobile.ui.components.CardFolds
+import com.jamal2367.tinyppimobile.ui.components.LocalCardFolds
 import com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import com.jamal2367.tinyppimobile.ui.theme.isDarkTheme
@@ -27,6 +32,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /**
  * The colour of what is playing, or null while the reader wants none.
@@ -49,6 +55,24 @@ private fun playingColour(container: AppContainer, settings: AppSettings): Color
     return rememberArtworkAccent(
         live.snapshot?.let { MediaUrls.art(live.server, it.art, MediaUrls.ArtKind.POSTER) }
     )
+}
+
+/**
+ * Which cards are folded shut, wired to where that is remembered.
+ *
+ * Built at the root because a card is drawn on every screen and folding one is
+ * the same act wherever it happens - there is nothing screen-shaped about it
+ * for a view model to own.
+ */
+@Composable
+private fun rememberCardFolds(container: AppContainer, settings: AppSettings): CardFolds {
+    val scope = rememberCoroutineScope()
+
+    return remember(settings.cardFolds) {
+        CardFolds(settings.cardFolds) { id, moved ->
+            scope.launch { container.settingsRepository.setCardFold(id, moved) }
+        }
+    }
 }
 
 class MainActivity : ComponentActivity() {
@@ -131,7 +155,11 @@ class MainActivity : ComponentActivity() {
                 // covering this anyway, and it is gone within a moment.
                 if (decided) {
                     ArtworkAccentTheme(accent = playingColour(container, settings)) {
-                        TinyPpiApp(container = container)
+                        CompositionLocalProvider(
+                            LocalCardFolds provides rememberCardFolds(container, settings),
+                        ) {
+                            TinyPpiApp(container = container)
+                        }
                     }
                 }
             }

@@ -115,6 +115,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             item {
                 ServerCard(
                     title = stringResource(R.string.settings_server_primary),
+                    foldId = "settings.server_primary",
                     config = settings.primary,
                     test = state.primaryTest,
                     isActive = state.activeServerLabel != null && state.activeIsPrimary,
@@ -130,6 +131,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             item {
                 ServerCard(
                     title = stringResource(R.string.settings_server_secondary),
+                    foldId = "settings.server_secondary",
                     config = settings.secondary,
                     test = state.secondaryTest,
                     isActive = state.activeServerLabel != null && !state.activeIsPrimary &&
@@ -154,6 +156,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
 @Composable
 private fun ServerCard(
     title: String,
+    foldId: String,
     config: ServerConfig,
     test: TestState,
     isActive: Boolean,
@@ -190,6 +193,7 @@ private fun ServerCard(
 
     SectionCard(
         title = title,
+        foldId = foldId,
         trailing = {
             if (isActive) {
                 Icon(
@@ -401,7 +405,7 @@ private fun ResultLine(
 
 @Composable
 private fun ConnectionModeCard(current: ConnectionMode, onSelect: (ConnectionMode) -> Unit) {
-    SectionCard(title = stringResource(R.string.settings_mode)) {
+    SectionCard(title = stringResource(R.string.settings_mode), foldId = "settings.mode") {
         ConnectionMode.entries.forEach { mode ->
             val (labelRes, descriptionRes) = when (mode) {
                 ConnectionMode.AUTO ->
@@ -440,7 +444,7 @@ private fun ConnectionModeCard(current: ConnectionMode, onSelect: (ConnectionMod
 /** How the readings arrive, and how hard the phone works for them. */
 @Composable
 private fun UpdatesCard(settings: AppSettings, viewModel: SettingsViewModel) {
-    SectionCard(title = stringResource(R.string.settings_updates)) {
+    SectionCard(title = stringResource(R.string.settings_updates), foldId = "settings.updates") {
         SwitchRow(
             label = stringResource(R.string.settings_live_updates),
             description = stringResource(R.string.settings_live_updates_desc),
@@ -483,7 +487,10 @@ private fun UpdatesCard(settings: AppSettings, viewModel: SettingsViewModel) {
 
 @Composable
 private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) {
-    SectionCard(title = stringResource(R.string.settings_appearance)) {
+    SectionCard(
+        title = stringResource(R.string.settings_appearance),
+        foldId = "settings.appearance",
+    ) {
         Text(
             text = stringResource(R.string.settings_theme),
             style = MaterialTheme.typography.bodyMedium,
@@ -537,7 +544,7 @@ private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) 
 
 @Composable
 private fun AboutCard() {
-    SectionCard(title = stringResource(R.string.settings_about)) {
+    SectionCard(title = stringResource(R.string.settings_about), foldId = "settings.about") {
         InfoRow(
             label = stringResource(R.string.settings_about_version),
             value = BuildConfig.VERSION_NAME,

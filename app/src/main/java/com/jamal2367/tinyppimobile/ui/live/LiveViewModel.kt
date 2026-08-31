@@ -98,17 +98,6 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
     /** Put the driver into one of the VS10 modes this snapshot offered. */
     fun setMode(mode: String) = command { repository.setMode(mode) }
 
-    /**
-     * Fold the live card open on the transport, or shut again.
-     *
-     * Written to the settings rather than held in the screen: a reader who
-     * wants the buttons wants them on the next launch too, and one who does not
-     * should not have to fold them away again every time the app is opened.
-     */
-    fun setControlsExpanded(expanded: Boolean) {
-        viewModelScope.launch { container.settingsRepository.setControlsExpanded(expanded) }
-    }
-
     /** Where the slider is now, before the box has been told. */
     fun previewVolume(level: Int) {
         _pendingVolume.value = level.coerceIn(0, 100)

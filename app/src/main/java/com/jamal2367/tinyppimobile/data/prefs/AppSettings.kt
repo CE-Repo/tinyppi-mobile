@@ -120,14 +120,15 @@ data class AppSettings(
      */
     val adaptiveColor: Boolean = true,
     /**
-     * Whether the live card is folded open on the transport and the tracks.
+     * The folds the reader has moved off where they start, by name.
      *
-     * Shut by default: what is playing is what the screen is opened for, and
-     * the buttons are wanted a good deal less often than they take up room.
-     * Kept here rather than in the screen because a fold reopened on every
-     * launch is one the reader has to close again on every launch.
+     * The difference rather than the state, because not every fold starts open:
+     * a card a later build adds should arrive open, and the live screen's
+     * transport should arrive folded away. Kept here rather than in the screens
+     * because a fold reopened on every launch is one the reader has to close
+     * again on every launch.
      */
-    val controlsExpanded: Boolean = false,
+    val cardFolds: Set<String> = emptySet(),
 ) {
     /** True once at least one box is filled in far enough to try. */
     val isConfigured: Boolean

@@ -37,6 +37,8 @@
 
     <string name="live_controls_show">Steuerung einblenden</string>
     <string name="live_controls_hide">Steuerung ausblenden</string>
+    <string name="card_expand">Karte ausklappen</string>
+    <string name="card_collapse">Karte einklappen</string>
     <string name="live_playpause">Wiedergabe / Pause</string>
     <string name="live_stop">Stopp</string>
     <plurals name="live_seek_back">

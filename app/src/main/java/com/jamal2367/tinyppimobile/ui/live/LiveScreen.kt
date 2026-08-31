@@ -6,8 +6,6 @@
 package com.jamal2367.tinyppimobile.ui.live
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,14 +18,11 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
@@ -58,8 +53,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -77,10 +70,12 @@ import com.jamal2367.tinyppimobile.data.model.Vs10State
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.ui.components.ConversionBadge
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
+import com.jamal2367.tinyppimobile.ui.components.FoldChevron
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
 import com.jamal2367.tinyppimobile.ui.components.FormatLogo
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
 import com.jamal2367.tinyppimobile.ui.components.InfoRow
+import com.jamal2367.tinyppimobile.ui.components.LocalCardFolds
 import com.jamal2367.tinyppimobile.ui.components.PosterImage
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.components.StatTile
@@ -161,7 +156,6 @@ fun LiveScreen(
                     poster = poster,
                     showArtwork = state.settings.showArtwork,
                     canControl = state.canControlPlayback,
-                    controlsExpanded = state.settings.controlsExpanded,
                     pendingVolume = pendingVolume,
                     viewModel = viewModel,
                 )
@@ -177,7 +171,6 @@ private fun LiveContent(
     poster: String?,
     showArtwork: Boolean,
     canControl: Boolean,
-    controlsExpanded: Boolean,
     pendingVolume: Int?,
     viewModel: LiveViewModel,
 ) {
@@ -208,7 +201,6 @@ private fun LiveContent(
                 poster = poster,
                 showArtwork = showArtwork,
                 canControl = canControl,
-                expanded = controlsExpanded,
                 pendingVolume = pendingVolume,
                 viewModel = viewModel,
             )
@@ -229,11 +221,11 @@ private fun LiveContent(
  * are read and used in the same breath, and a card boundary between them only
  * put scrolling between a button and the thing it moves.
  *
- * The controls are folded away until the heading is tapped, the way the
- * dashboard folds them, and the fold is remembered in the settings. What is
- * playing is what the screen is opened for and fits without scrolling; the
- * buttons are wanted a good deal less often than they take up room, and a
- * transport nobody meant to touch is one that gets touched by accident.
+ * Alone among the cards, this one folds a part of itself rather than the
+ * whole: what is playing is what the screen is opened for, and a card that can
+ * hide it is a card that can hide the answer. The arrow takes the transport and
+ * the track pickers away instead - the part that is wanted a good deal less
+ * often than it takes up room - and they start away, as they were asked to.
  *
  * The card is washed in the colour of the poster beside it, strongest at the
  * top and gone by the bottom - the same thing the add-on's dashboard does, and
@@ -254,20 +246,31 @@ private fun NowPlayingCard(
     poster: String?,
     showArtwork: Boolean,
     canControl: Boolean,
-    expanded: Boolean,
     pendingVolume: Int?,
     viewModel: LiveViewModel,
 ) {
     val accent = LocalArtworkAccent.current
     val container = MaterialTheme.colorScheme.surfaceContainerLow
 
+    val folds = LocalCardFolds.current
+    val expanded = folds.isExpanded(FOLD_CONTROLS, openByDefault = false)
+
     SectionCard(
         title = stringResource(R.string.live_now_playing),
         containerBrush = accent?.let { artworkGradient(it, container) },
         trailing = {
             if (canControl) {
-                ExpandChevron(expanded) {
-                    viewModel.setControlsExpanded(!expanded)
+                FoldChevron(
+                    expanded = expanded,
+                    contentDescription = stringResource(
+                        if (expanded) {
+                            R.string.live_controls_hide
+                        } else {
+                            R.string.live_controls_show
+                        }
+                    ),
+                ) {
+                    folds.setExpanded(FOLD_CONTROLS, !expanded, openByDefault = false)
                 }
             }
         },
@@ -290,6 +293,10 @@ private fun NowPlayingCard(
                 Text(
                     text = snapshot.title.ifBlank { stringResource(R.string.live_untitled) },
                     style = MaterialTheme.typography.titleMedium,
+                    // In the accent, like every heading on the screen - and on
+                    // a card washed in the poster's own colour, the title is
+                    // the one line that ought to be wearing it.
+                    color = MaterialTheme.colorScheme.primary,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -369,40 +376,6 @@ private fun NowPlayingCard(
             }
         }
     }
-}
-
-/**
- * The arrow at the end of the heading, turned over while the card is open.
- *
- * The target is the arrow and a hair of room around it, clipped to a circle so
- * the ripple is the arrow lighting up rather than the whole heading flashing.
- *
- * Built out of the icon rather than out of an icon button, because a button
- * there reserves the height of a finger and pushes the title down with it. The
- * heading is a line of text, and the arrow beside it has to sit on that line.
- */
-@Composable
-private fun ExpandChevron(expanded: Boolean, onClick: () -> Unit) {
-    val rotation by animateFloatAsState(
-        targetValue = if (expanded) 180f else 0f,
-        label = "chevron",
-    )
-
-    Icon(
-        imageVector = Icons.Filled.ExpandMore,
-        contentDescription = stringResource(
-            if (expanded) R.string.live_controls_hide else R.string.live_controls_show
-        ),
-        tint = MaterialTheme.colorScheme.primary,
-        modifier = Modifier
-            // Back out over the card's own padding: the room the ripple needs
-            // is room the arrow would otherwise be indented by.
-            .offset(x = 4.dp)
-            .clip(CircleShape)
-            .clickable(onClick = onClick)
-            .padding(4.dp)
-            .rotate(rotation),
-    )
 }
 
 /**
@@ -740,7 +713,7 @@ private fun TrackPicker(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Vs10Card(vs10: Vs10State, canControl: Boolean, viewModel: LiveViewModel) {
-    SectionCard(title = stringResource(R.string.live_vs10)) {
+    SectionCard(title = stringResource(R.string.live_vs10), foldId = FOLD_VS10) {
         InfoRow(
             label = stringResource(R.string.live_vs10_output),
             value = vs10.output.ifBlank { null },
@@ -781,7 +754,7 @@ private fun Vs10Card(vs10: Vs10State, canControl: Boolean, viewModel: LiveViewMo
 private fun MetricsCard(snapshot: Snapshot) {
     val metrics = snapshot.metrics
 
-    SectionCard(title = stringResource(R.string.live_metrics)) {
+    SectionCard(title = stringResource(R.string.live_metrics), foldId = FOLD_METRICS) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -866,7 +839,7 @@ private fun MetricsCard(snapshot: Snapshot) {
 private fun LastPlayedCard(snapshot: Snapshot) {
     val last = snapshot.last
 
-    SectionCard(title = stringResource(R.string.live_last_played)) {
+    SectionCard(title = stringResource(R.string.live_last_played), foldId = FOLD_LAST_PLAYED) {
         Text(
             text = last.title,
             style = MaterialTheme.typography.titleMedium,
@@ -903,6 +876,17 @@ private fun LastPlayedCard(snapshot: Snapshot) {
         )
     }
 }
+
+/**
+ * What each card on this screen is remembered by.
+ *
+ * Written out rather than taken from the heading: the heading is translated,
+ * and a card folded away in German should still be folded in English.
+ */
+private const val FOLD_CONTROLS = "live.controls"
+private const val FOLD_VS10 = "live.vs10"
+private const val FOLD_METRICS = "live.metrics"
+private const val FOLD_LAST_PLAYED = "live.last_played"
 
 /** The line under the title: the show and episode, the year, the genre. */
 private fun subtitleOf(snapshot: Snapshot): String? {

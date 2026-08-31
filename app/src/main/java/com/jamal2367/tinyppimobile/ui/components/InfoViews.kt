@@ -1,5 +1,6 @@
 package com.jamal2367.tinyppimobile.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,9 +10,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,14 +25,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.ui.theme.PillShape
 
 /**
  * A titled block of related rows - the unit every screen here is built from.
+ *
+ * A card given a [foldId] can be folded shut by the arrow on its heading, and
+ * is found the way it was left on the next launch - the name is what it is
+ * remembered by, so it has to outlive a translation and a rename of the
+ * heading above it. A card without one is always open.
  *
  * A card given a [containerBrush] is painted with it instead of the flat
  * surface, which is how the live card wears the colour of the poster on it.
@@ -37,10 +51,14 @@ import com.jamal2367.tinyppimobile.ui.theme.PillShape
 fun SectionCard(
     title: String,
     modifier: Modifier = Modifier,
+    foldId: String? = null,
     containerBrush: Brush? = null,
     trailing: (@Composable () -> Unit)? = null,
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
+    val folds = LocalCardFolds.current
+    val expanded = foldId == null || folds.isExpanded(foldId)
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -65,16 +83,68 @@ fun SectionCard(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f, fill = false),
                 )
-                trailing?.invoke()
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    trailing?.invoke()
+                    if (foldId != null) {
+                        FoldChevron(expanded) { folds.setExpanded(foldId, !expanded) }
+                    }
+                }
             }
-            Column(
-                modifier = Modifier.padding(top = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                content = content,
-            )
+            AnimatedVisibility(visible = expanded) {
+                Column(
+                    modifier = Modifier.padding(top = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    content = content,
+                )
+            }
         }
     }
+}
+
+/**
+ * The arrow at the end of a heading, turned over while what it holds is open.
+ *
+ * The target is the arrow and a hair of room around it, clipped to a circle so
+ * the ripple is the arrow lighting up rather than the whole heading flashing.
+ *
+ * Built out of the icon rather than out of an icon button, because a button
+ * there reserves the height of a finger and pushes the heading down with it. A
+ * heading is a line of text, and the arrow beside it has to sit on that line.
+ *
+ * Public because the live card folds a part of itself rather than the whole,
+ * and it should be the same arrow doing it.
+ */
+@Composable
+fun FoldChevron(
+    expanded: Boolean,
+    contentDescription: String? = null,
+    onClick: () -> Unit,
+) {
+    val rotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        label = "chevron",
+    )
+
+    Icon(
+        imageVector = Icons.Filled.ExpandMore,
+        contentDescription = contentDescription ?: stringResource(
+            if (expanded) R.string.card_collapse else R.string.card_expand
+        ),
+        tint = MaterialTheme.colorScheme.primary,
+        modifier = Modifier
+            // Back out over the card's own padding: the room the ripple needs
+            // is room the arrow would otherwise be indented by.
+            .offset(x = 4.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
+            .padding(4.dp)
+            .rotate(rotation),
+    )
 }
 
 /**

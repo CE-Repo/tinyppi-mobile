@@ -40,6 +40,8 @@
 
     <string name="live_controls_show">Show controls</string>
     <string name="live_controls_hide">Hide controls</string>
+    <string name="card_expand">Expand card</string>
+    <string name="card_collapse">Collapse card</string>
     <string name="live_playpause">Play / pause</string>
     <string name="live_stop">Stop</string>
     <plurals name="live_seek_back">

@@ -115,7 +115,7 @@ fun HistoryScreen(
 
 @Composable
 private fun SummaryCard(state: HistoryUiState, history: History) {
-    SectionCard(title = stringResource(R.string.history_summary)) {
+    SectionCard(title = stringResource(R.string.history_summary), foldId = "history.summary") {
         state.snapshot?.title?.takeIf { it.isNotBlank() }?.let { title ->
             Text(
                 text = title,
@@ -161,7 +161,7 @@ private fun ChartCard(
     range: ChartRange,
     onRangeChange: (ChartRange) -> Unit,
 ) {
-    SectionCard(title = stringResource(R.string.history_chart)) {
+    SectionCard(title = stringResource(R.string.history_chart), foldId = "history.chart") {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ChartRange.entries.forEach { option ->
                 FilterChip(
@@ -209,7 +209,7 @@ private fun ChartCard(
 
 @Composable
 private fun EventsCard(history: History) {
-    SectionCard(title = stringResource(R.string.history_events)) {
+    SectionCard(title = stringResource(R.string.history_events), foldId = "history.events") {
         if (history.events.isEmpty()) {
             Text(
                 text = stringResource(R.string.history_events_empty),

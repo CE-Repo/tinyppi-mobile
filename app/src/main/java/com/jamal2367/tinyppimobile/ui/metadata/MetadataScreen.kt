@@ -102,7 +102,12 @@ private fun MetadataList(rows: List<MetadataRow>, modifier: Modifier = Modifier)
     ) {
         items(sections.size) { index ->
             val section = sections[index]
-            SectionCard(title = section.title) {
+            // The box names its own sections. The first block of a view can
+            // arrive before any name at all, and that one is filed under where
+            // it sits instead - there is only ever one of it.
+            val foldId = "metadata.${section.title.ifBlank { "section$index" }}"
+
+            SectionCard(title = section.title, foldId = foldId) {
                 section.rows.forEach { row ->
                     when (MetadataKind.of(row.kind)) {
                         MetadataKind.HEADINGS -> CellRow(row, heading = true)

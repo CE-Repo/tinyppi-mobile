@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -49,8 +50,16 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setAdaptiveColor(enabled: Boolean) = edit { it[KEY_ADAPTIVE_COLOR] = enabled }
 
-    suspend fun setControlsExpanded(expanded: Boolean) = edit {
-        it[KEY_CONTROLS_EXPANDED] = expanded
+    /**
+     * Note that one fold has been moved off where it starts, or put back.
+     *
+     * Read and written whole, which is what a preference store offers: the set
+     * is a handful of short names, and a card is folded by a finger rather than
+     * by anything that could write two of these at once.
+     */
+    suspend fun setCardFold(id: String, moved: Boolean) = edit {
+        val folds = it[KEY_CARD_FOLDS].orEmpty()
+        it[KEY_CARD_FOLDS] = if (moved) folds + id else folds - id
     }
 
     private suspend fun writeServer(prefix: String, config: ServerConfig) = edit {
@@ -86,7 +95,7 @@ class SettingsRepository(private val context: Context) {
         keepScreenOn = this[KEY_KEEP_SCREEN_ON] ?: false,
         showArtwork = this[KEY_SHOW_ARTWORK] ?: true,
         adaptiveColor = this[KEY_ADAPTIVE_COLOR] ?: true,
-        controlsExpanded = this[KEY_CONTROLS_EXPANDED] ?: false,
+        cardFolds = this[KEY_CARD_FOLDS].orEmpty(),
     )
 
     private fun Preferences.readServer(prefix: String, defaultEnabled: Boolean) = ServerConfig(
@@ -120,6 +129,6 @@ class SettingsRepository(private val context: Context) {
         val KEY_KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
         val KEY_SHOW_ARTWORK = booleanPreferencesKey("show_artwork")
         val KEY_ADAPTIVE_COLOR = booleanPreferencesKey("adaptive_color")
-        val KEY_CONTROLS_EXPANDED = booleanPreferencesKey("controls_expanded")
+        val KEY_CARD_FOLDS = stringSetPreferencesKey("card_folds")
     }
 }

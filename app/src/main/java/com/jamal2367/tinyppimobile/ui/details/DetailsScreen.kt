@@ -91,7 +91,9 @@ fun DetailsScreen(
 
 @Composable
 private fun GroupCard(group: InfoGroup) {
-    SectionCard(title = group.title) {
+    // The box names its own groups, and the name is what the fold is filed
+    // under - a group that comes back next week comes back folded as it was.
+    SectionCard(title = group.title, foldId = "details.${group.id}") {
         group.rows.forEach { row ->
             ReadingRow(
                 label = row.label,
