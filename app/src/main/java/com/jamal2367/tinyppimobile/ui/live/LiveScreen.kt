@@ -197,14 +197,6 @@ private fun LiveContent(
         }
 
         if (!snapshot.playing) {
-            item {
-                EmptyState(
-                    icon = Icons.Outlined.PlayCircle,
-                    title = stringResource(R.string.live_idle_title),
-                    message = stringResource(R.string.live_idle_text),
-                    modifier = Modifier.height(320.dp),
-                )
-            }
             if (snapshot.last.isPresent) {
                 item { LastPlayedCard(snapshot) }
             }
