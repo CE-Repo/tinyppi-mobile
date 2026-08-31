@@ -724,8 +724,13 @@ private fun TrackPicker(
  * Tonal rather than filled: a filled button is the accent at full strength, and
  * two of those shouting from a card near the bottom of the screen outrank the
  * play button they are sitting under. These wear what the transport wears.
+ *
+ * Two to a line, sharing the width equally. They are alternatives to each
+ * other, so one drawn wider than the next would be saying something about it
+ * that is not true - and a box that offers four of them would otherwise put
+ * four names in the width of one, each cut to nothing. An odd one at the end
+ * takes the line to itself.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Vs10Card(vs10: Vs10State, canControl: Boolean, viewModel: LiveViewModel) {
     SectionCard(title = stringResource(R.string.live_vs10), foldId = FOLD_VS10) {
@@ -743,14 +748,32 @@ private fun Vs10Card(vs10: Vs10State, canControl: Boolean, viewModel: LiveViewMo
             return@SectionCard
         }
 
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(top = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp),
         ) {
-            vs10.options.forEach { option ->
-                FilledTonalButton(onClick = { viewModel.setMode(option.mode) }) {
-                    Text(option.label)
+            vs10.options.chunked(VS10_PER_ROW).forEach { row ->
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    row.forEach { option ->
+                        FilledTonalButton(
+                            onClick = { viewModel.setMode(option.mode) },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(
+                                text = option.label,
+                                // A button is one line tall whatever is written
+                                // on it, so a name too long for its share is cut
+                                // rather than wrapped out of sight.
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -940,3 +963,6 @@ private fun sourceLabelOf(snapshot: Snapshot): String {
     val detail = SourceLabel.dolbyVisionSuffix(snapshot) ?: return "DV"
     return "DV $detail"
 }
+
+/** How many conversions the VS10 card puts on one line. */
+private const val VS10_PER_ROW = 2
