@@ -923,7 +923,9 @@ private fun sourceLabelOf(snapshot: Snapshot): String {
 private fun conversionTargetOf(snapshot: Snapshot): String? =
     snapshot.outputType.takeIf { snapshot.isConverting }
         ?.let { HdrGrade.of(it).label }
-        ?: vs10ConversionTarget(snapshot.vs10.output)
+        ?: vs10ConversionTarget(snapshot.vs10.output)?.takeUnless {
+            it.equals(HdrGrade.of(snapshot.sourceType).label, ignoreCase = true)
+        }
 
 /** Read the active conversion from the VS10 output string when output_type is stale. */
 private fun vs10ConversionTarget(output: String): String? {
