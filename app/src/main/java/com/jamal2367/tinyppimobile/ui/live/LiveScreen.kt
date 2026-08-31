@@ -77,10 +77,8 @@ import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
 import com.jamal2367.tinyppimobile.ui.components.FormatLogo
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
-import com.jamal2367.tinyppimobile.ui.components.InfoRow
 import com.jamal2367.tinyppimobile.ui.components.PosterImage
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
-import com.jamal2367.tinyppimobile.ui.components.StatTile
 import com.jamal2367.tinyppimobile.ui.components.StatusLine
 import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.accentText
@@ -784,62 +782,6 @@ private fun Vs10Card(
 }
 
 /**
- * What the title that has just ended came to.
- *
- * The figures are worth most in the minutes right after the credits, which is
- * exactly when a dashboard that threw them away at the end of playback had
- * already lost them. The box holds them for ten minutes and this is where they
- * are read.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun LastPlayedCard(snapshot: Snapshot) {
-    val last = snapshot.last
-
-    SectionCard(title = stringResource(R.string.live_last_played), foldId = FOLD_LAST_PLAYED) {
-        Text(
-            text = last.title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-        )
-        FlowRow(
-            maxItemsInEachRow = 2,
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-        ) {
-            Formatters.nits(last.peak)?.let {
-                StatTile(
-                    value = it,
-                    caption = stringResource(R.string.metric_peak),
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            StatTile(
-                value = last.switches.toString(),
-                caption = stringResource(R.string.live_switches),
-                modifier = Modifier.weight(1f),
-            )
-            StatTile(
-                value = last.warnings.toString(),
-                caption = stringResource(R.string.live_warnings),
-                modifier = Modifier.weight(1f),
-            )
-        }
-        InfoRow(
-            label = stringResource(R.string.live_last_position),
-            value = last.position.ifBlank { null },
-        )
-        InfoRow(
-            label = stringResource(R.string.live_last_ago),
-            value = Formatters.elapsed(last.ago.toDouble()),
-        )
-    }
-}
-
-/**
  * What each card on this screen is remembered by.
  *
  * Written out rather than taken from the heading: the heading is translated,
@@ -847,8 +789,6 @@ private fun LastPlayedCard(snapshot: Snapshot) {
  */
 private const val FOLD_CONTROLS = "live.controls"
 private const val FOLD_VS10 = "live.vs10"
-private const val FOLD_EVENTS = "live.events"
-private const val FOLD_LAST_PLAYED = "live.last_played"
 
 /** The line under the title: the show and episode, the year, the genre. */
 @Composable

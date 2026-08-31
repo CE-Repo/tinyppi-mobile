@@ -15,8 +15,6 @@
 
     <!-- Actions -->
     <string name="action_open_settings">Beállítások megnyitása</string>
-    <string name="action_retry">Próbáld újra</string>
-    <string name="action_refresh">Frissítés</string>
 
     <!-- The connection line -->
     <string name="status_live">Live</string>
@@ -37,8 +35,6 @@
     <string name="live_untitled">Cím nélküli</string>
     <string name="live_source">Forrás</string>
 
-    <string name="live_controls_show">Vezérlők megjelenítése</string>
-    <string name="live_controls_hide">Vezérlők elrejtése</string>
     <string name="card_expand">Kártya kibontása</string>
     <string name="card_collapse">Kártya összecsukása</string>
     <string name="live_playpause">Lejátszás / szünet</string>
@@ -69,17 +65,12 @@
     <string name="live_track_unknown">Ismeretlen</string>
 
     <string name="live_vs10">VS10</string>
-    <string name="live_vs10_output">Kimenet (kép)</string>
     <string name="live_control_disabled">A lejátszó nem teszi lehetővé a kliens számára, hogy bármit is váltson. Kapcsold be a vezérlést aa kiegészítő beállításaiban.</string>
 
-    <string name="live_last_played">Legutóbb lejátszva</string>
-    <string name="live_last_position">Abbahagyva</string>
-    <string name="live_last_ago">Véget ért</string>
     <string name="live_switches">Kapcsolások</string>
     <string name="live_warnings">Figyelmeztetések</string>
 
     <!-- Measurements -->
-    <string name="metric_peak">Csúcs</string>
 
     <!-- Readings -->
     <string name="details_empty_title">Nincs adat</string>

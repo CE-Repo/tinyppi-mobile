@@ -273,67 +273,6 @@ fun InfoRow(
     }
 }
 
-/**
- * One reading as a name, a bar and a figure: processor load, cache level, the
- * share of a maximum that a number is.
- *
- * The bar is what makes a number readable at a glance across the room, which
- * is where a phone showing this usually is.
- */
-@Composable
-fun StatBar(
-    label: String,
-    count: Int,
-    maxCount: Int,
-    modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary,
-    onClick: (() -> Unit)? = null,
-) {
-    val fraction = if (maxCount > 0) count.toFloat() / maxCount else 0f
-    val animated by animateFloatAsState(targetValue = fraction, label = "statBar")
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(vertical = 4.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = count.toString(),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 12.dp),
-            )
-        }
-        Box(
-            modifier = Modifier
-                .padding(top = 6.dp)
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(PillShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(animated)
-                    .height(6.dp)
-                    .clip(PillShape)
-                    .background(color),
-            )
-        }
-    }
-}
-
 /** A single number with its caption - the tiles across the top of a screen. */
 @Composable
 fun StatTile(

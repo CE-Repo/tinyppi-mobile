@@ -12,8 +12,6 @@
 
     <!-- Aktionen -->
     <string name="action_open_settings">Einstellungen öffnen</string>
-    <string name="action_retry">Erneut versuchen</string>
-    <string name="action_refresh">Aktualisieren</string>
 
     <!-- Verbindungszeile -->
     <string name="status_live">Live</string>
@@ -34,8 +32,6 @@
     <string name="live_untitled">Ohne Titel</string>
     <string name="live_source">Quelle</string>
 
-    <string name="live_controls_show">Steuerung einblenden</string>
-    <string name="live_controls_hide">Steuerung ausblenden</string>
     <string name="card_expand">Karte ausklappen</string>
     <string name="card_collapse">Karte einklappen</string>
     <string name="live_playpause">Wiedergabe / Pause</string>
@@ -66,17 +62,12 @@
     <string name="live_track_unknown">Unbekannt</string>
 
     <string name="live_vs10">VS10</string>
-    <string name="live_vs10_output">Ausgabe (Bild)</string>
     <string name="live_control_disabled">Diese Box lässt keine Steuerung von außen zu. Schalte sie in den Addon-Einstellungen frei.</string>
 
-    <string name="live_last_played">Zuletzt gespielt</string>
-    <string name="live_last_position">Gestoppt bei</string>
-    <string name="live_last_ago">Beendet vor</string>
     <string name="live_switches">Wechsel</string>
     <string name="live_warnings">Warnungen</string>
 
     <!-- Messwerte -->
-    <string name="metric_peak">Spitze</string>
 
     <!-- Werte -->
     <string name="details_empty_title">Keine Werte</string>

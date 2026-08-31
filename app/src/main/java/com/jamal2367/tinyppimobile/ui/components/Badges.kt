@@ -19,7 +19,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jamal2367.tinyppimobile.ui.theme.BadgeConverted
 import com.jamal2367.tinyppimobile.ui.theme.PillShape
 import com.jamal2367.tinyppimobile.ui.theme.accentText
 
@@ -82,33 +81,6 @@ fun FormatBadge(
                 fontSize = 11.sp,
             )
         }
-    }
-}
-
-/**
- * The badge that says a picture is not leaving the box as it arrived.
- *
- * Its own colour and used nowhere else: a conversion is the one thing on the
- * screen that is a decision rather than a reading, and it should not have to be
- * read to be noticed.
- */
-@Composable
-fun ConversionBadge(text: String, modifier: Modifier = Modifier) {
-    val (container, content) = BadgeConverted
-    Row(
-        modifier = modifier
-            .clip(PillShape)
-            .background(container)
-            .padding(horizontal = 10.dp, vertical = 5.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = text,
-            color = content,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 11.sp,
-        )
     }
 }
 

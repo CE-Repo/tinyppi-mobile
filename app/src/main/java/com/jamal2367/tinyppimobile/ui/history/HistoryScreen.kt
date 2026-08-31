@@ -6,10 +6,8 @@
 package com.jamal2367.tinyppimobile.ui.history
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Timeline
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -36,21 +33,14 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.History
-import com.jamal2367.tinyppimobile.data.model.PlaybackEvent
-import com.jamal2367.tinyppimobile.data.model.PlaybackEventKind
 import com.jamal2367.tinyppimobile.data.prefs.ChartRange
 import com.jamal2367.tinyppimobile.ui.components.ChartColors
 import com.jamal2367.tinyppimobile.ui.components.ChartSeries
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.EventsCard
-import com.jamal2367.tinyppimobile.ui.components.EventsCard
-import com.jamal2367.tinyppimobile.ui.components.HdrGrade
 import com.jamal2367.tinyppimobile.ui.components.LuminanceChart
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.components.StatTile
-import com.jamal2367.tinyppimobile.ui.components.StatusDot
-import com.jamal2367.tinyppimobile.ui.theme.EventSwitch
-import com.jamal2367.tinyppimobile.ui.theme.EventWarning
 import com.jamal2367.tinyppimobile.util.Formatters
 import kotlinx.coroutines.delay
 

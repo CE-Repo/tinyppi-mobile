@@ -15,8 +15,6 @@
 
     <!-- Actions -->
     <string name="action_open_settings">Open settings</string>
-    <string name="action_retry">Try again</string>
-    <string name="action_refresh">Refresh</string>
 
     <!-- The connection line -->
     <string name="status_live">Live</string>
@@ -37,8 +35,6 @@
     <string name="live_untitled">Untitled</string>
     <string name="live_source">Source</string>
 
-    <string name="live_controls_show">Show controls</string>
-    <string name="live_controls_hide">Hide controls</string>
     <string name="card_expand">Expand card</string>
     <string name="card_collapse">Collapse card</string>
     <string name="live_playpause">Play / pause</string>
@@ -69,17 +65,12 @@
     <string name="live_track_unknown">Unknown</string>
 
     <string name="live_vs10">VS10</string>
-    <string name="live_vs10_output">Output (picture)</string>
     <string name="live_control_disabled">This box does not allow a client to switch anything. Turn control on in the add-on\'s settings.</string>
 
-    <string name="live_last_played">Last played</string>
-    <string name="live_last_position">Stopped at</string>
-    <string name="live_last_ago">Ended</string>
     <string name="live_switches">Switches</string>
     <string name="live_warnings">Warnings</string>
 
     <!-- Measurements -->
-    <string name="metric_peak">Peak</string>
 
     <!-- Readings -->
     <string name="details_empty_title">No readings</string>

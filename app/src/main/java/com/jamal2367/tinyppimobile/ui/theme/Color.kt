@@ -85,15 +85,6 @@ val DarkOutline = Color(0xFF8A9297)
 val DarkOutlineVariant = Color(0xFF40484D)
 
 /**
- * The accent a conversion wears.
- *
- * Green, and used nowhere else: a picture that is being converted on the way
- * out is the one thing on this screen that is not simply a reading of the file,
- * and it should not have to be read to be noticed.
- */
-val BadgeConverted = Color(0xFF07271A) to Color(0xFF8FEEBC)
-
-/**
  * What the connection line is painted in.
  *
  * The three states the add-on's own dashboard paints, in the same order:
