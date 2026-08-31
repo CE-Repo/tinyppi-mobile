@@ -182,7 +182,7 @@ private fun LiveContent(
 ) {
     LazyColumn(
         contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
         modifier = Modifier.fillMaxSize(),
     ) {
         item {
