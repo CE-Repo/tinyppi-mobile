@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
@@ -576,12 +577,15 @@ private fun JumpButton(label: String, description: String, onClick: () -> Unit) 
 }
 
 /**
- * The volume, with stop at the end of it.
+ * The volume, with stop at the head of it.
  *
- * Stop takes the far right of the last row rather than a button of its own in
- * the middle of the transport: it ends playback outright, and the far corner is
- * the hardest place on the row to hit by accident. A box that sends no volume
- * still gets the button - what goes missing is the slider, not the transport.
+ * Stop takes the far left of the last row rather than a button of its own in
+ * the middle of the transport: it ends playback outright, and a corner is the
+ * hardest place on the row to hit by accident. The mute button takes the other
+ * end, beside the figure its slider is reading.
+ *
+ * A box that sends no volume still gets stop - what goes missing is the slider
+ * and the mute beside it, not the transport.
  */
 @Composable
 private fun VolumeRow(
@@ -596,21 +600,15 @@ private fun VolumeRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
+        FilledTonalIconButton(onClick = viewModel::stop) {
+            Icon(
+                Icons.Filled.Stop,
+                contentDescription = stringResource(R.string.live_stop),
+            )
+        }
         if (level == null) {
             Spacer(Modifier.weight(1f))
         } else {
-            FilledTonalIconButton(onClick = viewModel::toggleMute) {
-                Icon(
-                    imageVector = if (controls.muted) {
-                        Icons.AutoMirrored.Filled.VolumeOff
-                    } else {
-                        Icons.AutoMirrored.Filled.VolumeUp
-                    },
-                    contentDescription = stringResource(
-                        if (controls.muted) R.string.live_unmute else R.string.live_mute
-                    ),
-                )
-            }
             Slider(
                 value = level.toFloat(),
                 onValueChange = { viewModel.previewVolume(it.toInt()) },
@@ -623,12 +621,18 @@ private fun VolumeRow(
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.width(36.dp),
             )
-        }
-        FilledTonalIconButton(onClick = viewModel::stop) {
-            Icon(
-                Icons.Filled.Stop,
-                contentDescription = stringResource(R.string.live_stop),
-            )
+            FilledTonalIconButton(onClick = viewModel::toggleMute) {
+                Icon(
+                    imageVector = if (controls.muted) {
+                        Icons.AutoMirrored.Filled.VolumeOff
+                    } else {
+                        Icons.AutoMirrored.Filled.VolumeUp
+                    },
+                    contentDescription = stringResource(
+                        if (controls.muted) R.string.live_unmute else R.string.live_mute
+                    ),
+                )
+            }
         }
     }
 }
@@ -764,20 +768,7 @@ private fun Vs10Card(vs10: Vs10State, canControl: Boolean, viewModel: LiveViewMo
                             onClick = { viewModel.setMode(option.mode) },
                             modifier = Modifier.weight(1f),
                         ) {
-                            Text(
-                                text = shortened(option.label),
-                                // A button is one line tall whatever is written
-                                // on it, so a name too long for its share is cut
-                                // rather than wrapped out of sight.
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                // Centred in the button rather than left in it:
-                                // a label that has to be cut fills the width it
-                                // was given, and a filled label is aligned by
-                                // its own setting rather than by the button.
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
+                            Vs10Label(option.label)
                         }
                     }
                 }
@@ -890,6 +881,48 @@ private fun sourceLabelOf(snapshot: Snapshot): String {
 private const val VS10_PER_ROW = 2
 
 /**
+ * A conversion, as `DV → SDR`, with the arrow drawn rather than typed.
+ *
+ * The box writes the label with an arrow character in it, and a character is at
+ * the mercy of the font that has to draw it: the one the system picks here sets
+ * it thin, small, and off the line of the words either side. Drawn as an icon
+ * it takes the weight and the colour of the text around it and sits where an
+ * arrow between two words should sit.
+ *
+ * A label with no arrow in it - or one written some other way - is set as it
+ * came. Nothing here needs the split to succeed.
+ */
+@Composable
+private fun Vs10Label(label: String) {
+    val sides = ARROW.split(shortened(label)).map { it.trim() }
+
+    if (sides.size != 2) {
+        Text(
+            text = shortened(label),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        return
+    }
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(text = sides[0], maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowRightAlt,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+        )
+        Text(text = sides[1], maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/**
  * A conversion's name, short enough for half a card.
  *
  * The box spells Dolby Vision out, and two buttons side by side have room for
@@ -898,3 +931,6 @@ private const val VS10_PER_ROW = 2
  */
 private fun shortened(label: String): String =
     label.replace("Dolby Vision", "DV", ignoreCase = true)
+
+/** However the box wrote the arrow between the two halves of a conversion. */
+private val ARROW = Regex("""\s*(?:->|=>|\u2192|\u27F6)\s*""")
