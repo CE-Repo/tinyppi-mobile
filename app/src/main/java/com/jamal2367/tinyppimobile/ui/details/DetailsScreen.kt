@@ -29,6 +29,7 @@ import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.InfoGroup
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
+import com.jamal2367.tinyppimobile.ui.theme.accentText
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
 
 /**
@@ -140,7 +141,7 @@ private fun ReadingRow(label: String, value: String, detail: String) {
                 Text(
                     text = detail,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.accentText,
                     textAlign = TextAlign.End,
                     modifier = Modifier.padding(top = 2.dp),
                 )

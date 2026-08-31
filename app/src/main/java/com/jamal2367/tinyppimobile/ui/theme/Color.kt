@@ -1,6 +1,20 @@
 package com.jamal2367.tinyppimobile.ui.theme
 
+import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
+
+/**
+ * What a heading, a title or a figure written in the accent is coloured.
+ *
+ * The tonal buttons' own text colour rather than the accent at full strength.
+ * The accent is mixed to be a ground for something to be drawn on - it fills
+ * the play button and the sliders - and the same colour set as type on a card
+ * comes out heavier and darker than the words beside it can carry. What a
+ * tonal button writes on itself is the tone that was picked to be read, so
+ * every heading in the app is written in it and the VS10 buttons, the stop
+ * button and the headings above them all say the same colour.
+ */
+val ColorScheme.accentText: Color get() = onSecondaryContainer
 
 /**
  * The palette the app falls back to when the wallpaper cannot supply one.

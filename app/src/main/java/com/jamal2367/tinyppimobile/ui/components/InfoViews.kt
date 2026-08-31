@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.ui.theme.PillShape
+import com.jamal2367.tinyppimobile.ui.theme.accentText
 
 /**
  * A titled block of related rows - the unit every screen here is built from.
@@ -82,7 +83,7 @@ fun SectionCard(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.accentText,
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 Row(
@@ -135,7 +136,7 @@ fun FoldChevron(
         contentDescription = contentDescription ?: stringResource(
             if (expanded) R.string.card_collapse else R.string.card_expand
         ),
-        tint = MaterialTheme.colorScheme.primary,
+        tint = MaterialTheme.colorScheme.accentText,
         modifier = Modifier
             // Back out over the card's own padding: the room the ripple needs
             // is room the arrow would otherwise be indented by.

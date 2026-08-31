@@ -61,6 +61,7 @@ import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.data.prefs.ThemeMode
 import com.jamal2367.tinyppimobile.ui.components.InfoRow
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
+import com.jamal2367.tinyppimobile.ui.theme.accentText
 
 /**
  * Where the two addresses live.
@@ -106,7 +107,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                                 }
                             ) + " · " + label,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.accentText,
                         )
                     }
                 }
@@ -199,7 +200,7 @@ private fun ServerCard(
                 Icon(
                     imageVector = Icons.Outlined.CheckCircle,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.accentText,
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -348,7 +349,7 @@ private fun TestResult(test: TestState, modifier: Modifier = Modifier) {
         is TestState.Ok -> Column(modifier = modifier) {
             ResultLine(
                 icon = Icons.Outlined.CheckCircle,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.accentText,
                 text = stringResource(R.string.settings_test_ok, test.version),
             )
             // Reachable and refusing every reading is the one outcome that

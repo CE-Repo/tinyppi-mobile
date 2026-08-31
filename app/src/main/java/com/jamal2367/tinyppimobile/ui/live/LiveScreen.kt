@@ -81,6 +81,7 @@ import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.components.StatTile
 import com.jamal2367.tinyppimobile.ui.components.StatusLine
 import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
+import com.jamal2367.tinyppimobile.ui.theme.accentText
 import com.jamal2367.tinyppimobile.ui.theme.artworkGradient
 import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.util.MediaUrls
@@ -296,7 +297,7 @@ private fun NowPlayingCard(
                     // In the accent, like every heading on the screen - and on
                     // a card washed in the poster's own colour, the title is
                     // the one line that ought to be wearing it.
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.accentText,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -452,7 +453,7 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
                 text = target ?: snapshot.time.ifBlank { "–" },
                 style = MaterialTheme.typography.labelSmall,
                 color = if (target != null) {
-                    MaterialTheme.colorScheme.primary
+                    MaterialTheme.colorScheme.accentText
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },
