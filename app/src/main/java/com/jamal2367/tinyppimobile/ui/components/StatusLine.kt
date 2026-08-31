@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -15,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.repository.LiveState
@@ -23,6 +25,7 @@ import com.jamal2367.tinyppimobile.ui.theme.PillShape
 import com.jamal2367.tinyppimobile.ui.theme.StatusDown
 import com.jamal2367.tinyppimobile.ui.theme.StatusLive
 import com.jamal2367.tinyppimobile.ui.theme.StatusWaiting
+import com.jamal2367.tinyppimobile.ui.theme.accentText
 import com.jamal2367.tinyppimobile.ui.theme.artworkTint
 
 /**
@@ -71,12 +74,15 @@ fun StatusLine(
         Text(
             text = stringResource(connection.labelRes()),
             style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.accentText,
         )
         if (serverLabel != null && connection.namesAServer()) {
+            Spacer(Modifier.weight(1f))
             Text(
                 text = serverLabel,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.accentText,
+                textAlign = TextAlign.End,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

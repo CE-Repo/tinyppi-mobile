@@ -44,7 +44,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -74,6 +73,7 @@ import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.model.Track
 import com.jamal2367.tinyppimobile.data.model.Vs10State
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
+import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.ui.components.ConversionBadge
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.EventsCard
@@ -127,11 +127,6 @@ fun LiveScreen(
         ?.let { MediaUrls.art(state.live.server, it.art, MediaUrls.ArtKind.POSTER) }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
-            )
-        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         val snapshot = state.snapshot
@@ -141,15 +136,6 @@ fun LiveScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            StatusLine(
-                connection = state.live.connection,
-                serverLabel = state.live.server?.label,
-                accented = state.snapshot?.playing == true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-
             when {
                 !state.isConfigured -> EmptyState(
                     icon = Icons.Outlined.PlayCircle,
@@ -168,6 +154,8 @@ fun LiveScreen(
                 else -> LiveContent(
                     snapshot = snapshot,
                     server = state.live.server,
+                    connection = state.live.connection,
+                    serverLabel = state.live.server?.label,
                     events = history.history?.events.orEmpty(),
                     poster = poster,
                     showArtwork = state.settings.showArtwork,
@@ -184,18 +172,31 @@ fun LiveScreen(
 private fun LiveContent(
     snapshot: Snapshot,
     server: ServerConfig?,
+    connection: LiveState.Connection,
+    serverLabel: String?,
     events: List<PlaybackEvent>,
     poster: String?,
     showArtwork: Boolean,
     canControl: Boolean,
     pendingVolume: Int?,
     viewModel: LiveViewModel,
-) {
+    ) {
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
+        item {
+            StatusLine(
+                connection = connection,
+                serverLabel = serverLabel,
+                accented = snapshot.playing,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+            )
+        }
+
         if (!snapshot.playing) {
             item {
                 EmptyState(
