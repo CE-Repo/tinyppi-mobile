@@ -2,6 +2,7 @@ package com.jamal2367.tinyppimobile.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
@@ -33,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.ui.theme.PillShape
+import com.jamal2367.tinyppimobile.ui.theme.accentText
 
 /**
  * A block of related rows, usually titled - the unit every screen is built from.
@@ -52,6 +55,11 @@ import com.jamal2367.tinyppimobile.ui.theme.PillShape
  * surface, which is how the live card wears the colour of the poster on it.
  * The brush goes on the inside: the card clips to its own shape, so a gradient
  * laid there follows the rounded corners without being told about them.
+ *
+ * Every card is outlined. The cards are the only thing on these screens and
+ * they are stacked one under the next in the same colour as each other - a
+ * hairline is what says where one ends and the next begins, on a dark theme
+ * where the difference in fill is a shade or two.
  */
 @Composable
 fun SectionCard(
@@ -75,6 +83,10 @@ fun SectionCard(
                 MaterialTheme.colorScheme.surfaceContainerLow
             },
         ),
+        // The card's own ground, a step or two lighter - not the outline
+        // colour, which the poster's accent is mixed into: a hairline is there
+        // to say where a card ends, and a coloured one says rather more.
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         Column(
             modifier = Modifier
@@ -90,15 +102,32 @@ fun SectionCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (!title.isNullOrBlank()) {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleMedium,
-                            // The same quiet as the arrow beside it, and not
-                            // the accent: a heading names the block under it,
-                            // and the colour of the film belongs to the film.
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                             modifier = Modifier.weight(1f, fill = false),
-                        )
+                        ) {
+                            // The one piece of the accent a heading wears: a
+                            // tick down its left edge, the way the dashboard
+                            // marks a section. It says what colour the screen
+                            // is in without colouring the words.
+                            Box(
+                                modifier = Modifier
+                                    .width(TICK_WIDTH)
+                                    .height(TICK_HEIGHT)
+                                    .clip(PillShape)
+                                    .background(MaterialTheme.colorScheme.accentText),
+                            )
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.titleMedium,
+                                // The same quiet as the arrow beside it, and
+                                // not the accent: a heading names the block
+                                // under it, and the colour of the film belongs
+                                // to the film.
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -287,3 +316,7 @@ fun StatTile(
         }
     }
 }
+
+/** The accent tick down the left of a card's heading. */
+private val TICK_WIDTH = 3.dp
+private val TICK_HEIGHT = 16.dp
