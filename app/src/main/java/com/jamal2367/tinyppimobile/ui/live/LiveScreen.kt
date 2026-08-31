@@ -5,10 +5,12 @@
 
 package com.jamal2367.tinyppimobile.ui.live
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,11 +20,14 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
@@ -53,6 +58,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -147,6 +154,7 @@ fun LiveScreen(
                     server = state.live.server,
                     showArtwork = state.settings.showArtwork,
                     canControl = state.canControlPlayback,
+                    controlsExpanded = state.settings.controlsExpanded,
                     pendingVolume = pendingVolume,
                     viewModel = viewModel,
                 )
@@ -161,6 +169,7 @@ private fun LiveContent(
     server: ServerConfig?,
     showArtwork: Boolean,
     canControl: Boolean,
+    controlsExpanded: Boolean,
     pendingVolume: Int?,
     viewModel: LiveViewModel,
 ) {
@@ -190,6 +199,7 @@ private fun LiveContent(
                 server = server,
                 showArtwork = showArtwork,
                 canControl = canControl,
+                expanded = controlsExpanded,
                 pendingVolume = pendingVolume,
                 viewModel = viewModel,
             )
@@ -210,6 +220,12 @@ private fun LiveContent(
  * are read and used in the same breath, and a card boundary between them only
  * put scrolling between a button and the thing it moves.
  *
+ * The controls are folded away until the heading is tapped, the way the
+ * dashboard folds them, and the fold is remembered in the settings. What is
+ * playing is what the screen is opened for and fits without scrolling; the
+ * buttons are wanted a good deal less often than they take up room, and a
+ * transport nobody meant to touch is one that gets touched by accident.
+ *
  * The two badges are the point of the card and of the add-on itself: what the
  * file is, and what the box is turning it into on the way out. They sit side by
  * side so the answer to "is this being converted" is a glance rather than a
@@ -222,6 +238,7 @@ private fun NowPlayingCard(
     server: ServerConfig?,
     showArtwork: Boolean,
     canControl: Boolean,
+    expanded: Boolean,
     pendingVolume: Int?,
     viewModel: LiveViewModel,
 ) {
@@ -231,7 +248,16 @@ private fun NowPlayingCard(
         null
     }
 
-    SectionCard(title = stringResource(R.string.live_now_playing)) {
+    SectionCard(
+        title = stringResource(R.string.live_now_playing),
+        trailing = {
+            if (canControl) {
+                ExpandChevron(expanded) {
+                    viewModel.setControlsExpanded(!expanded)
+                }
+            }
+        },
+    ) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             if (showArtwork) {
                 PosterImage(
@@ -310,16 +336,18 @@ private fun NowPlayingCard(
         ProgressRow(snapshot, canControl, viewModel)
 
         if (canControl) {
-            CardSection(stringResource(R.string.live_transport)) {
-                TransportSection(
-                    snapshot = snapshot,
-                    pendingVolume = pendingVolume,
-                    viewModel = viewModel,
-                )
-            }
-            if (!snapshot.controls.isEmpty) {
-                CardSection(stringResource(R.string.live_tracks)) {
-                    TrackSection(snapshot.controls, viewModel)
+            AnimatedVisibility(visible = expanded) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    SectionRule()
+                    TransportSection(
+                        snapshot = snapshot,
+                        pendingVolume = pendingVolume,
+                        viewModel = viewModel,
+                    )
+                    if (!snapshot.controls.isEmpty) {
+                        SectionRule()
+                        TrackSection(snapshot.controls, viewModel)
+                    }
                 }
             }
         }
@@ -327,29 +355,51 @@ private fun NowPlayingCard(
 }
 
 /**
- * A titled run of rows inside a card, under a rule.
+ * The arrow at the end of the heading, turned over while the card is open.
  *
- * The heading stays where a card of its own used to be: three stacked blocks
- * need saying apart, and a rule alone leaves the reader to work out where the
- * player ends and the tracks begin.
+ * The target is the arrow and a hair of room around it, clipped to a circle so
+ * the ripple is the arrow lighting up rather than the whole heading flashing.
+ *
+ * Built out of the icon rather than out of an icon button, because a button
+ * there reserves the height of a finger and pushes the title down with it. The
+ * heading is a line of text, and the arrow beside it has to sit on that line.
  */
 @Composable
-private fun ColumnScope.CardSection(
-    title: String,
-    content: @Composable ColumnScope.() -> Unit,
-) {
+private fun ExpandChevron(expanded: Boolean, onClick: () -> Unit) {
+    val rotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        label = "chevron",
+    )
+
+    Icon(
+        imageVector = Icons.Filled.ExpandMore,
+        contentDescription = stringResource(
+            if (expanded) R.string.live_controls_hide else R.string.live_controls_show
+        ),
+        tint = MaterialTheme.colorScheme.primary,
+        modifier = Modifier
+            // Back out over the card's own padding: the room the ripple needs
+            // is room the arrow would otherwise be indented by.
+            .offset(x = 4.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
+            .padding(4.dp)
+            .rotate(rotation),
+    )
+}
+
+/**
+ * The hairline between two blocks inside a card.
+ *
+ * All the heading a block needs here: a row of transport buttons and a pair of
+ * track pickers say what they are by their own shape, and a word over each
+ * only named what was already in front of the reader.
+ */
+@Composable
+private fun SectionRule() {
     HorizontalDivider(
         modifier = Modifier.padding(top = 6.dp),
         color = MaterialTheme.colorScheme.outlineVariant,
-    )
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-    )
-    Column(
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-        content = content,
     )
 }
 

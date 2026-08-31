@@ -111,6 +111,15 @@ data class AppSettings(
     val keepScreenOn: Boolean = false,
     /** Whether the poster of what is playing is fetched at all. */
     val showArtwork: Boolean = true,
+    /**
+     * Whether the live card is folded open on the transport and the tracks.
+     *
+     * Shut by default: what is playing is what the screen is opened for, and
+     * the buttons are wanted a good deal less often than they take up room.
+     * Kept here rather than in the screen because a fold reopened on every
+     * launch is one the reader has to close again on every launch.
+     */
+    val controlsExpanded: Boolean = false,
 ) {
     /** True once at least one box is filled in far enough to try. */
     val isConfigured: Boolean

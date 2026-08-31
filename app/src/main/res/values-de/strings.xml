@@ -35,7 +35,8 @@
     <string name="live_untitled">Ohne Titel</string>
     <string name="live_source">Quelle</string>
 
-    <string name="live_transport">Player</string>
+    <string name="live_controls_show">Steuerung einblenden</string>
+    <string name="live_controls_hide">Steuerung ausblenden</string>
     <string name="live_playpause">Wiedergabe / Pause</string>
     <string name="live_stop">Stopp</string>
     <plurals name="live_seek_back">
@@ -57,7 +58,6 @@
     <string name="live_mute">Stummschalten</string>
     <string name="live_unmute">Ton an</string>
 
-    <string name="live_tracks">Spuren</string>
     <string name="live_audio_track">Tonspur</string>
     <string name="live_subtitles">Untertitel</string>
     <string name="live_subtitles_off">Aus</string>

@@ -47,6 +47,10 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setShowArtwork(enabled: Boolean) = edit { it[KEY_SHOW_ARTWORK] = enabled }
 
+    suspend fun setControlsExpanded(expanded: Boolean) = edit {
+        it[KEY_CONTROLS_EXPANDED] = expanded
+    }
+
     private suspend fun writeServer(prefix: String, config: ServerConfig) = edit {
         it[booleanPreferencesKey("$prefix$SUFFIX_ENABLED")] = config.enabled
         it[booleanPreferencesKey("$prefix$SUFFIX_HTTPS")] = config.useHttps
@@ -79,6 +83,7 @@ class SettingsRepository(private val context: Context) {
         chartRange = this[KEY_CHART_RANGE].toEnum(ChartRange.TEN_MINUTES),
         keepScreenOn = this[KEY_KEEP_SCREEN_ON] ?: false,
         showArtwork = this[KEY_SHOW_ARTWORK] ?: true,
+        controlsExpanded = this[KEY_CONTROLS_EXPANDED] ?: false,
     )
 
     private fun Preferences.readServer(prefix: String, defaultEnabled: Boolean) = ServerConfig(
@@ -111,5 +116,6 @@ class SettingsRepository(private val context: Context) {
         val KEY_CHART_RANGE = stringPreferencesKey("chart_range")
         val KEY_KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
         val KEY_SHOW_ARTWORK = booleanPreferencesKey("show_artwork")
+        val KEY_CONTROLS_EXPANDED = booleanPreferencesKey("controls_expanded")
     }
 }

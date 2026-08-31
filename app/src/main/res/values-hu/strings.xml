@@ -38,7 +38,8 @@
     <string name="live_untitled">Cím nélküli</string>
     <string name="live_source">Forrás</string>
 
-    <string name="live_transport">Lejátszó</string>
+    <string name="live_controls_show">Vezérlők megjelenítése</string>
+    <string name="live_controls_hide">Vezérlők elrejtése</string>
     <string name="live_playpause">Lejátszás / szünet</string>
     <string name="live_stop">Stop</string>
     <plurals name="live_seek_back">
@@ -60,7 +61,6 @@
     <string name="live_mute">Némítás</string>
     <string name="live_unmute">Némítás feloldása</string>
 
-    <string name="live_tracks">Sávok</string>
     <string name="live_audio_track">Hangsáv</string>
     <string name="live_subtitles">Feliratok</string>
     <string name="live_subtitles_off">Ki</string>
