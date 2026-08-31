@@ -124,6 +124,21 @@ fun LiveScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
+            // Only where there is no film: while one runs the line goes into
+            // the list instead, directly above the card it belongs to, and
+            // scrolls away with it. With nothing playing there is no card for
+            // it to sit over, and whether the box is answering at all is the
+            // one thing the screen still has to say - so it stays at the top.
+            if (snapshot?.playing != true) {
+                StatusLine(
+                    connection = state.live.connection,
+                    serverLabel = state.live.server?.label,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                )
+            }
+
             when {
                 !state.isConfigured -> EmptyState(
                     icon = Icons.Outlined.PlayCircle,
@@ -172,6 +187,8 @@ private fun LiveContent(
         verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
         modifier = Modifier.fillMaxSize(),
     ) {
+        // The head of the list rather than a fixed line above it: it belongs to
+        // the card under it, and the two travel together.
         if (snapshot.playing) {
             item {
                 StatusLine(
