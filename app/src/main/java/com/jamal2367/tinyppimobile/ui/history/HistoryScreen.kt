@@ -166,22 +166,16 @@ private fun SummaryCard(state: HistoryUiState, history: History) {
                 value = history.switches.toString(),
                 caption = stringResource(R.string.live_switches),
                 modifier = Modifier.weight(1f),
-                container = MaterialTheme.colorScheme.secondaryContainer,
-                content = MaterialTheme.colorScheme.onSecondaryContainer,
             )
             StatTile(
                 value = (state.snapshot?.session?.warnings ?: 0).toString(),
                 caption = stringResource(R.string.live_warnings),
                 modifier = Modifier.weight(1f),
-                container = MaterialTheme.colorScheme.tertiaryContainer,
-                content = MaterialTheme.colorScheme.onTertiaryContainer,
             )
             StatTile(
                 value = Formatters.elapsed(history.now),
                 caption = stringResource(R.string.history_running),
                 modifier = Modifier.weight(1f),
-                container = MaterialTheme.colorScheme.surfaceContainerHigh,
-                content = MaterialTheme.colorScheme.onSurface,
             )
         }
     }

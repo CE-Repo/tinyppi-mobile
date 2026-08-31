@@ -358,11 +358,14 @@ fun StatTile(
                 text = value,
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
             )
             Text(
                 text = caption,
                 style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(top = 2.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp),
                 textAlign = TextAlign.Center,
             )
         }

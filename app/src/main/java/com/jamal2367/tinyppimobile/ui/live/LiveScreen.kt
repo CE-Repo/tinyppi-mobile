@@ -821,15 +821,11 @@ private fun LastPlayedCard(snapshot: Snapshot) {
                 value = last.switches.toString(),
                 caption = stringResource(R.string.live_switches),
                 modifier = Modifier.weight(1f),
-                container = MaterialTheme.colorScheme.secondaryContainer,
-                content = MaterialTheme.colorScheme.onSecondaryContainer,
             )
             StatTile(
                 value = last.warnings.toString(),
                 caption = stringResource(R.string.live_warnings),
                 modifier = Modifier.weight(1f),
-                container = MaterialTheme.colorScheme.tertiaryContainer,
-                content = MaterialTheme.colorScheme.onTertiaryContainer,
             )
         }
         InfoRow(
