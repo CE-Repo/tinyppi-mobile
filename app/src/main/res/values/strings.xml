@@ -178,6 +178,8 @@
     <string name="settings_dynamic_color_desc">Take the palette from the wallpaper where Android offers one.</string>
     <string name="settings_artwork">Show artwork</string>
     <string name="settings_artwork_desc">Fetch the poster of what is playing. Only a title with a library entry has one.</string>
+    <string name="settings_adaptive_color">Adaptive colours</string>
+    <string name="settings_adaptive_color_desc">Colour the app after the poster of what is playing, the way the dashboard does.</string>
 
     <!-- Settings: about -->
     <string name="settings_about">About</string>

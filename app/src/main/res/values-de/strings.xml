@@ -175,6 +175,8 @@
     <string name="settings_dynamic_color_desc">Die Palette vom Hintergrundbild nehmen, wo Android eine anbietet.</string>
     <string name="settings_artwork">Cover anzeigen</string>
     <string name="settings_artwork_desc">Das Poster des laufenden Titels laden. Nur ein Titel mit Bibliothekseintrag hat eines.</string>
+    <string name="settings_adaptive_color">Adaptive Farben</string>
+    <string name="settings_adaptive_color_desc">Die App in der Farbe des laufenden Covers einfärben, wie im Dashboard.</string>
 
     <!-- Einstellungen: Über -->
     <string name="settings_about">Über</string>

@@ -19,26 +19,43 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.ui.theme.PillShape
 
-/** A titled block of related rows - the unit every screen here is built from. */
+/**
+ * A titled block of related rows - the unit every screen here is built from.
+ *
+ * A card given a [containerBrush] is painted with it instead of the flat
+ * surface, which is how the live card wears the colour of the poster on it.
+ * The brush goes on the inside: the card clips to its own shape, so a gradient
+ * laid there follows the rounded corners without being told about them.
+ */
 @Composable
 fun SectionCard(
     title: String,
     modifier: Modifier = Modifier,
+    containerBrush: Brush? = null,
     trailing: (@Composable () -> Unit)? = null,
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            containerColor = if (containerBrush != null) {
+                Color.Transparent
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerLow
+            },
         ),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .then(if (containerBrush != null) Modifier.background(containerBrush) else Modifier)
+                .padding(16.dp),
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

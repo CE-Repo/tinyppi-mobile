@@ -6,20 +6,50 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
+import com.jamal2367.tinyppimobile.di.AppContainer
 import com.jamal2367.tinyppimobile.ui.TinyPpiApp
+import com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import com.jamal2367.tinyppimobile.ui.theme.isDarkTheme
+import com.jamal2367.tinyppimobile.ui.theme.rememberArtworkAccent
 import com.jamal2367.tinyppimobile.util.LocalNetworkAccess
+import com.jamal2367.tinyppimobile.util.MediaUrls
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+
+/**
+ * The colour of what is playing, or null while the reader wants none.
+ *
+ * Read here rather than on the live screen because the whole app wears it - the
+ * tabs along the bottom included, and those belong to the shell.
+ *
+ * Nothing is collected at all while the switch is off, so a reader who does not
+ * want this does not pay for it: the live reading is shared and reference
+ * counted, and not asking for it here leaves it exactly as it was.
+ */
+@Composable
+private fun playingColour(container: AppContainer, settings: AppSettings): Color? {
+    if (!settings.adaptiveColor || !settings.showArtwork) return null
+
+    // Lifecycle-aware, so a backgrounded app still lets go of the box's stream
+    // rather than holding one of its six slots open to keep a colour warm.
+    val live by container.liveState.collectAsStateWithLifecycle()
+
+    return rememberArtworkAccent(
+        live.snapshot?.let { MediaUrls.art(live.server, it.art, MediaUrls.ArtKind.POSTER) }
+    )
+}
 
 class MainActivity : ComponentActivity() {
 
@@ -100,7 +130,9 @@ class MainActivity : ComponentActivity() {
                 // Nothing but the theme's background until then - the dialog is
                 // covering this anyway, and it is gone within a moment.
                 if (decided) {
-                    TinyPpiApp(container = container)
+                    ArtworkAccentTheme(accent = playingColour(container, settings)) {
+                        TinyPpiApp(container = container)
+                    }
                 }
             }
         }

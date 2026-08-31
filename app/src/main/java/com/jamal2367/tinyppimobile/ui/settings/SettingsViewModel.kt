@@ -152,6 +152,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { repository.setShowArtwork(enabled) }
     }
 
+    fun setAdaptiveColor(enabled: Boolean) {
+        viewModelScope.launch { repository.setAdaptiveColor(enabled) }
+    }
+
     /**
      * Try an address as it stands on the screen.
      *

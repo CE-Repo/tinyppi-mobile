@@ -178,6 +178,8 @@
     <string name="settings_dynamic_color_desc">Válassza a színpalettát az android háttérképről.</string>
     <string name="settings_artwork">Artwork mutatása</string>
     <string name="settings_artwork_desc">A lejátszott film poszterének lekérése. Csak olyan címnek van posztere, amelyikhez tartozik médiatár bejegyzés.</string>
+    <string name="settings_adaptive_color">Adaptív színek</string>
+    <string name="settings_adaptive_color_desc">Az alkalmazás színezése a lejátszott film posztere alapján, ahogy az irányítópult teszi.</string>
 
     <!-- Settings: about -->
     <string name="settings_about">Névjegy</string>

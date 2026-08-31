@@ -34,7 +34,7 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.outlined.PlayCircle
-import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledIconButton
@@ -85,6 +85,8 @@ import com.jamal2367.tinyppimobile.ui.components.PosterImage
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.components.StatTile
 import com.jamal2367.tinyppimobile.ui.components.StatusLine
+import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
+import com.jamal2367.tinyppimobile.ui.theme.artworkGradient
 import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.util.MediaUrls
 
@@ -110,6 +112,10 @@ fun LiveScreen(
         snackbarHostState.showSnackbar(text)
         viewModel.consumeMessage()
     }
+
+    val poster = state.snapshot
+        ?.takeIf { state.settings.showArtwork }
+        ?.let { MediaUrls.art(state.live.server, it.art, MediaUrls.ArtKind.POSTER) }
 
     Scaffold(
         topBar = {
@@ -152,6 +158,7 @@ fun LiveScreen(
                 else -> LiveContent(
                     snapshot = snapshot,
                     server = state.live.server,
+                    poster = poster,
                     showArtwork = state.settings.showArtwork,
                     canControl = state.canControlPlayback,
                     controlsExpanded = state.settings.controlsExpanded,
@@ -167,6 +174,7 @@ fun LiveScreen(
 private fun LiveContent(
     snapshot: Snapshot,
     server: ServerConfig?,
+    poster: String?,
     showArtwork: Boolean,
     canControl: Boolean,
     controlsExpanded: Boolean,
@@ -197,6 +205,7 @@ private fun LiveContent(
             NowPlayingCard(
                 snapshot = snapshot,
                 server = server,
+                poster = poster,
                 showArtwork = showArtwork,
                 canControl = canControl,
                 expanded = controlsExpanded,
@@ -226,6 +235,12 @@ private fun LiveContent(
  * buttons are wanted a good deal less often than they take up room, and a
  * transport nobody meant to touch is one that gets touched by accident.
  *
+ * The card is washed in the colour of the poster beside it, strongest at the
+ * top and gone by the bottom - the same thing the add-on's dashboard does, and
+ * the reason a card about Blade comes out looking like Blade. The wash is all
+ * of it: an outline around the card as well would fence the colour in, and the
+ * point of a wash is that it has no edge.
+ *
  * The two badges are the point of the card and of the add-on itself: what the
  * file is, and what the box is turning it into on the way out. They sit side by
  * side so the answer to "is this being converted" is a glance rather than a
@@ -236,20 +251,19 @@ private fun LiveContent(
 private fun NowPlayingCard(
     snapshot: Snapshot,
     server: ServerConfig?,
+    poster: String?,
     showArtwork: Boolean,
     canControl: Boolean,
     expanded: Boolean,
     pendingVolume: Int?,
     viewModel: LiveViewModel,
 ) {
-    val poster = if (showArtwork) {
-        MediaUrls.art(server, snapshot.art, MediaUrls.ArtKind.POSTER)
-    } else {
-        null
-    }
+    val accent = LocalArtworkAccent.current
+    val container = MaterialTheme.colorScheme.surfaceContainerLow
 
     SectionCard(
         title = stringResource(R.string.live_now_playing),
+        containerBrush = accent?.let { artworkGradient(it, container) },
         trailing = {
             if (canControl) {
                 ExpandChevron(expanded) {
@@ -715,6 +729,10 @@ private fun TrackPicker(
  * that is playing, and the same set the on-screen dialog offers. HDR10+ and
  * HLG carry none, and then the whole card is left out rather than offering a
  * conversion nothing else offers either.
+ *
+ * Tonal rather than filled: a filled button is the accent at full strength, and
+ * two of those shouting from a card near the bottom of the screen outrank the
+ * play button they are sitting under. These wear what the transport wears.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -740,7 +758,7 @@ private fun Vs10Card(vs10: Vs10State, canControl: Boolean, viewModel: LiveViewMo
             modifier = Modifier.padding(top = 4.dp),
         ) {
             vs10.options.forEach { option ->
-                Button(onClick = { viewModel.setMode(option.mode) }) {
+                FilledTonalButton(onClick = { viewModel.setMode(option.mode) }) {
                     Text(option.label)
                 }
             }

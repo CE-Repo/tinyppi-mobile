@@ -29,6 +29,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -520,6 +521,17 @@ private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) 
             checked = settings.showArtwork,
             onCheckedChange = viewModel::setShowArtwork,
         )
+
+        // Greyed out rather than hidden where there are no posters to read a
+        // colour off: a switch that vanishes leaves the reader wondering what
+        // they did, and one that does nothing is worse.
+        SwitchRow(
+            label = stringResource(R.string.settings_adaptive_color),
+            description = stringResource(R.string.settings_adaptive_color_desc),
+            checked = settings.adaptiveColor && settings.showArtwork,
+            onCheckedChange = viewModel::setAdaptiveColor,
+            enabled = settings.showArtwork,
+        )
     }
 }
 
@@ -547,27 +559,37 @@ private fun SwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     description: String? = null,
+    enabled: Boolean = true,
 ) {
+    val dim = if (enabled) 1f else DISABLED_ALPHA
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onCheckedChange(!checked) },
+            .clickable(enabled = enabled) { onCheckedChange(!checked) },
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = label, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = LocalContentColor.current.copy(alpha = dim),
+            )
             if (description != null) {
                 Text(
                     text = description,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = dim),
                 )
             }
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
     }
 }
+
+/** How far a row that cannot be touched is faded. */
+private const val DISABLED_ALPHA = 0.38f
 
 /**
  * How much a token field accepts.

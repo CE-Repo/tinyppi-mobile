@@ -112,6 +112,14 @@ data class AppSettings(
     /** Whether the poster of what is playing is fetched at all. */
     val showArtwork: Boolean = true,
     /**
+     * Whether the app paints itself in the colour of what is playing.
+     *
+     * On by default, and read off the poster - so it follows [showArtwork]:
+     * with posters switched off there is no picture to take a colour from, and
+     * fetching one purely to average it is the thing that switch turns off.
+     */
+    val adaptiveColor: Boolean = true,
+    /**
      * Whether the live card is folded open on the transport and the tracks.
      *
      * Shut by default: what is playing is what the screen is opened for, and
