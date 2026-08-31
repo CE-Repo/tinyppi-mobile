@@ -3,8 +3,10 @@ package com.jamal2367.tinyppimobile.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -74,6 +77,13 @@ fun SectionCard(
     val expanded = foldId == null || folds.isExpanded(foldId)
     val heading = !title.isNullOrBlank() || trailing != null || foldId != null
 
+    // The whole heading answers to a finger, and the arrow is what lights up
+    // for it: one interaction source, held by the row and drawn by the arrow.
+    // A card that only opens on its arrow feels broken along the rest of the
+    // line, and a heading that flashes end to end reads as though the title
+    // itself did something.
+    val press = remember { MutableInteractionSource() }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -95,7 +105,20 @@ fun SectionCard(
         ) {
             if (heading) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (foldId != null) {
+                                Modifier.clickable(
+                                    interactionSource = press,
+                                    indication = null,
+                                ) {
+                                    folds.setExpanded(foldId, !expanded)
+                                }
+                            } else {
+                                Modifier
+                            }
+                        ),
                     // Ends apart where there is a heading, and the arrow alone
                     // at the right where there is not.
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -135,7 +158,9 @@ fun SectionCard(
                     ) {
                         trailing?.invoke()
                         if (foldId != null) {
-                            FoldChevron(expanded) { folds.setExpanded(foldId, !expanded) }
+                            FoldChevron(expanded, interactionSource = press) {
+                                folds.setExpanded(foldId, !expanded)
+                            }
                         }
                     }
                 }
@@ -161,6 +186,10 @@ fun SectionCard(
  * there reserves the height of a finger and pushes the heading down with it. A
  * heading is a line of text, and the arrow beside it has to sit on that line.
  *
+ * Hand it the [interactionSource] of the row it sits on and the arrow lights up
+ * for a press anywhere along that row, which is where the whole of the heading
+ * gets to be a target without the whole of it flashing.
+ *
  * Public because the live card folds a part of itself rather than the whole,
  * and it should be the same arrow doing it.
  */
@@ -168,12 +197,15 @@ fun SectionCard(
 fun FoldChevron(
     expanded: Boolean,
     contentDescription: String? = null,
+    interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit,
 ) {
     val rotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         label = "chevron",
     )
+
+    val press = interactionSource ?: remember { MutableInteractionSource() }
 
     Icon(
         imageVector = Icons.Filled.ExpandMore,
@@ -188,7 +220,11 @@ fun FoldChevron(
             // is room the arrow would otherwise be indented by.
             .offset(x = 4.dp)
             .clip(CircleShape)
-            .clickable(onClick = onClick)
+            .clickable(
+                interactionSource = press,
+                indication = LocalIndication.current,
+                onClick = onClick,
+            )
             .padding(4.dp)
             .rotate(rotation),
     )

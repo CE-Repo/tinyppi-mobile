@@ -6,6 +6,9 @@
 package com.jamal2367.tinyppimobile.ui.live
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -275,6 +278,11 @@ private fun NowPlayingCard(
     val folds = LocalCardFolds.current
     val expanded = folds.isExpanded(FOLD_CONTROLS, openByDefault = false)
 
+    // The line with the film's name on it is this card's heading, so it is the
+    // whole of the target - the arrow is only where the press is drawn.
+    val press = remember { MutableInteractionSource() }
+    val fold = { folds.setExpanded(FOLD_CONTROLS, !expanded, openByDefault = false) }
+
     SectionCard(
         // No heading: the poster, the title of the film and the clock under it
         // say what this card is more plainly than a word over them could.
@@ -302,7 +310,18 @@ private fun NowPlayingCard(
                     .heightIn(min = if (showArtwork) POSTER_HEIGHT else 0.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Row(verticalAlignment = Alignment.Top) {
+                Row(
+                    verticalAlignment = Alignment.Top,
+                    modifier = if (canControl) {
+                        Modifier.clickable(
+                            interactionSource = press,
+                            indication = null,
+                            onClick = fold,
+                        )
+                    } else {
+                        Modifier
+                    },
+                ) {
                     Text(
                         text = snapshot.title.ifBlank { stringResource(R.string.live_untitled) },
                         style = MaterialTheme.typography.titleMedium,
@@ -324,9 +343,9 @@ private fun NowPlayingCard(
                                     R.string.live_controls_show
                                 }
                             ),
-                        ) {
-                            folds.setExpanded(FOLD_CONTROLS, !expanded, openByDefault = false)
-                        }
+                            interactionSource = press,
+                            onClick = fold,
+                        )
                     }
                 }
                 subtitleOf(snapshot)?.let { line ->
