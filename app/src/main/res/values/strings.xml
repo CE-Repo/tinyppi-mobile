@@ -42,6 +42,7 @@
     <string name="card_expand">Expand card</string>
     <string name="card_collapse">Collapse card</string>
     <string name="live_playpause">Play / pause</string>
+    <string name="live_transport">Player</string>
     <string name="live_stop">Stop</string>
     <plurals name="live_seek_back">
         <item quantity="one">%1$d second back</item>

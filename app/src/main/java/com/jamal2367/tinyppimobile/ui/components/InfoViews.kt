@@ -54,6 +54,11 @@ import com.jamal2367.tinyppimobile.ui.theme.accentText
  * remembered by, so it has to outlive a translation and a rename of the
  * heading above it. A card without one is always open.
  *
+ * [foldOpenByDefault] is where that fold starts, for a reader who has never
+ * touched it. Cards start open; the transport starts shut, because what is
+ * playing is what the screen is opened for and the buttons are wanted a good
+ * deal less often than they take up room.
+ *
  * A card given a [containerBrush] is painted with it instead of the flat
  * surface, which is how the live card wears the colour of the poster on it.
  * The brush goes on the inside: the card clips to its own shape, so a gradient
@@ -69,12 +74,13 @@ fun SectionCard(
     title: String?,
     modifier: Modifier = Modifier,
     foldId: String? = null,
+    foldOpenByDefault: Boolean = true,
     containerBrush: Brush? = null,
     trailing: (@Composable () -> Unit)? = null,
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
     val folds = LocalCardFolds.current
-    val expanded = foldId == null || folds.isExpanded(foldId)
+    val expanded = foldId == null || folds.isExpanded(foldId, foldOpenByDefault)
     val heading = !title.isNullOrBlank() || trailing != null || foldId != null
 
     // The whole heading answers to a finger, and the arrow is what lights up
@@ -113,7 +119,7 @@ fun SectionCard(
                                     interactionSource = press,
                                     indication = null,
                                 ) {
-                                    folds.setExpanded(foldId, !expanded)
+                                    folds.setExpanded(foldId, !expanded, foldOpenByDefault)
                                 }
                             } else {
                                 Modifier
@@ -159,7 +165,7 @@ fun SectionCard(
                         trailing?.invoke()
                         if (foldId != null) {
                             FoldChevron(expanded, interactionSource = press) {
-                                folds.setExpanded(foldId, !expanded)
+                                folds.setExpanded(foldId, !expanded, foldOpenByDefault)
                             }
                         }
                     }

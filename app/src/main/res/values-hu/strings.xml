@@ -42,6 +42,7 @@
     <string name="card_expand">Kártya kibontása</string>
     <string name="card_collapse">Kártya összecsukása</string>
     <string name="live_playpause">Lejátszás / szünet</string>
+    <string name="live_transport">Lejátszó</string>
     <string name="live_stop">Stop</string>
     <plurals name="live_seek_back">
         <item quantity="one">%1$d másodperccel vissza</item>

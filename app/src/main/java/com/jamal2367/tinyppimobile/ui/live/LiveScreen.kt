@@ -5,10 +5,6 @@
 
 package com.jamal2367.tinyppimobile.ui.live
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,12 +29,11 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.outlined.PlayCircle
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -77,11 +72,9 @@ import com.jamal2367.tinyppimobile.ui.components.ConversionBadge
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.EventsCard
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
-import com.jamal2367.tinyppimobile.ui.components.FoldChevron
 import com.jamal2367.tinyppimobile.ui.components.FormatLogo
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
 import com.jamal2367.tinyppimobile.ui.components.InfoRow
-import com.jamal2367.tinyppimobile.ui.components.LocalCardFolds
 import com.jamal2367.tinyppimobile.ui.components.PosterImage
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.components.StatTile
@@ -219,9 +212,18 @@ private fun LiveContent(
                 poster = poster,
                 showArtwork = showArtwork,
                 canControl = canControl,
-                pendingVolume = pendingVolume,
                 viewModel = viewModel,
             )
+        }
+
+        if (canControl) {
+            item {
+                ControlsCard(
+                    snapshot = snapshot,
+                    pendingVolume = pendingVolume,
+                    viewModel = viewModel,
+                )
+            }
         }
 
         if (snapshot.vs10.options.isNotEmpty()) {
@@ -239,16 +241,10 @@ private fun LiveContent(
  * are read and used in the same breath, and a card boundary between them only
  * put scrolling between a button and the thing it moves.
  *
- * Alone among the cards, this one folds a part of itself rather than the
- * whole: what is playing is what the screen is opened for, and a card that can
- * hide it is a card that can hide the answer. The arrow takes the transport and
- * the track pickers away instead - the part that is wanted a good deal less
- * often than it takes up room - and they start away, as they were asked to.
- *
- * It sits beside the name of the film rather than on a heading of its own. This
- * card has no heading: a strip above the poster holding one arrow and nothing
- * else is a strip of air, and the thing the arrow belongs to is the title it is
- * now next to.
+ * It has no heading and no fold of its own: what is playing is what the screen
+ * is opened for, and a card that can hide it is a card that can hide the
+ * answer. The poster, the title of the film and the clock under it say what the
+ * card is more plainly than a word over them could.
  *
  * The card is washed in the colour of the poster beside it, strongest at the
  * top and gone by the bottom - the same thing the add-on's dashboard does, and
@@ -269,19 +265,10 @@ private fun NowPlayingCard(
     poster: String?,
     showArtwork: Boolean,
     canControl: Boolean,
-    pendingVolume: Int?,
     viewModel: LiveViewModel,
 ) {
     val accent = LocalArtworkAccent.current
     val container = MaterialTheme.colorScheme.surfaceContainerLow
-
-    val folds = LocalCardFolds.current
-    val expanded = folds.isExpanded(FOLD_CONTROLS, openByDefault = false)
-
-    // The line with the film's name on it is this card's heading, so it is the
-    // whole of the target - the arrow is only where the press is drawn.
-    val press = remember { MutableInteractionSource() }
-    val fold = { folds.setExpanded(FOLD_CONTROLS, !expanded, openByDefault = false) }
 
     SectionCard(
         // No heading: the poster, the title of the film and the clock under it
@@ -310,44 +297,15 @@ private fun NowPlayingCard(
                     .heightIn(min = if (showArtwork) POSTER_HEIGHT else 0.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Row(
-                    verticalAlignment = Alignment.Top,
-                    modifier = if (canControl) {
-                        Modifier.clickable(
-                            interactionSource = press,
-                            indication = null,
-                            onClick = fold,
-                        )
-                    } else {
-                        Modifier
-                    },
-                ) {
-                    Text(
-                        text = snapshot.title.ifBlank { stringResource(R.string.live_untitled) },
-                        style = MaterialTheme.typography.titleMedium,
-                        // In the accent - on a card washed in the poster's own
-                        // colour, the title is the line that ought to wear it.
-                        color = MaterialTheme.colorScheme.accentText,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
-
-                    if (canControl) {
-                        FoldChevron(
-                            expanded = expanded,
-                            contentDescription = stringResource(
-                                if (expanded) {
-                                    R.string.live_controls_hide
-                                } else {
-                                    R.string.live_controls_show
-                                }
-                            ),
-                            interactionSource = press,
-                            onClick = fold,
-                        )
-                    }
-                }
+                Text(
+                    text = snapshot.title.ifBlank { stringResource(R.string.live_untitled) },
+                    style = MaterialTheme.typography.titleMedium,
+                    // In the accent - on a card washed in the poster's own
+                    // colour, the title is the line that ought to wear it.
+                    color = MaterialTheme.colorScheme.accentText,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 subtitleOf(snapshot)?.let { line ->
                     Text(
                         text = line,
@@ -412,41 +370,41 @@ private fun NowPlayingCard(
         }
 
         ProgressRow(snapshot, canControl, viewModel)
-
-        if (canControl) {
-            AnimatedVisibility(visible = expanded) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    SectionRule()
-                    TransportSection(
-                        snapshot = snapshot,
-                        pendingVolume = pendingVolume,
-                        viewModel = viewModel,
-                    )
-                    // No rule before the pickers: they carry their own
-                    // labels, and a line between the volume and the word
-                    // "audio track" separates two things nobody was confusing.
-                    if (!snapshot.controls.isEmpty) {
-                        TrackSection(snapshot.controls, viewModel)
-                    }
-                }
-            }
-        }
     }
 }
 
 /**
- * The hairline between two blocks inside a card.
+ * The transport and the track pickers, in a card of their own.
  *
- * All the heading a block needs here: a row of transport buttons and a pair of
- * track pickers say what they are by their own shape, and a word over each
- * only named what was already in front of the reader.
+ * Folded shut until the reader opens it, and found that way again on the next
+ * launch: what is playing is what this screen is opened for, and the buttons
+ * are wanted a good deal less often than they take up room.
+ *
+ * No rule between the transport and the pickers: the pickers carry their own
+ * labels, and a line between the volume and the word "audio track" separates
+ * two things nobody was confusing.
  */
 @Composable
-private fun SectionRule() {
-    HorizontalDivider(
-        modifier = Modifier.padding(top = 6.dp),
-        color = MaterialTheme.colorScheme.outlineVariant,
-    )
+private fun ControlsCard(
+    snapshot: Snapshot,
+    pendingVolume: Int?,
+    viewModel: LiveViewModel,
+) {
+    SectionCard(
+        title = stringResource(R.string.live_transport),
+        foldId = FOLD_CONTROLS,
+        foldOpenByDefault = false,
+    ) {
+        TransportSection(
+            snapshot = snapshot,
+            pendingVolume = pendingVolume,
+            viewModel = viewModel,
+        )
+
+        if (!snapshot.controls.isEmpty) {
+            TrackSection(snapshot.controls, viewModel)
+        }
+    }
 }
 
 /**

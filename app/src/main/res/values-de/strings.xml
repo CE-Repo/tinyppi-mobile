@@ -39,6 +39,7 @@
     <string name="card_expand">Karte ausklappen</string>
     <string name="card_collapse">Karte einklappen</string>
     <string name="live_playpause">Wiedergabe / Pause</string>
+    <string name="live_transport">Player</string>
     <string name="live_stop">Stopp</string>
     <plurals name="live_seek_back">
         <item quantity="one">%1$d Sekunde zurück</item>
