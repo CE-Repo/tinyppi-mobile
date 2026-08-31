@@ -242,6 +242,11 @@ private fun LiveContent(
  * the track pickers away instead - the part that is wanted a good deal less
  * often than it takes up room - and they start away, as they were asked to.
  *
+ * It sits beside the name of the film rather than on a heading of its own. This
+ * card has no heading: a strip above the poster holding one arrow and nothing
+ * else is a strip of air, and the thing the arrow belongs to is the title it is
+ * now next to.
+ *
  * The card is washed in the colour of the poster beside it, strongest at the
  * top and gone by the bottom - the same thing the add-on's dashboard does, and
  * the reason a card about Blade comes out looking like Blade. The wash is all
@@ -271,24 +276,10 @@ private fun NowPlayingCard(
     val expanded = folds.isExpanded(FOLD_CONTROLS, openByDefault = false)
 
     SectionCard(
-        title = stringResource(R.string.live_now_playing),
+        // No heading: the poster, the title of the film and the clock under it
+        // say what this card is more plainly than a word over them could.
+        title = null,
         containerBrush = accent?.let { artworkGradient(it, container) },
-        trailing = {
-            if (canControl) {
-                FoldChevron(
-                    expanded = expanded,
-                    contentDescription = stringResource(
-                        if (expanded) {
-                            R.string.live_controls_hide
-                        } else {
-                            R.string.live_controls_show
-                        }
-                    ),
-                ) {
-                    folds.setExpanded(FOLD_CONTROLS, !expanded, openByDefault = false)
-                }
-            }
-        },
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             if (showArtwork) {
@@ -311,16 +302,33 @@ private fun NowPlayingCard(
                     .heightIn(min = if (showArtwork) POSTER_HEIGHT else 0.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Text(
-                    text = snapshot.title.ifBlank { stringResource(R.string.live_untitled) },
-                    style = MaterialTheme.typography.titleMedium,
-                    // In the accent, like every heading on the screen - and on
-                    // a card washed in the poster's own colour, the title is
-                    // the one line that ought to be wearing it.
-                    color = MaterialTheme.colorScheme.accentText,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(verticalAlignment = Alignment.Top) {
+                    Text(
+                        text = snapshot.title.ifBlank { stringResource(R.string.live_untitled) },
+                        style = MaterialTheme.typography.titleMedium,
+                        // In the accent - on a card washed in the poster's own
+                        // colour, the title is the line that ought to wear it.
+                        color = MaterialTheme.colorScheme.accentText,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+
+                    if (canControl) {
+                        FoldChevron(
+                            expanded = expanded,
+                            contentDescription = stringResource(
+                                if (expanded) {
+                                    R.string.live_controls_hide
+                                } else {
+                                    R.string.live_controls_show
+                                }
+                            ),
+                        ) {
+                            folds.setExpanded(FOLD_CONTROLS, !expanded, openByDefault = false)
+                        }
+                    }
+                }
                 subtitleOf(snapshot)?.let { line ->
                     Text(
                         text = line,

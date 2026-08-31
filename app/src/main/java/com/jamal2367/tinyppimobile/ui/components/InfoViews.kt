@@ -33,10 +33,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.ui.theme.PillShape
-import com.jamal2367.tinyppimobile.ui.theme.accentText
 
 /**
- * A titled block of related rows - the unit every screen here is built from.
+ * A block of related rows, usually titled - the unit every screen is built from.
+ *
+ * A card given no [title] is a card whose contents say what they are: the live
+ * card is the one, and a word over a poster with the film's own name beside it
+ * would be a label on a label. Where there is nothing to put on a heading at
+ * all - no title, no arrow, nothing trailing - the heading is left out rather
+ * than drawn empty, and the card starts where its contents start.
  *
  * A card given a [foldId] can be folded shut by the arrow on its heading, and
  * is found the way it was left on the next launch - the name is what it is
@@ -50,7 +55,7 @@ import com.jamal2367.tinyppimobile.ui.theme.accentText
  */
 @Composable
 fun SectionCard(
-    title: String,
+    title: String?,
     modifier: Modifier = Modifier,
     foldId: String? = null,
     containerBrush: Brush? = null,
@@ -59,6 +64,7 @@ fun SectionCard(
 ) {
     val folds = LocalCardFolds.current
     val expanded = foldId == null || folds.isExpanded(foldId)
+    val heading = !title.isNullOrBlank() || trailing != null || foldId != null
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -75,30 +81,39 @@ fun SectionCard(
                 .then(if (containerBrush != null) Modifier.background(containerBrush) else Modifier)
                 .padding(16.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.accentText,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
+            if (heading) {
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    // Ends apart where there is a heading, and the arrow alone
+                    // at the right where there is not.
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    trailing?.invoke()
-                    if (foldId != null) {
-                        FoldChevron(expanded) { folds.setExpanded(foldId, !expanded) }
+                    if (!title.isNullOrBlank()) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleMedium,
+                            // The same quiet as the arrow beside it, and not
+                            // the accent: a heading names the block under it,
+                            // and the colour of the film belongs to the film.
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        trailing?.invoke()
+                        if (foldId != null) {
+                            FoldChevron(expanded) { folds.setExpanded(foldId, !expanded) }
+                        }
                     }
                 }
             }
             AnimatedVisibility(visible = expanded) {
                 Column(
-                    modifier = Modifier.padding(top = 12.dp),
+                    modifier = Modifier.padding(top = if (heading) 12.dp else 0.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     content = content,
                 )
@@ -136,7 +151,9 @@ fun FoldChevron(
         contentDescription = contentDescription ?: stringResource(
             if (expanded) R.string.card_collapse else R.string.card_expand
         ),
-        tint = MaterialTheme.colorScheme.accentText,
+        // Quieter than the heading it sits beside: the arrow is a handle, and
+        // a handle that outshouts the word next to it is read first.
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier
             // Back out over the card's own padding: the room the ripple needs
             // is room the arrow would otherwise be indented by.

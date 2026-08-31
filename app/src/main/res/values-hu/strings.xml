@@ -34,7 +34,6 @@
     <string name="live_waiting_text">Még nem érkezett válasz. Ellenőrizd, hogy a kiegészítő webszervere be van-e kapcsolva a Kodiban</string>
     <string name="live_idle_title">Nincs lejátszás</string>
     <string name="live_idle_text">A TinyPPI a futó videót olvassa be, így nincs mit megjeleníteni, amíg legalább egy el nem indul.</string>
-    <string name="live_now_playing">Lejátszás</string>
     <string name="live_untitled">Cím nélküli</string>
     <string name="live_source">Forrás</string>
 

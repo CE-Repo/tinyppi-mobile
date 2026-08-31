@@ -34,7 +34,6 @@
     <string name="live_waiting_text">Nothing has answered yet. Check that the add-on\'s web server is switched on in Kodi.</string>
     <string name="live_idle_title">Nothing playing</string>
     <string name="live_idle_text">TinyPPI reads what a running video is, so there is nothing to show until one starts.</string>
-    <string name="live_now_playing">Now playing</string>
     <string name="live_untitled">Untitled</string>
     <string name="live_source">Source</string>
 
