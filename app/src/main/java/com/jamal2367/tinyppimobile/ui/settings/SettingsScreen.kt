@@ -82,7 +82,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_settings)) }) },
     ) { padding ->
         LazyColumn(
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
             modifier = Modifier
                 .fillMaxSize()

@@ -98,7 +98,7 @@ private fun MetadataList(rows: List<MetadataRow>, modifier: Modifier = Modifier)
     val sections = remember(rows) { rows.toSections() }
 
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = modifier,
     ) {
