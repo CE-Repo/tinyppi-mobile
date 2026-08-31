@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.jamal2367.tinyppimobile.ui.theme.accentText
 
 /**
  * The poster of what is playing, or a stand-in where there is none.
@@ -102,11 +103,11 @@ fun FormatLogo(
             .build(),
         contentDescription = contentDescription,
         contentScale = ContentScale.Fit,
-        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
+        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.accentText),
         onError = { failed = true },
         modifier = modifier.height(LOGO_HEIGHT),
     )
 }
 
 /** How tall a format logo is drawn - the height of a line of the title beside it. */
-private val LOGO_HEIGHT = 26.dp
+private val LOGO_HEIGHT = 24.dp

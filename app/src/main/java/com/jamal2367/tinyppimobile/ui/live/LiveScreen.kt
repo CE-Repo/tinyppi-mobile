@@ -58,8 +58,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -840,15 +844,37 @@ private const val FOLD_EVENTS = "live.events"
 private const val FOLD_LAST_PLAYED = "live.last_played"
 
 /** The line under the title: the show and episode, the year, the genre. */
-private fun subtitleOf(snapshot: Snapshot): String? {
+@Composable
+private fun subtitleOf(snapshot: Snapshot): AnnotatedString? {
     val media = snapshot.media
     val parts = listOfNotNull(
-        media.show.takeIf { it.isNotBlank() },
-        media.episodeLabel,
-        media.year.takeIf { it.isNotBlank() },
-        media.genre.takeIf { it.isNotBlank() },
+        media.show.takeIf { it.isNotBlank() }?.let { it to false },
+        media.episodeLabel?.let { it to false },
+        media.year.takeIf { it.isNotBlank() }?.let { it to true },
+        media.genre.takeIf { it.isNotBlank() }?.let { it to true },
     )
-    return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
+    if (parts.isEmpty()) return null
+
+    return buildAnnotatedString {
+        parts.forEachIndexed { index, (text, accented) ->
+            if (index > 0) {
+                if (accented || parts[index - 1].second) {
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.accentText)) {
+                        append(" · ")
+                    }
+                } else {
+                    append(" · ")
+                }
+            }
+            if (accented) {
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.accentText)) {
+                    append(text)
+                }
+            } else {
+                append(text)
+            }
+        }
+    }
 }
 
 /**
