@@ -91,22 +91,26 @@ fun isDarkTheme(themeMode: ThemeMode): Boolean = when (themeMode) {
  * to a stop, and the shape scale in [TinyPpiShapes] is the rounder one - the
  * near-square corners of the baseline scale are what date a screen at a glance.
  *
- * Takes its palette from the wallpaper where the platform offers one and the
- * reader left that switched on; everything else falls back to the fixed scheme
- * above, so the app looks like itself on older devices too.
+ * Takes its palette from the wallpaper wherever the platform offers one, which
+ * is Android 12 and up. Below that there is nothing to take it from, and the
+ * fixed scheme above is what the app wears instead - so it looks like itself on
+ * an older phone rather than like a phone that lost its colours.
+ *
+ * Not a choice the reader is given. A palette that follows the wallpaper is
+ * what a phone does now, and a switch for it is a switch for "look like an app
+ * from before" - which is not an answer anyone opens the settings to give.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TinyPpiTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val dark = isDarkTheme(themeMode)
 
     val context = LocalContext.current
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
             if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
 
         dark -> DarkColors

@@ -164,8 +164,6 @@
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
-    <string name="settings_dynamic_color">Wallpaper colours</string>
-    <string name="settings_dynamic_color_desc">Take the palette from the wallpaper where Android offers one.</string>
     <string name="settings_artwork">Show artwork</string>
     <string name="settings_artwork_desc">Fetch the poster of what is playing. Only a title with a library entry has one.</string>
     <string name="settings_adaptive_color">Adaptive colours</string>

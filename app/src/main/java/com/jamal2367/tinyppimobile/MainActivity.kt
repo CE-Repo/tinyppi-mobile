@@ -147,10 +147,7 @@ class MainActivity : ComponentActivity() {
                 onDispose {}
             }
 
-            TinyPpiTheme(
-                themeMode = settings.themeMode,
-                dynamicColor = settings.dynamicColor,
-            ) {
+            TinyPpiTheme(themeMode = settings.themeMode) {
                 // Nothing but the theme's background until then - the dialog is
                 // covering this anyway, and it is gone within a moment.
                 if (decided) {

@@ -517,13 +517,6 @@ private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) 
         }
 
         SwitchRow(
-            label = stringResource(R.string.settings_dynamic_color),
-            description = stringResource(R.string.settings_dynamic_color_desc),
-            checked = settings.dynamicColor,
-            onCheckedChange = viewModel::setDynamicColor,
-        )
-
-        SwitchRow(
             label = stringResource(R.string.settings_artwork),
             description = stringResource(R.string.settings_artwork_desc),
             checked = settings.showArtwork,

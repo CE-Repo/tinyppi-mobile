@@ -132,10 +132,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { repository.setThemeMode(mode) }
     }
 
-    fun setDynamicColor(enabled: Boolean) {
-        viewModelScope.launch { repository.setDynamicColor(enabled) }
-    }
-
     fun setLiveUpdates(enabled: Boolean) {
         viewModelScope.launch { repository.setLiveUpdates(enabled) }
     }

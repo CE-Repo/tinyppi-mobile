@@ -161,8 +161,6 @@
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Hell</string>
     <string name="settings_theme_dark">Dunkel</string>
-    <string name="settings_dynamic_color">Hintergrundfarben</string>
-    <string name="settings_dynamic_color_desc">Die Palette vom Hintergrundbild nehmen, wo Android eine anbietet.</string>
     <string name="settings_artwork">Cover anzeigen</string>
     <string name="settings_artwork_desc">Das Poster des laufenden Titels laden. Nur ein Titel mit Bibliothekseintrag hat eines.</string>
     <string name="settings_adaptive_color">Adaptive Farben</string>

@@ -34,8 +34,6 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setThemeMode(mode: ThemeMode) = edit { it[KEY_THEME] = mode.name }
 
-    suspend fun setDynamicColor(enabled: Boolean) = edit { it[KEY_DYNAMIC_COLOR] = enabled }
-
     suspend fun setLiveUpdates(enabled: Boolean) = edit { it[KEY_LIVE_UPDATES] = enabled }
 
     suspend fun setPollInterval(seconds: Int) = edit {
@@ -84,7 +82,6 @@ class SettingsRepository(private val context: Context) {
         secondary = readServer(SECONDARY, defaultEnabled = false),
         connectionMode = this[KEY_MODE].toEnum(ConnectionMode.AUTO),
         themeMode = this[KEY_THEME].toEnum(ThemeMode.SYSTEM),
-        dynamicColor = this[KEY_DYNAMIC_COLOR] ?: true,
         liveUpdates = this[KEY_LIVE_UPDATES] ?: true,
         // Coerced rather than trusted: an interval written by a build that
         // offered a wider choice would otherwise set a cadence this one has no
@@ -122,7 +119,6 @@ class SettingsRepository(private val context: Context) {
 
         val KEY_MODE = stringPreferencesKey("connection_mode")
         val KEY_THEME = stringPreferencesKey("theme_mode")
-        val KEY_DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val KEY_LIVE_UPDATES = booleanPreferencesKey("live_updates")
         val KEY_POLL_SECONDS = intPreferencesKey("poll_seconds")
         val KEY_CHART_RANGE = stringPreferencesKey("chart_range")

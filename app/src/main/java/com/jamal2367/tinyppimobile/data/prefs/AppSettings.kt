@@ -83,7 +83,6 @@ data class AppSettings(
     val secondary: ServerConfig = ServerConfig(),
     val connectionMode: ConnectionMode = ConnectionMode.AUTO,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val dynamicColor: Boolean = true,
     /**
      * Whether the app holds the event stream open.
      *
