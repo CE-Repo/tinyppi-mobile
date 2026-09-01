@@ -7,10 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -82,7 +78,7 @@ fun StatusLine(
             .clip(PillShape)
             .background(ground)
             .then(
-                if (onReconnect != null) {
+                if (onReconnect != null && connection.invitesReconnecting()) {
                     Modifier.clickable(
                         onClick = onReconnect,
                         onClickLabel = stringResource(R.string.status_reconnect),
@@ -114,23 +110,6 @@ fun StatusLine(
                 textAlign = TextAlign.End,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-            )
-        }
-
-        // At the end of the line, after the address it acts on: the pill says
-        // which box and how it is answering, and this is what to do about the
-        // answer. Drawn only where a caller has something for it to do.
-        //
-        // The mark and not the target. A 16dp button is half the size a finger
-        // is owed, and growing it to the 48 the guidance asks for would have
-        // made the pill taller than the line it is - so the whole pill answers
-        // the tap and the icon is what says so.
-        if (onReconnect != null) {
-            Icon(
-                imageVector = Icons.Rounded.Refresh,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(ICON_SIZE),
             )
         }
     }
@@ -167,5 +146,25 @@ private fun LiveState.Connection.namesAServer(): Boolean = when (this) {
     else -> true
 }
 
-/** How big the refresh at the end of the line is drawn - the height of the words. */
-private val ICON_SIZE = 16.dp
+/**
+ * Whether connecting again would change anything from this state.
+ *
+ * A reader is offered the tap only where it has something to do. Live and
+ * polling are already answering, so the only thing a restart could do there is
+ * interrupt a working connection - and the pill is under a thumb on a
+ * scrolling screen, where an accidental tap should cost nothing. With nothing
+ * configured there is no address to reach, and a busy box has said what it has
+ * to say: every slot is taken, and asking again does not free one.
+ *
+ * What is left is the three a reader watches and waits on: waiting to get in,
+ * turned away, and gone.
+ */
+private fun LiveState.Connection.invitesReconnecting(): Boolean = when (this) {
+    LiveState.Connection.Connecting -> true
+    LiveState.Connection.Unauthorized -> true
+    LiveState.Connection.Offline -> true
+    LiveState.Connection.Streaming -> false
+    LiveState.Connection.Polling -> false
+    LiveState.Connection.Busy -> false
+    LiveState.Connection.NotConfigured -> false
+}

@@ -16,6 +16,7 @@
     <string name="action_open_settings">Beállítások megnyitása</string>
 
     <!-- The connection line -->
+    <string name="status_reconnect">Újracsatlakozás</string>
     <string name="status_live">Live</string>
     <string name="status_polling">Lekérdezés</string>
     <string name="status_connecting">Kapcsolódás…</string>
