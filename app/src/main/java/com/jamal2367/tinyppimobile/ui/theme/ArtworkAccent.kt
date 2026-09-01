@@ -277,7 +277,7 @@ private const val SAMPLE_SIZE = 48
 /** How far down the card the poster's colour has faded to nothing. */
 private val WASH_HEIGHT = 240.dp
 
-private const val TOP_TINT = 0.22f
+private const val TOP_TINT = 0.44f
 
 /**
  * How much of the poster's own saturation survives at the bottom of the scale.
@@ -286,7 +286,7 @@ private const val TOP_TINT = 0.22f
  * palette turns the whole thing off; this scale is for how loudly a film is
  * allowed to speak, not for whether it speaks at all.
  */
-private const val MIN_SATURATION = 0.25f
+private const val MIN_SATURATION = 0.50f
 
 /**
  * How much of the poster's colour a hairline takes.

@@ -584,10 +584,10 @@ private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) 
                 )
                 TextButton(
                     onClick = {
-                        draftIntensity = 0.5f
-                        viewModel.setAdaptiveColorIntensity(0.5f)
+                        draftIntensity = 1f
+                        viewModel.setAdaptiveColorIntensity(1f)
                     },
-                    enabled = settings.adaptiveColor && draftIntensity != 0.5f,
+                    enabled = settings.adaptiveColor && draftIntensity != 1f,
                 ) {
                     Text(stringResource(R.string.settings_adaptive_color_reset))
                 }
