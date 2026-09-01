@@ -8,8 +8,8 @@
     <string name="nav_live">Live</string>
     <string name="nav_details">Adatok</string>
     <string name="nav_metadata">Dolby Vision metaadatok</string>
-    <string name="nav_metadata_tab">Metaadatok</string>
-    <string name="nav_history">Előzmények</string>
+    <string name="nav_metadata_tab">Metaadat</string>
+    <string name="nav_history">Előzmény</string>
     <string name="nav_settings">Beállítások</string>
     <string name="nav_settings_tab">Opciók</string>
 
@@ -156,11 +156,11 @@
     <string name="settings_theme_system">Rendszer</string>
     <string name="settings_theme_light">Világos</string>
     <string name="settings_theme_dark">Sötét</string>
-    <string name="settings_artwork">Artwork mutatása</string>
-    <string name="settings_artwork_desc">A lejátszott film poszterének lekérése. Csak olyan címnek van posztere, amelyikhez tartozik médiatár bejegyzés.</string>
+    <string name="settings_artwork">Film poszter mutatása</string>
+    <string name="settings_artwork_desc">A lejátszott film poszterének lekérése. Csak annak a címnek van posztere, amelyet a médiatár is tartalmaz.</string>
     <string name="settings_adaptive_color">Adaptív színek</string>
-    <string name="settings_adaptive_color_desc">Az alkalmazás színezése a lejátszott film posztere alapján, ahogy az irányítópult teszi.</string>
-    <string name="settings_adaptive_color_intensity">Akcentusszín intenzitása</string>
+    <string name="settings_adaptive_color_desc">Az alkalmazás színezése a lejátszott film posztere alapján.</string>
+    <string name="settings_adaptive_color_intensity">Hozzáadott szín intenzitása</string>
     <string name="settings_adaptive_color_intensity_value">%1$d %%</string>
     <string name="settings_adaptive_color_reset">Visszaállítás</string>
     <string name="settings_adaptive_color_subtle">Halvány</string>
