@@ -13,6 +13,7 @@
     <string name="action_open_settings">Einstellungen öffnen</string>
 
     <!-- Verbindungszeile -->
+    <string name="status_reconnect">Neu verbinden</string>
     <string name="status_live">Live</string>
     <string name="status_polling">Abfrage</string>
     <string name="status_connecting">Verbinde…</string>

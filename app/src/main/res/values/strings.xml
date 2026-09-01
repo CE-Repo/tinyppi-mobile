@@ -16,6 +16,7 @@
     <string name="action_open_settings">Open settings</string>
 
     <!-- The connection line -->
+    <string name="status_reconnect">Reconnect</string>
     <string name="status_live">Live</string>
     <string name="status_polling">Polling</string>
     <string name="status_connecting">Connecting…</string>

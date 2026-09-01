@@ -65,6 +65,18 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
      */
     val message: StateFlow<String?> = _message.asStateFlow()
 
+    /**
+     * Connect again now.
+     *
+     * Not a command to the box - it does not reach one - so it does not go
+     * through [command] and cannot fail: what it does is tear down whatever
+     * this app has open and start over, which is the answer when the box is
+     * back and the session is still sitting on its back-off.
+     */
+    fun reconnect() {
+        container.reconnect()
+    }
+
     fun consumeMessage() {
         _message.value = null
     }

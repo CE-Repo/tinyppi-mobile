@@ -142,6 +142,7 @@ fun LiveScreen(
                 StatusLine(
                     connection = state.live.connection,
                     serverLabel = state.live.server?.label,
+                    onReconnect = viewModel::reconnect,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = ScreenEdge, vertical = 8.dp),
@@ -204,6 +205,7 @@ private fun LiveContent(
                     connection = connection,
                     serverLabel = serverLabel,
                     accented = true,
+                    onReconnect = viewModel::reconnect,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),

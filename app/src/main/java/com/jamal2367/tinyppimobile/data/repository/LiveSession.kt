@@ -11,6 +11,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -94,17 +96,40 @@ class LiveSession(
         val servers: List<ServerConfig>,
         val liveUpdates: Boolean,
         val pollSeconds: Int,
+        /**
+         * Not a setting, and not read by the session: it is here so that
+         * asking to reconnect counts as a change like any other, and the same
+         * restart the settings get is the one a reader gets.
+         */
+        val restart: Int = 0,
     )
 
+    /**
+     * How many times a reader has asked for this to start over.
+     *
+     * A session restarts itself on a schedule that assumes nobody is watching:
+     * it backs off after a refusal and waits out its poll interval, which is
+     * right for a phone in a pocket and wrong for one in a hand in front of a
+     * box that has just come back. Bumping this is the way to say "now" - it
+     * is part of what a session is built against, so moving it tears the
+     * current one down and builds a fresh one against the same settings.
+     */
+    private val restarts = MutableStateFlow(0)
+
+    /** Drop whatever is open and connect again, without waiting out a back-off. */
+    fun restart() {
+        restarts.value += 1
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun states(): Flow<LiveState> = router.settingsFlow
-        .map { settings ->
-            SessionConfig(
-                servers = settings.servers(),
-                liveUpdates = settings.liveUpdates,
-                pollSeconds = settings.pollIntervalSeconds,
-            )
-        }
+    fun states(): Flow<LiveState> = combine(router.settingsFlow, restarts) { settings, restart ->
+        SessionConfig(
+            servers = settings.servers(),
+            liveUpdates = settings.liveUpdates,
+            pollSeconds = settings.pollIntervalSeconds,
+            restart = restart,
+        )
+    }
         .distinctUntilChanged()
         // The stored settings arriving for the first time is itself a change:
         // what came before them was the defaults, which point at nothing. A

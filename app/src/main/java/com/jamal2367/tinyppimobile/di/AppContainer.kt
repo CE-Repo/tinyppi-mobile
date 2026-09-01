@@ -160,6 +160,9 @@ class AppContainer(private val context: Context) {
      * showing the same thing. The connection is dropped a few seconds after
      * the last screen stops looking, so a backgrounded app holds none.
      */
+    /** Drop the open connection and build a new one - what the refresh asks for. */
+    fun reconnect() = session.restart()
+
     val liveState: StateFlow<LiveState> by lazy {
         session.states().stateIn(
             scope = containerScope,

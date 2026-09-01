@@ -6,6 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,6 +62,7 @@ fun StatusLine(
     serverLabel: String?,
     modifier: Modifier = Modifier,
     accented: Boolean = false,
+    onReconnect: (() -> Unit)? = null,
 ) {
     val dot by animateColorAsState(targetValue = connection.dotColor(), label = "statusDot")
 
@@ -75,6 +81,16 @@ fun StatusLine(
         modifier = modifier
             .clip(PillShape)
             .background(ground)
+            .then(
+                if (onReconnect != null) {
+                    Modifier.clickable(
+                        onClick = onReconnect,
+                        onClickLabel = stringResource(R.string.status_reconnect),
+                    )
+                } else {
+                    Modifier
+                }
+            )
             .padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -90,10 +106,31 @@ fun StatusLine(
             Text(
                 text = serverLabel,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                // The same ink as the state at the other end. The two are the
+                // one sentence this line has to say - which box, and how it is
+                // answering - and setting the address a shade under the state
+                // made it read as a footnote to it.
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.End,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        // At the end of the line, after the address it acts on: the pill says
+        // which box and how it is answering, and this is what to do about the
+        // answer. Drawn only where a caller has something for it to do.
+        //
+        // The mark and not the target. A 16dp button is half the size a finger
+        // is owed, and growing it to the 48 the guidance asks for would have
+        // made the pill taller than the line it is - so the whole pill answers
+        // the tap and the icon is what says so.
+        if (onReconnect != null) {
+            Icon(
+                imageVector = Icons.Rounded.Refresh,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(ICON_SIZE),
             )
         }
     }
@@ -129,3 +166,6 @@ private fun LiveState.Connection.namesAServer(): Boolean = when (this) {
     LiveState.Connection.NotConfigured -> false
     else -> true
 }
+
+/** How big the refresh at the end of the line is drawn - the height of the words. */
+private val ICON_SIZE = 16.dp
