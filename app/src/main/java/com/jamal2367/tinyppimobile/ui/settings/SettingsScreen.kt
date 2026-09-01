@@ -602,7 +602,11 @@ private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) 
                     onValueChangeFinished = {
                         viewModel.setAdaptiveColorIntensity(draftIntensity)
                     },
-                    valueRange = 0.5f..1f,
+                    // The whole scale. It used to start at a half because
+                    // the theme clamped there too, so the bottom of the slider
+                    // and the bottom of the effect were two figures that had
+                    // to be kept in step; the floor lives in one place now.
+                    valueRange = 0f..1f,
                     enabled = settings.adaptiveColor,
                     interactionSource = sliding,
                     thumb = { SlimSliderThumb(sliding, enabled = settings.adaptiveColor) },

@@ -95,6 +95,20 @@ val LocalArtworkAccent = staticCompositionLocalOf<Color?> { null }
  *
  * Surfaces are left where they are. The picture decides the accents; the reader
  * decided light or dark, and a poster is not entitled to overturn that.
+ *
+ * [intensity] is how much of the poster's colour to take, and it is taken out
+ * of the colour's saturation rather than by mixing it with something else. An
+ * earlier turn of this interpolated between the app's own blue and the
+ * poster's colour, which is not an intensity at all: half way between blue and
+ * orange is a muddy brown that belongs to no film, and half way between blue
+ * and a blue-ish poster is no change worth making. Dropping the saturation
+ * keeps the hue the picture actually has and takes away only how loudly it is
+ * said - which is what the word means and what the reader is asking for.
+ *
+ * The dimmed colour is what everything downstream gets, [LocalArtworkAccent]
+ * included. It used to hand the raw colour on from there, so the card's wash -
+ * the largest coloured area in the app - ignored the setting entirely and sat
+ * at full strength above buttons that had faded.
  */
 @Composable
 fun ArtworkAccentTheme(
@@ -103,13 +117,12 @@ fun ArtworkAccentTheme(
     content: @Composable () -> Unit,
 ) {
     val base = MaterialTheme.colorScheme
-    val scheme = remember(base, accent, intensity) {
-        if (accent == null) base else base.accented(
-            lerp(base.primary, accent, intensity.coerceIn(0.5f, 1f))
-        )
+    val dimmed = remember(accent, intensity) { accent?.dimmed(intensity) }
+    val scheme = remember(base, dimmed) {
+        if (dimmed == null) base else base.accented(dimmed)
     }
 
-    CompositionLocalProvider(LocalArtworkAccent provides accent) {
+    CompositionLocalProvider(LocalArtworkAccent provides dimmed) {
         MaterialExpressiveTheme(
             colorScheme = scheme,
             motionScheme = MotionScheme.expressive(),
@@ -138,7 +151,7 @@ fun artworkGradient(accent: Color, container: Color): Brush {
 
     return remember(accent, container, fade) {
         Brush.verticalGradient(
-            colors = listOf(lerp(container, accent, TOP_TINT), container),
+            colors = listOf(artworkTint(accent, container), container),
             startY = 0f,
             endY = fade,
         )
@@ -231,6 +244,25 @@ private fun Color.onContainer(dark: Boolean): Color =
 /** Black or white, whichever can be read on this colour. */
 private fun Color.readableOn(): Color = if (luminance() > 0.40f) Color.Black else Color.White
 
+/**
+ * The same colour, said more quietly.
+ *
+ * Hue and brightness are left exactly where the poster put them and only the
+ * saturation moves, so every setting of this is recognisably the colour of the
+ * film on screen - a red poster stays red at every point on the scale rather
+ * than passing through the app's blue on its way down.
+ *
+ * The floor is not zero. A saturation of nothing is grey, and an app painted
+ * grey by a setting called intensity has stopped being adaptive rather than
+ * become subtle; the reader who wants none of this has a switch for it.
+ */
+private fun Color.dimmed(intensity: Float): Color {
+    val strength = intensity.coerceIn(0f, 1f)
+    val hsv = ArtworkPalette.toHsv(toArgb())
+    val saturation = hsv[1] * (MIN_SATURATION + (1f - MIN_SATURATION) * strength)
+    return Color(ArtworkPalette.fromHsv(hsv[0], saturation, hsv[2]))
+}
+
 /** The same hue, taken to a given brightness. */
 private fun Color.toned(value: Float, saturationScale: Float = 1f): Color {
     val hsv = ArtworkPalette.toHsv(toArgb())
@@ -246,6 +278,15 @@ private const val SAMPLE_SIZE = 48
 private val WASH_HEIGHT = 240.dp
 
 private const val TOP_TINT = 0.22f
+
+/**
+ * How much of the poster's own saturation survives at the bottom of the scale.
+ *
+ * Enough to still be a colour. The reader who wants the app to wear its own
+ * palette turns the whole thing off; this scale is for how loudly a film is
+ * allowed to speak, not for whether it speaks at all.
+ */
+private const val MIN_SATURATION = 0.25f
 
 /**
  * How much of the poster's colour a hairline takes.
