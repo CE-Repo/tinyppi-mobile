@@ -243,7 +243,7 @@ private fun Color.toned(value: Float, saturationScale: Float = 1f): Color {
 private const val SAMPLE_SIZE = 48
 
 /** How far down the card the poster's colour has faded to nothing. */
-private val WASH_HEIGHT = 190.dp
+private val WASH_HEIGHT = 240.dp
 
 private const val TOP_TINT = 0.22f
 
