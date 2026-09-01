@@ -570,9 +570,24 @@ private fun PlaybackWave(
         // as a chip off the end of the new one.
         stopSize = WAVE_STROKE,
         amplitude = { amplitude },
+        waveSpeed = WAVE_SPEED,
         modifier = modifier.height(WAVE_HEIGHT),
     )
 }
+
+/**
+ * How far the wave travels in a second.
+ *
+ * Material moves it one wavelength - forty points - which is a crest a second
+ * passing any given spot. That is a rate for something being waited on, and
+ * this bar is not: a film is two hours long and the wave is there to say the
+ * picture is running, not to hurry it. At this it drifts.
+ *
+ * Distance rather than a multiplier, because that is what the component takes,
+ * and the wavelength is left at Material's - the wave is the same shape, just
+ * carried across more slowly.
+ */
+private val WAVE_SPEED = 24.dp
 
 /**
  * How thick the playback wave is drawn.

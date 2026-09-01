@@ -52,8 +52,14 @@ private fun playingColour(container: AppContainer, settings: AppSettings): Color
     // rather than holding one of its six slots open to keep a colour warm.
     val live by container.liveState.collectAsStateWithLifecycle()
 
+    // Only while something is playing. A snapshot outlives the film in it -
+    // the box goes on answering with `playing` false and whatever art it last
+    // held - and reading the poster off that would keep the app painted in a
+    // title that ended at the closing credits.
     return rememberArtworkAccent(
-        live.snapshot?.let { MediaUrls.art(live.server, it.art, MediaUrls.ArtKind.POSTER) }
+        live.snapshot
+            ?.takeIf { it.playing }
+            ?.let { MediaUrls.art(live.server, it.art, MediaUrls.ArtKind.POSTER) }
     )
 }
 
