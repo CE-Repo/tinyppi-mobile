@@ -52,6 +52,7 @@
         <item quantity="one">%1$d Minute vor</item>
         <item quantity="other">%1$d Minuten vor</item>
     </plurals>
+    <string name="live_volume">Lautstärke</string>
     <string name="live_mute">Stummschalten</string>
     <string name="live_unmute">Ton an</string>
 

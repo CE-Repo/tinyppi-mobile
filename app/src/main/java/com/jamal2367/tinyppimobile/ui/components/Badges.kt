@@ -21,15 +21,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jamal2367.tinyppimobile.ui.theme.PillShape
-import com.jamal2367.tinyppimobile.ui.theme.accentText
 
 /**
- * How a picture is graded, as one short line in the app's accent.
+ * How a picture is graded, as one short line.
  *
- * In the accent rather than in a colour of its own per grade, so it belongs to
- * the card it sits on: the card is washed in the colour of the poster beside
- * it, and a violet pill on a red film was the one thing there that answered to
- * nothing on screen.
+ * The ground carries the colour and the words do not. The pill is tinted from
+ * the poster like everything else on this card, which is what stops a badge
+ * about a red film reading as an unrelated violet chip - but a word set in the
+ * accent on a ground already made of it is a word competing with what it is
+ * printed on.
+ *
+ * The quieter of the two greys, the one the year and the genre are set in.
+ * These are what a film is rather than what it is called: the title is the
+ * line that gets the full-strength ink, and a row of format names underneath
+ * it in the same weight reads as five more titles.
  *
  * The [text] is the caller's, not a grade looked up here - a Dolby Vision
  * source says which profile it is and whether a second layer came with it, and
@@ -41,7 +46,7 @@ fun FormatBadge(
     modifier: Modifier = Modifier,
     arrowSuffix: String? = null,
 ) {
-    val content = MaterialTheme.colorScheme.accentText
+    val content = MaterialTheme.colorScheme.onSurfaceVariant
 
     // Cut to the line the words are set on rather than to a figure of its own.
     // The arrow appears only once a conversion starts, and at Material's 16dp

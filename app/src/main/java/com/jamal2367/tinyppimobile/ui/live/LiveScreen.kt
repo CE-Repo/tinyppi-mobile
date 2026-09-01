@@ -35,7 +35,6 @@ import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -615,7 +614,7 @@ private val WAVE_STROKE = 7.dp
 private val WAVE_HEIGHT = 12.dp
 
 /**
- * Play, the six jumps, the volume and stop.
+ * The six jumps, and under them the row that stops, sets and plays.
  *
  * Drawn only where the box allows control: the add-on gathers the track lists
  * and the volume for these rows alone, and a box that has control switched off
@@ -625,6 +624,10 @@ private val WAVE_HEIGHT = 12.dp
  * stops at thirty, so half of these six would have had to be labelled anyway,
  * and a row of three icons beside three labels reads as two kinds of button
  * doing one kind of thing.
+ *
+ * Six of one kind and nothing else, now that play has gone below: three back
+ * and three forward, spread evenly, and the row reads as one scale rather than
+ * as two halves either side of something bigger.
  *
  * Jumping to a point rather than by one is the bar at the top of the card.
  */
@@ -654,16 +657,6 @@ private fun TransportSection(
             description = pluralStringResource(R.plurals.live_seek_back, 10, 10),
             onClick = { viewModel.seekBy(-10) },
         )
-        FilledIconButton(
-            onClick = viewModel::playPause,
-            shape = CircleShape,
-            modifier = Modifier.size(54.dp),
-        ) {
-            Icon(
-                imageVector = if (snapshot.paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
-                contentDescription = stringResource(R.string.live_playpause),
-            )
-        }
         JumpButton(
             label = "+10s",
             description = pluralStringResource(R.plurals.live_seek_forward, 10, 10),
@@ -681,7 +674,7 @@ private fun TransportSection(
         )
     }
 
-    VolumeRow(snapshot.controls, pendingVolume, viewModel)
+    VolumeRow(snapshot.controls, snapshot.paused, pendingVolume, viewModel)
 }
 
 /**
@@ -701,7 +694,7 @@ private fun JumpButton(label: String, description: String, onClick: () -> Unit) 
         onClick = onClick,
         colors = neutralTonalIconButtonColors(),
         modifier = Modifier
-            .size(38.dp)
+            .size(TRANSPORT_BUTTON)
             .semantics { contentDescription = description },
     ) {
         Text(
@@ -714,80 +707,209 @@ private fun JumpButton(label: String, description: String, onClick: () -> Unit) 
 }
 
 /**
- * The volume, with stop at the head of it.
+ * Play, the volume, and stop.
  *
- * Stop takes the far left of the last row rather than a button of its own in
- * the middle of the transport: it ends playback outright, and a corner is the
- * hardest place on the row to hit by accident. The mute button takes the other
- * end, beside the figure its slider is reading.
+ * The row the card is for: start or hold what is playing, set how loud, end
+ * it. All three the same height, so the row has one line to it rather than a
+ * tall thing at one end and short ones at the other.
  *
- * A box that sends no volume still gets stop - what goes missing is the slider
- * and the mute beside it, not the transport.
+ * The volume takes the other end as a speaker and a figure, and the slider it
+ * sets lives behind them. A slider sits at a hundred most of its life, which
+ * meant a filled bar the width of the card - brighter and wider than anything
+ * else in the group, the play button included - to say a number that was
+ * already written beside it. Folded away, the row says the same thing in the
+ * space of a word, and the reader who wants to change it is one tap from the
+ * whole of it.
+ *
+ * A box that sends no volume still gets stop - what goes missing is the
+ * speaker and its figure, not the transport.
  */
 @Composable
 private fun VolumeRow(
     controls: PlayerControls,
+    paused: Boolean,
     pendingVolume: Int?,
     viewModel: LiveViewModel,
 ) {
     val level = pendingVolume ?: controls.volume
-    val sliding = remember { MutableInteractionSource() }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(TRANSPORT_GAP),
     ) {
+        // Play at the near corner and stop at the far one. They are the same
+        // button to look at - same fill, same size, same shape - so what tells
+        // them apart is where they sit and what is drawn on them. That is on
+        // purpose: stop ends playback outright, and the corner furthest from
+        // the thumb that reaches for play is the hardest place on the row to
+        // hit by accident.
+        FilledTonalIconButton(
+            onClick = viewModel::playPause,
+            shape = CircleShape,
+            colors = neutralTonalIconButtonColors(),
+            modifier = Modifier.size(TRANSPORT_BUTTON),
+        ) {
+            Icon(
+                imageVector = if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
+                contentDescription = stringResource(R.string.live_playpause),
+            )
+        }
+
+        // The volume takes whatever the two buttons leave, the way the two
+        // track pickers below share the width between them. Pushed to one end
+        // instead, it left a hand's width of nothing across the middle of the
+        // card - and the two ends of an empty row read as two rows.
+        if (level != null) {
+            VolumeButton(
+                level = level,
+                muted = controls.muted,
+                viewModel = viewModel,
+                modifier = Modifier.weight(1f),
+            )
+        } else {
+            Spacer(Modifier.weight(1f))
+        }
+
         FilledTonalIconButton(
             onClick = viewModel::stop,
             shape = CircleShape,
             colors = neutralTonalIconButtonColors(),
+            modifier = Modifier.size(TRANSPORT_BUTTON),
         ) {
             Icon(
                 Icons.Rounded.Stop,
                 contentDescription = stringResource(R.string.live_stop),
             )
         }
-        if (level == null) {
-            Spacer(Modifier.weight(1f))
-        } else {
-            val colors = neutralSliderColors()
-            Slider(
-                value = level.toFloat(),
-                onValueChange = { viewModel.previewVolume(it.toInt()) },
-                onValueChangeFinished = { viewModel.commitVolume(level) },
-                valueRange = 0f..100f,
-                colors = colors,
-                interactionSource = sliding,
-                thumb = { SlimSliderThumb(sliding, colors) },
-                track = { SlimSliderTrack(it, colors) },
-                modifier = Modifier.weight(1f),
+    }
+}
+
+/**
+ * The volume as it stands, and the whole of it a tap away.
+ *
+ * The button says the two things worth saying without being asked: whether the
+ * sound is on, and how loud. Pressing it opens the slider and the mute over
+ * the row, in the same menu the track pickers open in - a reader who has used
+ * one of those has already learnt this.
+ *
+ * Mute goes inside rather than staying in the row. Silencing a box is not
+ * something to have under a thumb on a screen that scrolls, and a speaker with
+ * a figure beside it already says whether the sound is on.
+ */
+@Composable
+private fun VolumeButton(
+    level: Int,
+    muted: Boolean,
+    viewModel: LiveViewModel,
+    modifier: Modifier = Modifier,
+) {
+    var open by remember { mutableStateOf(false) }
+    val sliding = remember { MutableInteractionSource() }
+    val colors = neutralSliderColors()
+
+    Box(modifier = modifier) {
+        FilledTonalButton(
+            onClick = { open = true },
+            colors = neutralTonalButtonColors(),
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(
+                imageVector = if (muted) {
+                    Icons.AutoMirrored.Rounded.VolumeOff
+                } else {
+                    Icons.AutoMirrored.Rounded.VolumeUp
+                },
+                contentDescription = stringResource(R.string.live_volume),
+                modifier = Modifier.size(20.dp),
             )
             Text(
                 text = "$level",
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.width(36.dp),
+                modifier = Modifier.padding(start = 8.dp),
             )
-            FilledTonalIconButton(
-                onClick = viewModel::toggleMute,
-                shape = CircleShape,
-                colors = neutralTonalIconButtonColors(),
+        }
+
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            Row(
+                modifier = Modifier
+                    .width(VOLUME_MENU_WIDTH)
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Icon(
-                    imageVector = if (controls.muted) {
-                        Icons.AutoMirrored.Rounded.VolumeOff
-                    } else {
-                        Icons.AutoMirrored.Rounded.VolumeUp
-                    },
-                    contentDescription = stringResource(
-                        if (controls.muted) R.string.live_unmute else R.string.live_mute
-                    ),
+                FilledTonalIconButton(
+                    onClick = viewModel::toggleMute,
+                    shape = CircleShape,
+                    colors = neutralTonalIconButtonColors(),
+                ) {
+                    Icon(
+                        imageVector = if (muted) {
+                            Icons.AutoMirrored.Rounded.VolumeOff
+                        } else {
+                            Icons.AutoMirrored.Rounded.VolumeUp
+                        },
+                        contentDescription = stringResource(
+                            if (muted) R.string.live_unmute else R.string.live_mute
+                        ),
+                    )
+                }
+                Slider(
+                    value = level.toFloat(),
+                    onValueChange = { viewModel.previewVolume(it.toInt()) },
+                    onValueChangeFinished = { viewModel.commitVolume(level) },
+                    valueRange = 0f..100f,
+                    colors = colors,
+                    interactionSource = sliding,
+                    thumb = { SlimSliderThumb(sliding, colors) },
+                    track = { SlimSliderTrack(it, colors) },
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = "$level",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.width(36.dp),
                 )
             }
         }
     }
 }
+
+/**
+ * How big a round button in the transport is drawn.
+ *
+ * One figure for all of them, so the two rows line up at the edges of the
+ * card. Left at its own default, an icon button measures a little wider than
+ * this and carries a touch target wider still - which put play and stop a
+ * couple of points inside where the jumps above them start and end, close
+ * enough to look like a mistake rather than a margin.
+ */
+private val TRANSPORT_BUTTON = 38.dp
+
+/**
+ * How far the three things in that row stand apart.
+ *
+ * Three times the four points they held to begin with. The row above sets its
+ * own spacing by spreading seven identical buttons across the card; this one
+ * is three unlike things - a button, a long pill, a button - and close
+ * together they touched shoulders and read as one control with two ends.
+ *
+ * What the gap costs comes off the volume, which takes whatever is left. Much
+ * past this and the pill starts to look narrow for the width it is sitting in,
+ * and the buttons either side would be the thing to shrink instead.
+ */
+private val TRANSPORT_GAP = 12.dp
+
+/**
+ * How wide the volume opens.
+ *
+ * Enough for a slider to be worth dragging. A menu sizes itself to what is in
+ * it, and a slider has no width of its own to offer - left to itself it would
+ * come out as wide as the mute button beside it.
+ */
+private val VOLUME_MENU_WIDTH = 260.dp
 
 /** The audio and subtitle tracks, as two pickers. */
 @Composable
