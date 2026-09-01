@@ -57,7 +57,8 @@
         <item quantity="one">%1$d minute forward</item>
         <item quantity="other">%1$d minutes forward</item>
     </plurals>
-    <string name="live_volume">Volume</string>
+    <string name="live_volume_up">Volume up</string>
+    <string name="live_volume_down">Volume down</string>
     <string name="live_mute">Mute</string>
     <string name="live_unmute">Unmute</string>
 

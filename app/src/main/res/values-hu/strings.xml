@@ -57,7 +57,8 @@
         <item quantity="one">%1$d perccel előre</item>
         <item quantity="other">%1$d perccel előre</item>
     </plurals>
-    <string name="live_volume">Hangerő</string>
+    <string name="live_volume_up">Hangosítás</string>
+    <string name="live_volume_down">Halkítás</string>
     <string name="live_mute">Némítás</string>
     <string name="live_unmute">Némítás feloldása</string>
 

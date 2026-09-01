@@ -88,9 +88,7 @@ import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 import com.jamal2367.tinyppimobile.ui.theme.SlimSliderThumb
-import com.jamal2367.tinyppimobile.ui.theme.SlimSliderTrack
 import com.jamal2367.tinyppimobile.ui.theme.artworkGradient
-import com.jamal2367.tinyppimobile.ui.theme.neutralSliderColors
 import com.jamal2367.tinyppimobile.ui.theme.neutralTonalButtonColors
 import com.jamal2367.tinyppimobile.ui.theme.neutralTonalIconButtonColors
 import com.jamal2367.tinyppimobile.util.Formatters
@@ -111,7 +109,6 @@ fun LiveScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
-    val pendingVolume by viewModel.pendingVolume.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(message) {
@@ -172,7 +169,6 @@ fun LiveScreen(
                     poster = poster,
                     showArtwork = state.settings.showArtwork,
                     canControl = state.canControlPlayback,
-                    pendingVolume = pendingVolume,
                     viewModel = viewModel,
                 )
             }
@@ -188,7 +184,6 @@ private fun LiveContent(
     poster: String?,
     showArtwork: Boolean,
     canControl: Boolean,
-    pendingVolume: Int?,
     viewModel: LiveViewModel,
 ) {
     LazyColumn(
@@ -224,7 +219,6 @@ private fun LiveContent(
             item {
                 ControlsCard(
                     snapshot = snapshot,
-                    pendingVolume = pendingVolume,
                     viewModel = viewModel,
                 )
             }
@@ -426,7 +420,6 @@ private fun NowPlayingCard(
 @Composable
 private fun ControlsCard(
     snapshot: Snapshot,
-    pendingVolume: Int?,
     viewModel: LiveViewModel,
 ) {
     SectionCard(
@@ -436,7 +429,6 @@ private fun ControlsCard(
     ) {
         TransportSection(
             snapshot = snapshot,
-            pendingVolume = pendingVolume,
             viewModel = viewModel,
         )
 
@@ -636,7 +628,6 @@ private val WAVE_HEIGHT = 12.dp
 @Composable
 private fun TransportSection(
     snapshot: Snapshot,
-    pendingVolume: Int?,
     viewModel: LiveViewModel,
 ) {
     // The two rows are held at the same distance apart as the keys within
@@ -689,7 +680,7 @@ private fun TransportSection(
             )
         }
 
-        VolumeRow(snapshot.controls, snapshot.paused, pendingVolume, viewModel)
+        VolumeRow(snapshot.controls, snapshot.paused, viewModel)
     }
 }
 
@@ -742,26 +733,30 @@ private fun JumpButton(
  * row has one line to it rather than a tall thing at one end and short ones at
  * the other.
  *
- * The volume takes the other end as a speaker and a figure, and the slider it
- * sets lives behind them. A slider sits at a hundred most of its life, which
- * meant a filled bar the width of the card - brighter and wider than anything
- * else in the group, the play button included - to say a number that was
- * already written beside it. Folded away, the row says the same thing in the
- * space of a word, and the reader who wants to change it is one tap from the
- * whole of it.
+ * The volume steps rather than slides, and there is a reason it has to. A
+ * slider could only ever have set Kodi's own mixer: a box that passes volume
+ * on over CEC leaves that number alone and sends the amplifier a command
+ * instead, and it does that from the input path - which an absolute level
+ * never reaches and a step always does. So a soundbar answers these three
+ * keys where it could not answer the slider, at the cost of the level itself,
+ * which CEC has no command for.
  *
- * A box that sends no volume still gets stop - what goes missing is the
- * speaker and its figure, not the transport.
+ * Mute is the key between them, and it carries the reading. That is one key
+ * doing two jobs, but the two belong together: it says how loud and whether
+ * at all, and pressing the thing that says "on" to turn it off is the shortest
+ * sentence the row can be written in. It also keeps the row at seven, which
+ * is as many as a phone's width divides into.
+ *
+ * The reading is Kodi's own level, which on a box passing volume over CEC is
+ * not the amplifier's - so it can sit still while the room gets louder. A box
+ * that sends no volume at all shows the speaker without a figure.
  */
 @Composable
 private fun VolumeRow(
     controls: PlayerControls,
     paused: Boolean,
-    pendingVolume: Int?,
     viewModel: LiveViewModel,
 ) {
-    val level = pendingVolume ?: controls.volume
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -776,6 +771,7 @@ private fun VolumeRow(
             forward = false,
             enabled = controls.hasChapters,
             onClick = viewModel::previousChapter,
+            modifier = Modifier.weight(1f),
         )
 
         // Play near one end, stop near the other. Every button here is the
@@ -788,7 +784,9 @@ private fun VolumeRow(
             onClick = viewModel::playPause,
             shape = TRANSPORT_SHAPE,
             colors = neutralTonalIconButtonColors(),
-            modifier = Modifier.size(TRANSPORT_BUTTON),
+            modifier = Modifier
+                .weight(1f)
+                .height(TRANSPORT_BUTTON),
         ) {
             Icon(
                 imageVector = if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
@@ -796,26 +794,33 @@ private fun VolumeRow(
             )
         }
 
-        // The volume takes whatever the buttons leave, the way the two track
-        // pickers below share the width between them. Pushed to one end
-        // instead, it left a hand's width of nothing across the middle of the
-        // card - and the two ends of an empty row read as two rows.
-        if (level != null) {
-            VolumeButton(
-                level = level,
-                muted = controls.muted,
-                viewModel = viewModel,
-                modifier = Modifier.weight(1f),
-            )
-        } else {
-            Spacer(Modifier.weight(1f))
-        }
+        // The three volume keys take the middle of the row, one share each
+        // like everything either side of them.
+        StepButton(
+            up = false,
+            onClick = viewModel::volumeDown,
+            modifier = Modifier.weight(1f),
+        )
+
+        MuteButton(
+            muted = controls.muted,
+            onClick = viewModel::toggleMute,
+            modifier = Modifier.weight(1f),
+        )
+
+        StepButton(
+            up = true,
+            onClick = viewModel::volumeUp,
+            modifier = Modifier.weight(1f),
+        )
 
         FilledTonalIconButton(
             onClick = viewModel::stop,
             shape = TRANSPORT_SHAPE,
             colors = neutralTonalIconButtonColors(),
-            modifier = Modifier.size(TRANSPORT_BUTTON),
+            modifier = Modifier
+                .weight(1f)
+                .height(TRANSPORT_BUTTON),
         ) {
             Icon(
                 Icons.Rounded.Stop,
@@ -827,6 +832,7 @@ private fun VolumeRow(
             forward = true,
             enabled = controls.hasChapters,
             onClick = viewModel::nextChapter,
+            modifier = Modifier.weight(1f),
         )
     }
 }
@@ -846,13 +852,18 @@ private fun VolumeRow(
  * which.
  */
 @Composable
-private fun ChapterButton(forward: Boolean, enabled: Boolean, onClick: () -> Unit) {
+private fun ChapterButton(
+    forward: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     FilledTonalIconButton(
         onClick = onClick,
         enabled = enabled,
         shape = TRANSPORT_SHAPE,
         colors = neutralTonalIconButtonColors(),
-        modifier = Modifier.size(TRANSPORT_BUTTON),
+        modifier = modifier.height(TRANSPORT_BUTTON),
     ) {
         Icon(
             imageVector = if (forward) Icons.Rounded.SkipNext else Icons.Rounded.SkipPrevious,
@@ -864,97 +875,80 @@ private fun ChapterButton(forward: Boolean, enabled: Boolean, onClick: () -> Uni
 }
 
 /**
- * The volume as it stands, and the whole of it a tap away.
+ * One notch louder, or one quieter.
  *
- * The button says the two things worth saying without being asked: whether the
- * sound is on, and how loud. Pressing it opens the slider and the mute over
- * the row, in the same menu the track pickers open in - a reader who has used
- * one of those has already learnt this.
+ * A speaker and a sign, in that order. The sign alone said the right thing in
+ * the wrong row: a bare plus among keys marked "+10s" is a key that has to be
+ * worked out, and the speaker says which kind of louder it means before it is
+ * read. The pair is what the mute key between them is drawn from, so the three
+ * read as one group without being drawn a box.
  *
- * Mute goes inside rather than staying in the row. Silencing a box is not
- * something to have under a thumb on a screen that scrolls, and a speaker with
- * a figure beside it already says whether the sound is on.
+ * Never switched off, however little the box has told us. The step does not
+ * depend on a level having arrived - and on a box that passes volume over CEC
+ * there is no level to know, only a soundbar that gets louder.
  */
 @Composable
-private fun VolumeButton(
-    level: Int,
-    muted: Boolean,
-    viewModel: LiveViewModel,
-    modifier: Modifier = Modifier,
-) {
-    var open by remember { mutableStateOf(false) }
-    val sliding = remember { MutableInteractionSource() }
-    val colors = neutralSliderColors()
+private fun StepButton(up: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val name = stringResource(
+        if (up) R.string.live_volume_up else R.string.live_volume_down,
+    )
 
-    Box(modifier = modifier) {
-        FilledTonalButton(
-            onClick = { open = true },
-            shape = TRANSPORT_SHAPE,
-            colors = neutralTonalButtonColors(),
-            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(TRANSPORT_BUTTON),
-        ) {
-            Icon(
-                imageVector = if (muted) {
-                    Icons.AutoMirrored.Rounded.VolumeOff
-                } else {
-                    Icons.AutoMirrored.Rounded.VolumeUp
-                },
-                contentDescription = stringResource(R.string.live_volume),
-                modifier = Modifier.size(20.dp),
-            )
-            Text(
-                text = "$level",
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(start = 8.dp),
-            )
-        }
+    FilledTonalButton(
+        onClick = onClick,
+        shape = TRANSPORT_SHAPE,
+        colors = neutralTonalButtonColors(),
+        // Nothing of its own: the key is as wide as its share of the row, and
+        // what is in it is two small things that have to sit together.
+        contentPadding = PaddingValues(0.dp),
+        modifier = modifier
+            .height(TRANSPORT_BUTTON)
+            .semantics { contentDescription = name },
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
+            contentDescription = null,
+            modifier = Modifier.size(STEP_ICON),
+        )
+        Text(
+            text = if (up) "+" else "−",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 4.dp),
+        )
+    }
+}
 
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            Row(
-                modifier = Modifier
-                    .width(VOLUME_MENU_WIDTH)
-                    .padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                FilledTonalIconButton(
-                    onClick = viewModel::toggleMute,
-                    shape = TRANSPORT_SHAPE,
-                    colors = neutralTonalIconButtonColors(),
-                ) {
-                    Icon(
-                        imageVector = if (muted) {
-                            Icons.AutoMirrored.Rounded.VolumeOff
-                        } else {
-                            Icons.AutoMirrored.Rounded.VolumeUp
-                        },
-                        contentDescription = stringResource(
-                            if (muted) R.string.live_unmute else R.string.live_mute
-                        ),
-                    )
-                }
-                Slider(
-                    value = level.toFloat(),
-                    onValueChange = { viewModel.previewVolume(it.toInt()) },
-                    onValueChangeFinished = { viewModel.commitVolume(level) },
-                    valueRange = 0f..100f,
-                    colors = colors,
-                    interactionSource = sliding,
-                    thumb = { SlimSliderThumb(sliding, colors) },
-                    track = { SlimSliderTrack(it, colors) },
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    text = "$level",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.width(36.dp),
-                )
-            }
-        }
+/**
+ * The key between the two steps, which turns the sound off.
+ *
+ * A speaker on its own, between two speakers that carry a sign: the middle of
+ * the three is the one that does the plain thing to the volume, and the group
+ * says so by what is missing from it rather than by a word.
+ *
+ * No figure beside it. The level the box reports is Kodi's own mixer, and a
+ * box that passes volume over CEC leaves that number where it is while the
+ * amplifier does the moving - so the reading would have been a number that sat
+ * still through everything these keys did, on the very boxes they were added
+ * for.
+ */
+@Composable
+private fun MuteButton(muted: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    FilledTonalIconButton(
+        onClick = onClick,
+        shape = TRANSPORT_SHAPE,
+        colors = neutralTonalIconButtonColors(),
+        modifier = modifier.height(TRANSPORT_BUTTON),
+    ) {
+        Icon(
+            imageVector = if (muted) {
+                Icons.AutoMirrored.Rounded.VolumeOff
+            } else {
+                Icons.AutoMirrored.Rounded.VolumeUp
+            },
+            contentDescription = stringResource(
+                if (muted) R.string.live_unmute else R.string.live_mute
+            ),
+        )
     }
 }
 
@@ -971,9 +965,9 @@ private fun VolumeButton(
  * So it is put on all of them by hand rather than left to two components to
  * agree on, and every key on both cards is the same height as every other.
  *
- * It sets the width too, for the four keys in the middle row that are square.
- * The seek keys above are not: they divide the row between them, and come out
- * wider than they are tall.
+ * Height only. Neither row sets a width: both divide what the card gives them
+ * between the keys in them, so a key is as wide as its share and no wider, and
+ * the two rows line up at the edges of the card without being told to.
  */
 private val TRANSPORT_BUTTON = 40.dp
 
@@ -991,6 +985,17 @@ private val TRANSPORT_BUTTON = 40.dp
  * lines drawn on it.
  */
 private val TRANSPORT_SHAPE = RoundedCornerShape(12.dp)
+
+/**
+ * How big the speaker on a step key is drawn.
+ *
+ * Well under Material's twenty-four, which every other key in the row takes.
+ * These two are the only keys with two things to fit, and the speaker is the
+ * half that can afford to give: what has to stay legible at arm's length is
+ * the sign, and a speaker that has shrunk to make room for it still reads as a
+ * speaker.
+ */
+private val STEP_ICON = 16.dp
 
 /**
  * How far the things on the card stand apart.
@@ -1020,15 +1025,6 @@ private val TRANSPORT_GAP = 8.dp
  * one number rather than two that happen to agree.
  */
 private val TRACK_GAP = 6.dp
-
-/**
- * How wide the volume opens.
- *
- * Enough for a slider to be worth dragging. A menu sizes itself to what is in
- * it, and a slider has no width of its own to offer - left to itself it would
- * come out as wide as the mute button beside it.
- */
-private val VOLUME_MENU_WIDTH = 260.dp
 
 /** The audio and subtitle tracks, as two pickers. */
 @Composable

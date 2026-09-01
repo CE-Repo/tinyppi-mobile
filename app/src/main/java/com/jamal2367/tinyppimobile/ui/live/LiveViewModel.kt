@@ -81,17 +81,6 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
         _message.value = null
     }
 
-    /**
-     * Where the volume slider is while a finger is on it.
-     *
-     * The box answers with the level it settled on and the snapshot brings it
-     * back five times a second, which is faster than a finger moves - so
-     * without this the thumb is dragged out from under the finger by an answer
-     * about where it was two frames ago. Cleared when the box catches up.
-     */
-    private val _pendingVolume = MutableStateFlow<Int?>(null)
-    val pendingVolume: StateFlow<Int?> = _pendingVolume.asStateFlow()
-
     fun playPause() = command { repository.playPause() }
 
     fun stop() = command { repository.stop() }
@@ -106,6 +95,10 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleMute() = command { repository.toggleMute() }
 
+    fun volumeUp() = command { repository.volumeUp() }
+
+    fun volumeDown() = command { repository.volumeDown() }
+
     fun selectAudio(index: Int) = command { repository.selectAudio(index) }
 
     /** Pick a subtitle track, or pass null to switch them off. */
@@ -113,31 +106,6 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Put the driver into one of the VS10 modes this snapshot offered. */
     fun setMode(mode: String) = command { repository.setMode(mode) }
-
-    /** Where the slider is now, before the box has been told. */
-    fun previewVolume(level: Int) {
-        _pendingVolume.value = level.coerceIn(0, 100)
-    }
-
-    /** Where the finger came off, which is the only level worth sending. */
-    fun commitVolume(level: Int) {
-        val target = level.coerceIn(0, 100)
-        _pendingVolume.value = target
-        viewModelScope.launch {
-            try {
-                repository.setVolume(target)
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (failure: Throwable) {
-                report(failure)
-            } finally {
-                // Handed back to the box either way: on success its own
-                // reading is the one to follow, and on failure the slider must
-                // not go on showing a level nothing was ever set to.
-                _pendingVolume.value = null
-            }
-        }
-    }
 
     private fun command(block: suspend () -> Unit) {
         viewModelScope.launch {

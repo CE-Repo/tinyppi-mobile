@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  *
  * A fixed set, checked on the far side before anything reaches Kodi: the
  * request names an action, never a JSON-RPC method, so a client can only ever
- * do these ten things (see `_COMMANDS` in the add-on's `snapshot.py`).
+ * do these twelve things (see `_COMMANDS` in the add-on's `snapshot.py`).
  */
 enum class PlayerAction(val id: String) {
     PLAY_PAUSE("playpause"),
@@ -31,8 +31,17 @@ enum class PlayerAction(val id: String) {
     /** Jump to a percentage of the running time. */
     SEEK_PERCENT("seek_percent"),
 
-    /** Set the volume, 0 to 100. */
-    VOLUME("volume"),
+    /**
+     * Step the volume one notch, up or down. Carries no value.
+     *
+     * The far side puts these in as the actions a remote sends rather than as
+     * an absolute level, because that is the path a box passing volume over
+     * CEC listens on - which is what lets these reach an amplifier where
+     * setting a level never could. It costs the absolute level: CEC carries
+     * "up", "down" and "mute" and has nothing for "set it to 40".
+     */
+    VOLUME_UP("volume_up"),
+    VOLUME_DOWN("volume_down"),
 
     /** Toggle mute; carries no value. */
     MUTE("mute"),

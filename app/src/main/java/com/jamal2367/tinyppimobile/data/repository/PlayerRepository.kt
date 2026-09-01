@@ -74,8 +74,10 @@ class PlayerRepository(
     suspend fun seekTo(percent: Float) =
         command(PlayerAction.SEEK_PERCENT, percent.toDouble().coerceIn(0.0, 100.0))
 
-    suspend fun setVolume(level: Int) =
-        command(PlayerAction.VOLUME, level.coerceIn(0, 100).toDouble())
+    /** One notch louder, and one notch quieter. */
+    suspend fun volumeUp() = command(PlayerAction.VOLUME_UP)
+
+    suspend fun volumeDown() = command(PlayerAction.VOLUME_DOWN)
 
     suspend fun toggleMute() = command(PlayerAction.MUTE)
 

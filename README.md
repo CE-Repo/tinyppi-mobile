@@ -177,7 +177,7 @@ All of it.
 | `GET /api/history` | The chart and the event list. |
 | `GET /api/art` | The poster of what is playing. |
 | `POST /api/mode` | The VS10 buttons. |
-| `POST /api/command` | Play/pause, stop, previous/next chapter, seek, seek to a percentage, volume, mute, audio track, subtitle track. |
+| `POST /api/command` | Play/pause, stop, previous/next chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track. |
 
 The token travels as `X-TinyPPI-Token` on everything Retrofit sends, and as
 `?token=` on the event stream and the artwork — the two the add-on documents
