@@ -21,12 +21,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.repository.LiveState
-import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.PillShape
 import com.jamal2367.tinyppimobile.ui.theme.StatusDown
 import com.jamal2367.tinyppimobile.ui.theme.StatusLive
 import com.jamal2367.tinyppimobile.ui.theme.StatusWaiting
-import com.jamal2367.tinyppimobile.ui.theme.artworkTint
 
 /**
  * How the app is getting its readings, in one line.
@@ -40,54 +38,79 @@ import com.jamal2367.tinyppimobile.ui.theme.artworkTint
  * The address is named beside it: in automatic mode that is the only way to
  * tell from the outside which of the two boxes answered.
  *
- * While a title is playing the pill takes the same tint as the card under it,
- * so the two read as one piece of the same screen rather than as a plain grey
- * lozenge sitting on a coloured one. That is what [accented] is for, and why it
- * is the caller's answer rather than a colour read from the theme: the colour
- * of the last film outlives the film, and a line about the connection is about
- * the box rather than about anything that was playing on it.
- *
- * The tint is the ground only. The words on it are plain: the state and the
- * address are the two things on this line anyone reads, and they read fastest
- * in the colour text is normally set in - the ground under them is already
- * saying everything the accent had to say here.
+ * The words are plain: the state and the address are the two things on this
+ * line anyone reads, and they read fastest in the colour text is normally set
+ * in. Only the dot carries colour, and it carries the one thing worth it.
  */
 @Composable
 fun StatusLine(
     connection: LiveState.Connection,
     serverLabel: String?,
     modifier: Modifier = Modifier,
-    accented: Boolean = false,
     onReconnect: (() -> Unit)? = null,
 ) {
-    val dot by animateColorAsState(targetValue = connection.dotColor(), label = "statusDot")
-
-    val container = MaterialTheme.colorScheme.surfaceContainerLow
-    val ground = LocalArtworkAccent.current
-        ?.takeIf { accented }
-        ?.let { artworkTint(it, container) }
-        ?: container
-
     // No hairline. A card is outlined because it is stacked against other
     // cards in nearly its own colour and something has to say where one ends;
     // this pill is a lozenge on the open page with nothing under it to be
     // confused with, and the outline was drawing a second edge just inside the
     // shape's own.
-    Row(
+    StatusContent(
+        connection = connection,
+        serverLabel = serverLabel,
+        onReconnect = onReconnect,
         modifier = modifier
             .clip(PillShape)
-            .background(ground)
-            .then(
-                if (onReconnect != null && connection.invitesReconnecting()) {
-                    Modifier.clickable(
-                        onClick = onReconnect,
-                        onClickLabel = stringResource(R.string.status_reconnect),
-                    )
-                } else {
-                    Modifier
-                }
-            )
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .reconnectable(connection, onReconnect)
             .padding(horizontal = 12.dp, vertical = 7.dp),
+    )
+}
+
+/**
+ * The same line, for a card that is already a card.
+ *
+ * While a title is playing the line goes inside the card about that title
+ * rather than standing over it. The two were always the one piece of screen -
+ * the pill took the card's own tint so that they would read as one - and a
+ * lozenge drawn on a surface it is already the colour of is an outline around
+ * nothing. Here it is simply the card's first row.
+ *
+ * No ground and no shape of its own, so it inherits the wash the card is
+ * painted in and lands where the card's padding puts it.
+ */
+@Composable
+fun StatusRow(
+    connection: LiveState.Connection,
+    serverLabel: String?,
+    modifier: Modifier = Modifier,
+    onReconnect: (() -> Unit)? = null,
+) {
+    StatusContent(
+        connection = connection,
+        serverLabel = serverLabel,
+        onReconnect = onReconnect,
+        // Out to the card's edges and back in again, so a tap lands anywhere
+        // along the row rather than only on the words - and the ripple runs
+        // the width of the card, which is what says the whole row is the
+        // target.
+        modifier = modifier
+            .clip(MaterialTheme.shapes.small)
+            .reconnectable(connection, onReconnect)
+            .padding(vertical = 2.dp),
+    )
+}
+
+@Composable
+private fun StatusContent(
+    connection: LiveState.Connection,
+    serverLabel: String?,
+    onReconnect: (() -> Unit)?,
+    modifier: Modifier,
+) {
+    val dot by animateColorAsState(targetValue = connection.dotColor(), label = "statusDot")
+
+    Row(
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -113,6 +136,17 @@ fun StatusLine(
             )
         }
     }
+}
+
+/** Answers a tap where connecting again would change anything, and not otherwise. */
+@Composable
+private fun Modifier.reconnectable(
+    connection: LiveState.Connection,
+    onReconnect: (() -> Unit)?,
+): Modifier = if (onReconnect != null && connection.invitesReconnecting()) {
+    clickable(onClick = onReconnect, onClickLabel = stringResource(R.string.status_reconnect))
+} else {
+    this
 }
 
 private fun LiveState.Connection.dotColor(): Color = when (this) {

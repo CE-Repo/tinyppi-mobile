@@ -74,7 +74,6 @@ import com.jamal2367.tinyppimobile.data.model.PlayerControls
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.model.Track
 import com.jamal2367.tinyppimobile.data.model.Vs10State
-import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
@@ -83,6 +82,7 @@ import com.jamal2367.tinyppimobile.ui.components.HdrGrade
 import com.jamal2367.tinyppimobile.ui.components.PosterImage
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.components.StatusLine
+import com.jamal2367.tinyppimobile.ui.components.StatusRow
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
@@ -166,7 +166,6 @@ fun LiveScreen(
 
                 else -> LiveContent(
                     snapshot = snapshot,
-                    server = state.live.server,
                     connection = state.live.connection,
                     serverLabel = state.live.server?.label,
                     poster = poster,
@@ -183,7 +182,6 @@ fun LiveScreen(
 @Composable
 private fun LiveContent(
     snapshot: Snapshot,
-    server: ServerConfig?,
     connection: LiveState.Connection,
     serverLabel: String?,
     poster: String?,
@@ -197,22 +195,6 @@ private fun LiveContent(
         verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
         modifier = Modifier.fillMaxSize(),
     ) {
-        // The head of the list rather than a fixed line above it: it belongs to
-        // the card under it, and the two travel together.
-        if (snapshot.playing) {
-            item {
-                StatusLine(
-                    connection = connection,
-                    serverLabel = serverLabel,
-                    accented = true,
-                    onReconnect = viewModel::reconnect,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                )
-            }
-        }
-
         if (!snapshot.playing) {
             item {
                 EmptyState(
@@ -228,6 +210,8 @@ private fun LiveContent(
         item {
             NowPlayingCard(
                 snapshot = snapshot,
+                connection = connection,
+                serverLabel = serverLabel,
                 poster = poster,
                 showArtwork = showArtwork,
                 canControl = canControl,
@@ -295,6 +279,8 @@ private fun LiveContent(
 @Composable
 private fun NowPlayingCard(
     snapshot: Snapshot,
+    connection: LiveState.Connection,
+    serverLabel: String?,
     poster: String?,
     showArtwork: Boolean,
     canControl: Boolean,
@@ -309,6 +295,17 @@ private fun NowPlayingCard(
         title = null,
         containerBrush = accent?.let { artworkGradient(it, container) },
     ) {
+        // The first row of the card rather than a pill above it. It was always
+        // about the same thing the card is - this box, this title - and it
+        // took the card's own tint so the two would read as one piece; drawn
+        // inside, it is one piece without having to be made to look like it.
+        StatusRow(
+            connection = connection,
+            serverLabel = serverLabel,
+            onReconnect = viewModel::reconnect,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             if (showArtwork) {
                 PosterImage(
