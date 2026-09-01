@@ -39,6 +39,8 @@
     <string name="live_playpause">Play / pause</string>
     <string name="live_transport">Player</string>
     <string name="live_stop">Stop</string>
+    <string name="live_chapter_previous">Previous chapter</string>
+    <string name="live_chapter_next">Next chapter</string>
     <plurals name="live_seek_back">
         <item quantity="one">%1$d second back</item>
         <item quantity="other">%1$d seconds back</item>

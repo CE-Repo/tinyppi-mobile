@@ -36,6 +36,8 @@
     <string name="live_playpause">Wiedergabe / Pause</string>
     <string name="live_transport">Player</string>
     <string name="live_stop">Stopp</string>
+    <string name="live_chapter_previous">Vorheriges Kapitel</string>
+    <string name="live_chapter_next">Nächstes Kapitel</string>
     <plurals name="live_seek_back">
         <item quantity="one">%1$d Sekunde zurück</item>
         <item quantity="other">%1$d Sekunden zurück</item>

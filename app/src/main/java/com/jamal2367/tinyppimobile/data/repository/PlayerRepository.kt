@@ -55,6 +55,12 @@ class PlayerRepository(
 
     suspend fun stop() = command(PlayerAction.STOP)
 
+    /** Step to the chapter before this one. Refused on a file with no chapters. */
+    suspend fun previousChapter() = command(PlayerAction.CHAPTER_PREVIOUS)
+
+    /** Step to the chapter after this one. Refused on a file with no chapters. */
+    suspend fun nextChapter() = command(PlayerAction.CHAPTER_NEXT)
+
     /** Jump [seconds] forwards, or back for a negative number. */
     suspend fun seekBy(seconds: Int) = command(
         PlayerAction.SEEK,

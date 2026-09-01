@@ -39,6 +39,8 @@
     <string name="live_playpause">Lejátszás / szünet</string>
     <string name="live_transport">Lejátszó</string>
     <string name="live_stop">Stop</string>
+    <string name="live_chapter_previous">Előző fejezet</string>
+    <string name="live_chapter_next">Következő fejezet</string>
     <plurals name="live_seek_back">
         <item quantity="one">%1$d másodperccel vissza</item>
         <item quantity="other">%1$d másodperccel vissza</item>

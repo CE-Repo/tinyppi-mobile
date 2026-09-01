@@ -7,11 +7,23 @@ import kotlinx.serialization.Serializable
  *
  * A fixed set, checked on the far side before anything reaches Kodi: the
  * request names an action, never a JSON-RPC method, so a client can only ever
- * do these eight things (see `_COMMANDS` in the add-on's `snapshot.py`).
+ * do these ten things (see `_COMMANDS` in the add-on's `snapshot.py`).
  */
 enum class PlayerAction(val id: String) {
     PLAY_PAUSE("playpause"),
     STOP("stop"),
+
+    /**
+     * Step to the chapter before this one, or the one after it.
+     *
+     * Carries no value, and is refused on a file with no chapters: Kodi has no
+     * JSON-RPC method for a chapter, only the action a keymap sends, and that
+     * action seeks a long way instead when there is no chapter to land on. The
+     * add-on checks the count rather than let the key mean two things, so the
+     * app can take a refusal at face value.
+     */
+    CHAPTER_PREVIOUS("chapter_previous"),
+    CHAPTER_NEXT("chapter_next"),
 
     /** Jump by a number of seconds, forwards or back. */
     SEEK("seek"),

@@ -211,9 +211,19 @@ data class PlayerControls(
     @SerialName("subtitle_on") val subtitleOn: Boolean = false,
     val volume: Int? = null,
     val muted: Boolean = false,
+    /** How many chapters the playing file has; 0 when it has none. */
+    val chapters: Int = 0,
 ) {
     val isEmpty: Boolean
         get() = audio.isEmpty() && subtitle.isEmpty() && volume == null
+
+    /**
+     * Whether stepping between chapters leads anywhere.
+     *
+     * One chapter is the whole file under another name, so it is no more
+     * navigable than none at all.
+     */
+    val hasChapters: Boolean get() = chapters > 1
 }
 
 @Serializable

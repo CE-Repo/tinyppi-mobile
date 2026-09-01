@@ -29,6 +29,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.automirrored.rounded.VolumeOff
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
@@ -707,11 +709,12 @@ private fun JumpButton(label: String, description: String, onClick: () -> Unit) 
 }
 
 /**
- * Play, the volume, and stop.
+ * The chapter keys, play, the volume, and stop.
  *
- * The row the card is for: start or hold what is playing, set how loud, end
- * it. All three the same height, so the row has one line to it rather than a
- * tall thing at one end and short ones at the other.
+ * The row the card is for: step between the film's own marks, start or hold
+ * what is playing, set how loud, end it. All of them the same height, so the
+ * row has one line to it rather than a tall thing at one end and short ones at
+ * the other.
  *
  * The volume takes the other end as a speaker and a figure, and the slider it
  * sets lives behind them. A slider sits at a hundred most of its life, which
@@ -738,12 +741,23 @@ private fun VolumeRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(TRANSPORT_GAP),
     ) {
-        // Play at the near corner and stop at the far one. They are the same
-        // button to look at - same fill, same size, same shape - so what tells
+        // The two chapter keys take the two ends of the row rather than
+        // standing either side of play. Back at the near corner and forward at
+        // the far one, they bracket everything between them: the pair is still
+        // read as one pair, and neither of them is close enough to play or to
+        // stop to be pressed in mistake for either.
+        ChapterButton(
+            forward = false,
+            enabled = controls.hasChapters,
+            onClick = viewModel::previousChapter,
+        )
+
+        // Play near one end, stop near the other. Every button here is the
+        // same to look at - same fill, same size, same shape - so what tells
         // them apart is where they sit and what is drawn on them. That is on
-        // purpose: stop ends playback outright, and the corner furthest from
-        // the thumb that reaches for play is the hardest place on the row to
-        // hit by accident.
+        // purpose: stop ends playback outright, and the far side of the
+        // volume from the thumb that reaches for play is as hard a place to
+        // hit by accident as the row has.
         FilledTonalIconButton(
             onClick = viewModel::playPause,
             shape = CircleShape,
@@ -756,8 +770,8 @@ private fun VolumeRow(
             )
         }
 
-        // The volume takes whatever the two buttons leave, the way the two
-        // track pickers below share the width between them. Pushed to one end
+        // The volume takes whatever the buttons leave, the way the two track
+        // pickers below share the width between them. Pushed to one end
         // instead, it left a hand's width of nothing across the middle of the
         // card - and the two ends of an empty row read as two rows.
         if (level != null) {
@@ -782,6 +796,43 @@ private fun VolumeRow(
                 contentDescription = stringResource(R.string.live_stop),
             )
         }
+
+        ChapterButton(
+            forward = true,
+            enabled = controls.hasChapters,
+            onClick = viewModel::nextChapter,
+        )
+    }
+}
+
+/**
+ * One chapter back, or one on.
+ *
+ * Off on a file that has none, which is most of them: the add-on refuses the
+ * command outright rather than seeking a long way instead, so a key that is
+ * still pressable here would only ever produce the failure line under the
+ * card. Dimmed and left in place rather than taken out, because a row that
+ * changes width when the film changes is a row whose buttons move out from
+ * under the thumb that was aiming at one.
+ *
+ * On the neutral ground with the rest of the row: every round button in it is
+ * one kind of thing, and where it sits is what says which.
+ */
+@Composable
+private fun ChapterButton(forward: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    FilledTonalIconButton(
+        onClick = onClick,
+        enabled = enabled,
+        shape = CircleShape,
+        colors = neutralTonalIconButtonColors(),
+        modifier = Modifier.size(TRANSPORT_BUTTON),
+    ) {
+        Icon(
+            imageVector = if (forward) Icons.Rounded.SkipNext else Icons.Rounded.SkipPrevious,
+            contentDescription = stringResource(
+                if (forward) R.string.live_chapter_next else R.string.live_chapter_previous,
+            ),
+        )
     }
 }
 
@@ -889,18 +940,20 @@ private fun VolumeButton(
 private val TRANSPORT_BUTTON = 38.dp
 
 /**
- * How far the three things in that row stand apart.
+ * How far the things in that row stand apart.
  *
- * Three times the four points they held to begin with. The row above sets its
- * own spacing by spreading seven identical buttons across the card; this one
- * is three unlike things - a button, a long pill, a button - and close
- * together they touched shoulders and read as one control with two ends.
+ * Two and a half times the four points they held to begin with. The row above
+ * sets its own spacing by spreading six identical buttons across the card;
+ * this one is unlike things side by side - buttons, a long pill, a button -
+ * and close together they touched shoulders and read as one control with
+ * several ends.
  *
- * What the gap costs comes off the volume, which takes whatever is left. Much
- * past this and the pill starts to look narrow for the width it is sitting in,
- * and the buttons either side would be the thing to shrink instead.
+ * What the gap costs comes off the volume, which takes whatever is left. Two
+ * points came back off it when the chapter keys joined the row: five things
+ * pay the gap four times over, and the pill was the only one of them with any
+ * width to give.
  */
-private val TRANSPORT_GAP = 12.dp
+private val TRANSPORT_GAP = 10.dp
 
 /**
  * How wide the volume opens.

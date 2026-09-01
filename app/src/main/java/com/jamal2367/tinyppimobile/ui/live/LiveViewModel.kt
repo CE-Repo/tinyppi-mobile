@@ -96,6 +96,10 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
 
     fun stop() = command { repository.stop() }
 
+    fun previousChapter() = command { repository.previousChapter() }
+
+    fun nextChapter() = command { repository.nextChapter() }
+
     fun seekBy(seconds: Int) = command { repository.seekBy(seconds) }
 
     fun seekTo(percent: Float) = command { repository.seekTo(percent) }
