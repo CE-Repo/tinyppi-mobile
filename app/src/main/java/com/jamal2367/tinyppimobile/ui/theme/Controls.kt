@@ -122,8 +122,8 @@ fun SlimSliderTrack(
  * touch target of its own whatever the handle is painted at, so what came off
  * is paint and not reach.
  */
-val SliderThumbWidth = 7.dp
-val SliderThumbHeight = 36.dp
+val SliderThumbWidth = 5.dp
+val SliderThumbHeight = 32.dp
 
 /**
  * That handle, for a slider that asks for it.

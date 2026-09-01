@@ -604,7 +604,7 @@ private val WAVE_SPEED = 24.dp
  * takes when it is a strip of information along the foot of something else;
  * this one is the length of the card and the thing the card is about.
  */
-private val WAVE_STROKE = 7.dp
+private val WAVE_STROKE = 5.dp
 
 /**
  * How much room the wave has to move in.
@@ -614,7 +614,7 @@ private val WAVE_STROKE = 7.dp
  * figures together are what is left for the wave to move in - five points
  * here - and raising the stroke without raising this flattens the wave.
  */
-private val WAVE_HEIGHT = 12.dp
+private val WAVE_HEIGHT = 10.dp
 
 /**
  * The six jumps, and under them the row that stops, sets and plays.
