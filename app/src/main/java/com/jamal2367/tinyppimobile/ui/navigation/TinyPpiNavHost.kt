@@ -8,7 +8,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.jamal2367.tinyppimobile.ui.details.DetailsScreen
 import com.jamal2367.tinyppimobile.ui.history.HistoryScreen
 import com.jamal2367.tinyppimobile.ui.live.LiveScreen
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
@@ -20,7 +19,7 @@ fun TinyPpiNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
 ) {
-    // The live reading outlives its tab. Three of the five screens are windows
+    // The live reading outlives its tab. Two of the four screens are windows
     // onto the same snapshot, and a per-destination view model would be three
     // objects collecting the same flow - which, with the container's stop
     // timeout under them, is a stream that drops and reopens every time
@@ -35,13 +34,6 @@ fun TinyPpiNavHost(
     ) {
         composable(Routes.LIVE) {
             LiveScreen(
-                onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                viewModel = liveViewModel,
-            )
-        }
-
-        composable(Routes.DETAILS) {
-            DetailsScreen(
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 viewModel = liveViewModel,
             )

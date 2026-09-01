@@ -3,7 +3,6 @@
 
     <!-- Navigation -->
     <string name="nav_live">Live</string>
-    <string name="nav_details">Werte</string>
     <string name="nav_metadata">Dolby-Vision-Metadaten</string>
     <string name="nav_metadata_tab">Metadaten</string>
     <string name="nav_history">Verlauf</string>
@@ -70,8 +69,6 @@
     <!-- Messwerte -->
 
     <!-- Werte -->
-    <string name="details_empty_title">Keine Werte</string>
-    <string name="details_empty_text">Die Zeilen des Overlays erscheinen hier, sobald ein Video läuft.</string>
 
     <!-- Dolby-Vision-Metadaten -->
     <string name="metadata_empty_title">Keine Metadaten</string>

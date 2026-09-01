@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
 import androidx.compose.material.icons.rounded.Pause
@@ -63,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.R
+import com.jamal2367.tinyppimobile.data.model.InfoGroup
 import com.jamal2367.tinyppimobile.data.model.PlayerControls
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.model.Track
@@ -72,6 +74,7 @@ import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
 import com.jamal2367.tinyppimobile.ui.components.FormatLogo
+import com.jamal2367.tinyppimobile.ui.components.GroupCard
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
 import com.jamal2367.tinyppimobile.ui.components.PosterImage
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
@@ -245,6 +248,16 @@ private fun LiveContent(
             }
         }
 
+        // The readings the overlay prints, at the foot of the same screen
+        // rather than behind a tab of their own. They answer questions the card
+        // at the top raises - what this file actually is, what the box is doing
+        // with it - and an answer a tab away is an answer nobody goes and gets.
+        //
+        // Keyed by the group's own id, so a card keeps its place in the list
+        // and its fold as the box adds and drops panels mid-film.
+        items(items = snapshot.groups, key = InfoGroup::id) { group ->
+            GroupCard(group)
+        }
     }
 }
 

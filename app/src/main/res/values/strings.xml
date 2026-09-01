@@ -6,7 +6,6 @@
 
     <!-- Navigation -->
     <string name="nav_live">Live</string>
-    <string name="nav_details">Readings</string>
     <string name="nav_metadata">Dolby Vision metadata</string>
     <string name="nav_metadata_tab">Metadata</string>
     <string name="nav_history">History</string>
@@ -73,8 +72,6 @@
     <!-- Measurements -->
 
     <!-- Readings -->
-    <string name="details_empty_title">No readings</string>
-    <string name="details_empty_text">The overlay\'s rows appear here while a video is playing.</string>
 
     <!-- Dolby Vision metadata -->
     <string name="metadata_empty_title">No metadata</string>

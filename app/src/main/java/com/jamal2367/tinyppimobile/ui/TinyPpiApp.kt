@@ -66,7 +66,6 @@ fun TinyPpiApp(container: AppContainer) {
     val liveViewModel: LiveViewModel = viewModel()
     val liveState by liveViewModel.state.collectAsStateWithLifecycle()
     val showMetadata = HdrGrade.of(liveState.snapshot?.sourceType.orEmpty()) == HdrGrade.DOLBY_VISION
-    val showValues = liveState.snapshot?.playing == true
     val showHistory = liveState.snapshot?.let { it.playing || it.last.isPresent } == true
 
     // Wide enough for a rail: a tablet or an unfolded phone should not waste a
@@ -95,7 +94,7 @@ fun TinyPpiApp(container: AppContainer) {
 
     if (useRail) {
         Row(Modifier.fillMaxSize()) {
-            TinyPpiNavigationRail(navController, showMetadata, showValues, showHistory)
+            TinyPpiNavigationRail(navController, showMetadata, showHistory)
             Box(Modifier.weight(1f)) {
                 TinyPpiNavHost(navController = navController)
                 // No scaffold on this branch to hand the host to, so it is
@@ -117,7 +116,7 @@ fun TinyPpiApp(container: AppContainer) {
             // counted twice and every screen would start a status bar's height
             // too low.
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            bottomBar = { TinyPpiNavigationBar(navController, showMetadata, showValues, showHistory) },
+            bottomBar = { TinyPpiNavigationBar(navController, showMetadata, showHistory) },
             // Above the navigation bar rather than over it, which is what the
             // scaffold does with a host it is given.
             snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -232,14 +231,12 @@ private fun DoubleBackToExit(enabled: Boolean, snackbarHostState: SnackbarHostSt
 private fun TinyPpiNavigationBar(
     navController: NavHostController,
     showMetadata: Boolean,
-    showValues: Boolean,
     showHistory: Boolean,
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val destinations = remember(showMetadata, showValues, showHistory) {
+    val destinations = remember(showMetadata, showHistory) {
         TopLevelDestination.entries.filter {
             (it != TopLevelDestination.METADATA || showMetadata) &&
-                (it != TopLevelDestination.DETAILS || showValues) &&
                 (it != TopLevelDestination.HISTORY || showHistory)
         }
     }
@@ -280,14 +277,12 @@ private fun TinyPpiNavigationBar(
 private fun TinyPpiNavigationRail(
     navController: NavHostController,
     showMetadata: Boolean,
-    showValues: Boolean,
     showHistory: Boolean,
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val destinations = remember(showMetadata, showValues, showHistory) {
+    val destinations = remember(showMetadata, showHistory) {
         TopLevelDestination.entries.filter {
             (it != TopLevelDestination.METADATA || showMetadata) &&
-                (it != TopLevelDestination.DETAILS || showValues) &&
                 (it != TopLevelDestination.HISTORY || showHistory)
         }
     }

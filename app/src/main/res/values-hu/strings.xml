@@ -6,7 +6,6 @@
 
     <!-- Navigation -->
     <string name="nav_live">Live</string>
-    <string name="nav_details">Adatok</string>
     <string name="nav_metadata">Dolby Vision metaadatok</string>
     <string name="nav_metadata_tab">Metaadat</string>
     <string name="nav_history">Előzmény</string>
@@ -73,8 +72,6 @@
     <!-- Measurements -->
 
     <!-- Readings -->
-    <string name="details_empty_title">Nincs adat</string>
-    <string name="details_empty_text">Az adat\'ok itt jelennek meg, videó lejátszása közben</string>
 
     <!-- Dolby Vision metadata -->
     <string name="metadata_empty_title">Nincsenek metaadatok</string>

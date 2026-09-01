@@ -1,41 +1,21 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-
-package com.jamal2367.tinyppimobile.ui.details
+package com.jamal2367.tinyppimobile.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.InfoGroup
-import com.jamal2367.tinyppimobile.ui.components.EmptyState
-import com.jamal2367.tinyppimobile.ui.components.SectionCard
-import com.jamal2367.tinyppimobile.ui.components.flashOnChange
 import com.jamal2367.tinyppimobile.ui.theme.accentText
-import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
-import com.jamal2367.tinyppimobile.ui.theme.CardGap
-import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 
 /**
- * Every reading the overlay prints, in the cards it prints them in.
+ * One of the panels the overlay prints its readings in, as a card.
  *
  * Nothing here is composed by this app: the add-on renders each row the way
  * the on-screen overlay draws it - same formatting, same units, same labels,
@@ -46,52 +26,15 @@ import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
  * A row the stream does not carry is left out by the add-on rather than sent
  * blank, and a whole card whose source cannot carry it goes the same way,
  * which is what keeps this readable on a phone.
+ *
+ * These used to be a screen of their own, reached by a tab. They are the same
+ * readings about the same film as the card at the top of the live screen, and
+ * a tab between the two made a reader cross the app to answer a question the
+ * poster had raised - so they are the foot of that screen now, under the
+ * transport and the conversions.
  */
 @Composable
-fun DetailsScreen(
-    onOpenSettings: () -> Unit,
-    viewModel: LiveViewModel,
-) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-    val snapshot = state.snapshot
-
-    Scaffold { padding ->
-        val groups = snapshot?.groups.orEmpty()
-
-        when {
-            !state.isConfigured -> EmptyState(
-                icon = Icons.Outlined.Assessment,
-                title = stringResource(R.string.live_not_configured_title),
-                message = stringResource(R.string.live_not_configured_text),
-                actionLabel = stringResource(R.string.action_open_settings),
-                onAction = onOpenSettings,
-                modifier = Modifier.padding(padding),
-            )
-
-            groups.isEmpty() -> EmptyState(
-                icon = Icons.Outlined.Assessment,
-                title = stringResource(R.string.details_empty_title),
-                message = stringResource(R.string.details_empty_text),
-                modifier = Modifier.padding(padding),
-            )
-
-            else -> LazyColumn(
-                contentPadding = PaddingValues(ScreenEdge),
-                verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-            ) {
-                items(items = groups, key = InfoGroup::id) { group ->
-                    GroupCard(group)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun GroupCard(group: InfoGroup) {
+fun GroupCard(group: InfoGroup) {
     // A row the box sent with nothing in it is dropped here rather than inside
     // the row: a rule is drawn between one row and the next, and a row that
     // draws nothing would leave its rule behind.
