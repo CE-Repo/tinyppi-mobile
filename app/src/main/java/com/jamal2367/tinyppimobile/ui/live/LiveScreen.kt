@@ -7,6 +7,7 @@ package com.jamal2367.tinyppimobile.ui.live
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,13 +28,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
+import androidx.compose.material.icons.automirrored.rounded.VolumeDown
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material.icons.rounded.Stop
-import androidx.compose.material.icons.automirrored.rounded.VolumeOff
-import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -67,6 +69,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.R
@@ -757,6 +766,11 @@ private fun VolumeRow(
     paused: Boolean,
     viewModel: LiveViewModel,
 ) {
+    var volumeMenuOpen by remember { mutableStateOf(false) }
+    val volumeDownLabel = stringResource(R.string.live_volume_down)
+    val volumeUpLabel = stringResource(R.string.live_volume_up)
+    val volumeMenuGap = with(LocalDensity.current) { 8.dp.roundToPx() }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -794,25 +808,109 @@ private fun VolumeRow(
             )
         }
 
-        // The three volume keys take the middle of the row, one share each
-        // like everything either side of them.
-        StepButton(
-            up = false,
-            onClick = viewModel::volumeDown,
-            modifier = Modifier.weight(1f),
-        )
+        // Keep the transport row compact. The three volume actions live in
+        // the menu anchored to this one button and therefore no longer take
+        // three permanent places in the row.
+        Box(modifier = Modifier.weight(1f)) {
+            FilledTonalIconButton(
+                onClick = { volumeMenuOpen = true },
+                shape = TRANSPORT_SHAPE,
+                colors = neutralTonalIconButtonColors(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(TRANSPORT_BUTTON),
+            ) {
+                Icon(
+                    imageVector = if (controls.muted) {
+                        Icons.AutoMirrored.Rounded.VolumeOff
+                    } else {
+                        Icons.AutoMirrored.Rounded.VolumeUp
+                    },
+                    contentDescription = stringResource(R.string.live_volume),
+                )
+            }
 
-        MuteButton(
-            muted = controls.muted,
-            onClick = viewModel::toggleMute,
-            modifier = Modifier.weight(1f),
-        )
-
-        StepButton(
-            up = true,
-            onClick = viewModel::volumeUp,
-            modifier = Modifier.weight(1f),
-        )
+            if (volumeMenuOpen) Popup(
+                popupPositionProvider = VolumeMenuPositionProvider(volumeMenuGap),
+                onDismissRequest = { volumeMenuOpen = false },
+                properties = PopupProperties(focusable = true),
+            ) {
+                androidx.compose.material3.Surface(
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    tonalElevation = 6.dp,
+                    shadowElevation = 8.dp,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        FilledTonalButton(
+                            onClick = { viewModel.volumeDown() },
+                            shape = TRANSPORT_SHAPE,
+                            colors = neutralTonalButtonColors(),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            modifier = Modifier
+                                .width(VOLUME_MENU_BUTTON)
+                                .height(TRANSPORT_BUTTON)
+                                .semantics { contentDescription = volumeDownLabel },
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.VolumeDown,
+                                contentDescription = null,
+                                modifier = Modifier.size(STEP_ICON),
+                            )
+                            Text(
+                                text = "−",
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(start = 4.dp),
+                            )
+                        }
+                        FilledTonalIconButton(
+                            onClick = { viewModel.toggleMute() },
+                            shape = TRANSPORT_SHAPE,
+                            colors = neutralTonalIconButtonColors(),
+                            modifier = Modifier
+                                .width(VOLUME_MENU_BUTTON)
+                                .height(TRANSPORT_BUTTON),
+                        ) {
+                            Icon(
+                                imageVector = if (controls.muted) {
+                                    Icons.AutoMirrored.Rounded.VolumeOff
+                                } else {
+                                    Icons.AutoMirrored.Rounded.VolumeUp
+                                },
+                                contentDescription = stringResource(
+                                    if (controls.muted) R.string.live_unmute else R.string.live_mute,
+                                ),
+                            )
+                        }
+                        FilledTonalButton(
+                            onClick = { viewModel.volumeUp() },
+                            shape = TRANSPORT_SHAPE,
+                            colors = neutralTonalButtonColors(),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            modifier = Modifier
+                                .width(VOLUME_MENU_BUTTON)
+                                .height(TRANSPORT_BUTTON)
+                                .semantics { contentDescription = volumeUpLabel },
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.VolumeUp,
+                                contentDescription = null,
+                                modifier = Modifier.size(STEP_ICON),
+                            )
+                            Text(
+                                text = "+",
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(start = 4.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
 
         FilledTonalIconButton(
             onClick = viewModel::stop,
@@ -835,6 +933,21 @@ private fun VolumeRow(
             modifier = Modifier.weight(1f),
         )
     }
+}
+
+/** Keeps the volume popup centered on its anchor, regardless of screen width. */
+private class VolumeMenuPositionProvider(
+    private val verticalGap: Int,
+) : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize,
+    ): IntOffset = IntOffset(
+        x = anchorBounds.left + (anchorBounds.width - popupContentSize.width) / 2,
+        y = anchorBounds.bottom + verticalGap,
+    )
 }
 
 /**
@@ -970,6 +1083,10 @@ private fun MuteButton(muted: Boolean, onClick: () -> Unit, modifier: Modifier =
  * the two rows line up at the edges of the card without being told to.
  */
 private val TRANSPORT_BUTTON = 40.dp
+
+/** Fixed width for the collapsed volume control. */
+/** Shared width for the three controls inside the volume popup. */
+private val VOLUME_MENU_BUTTON = 52.dp
 
 /**
  * The corner every control on the card is cut with.
