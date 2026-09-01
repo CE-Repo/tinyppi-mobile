@@ -7,6 +7,7 @@
 package com.jamal2367.tinyppimobile.ui.settings
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
@@ -47,6 +48,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -69,6 +71,8 @@ import com.jamal2367.tinyppimobile.data.prefs.ThemeMode
 import com.jamal2367.tinyppimobile.ui.components.InfoRow
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.theme.accentText
+import com.jamal2367.tinyppimobile.ui.theme.SlimSliderThumb
+import com.jamal2367.tinyppimobile.ui.theme.SlimSliderTrack
 import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
@@ -501,6 +505,7 @@ private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) 
     var draftIntensity by rememberSaveable(settings.adaptiveColorIntensity) {
         mutableStateOf(settings.adaptiveColorIntensity)
     }
+    val sliding = remember { MutableInteractionSource() }
 
     SectionCard(
         title = stringResource(R.string.settings_appearance),
@@ -599,6 +604,9 @@ private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) 
                     },
                     valueRange = 0.5f..1f,
                     enabled = settings.adaptiveColor,
+                    interactionSource = sliding,
+                    thumb = { SlimSliderThumb(sliding, enabled = settings.adaptiveColor) },
+                    track = { SlimSliderTrack(it, enabled = settings.adaptiveColor) },
                     modifier = Modifier.weight(1f),
                 )
             }

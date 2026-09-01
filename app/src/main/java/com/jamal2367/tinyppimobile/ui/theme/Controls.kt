@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.jamal2367.tinyppimobile.ui.theme
 
 import androidx.compose.material3.ButtonColors
@@ -7,7 +9,13 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SliderColors
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SliderState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 
 /**
  * What a button wears when it is a tool rather than an answer.
@@ -56,3 +64,76 @@ fun neutralSliderColors(): SliderColors = SliderDefaults.colors(
     activeTrackColor = MaterialTheme.colorScheme.onSurface,
     inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
 )
+
+/**
+ * How thick a slider's rail is drawn.
+ *
+ * Half of Material's sixteen. That figure is drawn for a slider that is the
+ * subject of the screen it sits on - a brightness or a volume alone on a
+ * settings page. Every slider here is one row among several on a card, sitting
+ * under a wave six points thick and between two buttons, and at sixteen it was
+ * the heaviest thing in the group by some way.
+ */
+val SliderTrackHeight = 8.dp
+
+/**
+ * That rail, for a slider that asks for it.
+ *
+ * The track is the only thing changed: the handle, the gap it holds either
+ * side of itself and the dot at the end are Material's, measured against
+ * whatever height the track is given.
+ */
+@Composable
+fun SlimSliderTrack(
+    state: SliderState,
+    colors: SliderColors = SliderDefaults.colors(),
+    enabled: Boolean = true,
+) {
+    SliderDefaults.Track(
+        sliderState = state,
+        colors = colors,
+        enabled = enabled,
+        modifier = Modifier.height(SliderTrackHeight),
+    )
+}
+
+/**
+ * How big a slider's handle is drawn.
+ *
+ * The playback bar's, and every other slider follows it: the transport is
+ * where a handle on this app is learnt, and one shape of handle everywhere is
+ * what stops the volume under it reading as a different kind of control.
+ *
+ * Wider than Material's four, because the wave it rides is drawn at the same
+ * seven and a handle thinner than its own line looks like a crack in it.
+ * Shorter than Material's forty-four, which is the height of a thumb - sized
+ * to be grabbed rather than to be looked at - and against a twelve-point rail
+ * read as a bar dropped across the card.
+ *
+ * Nothing is lost by taking the height down. A slider carries a full-sized
+ * touch target of its own whatever the handle is painted at, so what came off
+ * is paint and not reach.
+ */
+val SliderThumbWidth = 7.dp
+val SliderThumbHeight = 36.dp
+
+/**
+ * That handle, for a slider that asks for it.
+ *
+ * The [interactionSource] has to be the one the slider itself was given: a
+ * handle drawn by hand hears nothing on its own, and one that does not light
+ * up under a finger is a handle that looks broken while it works.
+ */
+@Composable
+fun SlimSliderThumb(
+    interactionSource: MutableInteractionSource,
+    colors: SliderColors = SliderDefaults.colors(),
+    enabled: Boolean = true,
+) {
+    SliderDefaults.Thumb(
+        interactionSource = interactionSource,
+        colors = colors,
+        enabled = enabled,
+        thumbSize = DpSize(SliderThumbWidth, SliderThumbHeight),
+    )
+}

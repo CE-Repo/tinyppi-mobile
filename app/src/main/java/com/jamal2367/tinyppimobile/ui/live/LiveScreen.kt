@@ -43,7 +43,6 @@ import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -66,7 +65,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -89,6 +87,8 @@ import com.jamal2367.tinyppimobile.ui.components.StatusLine
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
+import com.jamal2367.tinyppimobile.ui.theme.SlimSliderThumb
+import com.jamal2367.tinyppimobile.ui.theme.SlimSliderTrack
 import com.jamal2367.tinyppimobile.ui.theme.artworkGradient
 import com.jamal2367.tinyppimobile.ui.theme.neutralSliderColors
 import com.jamal2367.tinyppimobile.ui.theme.neutralTonalButtonColors
@@ -483,12 +483,7 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
                 // is drawn by hand below and it has to light up for the same
                 // presses and drags the slider is hearing.
                 interactionSource = seeking,
-                thumb = {
-                    SliderDefaults.Thumb(
-                        interactionSource = seeking,
-                        thumbSize = DpSize(THUMB_WIDTH, THUMB_HEIGHT),
-                    )
-                },
+                thumb = { SlimSliderThumb(seeking) },
                 // The bar is the slider's track rather than a reading drawn
                 // beside it: the handle still drags, the semantics are still
                 // the slider's, and what changes is only what gets painted
@@ -591,27 +586,12 @@ private val WAVE_STROKE = 7.dp
 /**
  * How much room the wave has to move in.
  *
- * Tied to the stroke rather than set beside it. The component plots the wave
- * across the height it is given less the width of the line - a thicker line in
- * the same box is a flatter wave - so the box grows by exactly what the line
- * grew by, and the wave keeps the depth it had.
+ * Read against the stroke, not independent of it. The component plots the wave
+ * across the height it is given less the width of the line, so these two
+ * figures together are what is left for the wave to move in - five points
+ * here - and raising the stroke without raising this flattens the wave.
  */
 private val WAVE_HEIGHT = 12.dp
-
-/**
- * How far the handle stands above and below the wave it rides on.
- *
- * Material draws it 44 points tall, which is the height of a thumb rather than
- * the height of anything on screen: it is sized to be grabbed. Against a wave
- * a fifth of that it read as a bar dropped across the card. Twice the wave is
- * enough to be seen as the handle and to be aimed at, and losing the rest
- * costs nothing - the slider keeps a full-sized touch target either way, so
- * what came off is paint and not reach.
- */
-private val THUMB_HEIGHT = 36.dp
-
-/** Material's own, unchanged: it is the wave that got thicker, not the handle. */
-private val THUMB_WIDTH = 7.dp
 
 /**
  * Play, the six jumps, the volume and stop.
@@ -730,6 +710,7 @@ private fun VolumeRow(
     viewModel: LiveViewModel,
 ) {
     val level = pendingVolume ?: controls.volume
+    val sliding = remember { MutableInteractionSource() }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -749,12 +730,16 @@ private fun VolumeRow(
         if (level == null) {
             Spacer(Modifier.weight(1f))
         } else {
+            val colors = neutralSliderColors()
             Slider(
                 value = level.toFloat(),
                 onValueChange = { viewModel.previewVolume(it.toInt()) },
                 onValueChangeFinished = { viewModel.commitVolume(level) },
                 valueRange = 0f..100f,
-                colors = neutralSliderColors(),
+                colors = colors,
+                interactionSource = sliding,
+                thumb = { SlimSliderThumb(sliding, colors) },
+                track = { SlimSliderTrack(it, colors) },
                 modifier = Modifier.weight(1f),
             )
             Text(
