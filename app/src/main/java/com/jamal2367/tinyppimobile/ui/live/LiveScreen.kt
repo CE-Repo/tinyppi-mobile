@@ -5,6 +5,8 @@
 
 package com.jamal2367.tinyppimobile.ui.live
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,10 +39,11 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -52,6 +55,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -60,6 +66,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -452,6 +459,7 @@ private fun ControlsCard(
 private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: LiveViewModel) {
     val reported = (snapshot.metrics.progress ?: 0.0).toFloat().coerceIn(0f, 100f)
     var dragged by remember { mutableStateOf<Float?>(null) }
+    val seeking = remember { MutableInteractionSource() }
 
     val target = dragged?.let { percent ->
         Formatters.clockSeconds(snapshot.duration)?.let { total ->
@@ -471,14 +479,34 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
                     dragged = null
                 },
                 valueRange = 0f..100f,
+                // Held here rather than left to the slider, because the thumb
+                // is drawn by hand below and it has to light up for the same
+                // presses and drags the slider is hearing.
+                interactionSource = seeking,
+                thumb = {
+                    SliderDefaults.Thumb(
+                        interactionSource = seeking,
+                        thumbSize = DpSize(THUMB_WIDTH, THUMB_HEIGHT),
+                    )
+                },
+                // The bar is the slider's track rather than a reading drawn
+                // beside it: the handle still drags, the semantics are still
+                // the slider's, and what changes is only what gets painted
+                // under the thumb.
+                track = { state ->
+                    PlaybackWave(
+                        progress = { state.coercedValueAsFraction },
+                        paused = snapshot.paused,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
         } else {
-            LinearProgressIndicator(
+            PlaybackWave(
                 progress = { reported / 100f },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp),
+                paused = snapshot.paused,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         Row(
@@ -501,6 +529,89 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
         }
     }
 }
+
+/**
+ * How far the film has got, drawn as a wave that travels with it.
+ *
+ * The part that has played is a moving squiggle and the part that has not is a
+ * straight line, so the bar says whether the picture is running without anyone
+ * having to watch the figures under it change. A frozen stream and a paused
+ * film look identical in every reading on this card - the wave is the one
+ * thing on the screen that stops when the picture does.
+ *
+ * Which is what [paused] is for. It flattens rather than stopping: a wave that
+ * simply froze mid-crest would read as a drawing bug, and one that settles to
+ * a straight line reads as a film that has been paused. The settling is
+ * animated for the same reason - the flattening is the announcement.
+ *
+ * Amplitude is the only thing said here. The wavelength and the speed are
+ * Material's, and a wave tuned by hand on top of a component that already
+ * tunes it is two answers to one question.
+ */
+@Composable
+private fun PlaybackWave(
+    progress: () -> Float,
+    paused: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val amplitude by animateFloatAsState(
+        targetValue = if (paused) 0f else 1f,
+        label = "waveAmplitude",
+    )
+
+    val width = with(LocalDensity.current) { WAVE_STROKE.toPx() }
+    val stroke = remember(width) { Stroke(width = width, cap = StrokeCap.Round) }
+
+    LinearWavyProgressIndicator(
+        progress = progress,
+        color = MaterialTheme.colorScheme.primary,
+        // The neutral ground the buttons on this card stand on, so the length
+        // still to play reads as the card rather than as a second colour.
+        trackColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        stroke = stroke,
+        trackStroke = stroke,
+        // The dot that ends the track, matched to the line it ends. Left at
+        // Material's figure it stayed the width of the old thin line and read
+        // as a chip off the end of the new one.
+        stopSize = WAVE_STROKE,
+        amplitude = { amplitude },
+        modifier = modifier.height(WAVE_HEIGHT),
+    )
+}
+
+/**
+ * How thick the playback wave is drawn.
+ *
+ * Two points over Material's four. A four-point line is what a progress bar
+ * takes when it is a strip of information along the foot of something else;
+ * this one is the length of the card and the thing the card is about.
+ */
+private val WAVE_STROKE = 7.dp
+
+/**
+ * How much room the wave has to move in.
+ *
+ * Tied to the stroke rather than set beside it. The component plots the wave
+ * across the height it is given less the width of the line - a thicker line in
+ * the same box is a flatter wave - so the box grows by exactly what the line
+ * grew by, and the wave keeps the depth it had.
+ */
+private val WAVE_HEIGHT = 12.dp
+
+/**
+ * How far the handle stands above and below the wave it rides on.
+ *
+ * Material draws it 44 points tall, which is the height of a thumb rather than
+ * the height of anything on screen: it is sized to be grabbed. Against a wave
+ * a fifth of that it read as a bar dropped across the card. Twice the wave is
+ * enough to be seen as the handle and to be aimed at, and losing the rest
+ * costs nothing - the slider keeps a full-sized touch target either way, so
+ * what came off is paint and not reach.
+ */
+private val THUMB_HEIGHT = 36.dp
+
+/** Material's own, unchanged: it is the wave that got thicker, not the handle. */
+private val THUMB_WIDTH = 7.dp
 
 /**
  * Play, the six jumps, the volume and stop.

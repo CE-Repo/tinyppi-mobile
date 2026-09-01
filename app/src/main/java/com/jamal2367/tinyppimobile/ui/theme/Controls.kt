@@ -44,10 +44,15 @@ fun neutralTonalIconButtonColors(): IconButtonColors =
  * card is about. The volume is a second full-strength bar sitting directly
  * under the first, saying the same colour about a smaller thing - drawn grey
  * it still reads at a glance, and stops repeating the point.
+ *
+ * The same grey as the buttons at either end of it, not the dimmer one. The
+ * bar runs between the stop and the mute and is read across all three, and a
+ * handle a shade under the icons it sits between looks like a handle that has
+ * been switched off.
  */
 @Composable
 fun neutralSliderColors(): SliderColors = SliderDefaults.colors(
-    thumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-    activeTrackColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    thumbColor = MaterialTheme.colorScheme.onSurface,
+    activeTrackColor = MaterialTheme.colorScheme.onSurface,
     inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
 )
