@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -310,7 +311,10 @@ private fun NowPlayingCard(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(
+            modifier = Modifier.offset(y = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
             if (showArtwork) {
                 PosterImage(
                     url = poster,
@@ -988,84 +992,6 @@ private fun ChapterButton(
 }
 
 /**
- * One notch louder, or one quieter.
- *
- * A speaker and a sign, in that order. The sign alone said the right thing in
- * the wrong row: a bare plus among keys marked "+10s" is a key that has to be
- * worked out, and the speaker says which kind of louder it means before it is
- * read. The pair is what the mute key between them is drawn from, so the three
- * read as one group without being drawn a box.
- *
- * Never switched off, however little the box has told us. The step does not
- * depend on a level having arrived - and on a box that passes volume over CEC
- * there is no level to know, only a soundbar that gets louder.
- */
-@Composable
-private fun StepButton(up: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val name = stringResource(
-        if (up) R.string.live_volume_up else R.string.live_volume_down,
-    )
-
-    FilledTonalButton(
-        onClick = onClick,
-        shape = TRANSPORT_SHAPE,
-        colors = neutralTonalButtonColors(),
-        // Nothing of its own: the key is as wide as its share of the row, and
-        // what is in it is two small things that have to sit together.
-        contentPadding = PaddingValues(0.dp),
-        modifier = modifier
-            .height(TRANSPORT_BUTTON)
-            .semantics { contentDescription = name },
-    ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
-            contentDescription = null,
-            modifier = Modifier.size(STEP_ICON),
-        )
-        Text(
-            text = if (up) "+" else "−",
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(start = 4.dp),
-        )
-    }
-}
-
-/**
- * The key between the two steps, which turns the sound off.
- *
- * A speaker on its own, between two speakers that carry a sign: the middle of
- * the three is the one that does the plain thing to the volume, and the group
- * says so by what is missing from it rather than by a word.
- *
- * No figure beside it. The level the box reports is Kodi's own mixer, and a
- * box that passes volume over CEC leaves that number where it is while the
- * amplifier does the moving - so the reading would have been a number that sat
- * still through everything these keys did, on the very boxes they were added
- * for.
- */
-@Composable
-private fun MuteButton(muted: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    FilledTonalIconButton(
-        onClick = onClick,
-        shape = TRANSPORT_SHAPE,
-        colors = neutralTonalIconButtonColors(),
-        modifier = modifier.height(TRANSPORT_BUTTON),
-    ) {
-        Icon(
-            imageVector = if (muted) {
-                Icons.AutoMirrored.Rounded.VolumeOff
-            } else {
-                Icons.AutoMirrored.Rounded.VolumeUp
-            },
-            contentDescription = stringResource(
-                if (muted) R.string.live_unmute else R.string.live_mute
-            ),
-        )
-    }
-}
-
-/**
  * How tall a key on the Player and VS10 cards is drawn.
  *
  * Material's own figure for a button, which is what the volume and the two
@@ -1374,7 +1300,7 @@ private val BADGE_ROW_GAP = 10.dp
  * the column of text beside it is measured against the same height - the logos
  * at its foot are meant to land on the poster's bottom edge.
  */
-private val POSTER_WIDTH = 84.dp
+private val POSTER_WIDTH = 104.dp
 private const val POSTER_RATIO = 2f / 3f
 private val POSTER_HEIGHT = POSTER_WIDTH / POSTER_RATIO
 

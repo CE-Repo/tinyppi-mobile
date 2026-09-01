@@ -123,7 +123,7 @@ fun SlimSliderTrack(
  * is paint and not reach.
  */
 val SliderThumbWidth = 5.dp
-val SliderThumbHeight = 32.dp
+val SliderThumbHeight = 28.dp
 
 /**
  * That handle, for a slider that asks for it.
