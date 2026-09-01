@@ -98,7 +98,7 @@ class SettingsRepository(private val context: Context) {
         keepScreenOn = this[KEY_KEEP_SCREEN_ON] ?: false,
         showArtwork = this[KEY_SHOW_ARTWORK] ?: true,
         adaptiveColor = this[KEY_ADAPTIVE_COLOR] ?: true,
-        adaptiveColorIntensity = (this[KEY_ADAPTIVE_COLOR_INTENSITY] ?: 0.75f)
+        adaptiveColorIntensity = (this[KEY_ADAPTIVE_COLOR_INTENSITY] ?: 0.5f)
             .coerceIn(0.5f, 1f),
         cardFolds = this[KEY_CARD_FOLDS].orEmpty(),
     )
