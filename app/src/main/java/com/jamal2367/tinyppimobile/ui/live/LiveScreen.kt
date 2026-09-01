@@ -58,7 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -639,44 +639,58 @@ private fun TransportSection(
     pendingVolume: Int?,
     viewModel: LiveViewModel,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        JumpButton(
-            label = "-10m",
-            description = pluralStringResource(R.plurals.live_seek_back_minutes, 10, 10),
-            onClick = { viewModel.seekBy(-600) },
-        )
-        JumpButton(
-            label = "-1m",
-            description = pluralStringResource(R.plurals.live_seek_back_minutes, 1, 1),
-            onClick = { viewModel.seekBy(-60) },
-        )
-        JumpButton(
-            label = "-10s",
-            description = pluralStringResource(R.plurals.live_seek_back, 10, 10),
-            onClick = { viewModel.seekBy(-10) },
-        )
-        JumpButton(
-            label = "+10s",
-            description = pluralStringResource(R.plurals.live_seek_forward, 10, 10),
-            onClick = { viewModel.seekBy(10) },
-        )
-        JumpButton(
-            label = "+1m",
-            description = pluralStringResource(R.plurals.live_seek_forward_minutes, 1, 1),
-            onClick = { viewModel.seekBy(60) },
-        )
-        JumpButton(
-            label = "+10m",
-            description = pluralStringResource(R.plurals.live_seek_forward_minutes, 10, 10),
-            onClick = { viewModel.seekBy(600) },
-        )
-    }
+    // The two rows are held at the same distance apart as the keys within
+    // them, which the card would otherwise not do: it sets ten points between
+    // whatever it is given, and a keypad with more air across it than along it
+    // reads as two rows rather than as one block. What the card still puts in
+    // is the space under the block, before the track pickers - and that one is
+    // a division worth drawing.
+    Column(verticalArrangement = Arrangement.spacedBy(TRANSPORT_GAP)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(TRANSPORT_GAP),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            JumpButton(
+                label = "-10m",
+                description = pluralStringResource(R.plurals.live_seek_back_minutes, 10, 10),
+                onClick = { viewModel.seekBy(-600) },
+                modifier = Modifier.weight(1f),
+            )
+            JumpButton(
+                label = "-1m",
+                description = pluralStringResource(R.plurals.live_seek_back_minutes, 1, 1),
+                onClick = { viewModel.seekBy(-60) },
+                modifier = Modifier.weight(1f),
+            )
+            JumpButton(
+                label = "-10s",
+                description = pluralStringResource(R.plurals.live_seek_back, 10, 10),
+                onClick = { viewModel.seekBy(-10) },
+                modifier = Modifier.weight(1f),
+            )
+            JumpButton(
+                label = "+10s",
+                description = pluralStringResource(R.plurals.live_seek_forward, 10, 10),
+                onClick = { viewModel.seekBy(10) },
+                modifier = Modifier.weight(1f),
+            )
+            JumpButton(
+                label = "+1m",
+                description = pluralStringResource(R.plurals.live_seek_forward_minutes, 1, 1),
+                onClick = { viewModel.seekBy(60) },
+                modifier = Modifier.weight(1f),
+            )
+            JumpButton(
+                label = "+10m",
+                description = pluralStringResource(R.plurals.live_seek_forward_minutes, 10, 10),
+                onClick = { viewModel.seekBy(600) },
+                modifier = Modifier.weight(1f),
+            )
+        }
 
-    VolumeRow(snapshot.controls, snapshot.paused, pendingVolume, viewModel)
+        VolumeRow(snapshot.controls, snapshot.paused, pendingVolume, viewModel)
+    }
 }
 
 /**
@@ -689,14 +703,26 @@ private fun TransportSection(
  * Drawn on the neutral ground: six of these in the accent, three to each side
  * of the play button, is a row where the one button that matters is the same
  * colour as the six that surround it.
+ *
+ * Each takes an equal share of the row rather than a width of its own. Spread
+ * across the card at their own size they stood a finger's width apart, which
+ * read as six separate things that happened to be in a line; shoulder to
+ * shoulder with a hairline between them they read as one scale, which is what
+ * they are.
  */
 @Composable
-private fun JumpButton(label: String, description: String, onClick: () -> Unit) {
+private fun JumpButton(
+    label: String,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     FilledTonalIconButton(
         onClick = onClick,
+        shape = TRANSPORT_SHAPE,
         colors = neutralTonalIconButtonColors(),
-        modifier = Modifier
-            .size(TRANSPORT_BUTTON)
+        modifier = modifier
+            .height(TRANSPORT_BUTTON)
             .semantics { contentDescription = description },
     ) {
         Text(
@@ -760,7 +786,7 @@ private fun VolumeRow(
         // hit by accident as the row has.
         FilledTonalIconButton(
             onClick = viewModel::playPause,
-            shape = CircleShape,
+            shape = TRANSPORT_SHAPE,
             colors = neutralTonalIconButtonColors(),
             modifier = Modifier.size(TRANSPORT_BUTTON),
         ) {
@@ -787,7 +813,7 @@ private fun VolumeRow(
 
         FilledTonalIconButton(
             onClick = viewModel::stop,
-            shape = CircleShape,
+            shape = TRANSPORT_SHAPE,
             colors = neutralTonalIconButtonColors(),
             modifier = Modifier.size(TRANSPORT_BUTTON),
         ) {
@@ -815,15 +841,16 @@ private fun VolumeRow(
  * changes width when the film changes is a row whose buttons move out from
  * under the thumb that was aiming at one.
  *
- * On the neutral ground with the rest of the row: every round button in it is
- * one kind of thing, and where it sits is what says which.
+ * On the neutral ground with the rest of the row, and cut to the same corner:
+ * every key on this card is one kind of thing, and where it sits is what says
+ * which.
  */
 @Composable
 private fun ChapterButton(forward: Boolean, enabled: Boolean, onClick: () -> Unit) {
     FilledTonalIconButton(
         onClick = onClick,
         enabled = enabled,
-        shape = CircleShape,
+        shape = TRANSPORT_SHAPE,
         colors = neutralTonalIconButtonColors(),
         modifier = Modifier.size(TRANSPORT_BUTTON),
     ) {
@@ -862,9 +889,12 @@ private fun VolumeButton(
     Box(modifier = modifier) {
         FilledTonalButton(
             onClick = { open = true },
+            shape = TRANSPORT_SHAPE,
             colors = neutralTonalButtonColors(),
             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(TRANSPORT_BUTTON),
         ) {
             Icon(
                 imageVector = if (muted) {
@@ -892,7 +922,7 @@ private fun VolumeButton(
             ) {
                 FilledTonalIconButton(
                     onClick = viewModel::toggleMute,
-                    shape = CircleShape,
+                    shape = TRANSPORT_SHAPE,
                     colors = neutralTonalIconButtonColors(),
                 ) {
                     Icon(
@@ -929,31 +959,67 @@ private fun VolumeButton(
 }
 
 /**
- * How big a round button in the transport is drawn.
+ * How tall a key on the Player and VS10 cards is drawn.
  *
- * One figure for all of them, so the two rows line up at the edges of the
- * card. Left at its own default, an icon button measures a little wider than
- * this and carries a touch target wider still - which put play and stop a
- * couple of points inside where the jumps above them start and end, close
- * enough to look like a mistake rather than a margin.
+ * Material's own figure for a button, which is what the volume and the two
+ * track pickers were taking anyway - they are written buttons and set their
+ * height from their text and its padding, while an icon button takes whatever
+ * it is given. At thirty-eight the icon keys sat two points shy of the pill
+ * they share a row with, which is the kind of difference that is not seen so
+ * much as felt.
+ *
+ * So it is put on all of them by hand rather than left to two components to
+ * agree on, and every key on both cards is the same height as every other.
+ *
+ * It sets the width too, for the four keys in the middle row that are square.
+ * The seek keys above are not: they divide the row between them, and come out
+ * wider than they are tall.
  */
-private val TRANSPORT_BUTTON = 38.dp
+private val TRANSPORT_BUTTON = 40.dp
 
 /**
- * How far the things in that row stand apart.
+ * The corner every control on the card is cut with.
  *
- * Two and a half times the four points they held to begin with. The row above
- * sets its own spacing by spreading six identical buttons across the card;
- * this one is unlike things side by side - buttons, a long pill, a button -
- * and close together they touched shoulders and read as one control with
- * several ends.
+ * Not the circle Material puts on an icon button, and not the app's own
+ * twenty-four either: a round button says one thing sitting on its own, and a
+ * dozen of them stacked in rows say a handful of loose coins. Cut square
+ * enough to have sides, they line up along theirs - which is what a keypad is,
+ * and what these two cards have been all along.
  *
- * What the gap costs comes off the volume, which takes whatever is left. Two
- * points came back off it when the chapter keys joined the row: five things
- * pay the gap four times over, and the pill was the only one of them with any
- * width to give.
+ * Still cut, though, and cut deep enough to be seen against the card it sits
+ * on. The corner is what keeps a row of keys from reading as one bar with
+ * lines drawn on it.
  */
-private val TRANSPORT_GAP = 10.dp
+private val TRANSPORT_SHAPE = RoundedCornerShape(12.dp)
+
+/**
+ * How far the things on the card stand apart.
+ *
+ * Air rather than space: enough that two keys are two keys, and no more.
+ * These are a dozen controls across two cards that all do one job between
+ * them, and a gap wide enough to read as a division between them was drawing
+ * divisions that are not there.
+ *
+ * The seek keys take an equal share of what is left over, so the figure sets
+ * their width as well as the distance between them - and the volume, which is
+ * the one thing in the middle row with width to give, keeps what the gap does
+ * not take.
+ */
+private val TRANSPORT_GAP = 8.dp
+
+/**
+ * The air around a track picker: over the pair of them, and under each name.
+ *
+ * The space above sits on top of the ten the card already puts between its own
+ * children, so the pickers stand a good deal further from the volume row than
+ * the volume row does from the seek keys. That is the point: it is what says
+ * the keypad has ended and something else has started.
+ *
+ * The same figure again between a picker's name and the button under it. Both
+ * are the gap that separates a caption from what it captions, so both are the
+ * one number rather than two that happen to agree.
+ */
+private val TRACK_GAP = 6.dp
 
 /**
  * How wide the volume opens.
@@ -970,9 +1036,16 @@ private fun TrackSection(controls: PlayerControls, viewModel: LiveViewModel) {
     val hasAudio = controls.audio.isNotEmpty()
     val hasSubtitles = controls.subtitle.isNotEmpty()
 
+    // Set down off the keypad rather than carried on under it. The rows above
+    // are one block of keys held six points apart; these two are a different
+    // kind of thing - each one a named picker rather than a key - and the
+    // ten points the card puts between what it is given were not enough to
+    // say so once the keys themselves had closed up.
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(TRANSPORT_GAP),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = TRACK_GAP),
     ) {
         if (hasAudio) {
             TrackPicker(
@@ -1014,7 +1087,14 @@ private fun TrackPicker(
         ?: offLabel
         ?: stringResource(R.string.live_track_unknown)
 
-    Column(modifier = modifier) {
+    // The name stands off its picker rather than sitting on it. Set tight
+    // against the button, a caption in the card's own quieter grey read as
+    // part of the button's own furniture instead of as the thing that says
+    // what the button is for.
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(TRACK_GAP),
+    ) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
@@ -1026,8 +1106,11 @@ private fun TrackPicker(
         Box {
             FilledTonalButton(
                 onClick = { open = true },
+                shape = TRANSPORT_SHAPE,
                 colors = neutralTonalButtonColors(),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(TRANSPORT_BUTTON),
             ) {
                 Text(
                     text = current,
@@ -1073,7 +1156,9 @@ private fun TrackPicker(
  * those shouting from a card near the bottom of the screen outrank the play
  * button they are sitting under. Even in the tonal shade they were two more
  * coloured pills on a screen that had a dozen. These wear what the transport
- * wears, which is now the card's own ground.
+ * wears throughout - the card's own ground, the same corner, the same height
+ * and the same air between them - so the two cards read as one set of keys in
+ * two groups rather than as two ideas of what a button is.
  *
  * Two to a line, sharing the width equally. They are alternatives to each
  * other, so one drawn wider than the next would be saying something about it
@@ -1098,21 +1183,24 @@ private fun Vs10Card(
         }
 
         Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(TRANSPORT_GAP),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 4.dp),
         ) {
             vs10.options.chunked(VS10_PER_ROW).forEach { row ->
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(TRANSPORT_GAP),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     row.forEach { option ->
                         FilledTonalButton(
                             onClick = { viewModel.setMode(option.mode) },
+                            shape = TRANSPORT_SHAPE,
                             colors = neutralTonalButtonColors(),
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(TRANSPORT_BUTTON),
                         ) {
                             Vs10Label(option.label)
                         }
