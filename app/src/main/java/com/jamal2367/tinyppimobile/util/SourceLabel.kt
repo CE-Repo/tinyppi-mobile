@@ -1,5 +1,7 @@
 package com.jamal2367.tinyppimobile.util
 
+import com.jamal2367.tinyppimobile.data.model.Frame
+import com.jamal2367.tinyppimobile.data.model.InfoGroup
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 
 /**
@@ -16,6 +18,111 @@ import com.jamal2367.tinyppimobile.data.model.Snapshot
  * the rows the overlay prints, under whatever name the box gives it.
  */
 object SourceLabel {
+
+    /**
+     * How the sound is described, a badge apiece.
+     *
+     * Read out of the Audio card rather than off the name of a picture. The
+     * add-on prints the codec, the channel layout and whatever rides on top of
+     * them as one row it has already parsed - `TrueHD 7.1` with `(Atmos)`
+     * beside it - and that row is the same row whether or not the box allows
+     * control, whether or not a conversion is running, and whatever the reader
+     * has Kodi set to speak.
+     *
+     * The row is found by its id and not by what it is called. The labels come
+     * out of Kodi's own string table and are translated; `audio.32045` is the
+     * number of the string rather than the string, and does not move. The
+     * card's first row answers where a box numbers them differently, which is
+     * the codec row on every box seen so far.
+     *
+     * Ordered codec, then what rides on it, then how wide it is. The layout is
+     * the one figure here rather than a name, and a number between two names
+     * breaks the reading.
+     */
+    fun soundBadges(snapshot: Snapshot): List<String> {
+        val audio = snapshot.groups.firstOrNull { it.id == AUDIO_GROUP } ?: return emptyList()
+        val row = audio.rows.firstOrNull { it.id == AUDIO_CODEC_ROW }
+            ?: audio.rows.firstOrNull()
+            ?: return emptyList()
+
+        val words = row.value.trim().split(' ').filter { it.isNotBlank() }
+        val layout = words.lastOrNull()?.takeIf { it.matches(CHANNEL_LAYOUT) }
+        val codec = words.dropLast(if (layout != null) 1 else 0)
+            .joinToString(" ")
+            .takeIf { it.isNotBlank() }
+
+        return (listOfNotNull(codec) + marksIn(audio) + listOfNotNull(layout)).distinct()
+    }
+
+    /**
+     * What the picture carries beyond how it is graded - `IMAX` and its like.
+     *
+     * Every card except the sound's, so a mark is found wherever the add-on
+     * prints it: the Video card and the processing card are two panels of the
+     * same answer, and which of them names a release is the box's business
+     * rather than this app's.
+     *
+     * Read out of the cards rather than off the name of a format graphic, and
+     * that is the whole of why it survives a conversion. The graphic is named
+     * for what is being displayed - put a Dolby Vision title through VS10 and
+     * it becomes the SDR one, taking IMAX with it - while the cards describe
+     * the file, and a film does not stop being the IMAX cut because the
+     * picture is being converted on the way out.
+     */
+    fun pictureMarks(snapshot: Snapshot): List<String> = snapshot.groups
+        .filterNot { it.id == AUDIO_GROUP }
+        .flatMap { group -> marksIn(group) }
+        .distinct()
+
+    /**
+     * The names worth a badge that appear anywhere in a card's readings.
+     *
+     * Looked for in what the rows say rather than in what they are called: a
+     * label is translated and `IMAX` is not. Longest first, so `IMAX Enhanced`
+     * is found whole rather than as an `IMAX` with a spare word after it.
+     */
+    private fun marksIn(group: InfoGroup): List<String> {
+        val text = group.rows.joinToString(" ") { "${it.value} ${it.detail}" }
+
+        val found = mutableListOf<String>()
+        var rest = text
+        MARKS.forEach { mark ->
+            if (rest.contains(mark, ignoreCase = true)) {
+                found += mark.spelled()
+                // Taken out of the running text so a longer name already found
+                // does not hand its own words to a shorter one after it.
+                rest = rest.replace(mark, " ", ignoreCase = true)
+            }
+        }
+        return found
+    }
+
+    /**
+     * What the coded frame is called - `UHD`, `FHD`, `SD`.
+     *
+     * The frame the box reports, not the mode the television is running. Those
+     * are different questions and the readings answer both: a 1080p film on a
+     * 4K set displays at 3840x2160, and a badge on this card that said 4K
+     * because of the television would be describing the wrong end of the wire.
+     *
+     * Classified by width. A scope film is stored short - a UHD release runs
+     * 3840 by 1608 rather than by 2160 - so height is the figure that varies
+     * with the aspect ratio and width is the one that names the format.
+     *
+     * Named from the same family throughout: `HD`, `FHD`, `QHD`, `UHD`. What
+     * a television plays is 3840 across and that is UHD; `4K` is the cinema
+     * standard at 4096 and is spelled out as such where one turns up. Calling
+     * the consumer format 4K is the industry's own shorthand, and this app is
+     * read by people who can see the difference from the readings below it.
+     *
+     * Null where the box sent no frame. It comes with the Dolby Vision L5
+     * offsets, so an SDR title may carry none, and a badge is better absent
+     * than guessed from something that was measuring the display.
+     */
+    fun resolution(frame: Frame?): String? {
+        val width = frame?.takeIf { it.isUsable }?.w ?: return null
+        return RESOLUTIONS.firstOrNull { (from, _) -> width >= from }?.second ?: "SD"
+    }
 
     /**
      * The profile and layer of a Dolby Vision source - `P7.6 FEL`, `P8.1` - or
@@ -105,3 +212,69 @@ object SourceLabel {
 
     private val AFFIRMATIVE = setOf("yes", "true", "1", "present", "ja", "on")
 }
+
+/** How a channel layout is written, wherever a format graphic names one: `7.1`, `5.1`. */
+private val CHANNEL_LAYOUT = Regex("""\d+\.\d+""")
+
+/**
+ * Which card the sound is described in, and which row of it.
+ *
+ * Ids and not titles. The titles are Kodi's own strings and come back
+ * translated - the card reads Audio here and Ton on a German box - while the
+ * ids are the numbers those strings are filed under and do not move.
+ */
+private const val AUDIO_GROUP = "audio"
+private const val AUDIO_CODEC_ROW = "audio.32045"
+
+/**
+ * The names worth a badge of their own where a card mentions them.
+ *
+ * Longest first: `IMAX Enhanced` is one certification, and looking for `IMAX`
+ * before it would find half of it and leave the rest as loose text.
+ *
+ * Brand names throughout, which is what makes finding them in the readings
+ * safe: these are not translated, so a German box prints them the same way.
+ */
+private val MARKS = listOf(
+    "IMAX Enhanced",
+    "IMAX",
+    "Dolby Atmos",
+    "Atmos",
+    "DTS:X",
+    "DTS-X",
+    "DTSX",
+)
+
+/**
+ * How a name is written on a badge, where a card wrote it another way.
+ *
+ * A colon is awkward in a file name and in a good many string tables, so DTS:X
+ * turns up spelled around it. Put back here: the badge is read by someone who
+ * knows the format, and `DTSX` looks like a typo of it.
+ */
+private val SPELLINGS = mapOf(
+    "DTSX" to "DTS:X",
+    "DTS-X" to "DTS:X",
+    "DOLBY ATMOS" to "Atmos",
+)
+
+private fun String.spelled(): String = SPELLINGS[uppercase()] ?: this
+
+/**
+ * The names a coded width goes by, widest first.
+ *
+ * The thresholds are the standard widths themselves rather than midpoints
+ * between them: a release is authored at one of these, and anything wider than
+ * a standard is that standard - DCI's 4096 is 4K, not something above it.
+ */
+private val RESOLUTIONS = listOf(
+    7680 to "8K",
+    // The cinema standard, which is what 4K actually names: 4096 across. Kept
+    // apart from UHD rather than folded into it, because the whole reason to
+    // write UHD on the badge below is that 3840 is not this.
+    4096 to "DCI 4K",
+    3840 to "UHD",
+    2560 to "QHD",
+    1920 to "FHD",
+    1280 to "HD",
+)

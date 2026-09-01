@@ -51,20 +51,6 @@ object MediaUrls {
         }
     }
 
-    /**
-     * One of the format logos the overlay draws, by the path a snapshot named.
-     *
-     * These are the add-on's own skin graphics, served off a fixed allowlist
-     * built from the very maps the overlay picks its logos out of - so a format
-     * wears the same face on the television and on the phone. They need no
-     * token: they carry no player state and the same file answers every box.
-     */
-    fun logo(server: ServerConfig?, path: String): String? {
-        val box = server ?: return null
-        val name = path.trim().trim('/').takeIf { it.isNotBlank() } ?: return null
-        return "${box.baseUrl}/media/$name"
-    }
-
     private fun ServerConfig.tokenParameter(): String? =
         token.trim().takeIf { it.isNotBlank() }?.let { "&token=${it.encoded()}" }
 

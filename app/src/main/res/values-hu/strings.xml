@@ -32,7 +32,6 @@
     <string name="live_idle_title">Nincs lejátszás</string>
     <string name="live_idle_text">A TinyPPI a futó videót olvassa be, így nincs mit megjeleníteni, amíg legalább egy el nem indul.</string>
     <string name="live_untitled">Cím nélküli</string>
-    <string name="live_source">Forrás</string>
 
     <string name="card_expand">Kártya kibontása</string>
     <string name="card_collapse">Kártya összecsukása</string>

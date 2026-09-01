@@ -29,7 +29,6 @@
     <string name="live_idle_title">Nichts läuft</string>
     <string name="live_idle_text">TinyPPI liest aus, was ein laufendes Video ist – vorher gibt es nichts zu zeigen.</string>
     <string name="live_untitled">Ohne Titel</string>
-    <string name="live_source">Quelle</string>
 
     <string name="card_expand">Karte ausklappen</string>
     <string name="card_collapse">Karte einklappen</string>

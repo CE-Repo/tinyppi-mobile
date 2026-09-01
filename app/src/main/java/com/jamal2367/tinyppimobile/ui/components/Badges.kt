@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -38,10 +39,17 @@ import com.jamal2367.tinyppimobile.ui.theme.accentText
 fun FormatBadge(
     text: String,
     modifier: Modifier = Modifier,
-    prefix: String? = null,
     arrowSuffix: String? = null,
 ) {
     val content = MaterialTheme.colorScheme.accentText
+
+    // Cut to the line the words are set on rather than to a figure of its own.
+    // The arrow appears only once a conversion starts, and at Material's 16dp
+    // it stood taller than this app's 14sp label line - so the badge grew by
+    // two points at the moment a reader was watching it to see what changed.
+    val arrow = with(LocalDensity.current) {
+        MaterialTheme.typography.labelSmall.lineHeight.toDp()
+    }
 
     Row(
         modifier = modifier
@@ -51,14 +59,6 @@ fun FormatBadge(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        if (prefix != null) {
-            Text(
-                text = prefix,
-                color = content.copy(alpha = 0.7f),
-                style = MaterialTheme.typography.labelSmall,
-                fontSize = 10.sp,
-            )
-        }
         Text(
             text = text,
             color = content,
@@ -71,7 +71,7 @@ fun FormatBadge(
                 imageVector = Icons.AutoMirrored.Filled.ArrowRightAlt,
                 contentDescription = null,
                 tint = content,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(arrow),
             )
             Text(
                 text = arrowSuffix,

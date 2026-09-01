@@ -78,7 +78,6 @@ import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
-import com.jamal2367.tinyppimobile.ui.components.FormatLogo
 import com.jamal2367.tinyppimobile.ui.components.GroupCard
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
 import com.jamal2367.tinyppimobile.ui.components.PosterImage
@@ -227,7 +226,6 @@ private fun LiveContent(
         item {
             NowPlayingCard(
                 snapshot = snapshot,
-                server = server,
                 poster = poster,
                 showArtwork = showArtwork,
                 canControl = canControl,
@@ -295,7 +293,6 @@ private fun LiveContent(
 @Composable
 private fun NowPlayingCard(
     snapshot: Snapshot,
-    server: ServerConfig?,
     poster: String?,
     showArtwork: Boolean,
     canControl: Boolean,
@@ -352,40 +349,50 @@ private fun NowPlayingCard(
                     )
                 }
 
-                // A gap of its own above and below, both of the same weight,
-                // so the badges sit halfway between the line that names the
-                // film and the logos at the foot of the poster rather than
-                // hanging off one of the two.
+                // All of the slack above the badges rather than half of it
+                // either side, which lands the block on the bottom edge of the
+                // poster beside it: the column is held to the poster's height,
+                // so the last row of badges and the last row of pixels of the
+                // picture finish on the same line. Centred, they floated in
+                // the middle of the card against nothing.
                 Spacer(Modifier.weight(1f))
 
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    FormatBadge(
-                        text = sourceLabelOf(snapshot),
-                        prefix = stringResource(R.string.live_source),
-                        arrowSuffix = conversionTargetOf(snapshot),
-                    )
-                }
+                // The two rows travel together, a badge's own gap apart. They
+                // used to have one of those weighted spacers between them,
+                // which spread the picture and the sound to opposite ends of
+                // whatever the poster left over - two rows of the same kind of
+                // thing, reading as two unrelated groups.
+                Column(verticalArrangement = Arrangement.spacedBy(BADGE_ROW_GAP)) {
+                    // The picture: what it is graded as, what it is leaving
+                    // as, and what else the box said about this release.
+                    // `IMAX` is a cut of a film rather than a property of its
+                    // sound, so it belongs beside the grade, not with the audio.
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(BADGE_GAP),
+                        verticalArrangement = Arrangement.spacedBy(BADGE_GAP),
+                    ) {
+                        SourceLabel.resolution(snapshot.metrics.frame)?.let {
+                            FormatBadge(text = it)
+                        }
+                        FormatBadge(
+                            text = sourceLabelOf(snapshot),
+                            arrowSuffix = conversionTargetOf(snapshot),
+                        )
+                        SourceLabel.pictureMarks(snapshot).forEach { FormatBadge(text = it) }
+                    }
 
-                Spacer(Modifier.weight(1f))
-
-                // Wider apart than a badge would be: the logos have lost the
-                // chips that used to hold them apart, and two bare wordmarks
-                // six points from each other read as one.
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    FormatLogo(
-                        url = MediaUrls.logo(server, snapshot.logos.video),
-                        contentDescription = null,
-                    )
-                    FormatLogo(
-                        url = MediaUrls.logo(server, snapshot.logos.audio),
-                        contentDescription = null,
-                    )
+                    // The sound, out of the Audio card at the foot of this
+                    // screen: the codec, what rides on it, how wide it is.
+                    // These were the add-on's own wordmarks once - brand
+                    // graphics with their own weight and their own idea of how
+                    // tall a logo should be, sitting under a line of type they
+                    // had nothing in common with.
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(BADGE_GAP),
+                        verticalArrangement = Arrangement.spacedBy(BADGE_GAP),
+                    ) {
+                        SourceLabel.soundBadges(snapshot).forEach { FormatBadge(text = it) }
+                    }
                 }
             }
         }
@@ -971,6 +978,19 @@ private fun subtitleOf(snapshot: Snapshot): String? {
 
     return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
 }
+
+/** How far apart two badges sit in a row, and a wrapped row from the next. */
+private val BADGE_GAP = 6.dp
+
+/**
+ * How far apart the picture's badges and the sound's sit.
+ *
+ * Wider than the gap inside a row. The two rows are about different things,
+ * and at the same figure as the badges beside them they read as one block that
+ * happened to wrap - the extra points are what says the second row started on
+ * purpose.
+ */
+private val BADGE_ROW_GAP = 10.dp
 
 /**
  * How big the poster on the live card is drawn.

@@ -5,7 +5,12 @@ import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.prefs.ConnectionMode
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
+import com.jamal2367.tinyppimobile.data.model.Frame
+import com.jamal2367.tinyppimobile.data.model.Snapshot
+import com.jamal2367.tinyppimobile.data.model.InfoRowData
+import com.jamal2367.tinyppimobile.data.model.InfoGroup
 import com.jamal2367.tinyppimobile.util.MediaUrls
+import com.jamal2367.tinyppimobile.util.SourceLabel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -103,13 +108,89 @@ class ServerConfigTest {
         assertNull(MediaUrls.art(null, ArtTags(poster = "1a2b"), MediaUrls.ArtKind.POSTER))
     }
 
-    @Test
-    fun `a logo needs no token, and an absent one is no address`() {
-        assertEquals(
-            "http://192.168.1.10:8099/media/codecs/Dolby_Vision.png",
-            MediaUrls.logo(local, "codecs/Dolby_Vision.png"),
+    private fun withAudio(value: String, detail: String) = Snapshot(
+        groups = listOf(
+            InfoGroup(
+                id = "audio",
+                title = "Audio",
+                rows = listOf(InfoRowData("audio.32045", "Codec", value, detail)),
+            )
         )
-        assertNull(MediaUrls.logo(local, ""))
+    )
+
+    @Test
+    fun `the sound is read out of the Audio card`() {
+        // Codec, what rides on it, how wide it is - the add-on has already
+        // parsed all three into one row.
+        assertEquals(
+            listOf("TrueHD", "Atmos", "7.1"),
+            SourceLabel.soundBadges(withAudio("TrueHD 7.1", "(Atmos)")),
+        )
+        // A row with no layout in it is a codec and nothing more.
+        assertEquals(listOf("AC3"), SourceLabel.soundBadges(withAudio("AC3", "")))
+        // A colon is awkward in a string table, so the name is put back.
+        assertEquals(
+            listOf("DTS-HD MA", "DTS:X", "7.1"),
+            SourceLabel.soundBadges(withAudio("DTS-HD MA 7.1", "(DTSX)")),
+        )
+        // No card, no badges.
+        assertEquals(emptyList<String>(), SourceLabel.soundBadges(Snapshot()))
+    }
+
+    @Test
+    fun `the row is found by its id and not by what it is called`() {
+        // The labels come out of Kodi's string table and are translated; the
+        // ids are the numbers those strings are filed under.
+        val german = Snapshot(
+            groups = listOf(
+                InfoGroup(
+                    id = "audio",
+                    title = "Ton",
+                    rows = listOf(
+                        InfoRowData("audio.32045", "Codec", "TrueHD 7.1", "(Atmos)"),
+                    ),
+                )
+            )
+        )
+        assertEquals(listOf("TrueHD", "Atmos", "7.1"), SourceLabel.soundBadges(german))
+
+        // A box that numbers its rows differently still answers: the card's
+        // first row is the codec row on every box seen so far.
+        val renumbered = Snapshot(
+            groups = listOf(
+                InfoGroup(
+                    id = "audio",
+                    rows = listOf(InfoRowData("audio.99999", "Codec", "TrueHD 7.1", "")),
+                )
+            )
+        )
+        assertEquals(listOf("TrueHD", "7.1"), SourceLabel.soundBadges(renumbered))
+    }
+
+    @Test
+    fun `what the picture is marked with comes off every card but the sound's`() {
+        val snapshot = Snapshot(
+            groups = listOf(
+                InfoGroup(
+                    id = "video",
+                    title = "Video",
+                    rows = listOf(InfoRowData("video.32000", "Display mode", "3840x2160p23", "")),
+                ),
+                InfoGroup(
+                    id = "processing",
+                    title = "Verarbeitung",
+                    rows = listOf(InfoRowData("proc.1", "Release", "IMAX Enhanced", "")),
+                ),
+                InfoGroup(
+                    id = "audio",
+                    rows = listOf(InfoRowData("audio.32045", "Codec", "TrueHD 7.1", "(Atmos)")),
+                ),
+            )
+        )
+        // Found whole, and not as an IMAX with a spare word after it. Atmos
+        // belongs to the sound and stays out of the picture's row.
+        assertEquals(listOf("IMAX Enhanced"), SourceLabel.pictureMarks(snapshot))
+        assertEquals(listOf("TrueHD", "Atmos", "7.1"), SourceLabel.soundBadges(snapshot))
     }
 
     @Test

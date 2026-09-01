@@ -122,9 +122,9 @@ with the same wrong token would turn a clear error into a confusing one.
 
 ### Live
 
-The title with its poster, the source and output badges, the format logos the
-overlay itself draws, the progress, and — on a box that allows it — the
-transport row, the track pickers and the VS10 conversions.
+The title with its poster, the source and output badges, the video and audio
+formats named in badges of their own, the progress, and — on a box that allows
+it — the transport row, the track pickers and the VS10 conversions.
 
 The measurements at the bottom are the numeric half of a snapshot: the readings
 the dashboard charts rather than prints. The luminance pair only exists inside
@@ -176,7 +176,6 @@ All of it.
 | `GET /api/state` | The polling fallback, and the second half of the connection test. |
 | `GET /api/history` | The chart and the event list. |
 | `GET /api/art` | The poster of what is playing. |
-| `GET /media/…` | The format logos, from the add-on's own allowlist of skin graphics. |
 | `POST /api/mode` | The VS10 buttons. |
 | `POST /api/command` | Play/pause, stop, seek, seek to a percentage, volume, mute, audio track, subtitle track. |
 
