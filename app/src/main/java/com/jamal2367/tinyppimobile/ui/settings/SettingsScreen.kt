@@ -70,6 +70,8 @@ import com.jamal2367.tinyppimobile.ui.components.InfoRow
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.theme.accentText
 import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
+import com.jamal2367.tinyppimobile.ui.theme.CardGap
+import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 
 /**
  * Where the two addresses live.
@@ -90,8 +92,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_settings)) }) },
     ) { padding ->
         LazyColumn(
-            contentPadding = PaddingValues(12.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
+            contentPadding = PaddingValues(ScreenEdge),
+            verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),

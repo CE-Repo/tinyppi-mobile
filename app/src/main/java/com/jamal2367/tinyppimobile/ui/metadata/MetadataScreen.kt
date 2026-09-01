@@ -38,6 +38,8 @@ import com.jamal2367.tinyppimobile.ui.history.HistoryViewModel
 import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.ui.components.flashOnChange
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
+import com.jamal2367.tinyppimobile.ui.theme.CardGap
+import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 
 /**
  * The Dolby Vision metadata view, as the overlay's own second window draws it.
@@ -110,8 +112,8 @@ private fun MetadataList(
     val sections = remember(rows) { rows.toSections() }
 
     LazyColumn(
-        contentPadding = PaddingValues(12.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
+        contentPadding = PaddingValues(ScreenEdge),
+        verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
         modifier = modifier,
     ) {
         chartHistory?.let { history ->

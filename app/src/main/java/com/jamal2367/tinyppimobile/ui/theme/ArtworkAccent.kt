@@ -243,11 +243,32 @@ private const val SAMPLE_SIZE = 48
 private val WASH_HEIGHT = 190.dp
 
 private const val TOP_TINT = 0.22f
-private const val OUTLINE_TINT = 0.35f
+
+/**
+ * How much of the poster's colour a hairline takes.
+ *
+ * Little. An outline is drawn around every card on every screen, and a colour
+ * carried by that many edges at once stops being an accent and becomes the
+ * paint the app is painted in - which is what it had become at better than a
+ * third of the way over.
+ */
+private const val OUTLINE_TINT = 0.15f
 
 private const val STRONG_TINT = 0.34f
-private const val MEDIUM_TINT = 0.22f
-private const val FAINT_TINT = 0.13f
+
+/**
+ * The workhorse tone, and what is left wearing it.
+ *
+ * `secondaryContainer` used to fill twelve buttons on the live screen as well
+ * as the badge and the selected tab, and it was drawn deep enough to hold its
+ * own against the play button. The buttons are on the neutral ground now, so
+ * what is left is a badge and a tab - two small things that only have to be
+ * seen, not to shout - and the tone can come down to where it belongs.
+ */
+private const val MEDIUM_TINT = 0.12f
+
+/** Still the faintest of the three - it has to stay under the one above it. */
+private const val FAINT_TINT = 0.07f
 
 /** A pale ground takes more of the colour before it shows at all. */
 private const val LIGHT_EXTRA_TINT = 0.06f

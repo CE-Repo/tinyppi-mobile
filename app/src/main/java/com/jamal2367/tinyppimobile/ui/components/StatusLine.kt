@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.border
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,7 +25,6 @@ import com.jamal2367.tinyppimobile.ui.theme.PillShape
 import com.jamal2367.tinyppimobile.ui.theme.StatusDown
 import com.jamal2367.tinyppimobile.ui.theme.StatusLive
 import com.jamal2367.tinyppimobile.ui.theme.StatusWaiting
-import com.jamal2367.tinyppimobile.ui.theme.accentText
 import com.jamal2367.tinyppimobile.ui.theme.artworkTint
 
 /**
@@ -47,6 +45,11 @@ import com.jamal2367.tinyppimobile.ui.theme.artworkTint
  * is the caller's answer rather than a colour read from the theme: the colour
  * of the last film outlives the film, and a line about the connection is about
  * the box rather than about anything that was playing on it.
+ *
+ * The tint is the ground only. The words on it are plain: the state and the
+ * address are the two things on this line anyone reads, and they read fastest
+ * in the colour text is normally set in - the ground under them is already
+ * saying everything the accent had to say here.
  */
 @Composable
 fun StatusLine(
@@ -63,9 +66,13 @@ fun StatusLine(
         ?.let { artworkTint(it, container) }
         ?: container
 
+    // No hairline. A card is outlined because it is stacked against other
+    // cards in nearly its own colour and something has to say where one ends;
+    // this pill is a lozenge on the open page with nothing under it to be
+    // confused with, and the outline was drawing a second edge just inside the
+    // shape's own.
     Row(
         modifier = modifier
-            .border(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh, PillShape)
             .clip(PillShape)
             .background(ground)
             .padding(horizontal = 12.dp, vertical = 7.dp),
@@ -76,14 +83,14 @@ fun StatusLine(
         Text(
             text = stringResource(connection.labelRes()),
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.accentText,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         if (serverLabel != null && connection.namesAServer()) {
             Spacer(Modifier.weight(1f))
             Text(
                 text = serverLabel,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.accentText,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.End,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

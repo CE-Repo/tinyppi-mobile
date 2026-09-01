@@ -57,12 +57,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -80,9 +76,13 @@ import com.jamal2367.tinyppimobile.ui.components.HdrGrade
 import com.jamal2367.tinyppimobile.ui.components.PosterImage
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.components.StatusLine
+import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
-import com.jamal2367.tinyppimobile.ui.theme.accentText
+import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 import com.jamal2367.tinyppimobile.ui.theme.artworkGradient
+import com.jamal2367.tinyppimobile.ui.theme.neutralSliderColors
+import com.jamal2367.tinyppimobile.ui.theme.neutralTonalButtonColors
+import com.jamal2367.tinyppimobile.ui.theme.neutralTonalIconButtonColors
 import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.util.MediaUrls
 import com.jamal2367.tinyppimobile.util.SourceLabel
@@ -135,7 +135,7 @@ fun LiveScreen(
                     serverLabel = state.live.server?.label,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .padding(horizontal = ScreenEdge, vertical = 8.dp),
                 )
             }
 
@@ -183,8 +183,8 @@ private fun LiveContent(
     viewModel: LiveViewModel,
 ) {
     LazyColumn(
-        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
+        contentPadding = PaddingValues(start = ScreenEdge, end = ScreenEdge, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
         modifier = Modifier.fillMaxSize(),
     ) {
         // The head of the list rather than a fixed line above it: it belongs to
@@ -314,9 +314,11 @@ private fun NowPlayingCard(
                 Text(
                     text = snapshot.title.ifBlank { stringResource(R.string.live_untitled) },
                     style = MaterialTheme.typography.titleMedium,
-                    // In the accent - on a card washed in the poster's own
-                    // colour, the title is the line that ought to wear it.
-                    color = MaterialTheme.colorScheme.accentText,
+                    // Plain, on a card already washed in the poster's colour.
+                    // The wash is the colour of the film; the title set in it
+                    // as well only said the same thing twice, and cost the
+                    // longest line on the screen its contrast to say it.
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -475,13 +477,13 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
             Text(
                 text = target ?: snapshot.time.ifBlank { "–" },
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.accentText.copy(alpha = 0.8f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = if (target != null) FontWeight.SemiBold else null,
             )
             Text(
                 text = snapshot.duration.ifBlank { "–" },
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.accentText.copy(alpha = 0.8f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -563,11 +565,16 @@ private fun TransportSection(
  * The label carries the distance and the sign carries the direction, so the
  * row reads left to right without counting buttons out from the middle. The
  * screen reader is told the same thing in words.
+ *
+ * Drawn on the neutral ground: six of these in the accent, three to each side
+ * of the play button, is a row where the one button that matters is the same
+ * colour as the six that surround it.
  */
 @Composable
 private fun JumpButton(label: String, description: String, onClick: () -> Unit) {
     FilledTonalIconButton(
         onClick = onClick,
+        colors = neutralTonalIconButtonColors(),
         modifier = Modifier
             .size(38.dp)
             .semantics { contentDescription = description },
@@ -605,7 +612,11 @@ private fun VolumeRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        FilledTonalIconButton(onClick = viewModel::stop, shape = CircleShape) {
+        FilledTonalIconButton(
+            onClick = viewModel::stop,
+            shape = CircleShape,
+            colors = neutralTonalIconButtonColors(),
+        ) {
             Icon(
                 Icons.Rounded.Stop,
                 contentDescription = stringResource(R.string.live_stop),
@@ -619,15 +630,20 @@ private fun VolumeRow(
                 onValueChange = { viewModel.previewVolume(it.toInt()) },
                 onValueChangeFinished = { viewModel.commitVolume(level) },
                 valueRange = 0f..100f,
+                colors = neutralSliderColors(),
                 modifier = Modifier.weight(1f),
             )
             Text(
                 text = "$level",
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.accentText.copy(alpha = 0.8f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.width(36.dp),
             )
-            FilledTonalIconButton(onClick = viewModel::toggleMute, shape = CircleShape) {
+            FilledTonalIconButton(
+                onClick = viewModel::toggleMute,
+                shape = CircleShape,
+                colors = neutralTonalIconButtonColors(),
+            ) {
                 Icon(
                     imageVector = if (controls.muted) {
                         Icons.AutoMirrored.Rounded.VolumeOff
@@ -697,7 +713,7 @@ private fun TrackPicker(
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.accentText.copy(alpha = 0.8f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Medium,
             textAlign = labelTextAlign,
             modifier = Modifier.fillMaxWidth(),
@@ -705,6 +721,7 @@ private fun TrackPicker(
         Box {
             FilledTonalButton(
                 onClick = { open = true },
+                colors = neutralTonalButtonColors(),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
@@ -747,9 +764,11 @@ private fun TrackPicker(
  * HLG carry none, and then the whole card is left out rather than offering a
  * conversion nothing else offers either.
  *
- * Tonal rather than filled: a filled button is the accent at full strength, and
- * two of those shouting from a card near the bottom of the screen outrank the
- * play button they are sitting under. These wear what the transport wears.
+ * Tonal and neutral: a filled button is the accent at full strength, and two of
+ * those shouting from a card near the bottom of the screen outrank the play
+ * button they are sitting under. Even in the tonal shade they were two more
+ * coloured pills on a screen that had a dozen. These wear what the transport
+ * wears, which is now the card's own ground.
  *
  * Two to a line, sharing the width equally. They are alternatives to each
  * other, so one drawn wider than the next would be saying something about it
@@ -787,6 +806,7 @@ private fun Vs10Card(
                     row.forEach { option ->
                         FilledTonalButton(
                             onClick = { viewModel.setMode(option.mode) },
+                            colors = neutralTonalButtonColors(),
                             modifier = Modifier.weight(1f),
                         ) {
                             Vs10Label(option.label)
@@ -807,38 +827,25 @@ private fun Vs10Card(
 private const val FOLD_CONTROLS = "live.controls"
 private const val FOLD_VS10 = "live.vs10"
 
-/** The line under the title: the show and episode, the year, the genre. */
-@Composable
-private fun subtitleOf(snapshot: Snapshot): AnnotatedString? {
+/**
+ * The line under the title: the show and episode, the year, the genre.
+ *
+ * One colour throughout. The year and the genre used to be set in the accent
+ * to hold them apart from the show and episode in front of them, which put the
+ * whole of a film's subtitle - a film has no show and no episode - in the
+ * accent, and left the second line of the card shouting as loudly as the first.
+ * The dots hold the parts apart on their own.
+ */
+private fun subtitleOf(snapshot: Snapshot): String? {
     val media = snapshot.media
     val parts = listOfNotNull(
-        media.show.takeIf { it.isNotBlank() }?.let { it to false },
-        media.episodeLabel?.let { it to false },
-        media.year.takeIf { it.isNotBlank() }?.let { it to true },
-        media.genre.takeIf { it.isNotBlank() }?.let { it to true },
+        media.show.takeIf { it.isNotBlank() },
+        media.episodeLabel,
+        media.year.takeIf { it.isNotBlank() },
+        media.genre.takeIf { it.isNotBlank() },
     )
-    if (parts.isEmpty()) return null
 
-    return buildAnnotatedString {
-        parts.forEachIndexed { index, (text, accented) ->
-            if (index > 0) {
-                if (accented || parts[index - 1].second) {
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.accentText)) {
-                        append(" · ")
-                    }
-                } else {
-                    append(" · ")
-                }
-            }
-            if (accented) {
-                withStyle(SpanStyle(color = MaterialTheme.colorScheme.accentText)) {
-                    append(text)
-                }
-            } else {
-                append(text)
-            }
-        }
-    }
+    return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
 }
 
 /**

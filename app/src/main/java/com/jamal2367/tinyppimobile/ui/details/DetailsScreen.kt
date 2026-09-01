@@ -31,6 +31,8 @@ import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.components.flashOnChange
 import com.jamal2367.tinyppimobile.ui.theme.accentText
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
+import com.jamal2367.tinyppimobile.ui.theme.CardGap
+import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 
 /**
  * Every reading the overlay prints, in the cards it prints them in.
@@ -74,8 +76,8 @@ fun DetailsScreen(
             )
 
             else -> LazyColumn(
-                contentPadding = PaddingValues(12.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
+                contentPadding = PaddingValues(ScreenEdge),
+                verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
