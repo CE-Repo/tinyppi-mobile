@@ -32,6 +32,16 @@
     <string name="live_untitled">Ohne Titel</string>
     <string name="live_ends_at">Endet um %1$s</string>
 
+    <!-- The wall of films, offered while nothing is playing -->
+    <string name="library_title">Filme</string>
+    <string name="library_search">Filme suchen</string>
+    <string name="library_watched">Gesehen</string>
+    <string name="library_no_match">Dazu passt kein Film.</string>
+    <plurals name="library_count">
+        <item quantity="one">%1$d Film</item>
+        <item quantity="other">%1$d Filme</item>
+    </plurals>
+
     <string name="card_expand">Karte ausklappen</string>
     <string name="card_collapse">Karte einklappen</string>
     <string name="live_playpause">Wiedergabe / Pause</string>

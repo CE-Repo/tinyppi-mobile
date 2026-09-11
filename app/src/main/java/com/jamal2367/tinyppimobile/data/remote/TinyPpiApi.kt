@@ -4,7 +4,9 @@ import com.jamal2367.tinyppimobile.data.model.CommandAck
 import com.jamal2367.tinyppimobile.data.model.CommandBody
 import com.jamal2367.tinyppimobile.data.model.Hello
 import com.jamal2367.tinyppimobile.data.model.History
+import com.jamal2367.tinyppimobile.data.model.Library
 import com.jamal2367.tinyppimobile.data.model.ModeBody
+import com.jamal2367.tinyppimobile.data.model.PlayBody
 import kotlinx.serialization.json.JsonObject
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -46,6 +48,17 @@ interface TinyPpiApi {
     @GET("api/history")
     suspend fun history(): History
 
+    /**
+     * The films the box has, for the wall the live screen shows while nothing
+     * is playing.
+     *
+     * Refused with a 403 by a box whose owner has switched the library card
+     * off, or one that will not be told what to play at all - both of which
+     * are answers rather than failures, and the screen simply has no wall.
+     */
+    @GET("api/library")
+    suspend fun library(): Library
+
     /** Put the driver into one of the VS10 modes the snapshot offered. */
     @POST("api/mode")
     suspend fun setMode(@Body body: ModeBody): CommandAck
@@ -53,4 +66,15 @@ interface TinyPpiApi {
     /** One transport command. */
     @POST("api/command")
     suspend fun command(@Body body: CommandBody): CommandAck
+
+    /**
+     * Put one of the library's films on the television.
+     *
+     * Its own endpoint rather than a transport command: every one of those
+     * acts on a player that is already running, and this is the one call that
+     * starts one. Resumed by the box where the library holds a point to
+     * resume from, the same as pressing the film in Kodi's own window.
+     */
+    @POST("api/play")
+    suspend fun play(@Body body: PlayBody): CommandAck
 }

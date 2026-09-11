@@ -131,9 +131,21 @@ the dashboard charts rather than prints. The luminance pair only exists inside
 a Dolby Vision RPU, so it is absent for every other grade rather than shown as
 zeroes.
 
-With nothing playing, the screen shows what the last title came to instead. The
-box keeps that for ten minutes, which is exactly when those figures are worth
-most.
+With nothing playing, the screen offers the box's **film library** instead:
+every film in Kodi's video database as a wall of posters, and a tap starts one
+on the television. The wall is read when the screen finds the box idle and read
+again the moment a film ends — which is when the next one is being looked for.
+
+A film the box left half-watched carries a bar along the bottom of its poster
+and is resumed where it was, the same as pressing it in Kodi's own window; one
+already seen wears a tick in the corner of the picture. Above a dozen films the wall grows a search box, which
+narrows it on this phone rather than asking the box again per keystroke. The
+posters are fetched as they are scrolled to and each one crosses the network
+once, so a library of five hundred costs the dozen on screen.
+
+A box that offers no library — the card switched off in the add-on's settings,
+control switched off, or an empty video database — keeps the line saying
+nothing is playing.
 
 ### Readings
 
@@ -175,9 +187,11 @@ All of it.
 | `GET /api/stream` | The live connection. One per app, shared by every screen. |
 | `GET /api/state` | The polling fallback, and the second half of the connection test. |
 | `GET /api/history` | The chart and the event list. |
-| `GET /api/art` | The poster of what is playing. |
+| `GET /api/art` | The poster of what is playing, and the posters on the film wall. |
+| `GET /api/library` | The films the box has, for the wall shown while nothing is playing. |
 | `POST /api/mode` | The VS10 buttons. |
 | `POST /api/command` | Play/pause, stop, previous/next chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track. |
+| `POST /api/play` | Starting one of the library's films. |
 
 The token travels as `X-TinyPPI-Token` on everything Retrofit sends, and as
 `?token=` on the event stream and the artwork — the two the add-on documents
@@ -279,7 +293,7 @@ checks that tag once per launch to tell you it is behind.
 ```
 app/src/main/java/com/jamal2367/tinyppimobile/
 ├── data/
-│   ├── model/          The add-on's payloads as Kotlin: Snapshot, History, commands
+│   ├── model/          The add-on's payloads as Kotlin: Snapshot, History, Library, commands
 │   ├── prefs/          The two addresses and everything else remembered on disk
 │   ├── remote/         Retrofit interface, failover, the event stream, the delta merge
 │   └── repository/     LiveSession (stream + polling fallback), PlayerRepository

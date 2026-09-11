@@ -4,7 +4,9 @@ import com.jamal2367.tinyppimobile.data.model.ApiErrorBody
 import com.jamal2367.tinyppimobile.data.model.CommandBody
 import com.jamal2367.tinyppimobile.data.model.Hello
 import com.jamal2367.tinyppimobile.data.model.History
+import com.jamal2367.tinyppimobile.data.model.Library
 import com.jamal2367.tinyppimobile.data.model.ModeBody
+import com.jamal2367.tinyppimobile.data.model.PlayBody
 import com.jamal2367.tinyppimobile.data.model.PlayerAction
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
 import com.jamal2367.tinyppimobile.data.remote.NoServerConfiguredException
@@ -34,6 +36,20 @@ class PlayerRepository(
 
     /** The playing title's chart samples and its event list. */
     suspend fun history(): History = call { api.history() }
+
+    /** The films the box has, for the wall shown while nothing is playing. */
+    suspend fun library(): Library = call { api.library() }
+
+    /**
+     * Put one of those films on the television.
+     *
+     * The box resumes it where it left off if the library holds a point to
+     * resume from; nothing here decides that, because the point is the
+     * library's and Kodi's own window would do the same.
+     */
+    suspend fun playFilm(movieId: Int) {
+        call { api.play(PlayBody(movieId)) }
+    }
 
     /**
      * Put the driver into one of the VS10 modes the snapshot offered.

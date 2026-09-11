@@ -35,6 +35,16 @@
     <string name="live_untitled">Untitled</string>
     <string name="live_ends_at">Ends at %1$s</string>
 
+    <!-- The wall of films, offered while nothing is playing -->
+    <string name="library_title">Films</string>
+    <string name="library_search">Search films</string>
+    <string name="library_watched">Watched</string>
+    <string name="library_no_match">No film matches that.</string>
+    <plurals name="library_count">
+        <item quantity="one">%1$d film</item>
+        <item quantity="other">%1$d films</item>
+    </plurals>
+
     <string name="card_expand">Expand card</string>
     <string name="card_collapse">Collapse card</string>
     <string name="live_playpause">Play / pause</string>
