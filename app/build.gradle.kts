@@ -50,8 +50,8 @@ android {
         applicationId = "com.jamal2367.tinyppimobile"
         minSdk = 26
         targetSdk = 37
-        versionCode = 140
-        versionName = "1.4.0"
+        versionCode = 142
+        versionName = "1.4.2"
 
         // Which run of the release workflow this build came from, or 0 for one
         // built from a checkout by hand. It is what the update check compares
