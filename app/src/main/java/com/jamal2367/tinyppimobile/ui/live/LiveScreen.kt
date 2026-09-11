@@ -6,6 +6,8 @@
 package com.jamal2367.tinyppimobile.ui.live
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,6 +29,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
@@ -38,6 +42,7 @@ import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.outlined.PlayCircle
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
@@ -49,18 +54,23 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -81,10 +91,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.InfoGroup
+import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.PlayerControls
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.model.Track
 import com.jamal2367.tinyppimobile.data.model.Vs10State
+import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
@@ -104,6 +116,7 @@ import com.jamal2367.tinyppimobile.ui.theme.neutralTonalIconButtonColors
 import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.util.MediaUrls
 import com.jamal2367.tinyppimobile.util.SourceLabel
+import kotlinx.coroutines.delay
 
 /**
  * What the box is playing, and what can be done to it.
@@ -118,8 +131,32 @@ fun LiveScreen(
     viewModel: LiveViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val library by viewModel.library.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // The wall of films is read whenever this screen finds the box idle, and
+    // read again when a film ends - which is the moment somebody starts
+    // looking for the next one, and also the moment what the library says
+    // about the one that just finished stops being true.
+    val playing = state.snapshot?.playing
+    var wasPlaying by remember { mutableStateOf(false) }
+    LaunchedEffect(playing, state.canControl) {
+        if (playing == false && state.canControl) {
+            viewModel.refreshLibrary(force = wasPlaying)
+        }
+        wasPlaying = playing == true
+    }
+
+    // The tile that was pressed stays pressed until the box says the film is
+    // on. This is for the film that never arrives - a missing file, a share
+    // that has gone away - so the wall is not left disabled for the evening.
+    LaunchedEffect(library.starting) {
+        if (library.starting != null) {
+            delay(FILM_START_TIMEOUT_MS)
+            viewModel.filmStarted()
+        }
+    }
 
     LaunchedEffect(message) {
         val text = message ?: return@LaunchedEffect
@@ -179,6 +216,8 @@ fun LiveScreen(
                     poster = poster,
                     showArtwork = state.settings.showArtwork,
                     canControl = state.canControlPlayback,
+                    library = library,
+                    server = state.live.server,
                     viewModel = viewModel,
                 )
             }
@@ -194,22 +233,49 @@ private fun LiveContent(
     poster: String?,
     showArtwork: Boolean,
     canControl: Boolean,
+    library: LibraryUiState,
+    server: ServerConfig?,
     viewModel: LiveViewModel,
 ) {
+    // What the search box holds, kept outside the list: it is drawn as the
+    // first item of the wall and would otherwise be forgotten the moment it
+    // scrolled off the top.
+    var search by rememberSaveable { mutableStateOf("") }
+    val shown = remember(library.films, search) { matching(library.films, search) }
+    val columns = filmColumns()
+
     LazyColumn(
         contentPadding = PaddingValues(start = ScreenEdge, end = ScreenEdge, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
         modifier = Modifier.fillMaxSize(),
     ) {
         if (!snapshot.playing) {
-            item {
-                EmptyState(
-                    icon = Icons.Outlined.PlayCircle,
-                    title = stringResource(R.string.live_idle_title),
-                    message = stringResource(R.string.live_idle_text),
-                    modifier = Modifier.height(320.dp),
-                )
+            // Nothing is on, so the screen offers what could be: the films the
+            // box has, as posters, and a press starts one. A box with no
+            // library to offer - the card switched off, control switched off,
+            // an empty video database - keeps the line it always had.
+            if (library.films.isEmpty()) {
+                item {
+                    EmptyState(
+                        icon = Icons.Outlined.PlayCircle,
+                        title = stringResource(R.string.live_idle_title),
+                        message = stringResource(R.string.live_idle_text),
+                        modifier = Modifier.height(320.dp),
+                    )
+                }
+                return@LazyColumn
             }
+            filmWall(
+                films = shown,
+                total = library.films.size,
+                columns = columns,
+                server = server,
+                showArtwork = showArtwork,
+                starting = library.starting,
+                search = search,
+                onSearch = { search = it },
+                onPlay = viewModel::playFilm,
+            )
             return@LazyColumn
         }
 
@@ -1437,3 +1503,269 @@ private fun shortened(label: String): String =
 
 /** However the box wrote the arrow between the two halves of a conversion. */
 private val ARROW = Regex("""\s*(?:->|=>|\u2192|\u27F6)\s*""")
+
+/* --- The film library ---------------------------------------------------- */
+
+/**
+ * What the box could be playing, while it is playing nothing.
+ *
+ * A wall of posters rather than a list of titles: a film is recognised by its
+ * cover long before its name has been read, and the screen this replaces had
+ * one line of type on it saying there was nothing to see.
+ *
+ * Laid out as rows of tiles inside the screen's own list rather than as a grid
+ * of its own. A grid inside a scrolling column is two things that scroll, and
+ * the one thing this list must keep doing is scrolling in one piece; chunked
+ * into rows it stays lazy, so a library of five hundred films draws the six
+ * tiles on screen and asks the box for six posters.
+ */
+private fun LazyListScope.filmWall(
+    films: List<LibraryFilm>,
+    total: Int,
+    columns: Int,
+    server: ServerConfig?,
+    showArtwork: Boolean,
+    starting: Int?,
+    search: String,
+    onSearch: (String) -> Unit,
+    onPlay: (LibraryFilm) -> Unit,
+) {
+    item(key = "film-wall-heading") {
+        FilmWallHeading(
+            shown = films.size,
+            total = total,
+            search = search,
+            onSearch = onSearch,
+        )
+    }
+
+    if (films.isEmpty()) {
+        // A search nothing answers. The library itself being empty is handled
+        // before the wall is drawn at all, where the screen has room to say so
+        // properly.
+        item(key = "film-wall-empty") {
+            Text(
+                text = stringResource(R.string.library_no_match),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 28.dp),
+            )
+        }
+        return
+    }
+
+    val rows = films.chunked(columns)
+    items(items = rows, key = { row -> "film-row-${row.first().id}" }) { row ->
+        Row(horizontalArrangement = Arrangement.spacedBy(FILM_GAP)) {
+            for (film in row) {
+                FilmTile(
+                    film = film,
+                    poster = if (showArtwork) MediaUrls.filmPoster(server, film) else null,
+                    starting = starting == film.id,
+                    // While one film is on its way nothing else may be
+                    // pressed: two Player.Opens a second apart leave the box
+                    // playing whichever won, which is not the one the second
+                    // press was for.
+                    enabled = starting == null,
+                    onPlay = { onPlay(film) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            // The last row is rarely full. Without this its tiles would be
+            // spread across the width instead of standing under the ones above
+            // them.
+            repeat(columns - row.size) {
+                Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/**
+ * The line over the wall: what it is, how much of it there is, and - once
+ * there is enough of it to be worth it - a box to narrow it down with.
+ */
+@Composable
+private fun FilmWallHeading(
+    shown: Int,
+    total: Int,
+    search: String,
+    onSearch: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.library_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = pluralStringResource(R.plurals.library_count, shown, shown),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        // A shelf that fits on a screen is read rather than searched, and a
+        // field over it would be one more thing to look past.
+        if (total >= FILM_SEARCH_FROM) {
+            OutlinedTextField(
+                value = search,
+                onValueChange = onSearch,
+                singleLine = true,
+                label = { Text(stringResource(R.string.library_search)) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+/**
+ * One film: its poster, its name and its year, and a press that starts it.
+ *
+ * A film the box left half-watched carries a bar along the bottom of the
+ * poster, and pressing it resumes it where it was - the box decides that from
+ * its own library, the same as pressing the film in Kodi's own window. One
+ * already seen is dimmed rather than marked: the wall is read for what to
+ * watch next, and the ones that are not it should be the quiet ones.
+ */
+@Composable
+private fun FilmTile(
+    film: LibraryFilm,
+    poster: String?,
+    starting: Boolean,
+    enabled: Boolean,
+    onPlay: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.clickable(enabled = enabled, onClick = onPlay),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(POSTER_RATIO)
+                .clip(RoundedCornerShape(10.dp))
+                .alpha(if (film.watched && !starting) WATCHED_ALPHA else 1f),
+        ) {
+            // A film with no poster - and every film on a phone told not to
+            // show artwork - gets the stand-in the playing title gets, which
+            // holds the same space rather than collapsing the row it is in.
+            PosterImage(
+                url = poster,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+            )
+
+            film.progress?.let { progress ->
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .fillMaxWidth()
+                        .height(RESUME_BAR)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progress)
+                            .fillMaxHeight()
+                            .background(MaterialTheme.colorScheme.primary),
+                    )
+                }
+            }
+
+            if (starting) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(28.dp))
+                }
+            }
+        }
+
+        Text(
+            text = film.title,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold,
+            color = if (film.watched) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (film.year > 0) {
+            Text(
+                text = film.year.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/**
+ * The films whose name - or year - answers what has been typed.
+ *
+ * Matched here rather than by the box: the whole library is already on the
+ * phone, and a round trip per keystroke to narrow a list this app is holding
+ * would be a slower answer to a question already in front of it.
+ */
+private fun matching(films: List<LibraryFilm>, search: String): List<LibraryFilm> {
+    val needle = search.trim()
+    if (needle.isEmpty()) return films
+    return films.filter { film ->
+        film.title.contains(needle, ignoreCase = true) ||
+            (film.year > 0 && film.year.toString().contains(needle))
+    }
+}
+
+/**
+ * How many posters go across, from how wide the screen is.
+ *
+ * A count rather than a width, because the row has to divide the screen
+ * exactly: tiles that each take a fixed width leave a ragged edge down the
+ * right of every row. Three on a phone, more on a tablet or a phone held
+ * sideways - worked out from the same poster width the card at the top of this
+ * screen uses.
+ */
+@Composable
+private fun filmColumns(): Int {
+    val width = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width.toDp()
+    }
+    val usable = width - ScreenEdge * 2
+    return (usable / (FILM_TILE_MIN + FILM_GAP)).toInt().coerceIn(3, 6)
+}
+
+/** Below this a search box is one more thing on the screen and nothing to use. */
+private const val FILM_SEARCH_FROM = 12
+
+/** How long a pressed tile waits for a film that never starts. */
+private const val FILM_START_TIMEOUT_MS = 6_000L
+
+/** How dim a film the box counts as seen. */
+private const val WATCHED_ALPHA = 0.5f
+
+/**
+ * The air between two posters.
+ *
+ * The card gap, because the rows of the wall are items of the screen's own
+ * list and are spaced by it from above and below: a narrower gap across than
+ * down would have drawn a grid with two different rhythms in it.
+ */
+private val FILM_GAP = CardGap
+private val FILM_TILE_MIN = 104.dp
+private val RESUME_BAR = 3.dp

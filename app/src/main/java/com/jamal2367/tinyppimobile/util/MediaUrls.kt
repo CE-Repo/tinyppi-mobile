@@ -1,6 +1,7 @@
 package com.jamal2367.tinyppimobile.util
 
 import com.jamal2367.tinyppimobile.data.model.ArtTags
+import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import java.net.URLEncoder
 
@@ -45,6 +46,28 @@ object MediaUrls {
             append(box.baseUrl)
             append("/api/art?kind=")
             append(kind.id)
+            append("&v=")
+            append(tag.encoded())
+            box.tokenParameter()?.let(::append)
+        }
+    }
+
+    /**
+     * The poster of one of the library's films, or null where it has none.
+     *
+     * The same address as the playing title's artwork with the film named on
+     * it, and the same bargain: the tag changes only when the picture does, so
+     * a wall of posters scrolled past twice is fetched once. Which is what
+     * makes a wall of five hundred affordable at all - the loader asks for the
+     * dozen on screen, and holds them.
+     */
+    fun filmPoster(server: ServerConfig?, film: LibraryFilm): String? {
+        val box = server ?: return null
+        val tag = film.poster.takeIf { it.isNotBlank() } ?: return null
+        return buildString {
+            append(box.baseUrl)
+            append("/api/art?kind=poster&movieid=")
+            append(film.id)
             append("&v=")
             append(tag.encoded())
             box.tokenParameter()?.let(::append)
