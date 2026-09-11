@@ -69,7 +69,7 @@ class ApiParsingTest {
             """
             {"seq":7,"playing":true,"paused":false,"title":"Dune","filename":"/media/dune.mkv",
              "hdr_type":"dolbyvision","effective":"dolbyvision","output_type":"hdr10",
-             "time":"0:12:03","duration":"2:35:00",
+             "time":"0:12:03","duration":"2:35:00","finish":"21:47",
              "metrics":{"l1":{"min":0.0,"max":1200.5,"avg":98.0},"bars":[0.0,0.0,138.0,138.0],
                         "frame":{"w":3840,"h":2160},"aspect":2.39,"fps_in":23.976,"fps_drop":0.0,
                         "fps_out":23.976,"progress":7.8,"cpu":31.0,"cpu_temp":58.0,
@@ -97,10 +97,27 @@ class ApiParsingTest {
         assertEquals(1200.5, snapshot.metrics.l1.max!!, 0.001)
         assertEquals(72, snapshot.controls.volume)
         assertTrue(snapshot.control)
+        // Printed as the box wrote it: the bar under the title shows this
+        // between the position and the length, and never reformats it.
+        assertEquals("21:47", snapshot.finish)
 
         val area = snapshot.metrics.activeArea!!
         assertTrue(area.isLetterboxed)
         assertFalse(area.isPillarboxed)
+    }
+
+    @Test
+    fun `a box that named no end leaves the finish time empty`() {
+        // A live stream, a title whose length is not known yet, and an add-on
+        // older than the reading all arrive the same way: without the key.
+        // The bar has to draw from what is there, so the default is the empty
+        // string rather than an absence a screen would have to test for.
+        val snapshot = json.decodeFromString(
+            Snapshot.serializer(),
+            """{"playing":true,"time":"0:12:03","duration":"2:35:00"}""",
+        )
+
+        assertEquals("", snapshot.finish)
     }
 
     @Test
