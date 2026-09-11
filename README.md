@@ -138,7 +138,7 @@ again the moment a film ends — which is when the next one is being looked for.
 
 A film the box left half-watched carries a bar along the bottom of its poster
 and is resumed where it was, the same as pressing it in Kodi's own window; one
-already seen is dimmed. Above a dozen films the wall grows a search box, which
+already seen wears a tick in the corner of the picture. Above a dozen films the wall grows a search box, which
 narrows it on this phone rather than asking the box again per keystroke. The
 posters are fetched as they are scrolled to and each one crosses the network
 once, so a library of five hundred costs the dozen on screen.

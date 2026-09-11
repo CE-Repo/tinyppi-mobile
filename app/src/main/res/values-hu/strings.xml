@@ -38,6 +38,7 @@
     <!-- The wall of films, offered while nothing is playing -->
     <string name="library_title">Filmek</string>
     <string name="library_search">Filmek keresése</string>
+    <string name="library_watched">Megtekintve</string>
     <string name="library_no_match">Nincs erre illő film.</string>
     <plurals name="library_count">
         <item quantity="one">%1$d film</item>

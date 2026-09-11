@@ -35,6 +35,7 @@
     <!-- The wall of films, offered while nothing is playing -->
     <string name="library_title">Filme</string>
     <string name="library_search">Filme suchen</string>
+    <string name="library_watched">Gesehen</string>
     <string name="library_no_match">Dazu passt kein Film.</string>
     <plurals name="library_count">
         <item quantity="one">%1$d Film</item>

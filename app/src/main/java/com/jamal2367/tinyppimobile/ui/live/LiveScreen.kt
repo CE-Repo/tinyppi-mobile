@@ -36,6 +36,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
 import androidx.compose.material.icons.automirrored.rounded.VolumeDown
 import androidx.compose.material.icons.automirrored.rounded.VolumeOff
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
@@ -65,12 +66,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -1633,8 +1635,13 @@ private fun FilmWallHeading(
  * A film the box left half-watched carries a bar along the bottom of the
  * poster, and pressing it resumes it where it was - the box decides that from
  * its own library, the same as pressing the film in Kodi's own window. One
- * already seen is dimmed rather than marked: the wall is read for what to
- * watch next, and the ones that are not it should be the quiet ones.
+ * already seen wears a tick in the corner of the picture.
+ *
+ * A mark rather than a dimmed poster, which is what this was: dimming says
+ * "not this one" about whatever it touches, and on a shelf where most of the
+ * films have been watched that is most of the wall greyed out - which reads as
+ * artwork that failed to load rather than as an answer. The mark costs one
+ * corner of one poster and says the same thing about the smaller group.
  */
 @Composable
 private fun FilmTile(
@@ -1653,8 +1660,7 @@ private fun FilmTile(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(POSTER_RATIO)
-                .clip(RoundedCornerShape(10.dp))
-                .alpha(if (film.watched && !starting) WATCHED_ALPHA else 1f),
+                .clip(RoundedCornerShape(10.dp)),
         ) {
             // A film with no poster - and every film on a phone told not to
             // show artwork - gets the stand-in the playing title gets, which
@@ -1682,6 +1688,14 @@ private fun FilmTile(
                 }
             }
 
+            if (film.watched) {
+                WatchedMark(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(WATCHED_INSET),
+                )
+            }
+
             if (starting) {
                 Box(
                     modifier = Modifier
@@ -1698,11 +1712,7 @@ private fun FilmTile(
             text = film.title,
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.SemiBold,
-            color = if (film.watched) {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            },
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
@@ -1713,6 +1723,36 @@ private fun FilmTile(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+/**
+ * The tick a film the box counts as seen wears.
+ *
+ * Drawn as a disc with a tick on it rather than as Material's own filled
+ * `CheckCircle`, whose tick is knocked out of the disc: over a poster that
+ * hole is the poster, and a tick made of whatever picture happens to be behind
+ * it is a tick nobody can read.
+ *
+ * The shadow is not decoration either. Posters are photographs, and a disc in
+ * one flat colour has nothing to stand on where the picture under it happens
+ * to be light.
+ */
+@Composable
+private fun WatchedMark(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(WATCHED_MARK)
+            .shadow(3.dp, CircleShape)
+            .background(MaterialTheme.colorScheme.primary, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Check,
+            contentDescription = stringResource(R.string.library_watched),
+            tint = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.size(WATCHED_TICK),
+        )
     }
 }
 
@@ -1756,8 +1796,10 @@ private const val FILM_SEARCH_FROM = 12
 /** How long a pressed tile waits for a film that never starts. */
 private const val FILM_START_TIMEOUT_MS = 6_000L
 
-/** How dim a film the box counts as seen. */
-private const val WATCHED_ALPHA = 0.5f
+/** The mark a film the box counts as seen wears, and how far off the corner. */
+private val WATCHED_MARK = 21.dp
+private val WATCHED_TICK = 14.dp
+private val WATCHED_INSET = 5.dp
 
 /**
  * The air between two posters.
