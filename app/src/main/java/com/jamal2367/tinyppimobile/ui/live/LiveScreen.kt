@@ -537,19 +537,20 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
                 fontWeight = if (target != null) FontWeight.SemiBold else null,
                 modifier = Modifier.weight(1f),
             )
-            // When the title will be over, by the clock. Quieter than the two
-            // readings it sits between: those are the bar's own scale and
-            // this is a note beside it.
+            // When the title will be over, by the clock. The same style and
+            // the same colour as the two readings either side of it: it is
+            // the third reading of the row, not an aside about them.
             //
             // Left out entirely where the box named no end - a live stream, a
-            // title it does not yet know the length of, or an add-on older
-            // than the reading - rather than standing in for one with a dash,
-            // which would read as a clock that failed to arrive.
+            // channel or a recording off the tuner, a title it does not yet
+            // know the length of, or an add-on older than the reading -
+            // rather than standing in for one with a dash, which would read
+            // as a clock that failed to arrive.
             if (snapshot.finish.isNotBlank()) {
                 Text(
                     text = stringResource(R.string.live_ends_at, snapshot.finish),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
