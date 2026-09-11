@@ -521,17 +521,58 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
                 .fillMaxWidth()
                 .padding(top = if (canControl) 0.dp else 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Weighted rather than left at its own width, and so is the
+            // length at the far end: two equal slots either side are what put
+            // the reading between them over the centre of the bar. Their
+            // figures are not the same length - `0:12:03` against `2:35:00`,
+            // and further apart the moment a drag puts the hour into one of
+            // them - so a row that only spaced its three readings out would
+            // put the middle one wherever those two left it.
             Text(
                 text = target ?: snapshot.time.ifBlank { "–" },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = if (target != null) FontWeight.SemiBold else null,
+                modifier = Modifier.weight(1f),
             )
+            // When the title will be over, by the clock. The same style and
+            // the same colour as the two readings either side of it: it is
+            // the third reading of the row, not an aside about them.
+            //
+            // Left out entirely where the box named no end - a live stream, a
+            // channel or a recording off the tuner, a title it does not yet
+            // know the length of, or an add-on older than the reading -
+            // rather than standing in for one with a dash, which would read
+            // as a clock that failed to arrive.
+            if (snapshot.finish.isNotBlank()) {
+                Text(
+                    text = stringResource(R.string.live_ends_at, snapshot.finish),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    // Weighted but not filled: the two figures either side are
+                    // the same width, so whatever this leaves over is split
+                    // evenly between the gaps beside it and the reading lands
+                    // on the centre of the bar however short it is. The weight
+                    // is only there to put a ceiling on it - half the row,
+                    // which a clock and a word are nowhere near until the
+                    // phone is turned up to the largest type, and past that
+                    // the label gives way rather than the two clocks wrapping.
+                    modifier = Modifier
+                        .weight(2f, fill = false)
+                        .padding(horizontal = 8.dp),
+                )
+            }
             Text(
                 text = snapshot.duration.ifBlank { "–" },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.End,
+                modifier = Modifier.weight(1f),
             )
         }
     }

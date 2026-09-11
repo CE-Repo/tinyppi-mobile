@@ -35,6 +35,23 @@ data class Snapshot(
     @SerialName("output_type") val outputType: String = "",
     val time: String = "",
     val duration: String = "",
+    /**
+     * When the title will be over, by the clock on the wall rather than by
+     * its length: `21:47`, or `9:47 PM` on a box set to a twelve-hour clock.
+     *
+     * The box works it out and writes it in its own regional format, and it
+     * is printed here exactly as it came - the same reasoning as every other
+     * reading on this screen. Adding the remaining time to the phone's clock
+     * would be a second answer to a question the television has already
+     * answered, and the two would part company the moment a pause ran long or
+     * the two devices disagreed about the time.
+     *
+     * Empty for anything with no end to name - a live stream, a title whose
+     * length the box does not know yet - and empty as well against an add-on
+     * older than the reading, which is why the bar has to be able to draw
+     * without it.
+     */
+    val finish: String = "",
     val metrics: Metrics = Metrics(),
     val groups: List<InfoGroup> = emptyList(),
     val metadata: List<MetadataRow> = emptyList(),

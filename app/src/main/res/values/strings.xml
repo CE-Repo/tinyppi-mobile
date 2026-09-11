@@ -33,6 +33,7 @@
     <string name="live_idle_title">Nothing playing</string>
     <string name="live_idle_text">TinyPPI reads what a running video is, so there is nothing to show until one starts.</string>
     <string name="live_untitled">Untitled</string>
+    <string name="live_ends_at">Ends at %1$s</string>
 
     <string name="card_expand">Expand card</string>
     <string name="card_collapse">Collapse card</string>
