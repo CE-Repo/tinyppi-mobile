@@ -51,13 +51,6 @@ enum class TopLevelDestination(
     @StringRes val tabLabelRes: Int = labelRes,
 ) {
     LIVE(Routes.LIVE, R.string.nav_live, Icons.Filled.PlayCircle, Icons.Outlined.PlayCircle),
-
-    // The two shelves sit next to what is playing, because that is what they
-    // are for: deciding what is playing next. They wear the names the walls
-    // wear on the live screen rather than names of their own - it is the same
-    // shelf reached another way.
-    FILMS(Routes.FILMS, R.string.library_title, Icons.Filled.Movie, Icons.Outlined.Movie),
-    SERIES(Routes.SERIES, R.string.series_title, Icons.Filled.Tv, Icons.Outlined.Tv),
     METADATA(
         Routes.METADATA,
         R.string.nav_metadata,
@@ -67,6 +60,8 @@ enum class TopLevelDestination(
         // second line and takes the whole bar with it.
         tabLabelRes = R.string.nav_metadata_tab,
     ),
+    FILMS(Routes.FILMS, R.string.library_title, Icons.Filled.Movie, Icons.Outlined.Movie),
+    SERIES(Routes.SERIES, R.string.series_title, Icons.Filled.Tv, Icons.Outlined.Tv),
     HISTORY(Routes.HISTORY, R.string.nav_history, Icons.Filled.Timeline, Icons.Outlined.Timeline),
     SETTINGS(
         Routes.SETTINGS,
