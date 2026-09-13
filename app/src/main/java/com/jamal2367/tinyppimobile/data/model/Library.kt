@@ -71,3 +71,97 @@ data class LibraryFilm(
 /** What starting a film asks for: Kodi's own id, and nothing else. */
 @Serializable
 data class PlayBody(val movieid: Int)
+
+/**
+ * The series the box has, as the add-on's `/api/series` answers them.
+ *
+ * The same shelf as the films with one floor more: what comes back here is the
+ * wall of shows, and the episodes of one of them are asked for only when that
+ * show is opened (see [EpisodeList]). A house with ninety series in it would
+ * otherwise be sent every episode of all of them to draw a wall of ninety
+ * posters.
+ */
+@Serializable
+data class SeriesLibrary(
+    val shows: List<LibraryShow> = emptyList(),
+    val count: Int = 0,
+    /** The list's own tag, which changes only when the shelf does. */
+    val tag: String = "",
+)
+
+/** One series on the wall. */
+@Serializable
+data class LibraryShow(
+    /** Kodi's own id for it, which is what asking for its episodes names. */
+    val id: Int = 0,
+    val title: String = "",
+    /** 0 where the library has no year for it. */
+    val year: Int = 0,
+    /** The poster's own tag, or empty for a show that has none. */
+    val poster: String = "",
+    /** How many episodes the library holds; 0 where it says nothing. */
+    val episodes: Int = 0,
+    /**
+     * How many of them have not been watched.
+     *
+     * How many are left rather than how many are gone: a shelf is scanned for
+     * what there is still to see, and a tile saying "4" is read as four
+     * waiting.
+     */
+    val unseen: Int = 0,
+    /** Whether the box counts every episode of it as seen. */
+    val watched: Boolean = false,
+)
+
+/** The episodes of one show, as `/api/episodes?tvshowid=` answers them. */
+@Serializable
+data class EpisodeList(
+    val tvshowid: Int = 0,
+    /** The show's own name, for the line over the list. */
+    val title: String = "",
+    val episodes: List<LibraryEpisode> = emptyList(),
+    val count: Int = 0,
+    val tag: String = "",
+)
+
+/** One episode: what its row draws, and what starting it names. */
+@Serializable
+data class LibraryEpisode(
+    val id: Int = 0,
+    /** Empty for an episode the library has no name for; the row uses [code]. */
+    val title: String = "",
+    /** -1 where the library files it under no season at all; 0 is a special. */
+    val season: Int = -1,
+    val episode: Int = -1,
+    /** The still's own tag, or empty for an episode that has none. */
+    val thumb: String = "",
+    val duration: Int = 0,
+    val watched: Boolean = false,
+    /** Where the box got to last time, in seconds, or 0 to start fresh. */
+    val resume: Int = 0,
+) {
+    /** How far through it the box got, 0 to 1, or null for one to start fresh. */
+    val progress: Float?
+        get() = if (resume > 0 && duration > 0) {
+            (resume.toFloat() / duration).coerceIn(0f, 1f)
+        } else {
+            null
+        }
+
+    /**
+     * S01E04, or E04 where the library knows the number but not the season,
+     * or nothing at all.
+     *
+     * Also what an episode with no name of its own is called: the number is
+     * the only name it has ever had.
+     */
+    val code: String
+        get() = buildString {
+            if (season > 0) append("S%02d".format(season))
+            if (episode >= 0) append("E%02d".format(episode))
+        }
+}
+
+/** What starting an episode asks for: Kodi's own id, and nothing else. */
+@Serializable
+data class PlayEpisodeBody(val episodeid: Int)

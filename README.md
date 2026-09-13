@@ -138,14 +138,31 @@ again the moment a film ends — which is when the next one is being looked for.
 
 A film the box left half-watched carries a bar along the bottom of its poster
 and is resumed where it was, the same as pressing it in Kodi's own window; one
-already seen wears a tick in the corner of the picture. Above a dozen films the wall grows a search box, which
-narrows it on this phone rather than asking the box again per keystroke. The
-posters are fetched as they are scrolled to and each one crosses the network
-once, so a library of five hundred costs the dozen on screen.
+already seen wears a tick in the corner of the picture. The wall carries a
+search box, which narrows it on this phone rather than asking the box again per
+keystroke; the cross inside it empties the field again. The posters are fetched
+as they are scrolled to and each one crosses the network once, so a library of
+five hundred costs the dozen on screen.
 
-A box that offers no library — the card switched off in the add-on's settings,
-control switched off, or an empty video database — keeps the line saying
-nothing is playing.
+Under the films is the same wall again for the box's **series library**. A
+series is not something that can be put on — an episode is — so a tap on a
+poster does not start anything: it opens the show, and the screen becomes that
+show's episodes, in the order they were made and each season folded away under
+its own heading — all of them folded, so a show that has run for nine years
+arrives as a dozen lines rather than as several hundred rows. A tap opens a
+season, a tap on one of its episodes starts it, and the way back sits at the
+top of the list.
+
+Each poster carries the number of episodes still unwatched in the corner a
+watched film wears its tick in; a show seen right through wears the tick
+instead. The episodes of a show are read when that show is opened and not
+before, so a house with ninety series in it is not sent every episode of all of
+them to draw a wall of ninety posters.
+
+A box that offers neither shelf — the cards switched off in the add-on's
+settings, control switched off, or an empty video database — keeps the line
+saying nothing is playing. The two cards have a setting each, so it can offer
+the films and not the series, or the other way round.
 
 ### Readings
 
@@ -187,11 +204,13 @@ All of it.
 | `GET /api/stream` | The live connection. One per app, shared by every screen. |
 | `GET /api/state` | The polling fallback, and the second half of the connection test. |
 | `GET /api/history` | The chart and the event list. |
-| `GET /api/art` | The poster of what is playing, and the posters on the film wall. |
+| `GET /api/art` | The poster of what is playing, the posters on both walls, and an episode's still. |
 | `GET /api/library` | The films the box has, for the wall shown while nothing is playing. |
+| `GET /api/series` | The series it has, for the wall under them. |
+| `GET /api/episodes` | The episodes of one series, read when it is opened. |
 | `POST /api/mode` | The VS10 buttons. |
 | `POST /api/command` | Play/pause, stop, previous/next chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track. |
-| `POST /api/play` | Starting one of the library's films. |
+| `POST /api/play` | Starting one of the library's films, or one episode of a series. |
 
 The token travels as `X-TinyPPI-Token` on everything Retrofit sends, and as
 `?token=` on the event stream and the artwork — the two the add-on documents

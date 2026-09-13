@@ -34,12 +34,33 @@
 
     <!-- The wall of films, offered while nothing is playing -->
     <string name="library_title">Filme</string>
+    <string name="library_search_clear">Suche leeren</string>
     <string name="library_search">Filme suchen</string>
     <string name="library_watched">Gesehen</string>
     <string name="library_no_match">Dazu passt kein Film.</string>
     <plurals name="library_count">
         <item quantity="one">%1$d Film</item>
         <item quantity="other">%1$d Filme</item>
+    </plurals>
+
+    <!-- The wall of series under the films, and the episodes of one of them -->
+    <string name="series_title">Serien</string>
+    <string name="series_search">Serien suchen</string>
+    <string name="series_back">Alle Serien</string>
+    <string name="series_no_match">Dazu passt keine Serie.</string>
+    <string name="series_specials">Specials</string>
+    <string name="series_season">Staffel %1$d</string>
+    <plurals name="series_count">
+        <item quantity="one">%1$d Serie</item>
+        <item quantity="other">%1$d Serien</item>
+    </plurals>
+    <plurals name="series_episodes">
+        <item quantity="one">%1$d Folge</item>
+        <item quantity="other">%1$d Folgen</item>
+    </plurals>
+    <plurals name="series_unseen">
+        <item quantity="one">%1$d ungesehene Folge</item>
+        <item quantity="other">%1$d ungesehene Folgen</item>
     </plurals>
 
     <string name="card_expand">Karte ausklappen</string>

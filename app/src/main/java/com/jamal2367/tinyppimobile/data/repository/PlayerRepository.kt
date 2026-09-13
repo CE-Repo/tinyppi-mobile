@@ -4,9 +4,12 @@ import com.jamal2367.tinyppimobile.data.model.ApiErrorBody
 import com.jamal2367.tinyppimobile.data.model.CommandBody
 import com.jamal2367.tinyppimobile.data.model.Hello
 import com.jamal2367.tinyppimobile.data.model.History
+import com.jamal2367.tinyppimobile.data.model.EpisodeList
 import com.jamal2367.tinyppimobile.data.model.Library
 import com.jamal2367.tinyppimobile.data.model.ModeBody
 import com.jamal2367.tinyppimobile.data.model.PlayBody
+import com.jamal2367.tinyppimobile.data.model.PlayEpisodeBody
+import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
 import com.jamal2367.tinyppimobile.data.model.PlayerAction
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
 import com.jamal2367.tinyppimobile.data.remote.NoServerConfiguredException
@@ -40,6 +43,12 @@ class PlayerRepository(
     /** The films the box has, for the wall shown while nothing is playing. */
     suspend fun library(): Library = call { api.library() }
 
+    /** The series it has, for the wall under them. */
+    suspend fun series(): SeriesLibrary = call { api.series() }
+
+    /** The episodes of one of those series, read when it is opened. */
+    suspend fun episodes(showId: Int): EpisodeList = call { api.episodes(showId) }
+
     /**
      * Put one of those films on the television.
      *
@@ -49,6 +58,16 @@ class PlayerRepository(
      */
     suspend fun playFilm(movieId: Int) {
         call { api.play(PlayBody(movieId)) }
+    }
+
+    /**
+     * Put one episode of a series on the television.
+     *
+     * Resumed by the box where the library holds a point to resume from, the
+     * same as a film.
+     */
+    suspend fun playEpisode(episodeId: Int) {
+        call { api.playEpisode(PlayEpisodeBody(episodeId)) }
     }
 
     /**

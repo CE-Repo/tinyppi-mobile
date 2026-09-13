@@ -1,7 +1,9 @@
 package com.jamal2367.tinyppimobile.util
 
 import com.jamal2367.tinyppimobile.data.model.ArtTags
+import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
+import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import java.net.URLEncoder
 
@@ -61,15 +63,49 @@ object MediaUrls {
      * makes a wall of five hundred affordable at all - the loader asks for the
      * dozen on screen, and holds them.
      */
-    fun filmPoster(server: ServerConfig?, film: LibraryFilm): String? {
+    fun filmPoster(server: ServerConfig?, film: LibraryFilm): String? =
+        shelfArt(server, "poster", "movieid", film.id, film.poster)
+
+    /** The poster of one of the library's series, or null where it has none. */
+    fun showPoster(server: ServerConfig?, show: LibraryShow): String? =
+        shelfArt(server, "poster", "tvshowid", show.id, show.poster)
+
+    /**
+     * The still of one episode, or null where it has none.
+     *
+     * A still rather than a poster, and at the shape a television picture is:
+     * every episode of a show shares the show's poster, and a list of forty
+     * rows each carrying the same picture says nothing about any of them.
+     */
+    fun episodeStill(server: ServerConfig?, episode: LibraryEpisode): String? =
+        shelfArt(server, "thumb", "episodeid", episode.id, episode.thumb)
+
+    /**
+     * One picture off one of the library shelves.
+     *
+     * The three shelves address their art identically bar which kind and which
+     * id -- the film wall's bargain in [filmPoster] is the bargain here too --
+     * so they are built in one place rather than three.
+     */
+    private fun shelfArt(
+        server: ServerConfig?,
+        kind: String,
+        name: String,
+        id: Int,
+        tag: String,
+    ): String? {
         val box = server ?: return null
-        val tag = film.poster.takeIf { it.isNotBlank() } ?: return null
+        val picture = tag.takeIf { it.isNotBlank() } ?: return null
         return buildString {
             append(box.baseUrl)
-            append("/api/art?kind=poster&movieid=")
-            append(film.id)
+            append("/api/art?kind=")
+            append(kind)
+            append("&")
+            append(name)
+            append("=")
+            append(id)
             append("&v=")
-            append(tag.encoded())
+            append(picture.encoded())
             box.tokenParameter()?.let(::append)
         }
     }

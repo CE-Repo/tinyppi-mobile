@@ -37,12 +37,33 @@
 
     <!-- The wall of films, offered while nothing is playing -->
     <string name="library_title">Films</string>
+    <string name="library_search_clear">Clear the search</string>
     <string name="library_search">Search films</string>
     <string name="library_watched">Watched</string>
     <string name="library_no_match">No film matches that.</string>
     <plurals name="library_count">
         <item quantity="one">%1$d film</item>
         <item quantity="other">%1$d films</item>
+    </plurals>
+
+    <!-- The wall of series under the films, and the episodes of one of them -->
+    <string name="series_title">Series</string>
+    <string name="series_search">Search series</string>
+    <string name="series_back">All series</string>
+    <string name="series_no_match">No series matches that.</string>
+    <string name="series_specials">Specials</string>
+    <string name="series_season">Season %1$d</string>
+    <plurals name="series_count">
+        <item quantity="one">%1$d series</item>
+        <item quantity="other">%1$d series</item>
+    </plurals>
+    <plurals name="series_episodes">
+        <item quantity="one">%1$d episode</item>
+        <item quantity="other">%1$d episodes</item>
+    </plurals>
+    <plurals name="series_unseen">
+        <item quantity="one">%1$d unwatched episode</item>
+        <item quantity="other">%1$d unwatched episodes</item>
     </plurals>
 
     <string name="card_expand">Expand card</string>

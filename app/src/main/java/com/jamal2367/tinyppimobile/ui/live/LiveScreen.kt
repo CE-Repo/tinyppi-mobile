@@ -8,6 +8,7 @@ package com.jamal2367.tinyppimobile.ui.live
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -24,19 +25,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.VolumeDown
 import androidx.compose.material.icons.automirrored.rounded.VolumeOff
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
@@ -47,8 +52,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -57,6 +64,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -70,15 +78,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -93,7 +108,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.InfoGroup
+import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
+import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.PlayerControls
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.model.Track
@@ -101,6 +118,7 @@ import com.jamal2367.tinyppimobile.data.model.Vs10State
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
+import com.jamal2367.tinyppimobile.ui.components.FoldChevron
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
 import com.jamal2367.tinyppimobile.ui.components.GroupCard
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
@@ -134,6 +152,7 @@ fun LiveScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val library by viewModel.library.collectAsStateWithLifecycle()
+    val series by viewModel.series.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -146,7 +165,11 @@ fun LiveScreen(
     LaunchedEffect(playing, state.canControl) {
         if (playing == false && state.canControl) {
             viewModel.refreshLibrary(force = wasPlaying)
+            viewModel.refreshSeries(force = wasPlaying)
         }
+        // Something is on: the screen that comes back when it ends starts at
+        // the wall rather than inside whatever show was open when it started.
+        if (playing == true) viewModel.closeShow()
         wasPlaying = playing == true
     }
 
@@ -157,6 +180,14 @@ fun LiveScreen(
         if (library.starting != null) {
             delay(FILM_START_TIMEOUT_MS)
             viewModel.filmStarted()
+        }
+    }
+
+    // And the same for an episode that never arrives.
+    LaunchedEffect(series.starting) {
+        if (series.starting != null) {
+            delay(FILM_START_TIMEOUT_MS)
+            viewModel.episodeStarted()
         }
     }
 
@@ -219,6 +250,7 @@ fun LiveScreen(
                     showArtwork = state.settings.showArtwork,
                     canControl = state.canControlPlayback,
                     library = library,
+                    series = series,
                     server = state.live.server,
                     viewModel = viewModel,
                 )
@@ -236,27 +268,72 @@ private fun LiveContent(
     showArtwork: Boolean,
     canControl: Boolean,
     library: LibraryUiState,
+    series: SeriesUiState,
     server: ServerConfig?,
     viewModel: LiveViewModel,
 ) {
-    // What the search box holds, kept outside the list: it is drawn as the
-    // first item of the wall and would otherwise be forgotten the moment it
-    // scrolled off the top.
+    // What the search boxes hold, kept outside the list: they are drawn as the
+    // first item of their wall and would otherwise be forgotten the moment
+    // they scrolled off the top. One each, because narrowing the films has
+    // nothing to say about the series.
     var search by rememberSaveable { mutableStateOf("") }
+    var showSearch by rememberSaveable { mutableStateOf("") }
     val shown = remember(library.films, search) { matching(library.films, search) }
+    val shownShows = remember(series.shows, showSearch) {
+        matching(series.shows, showSearch, { it.title }, { it.year })
+    }
     val columns = filmColumns()
 
+    // The field lets go the moment a finger drags the list, and takes the
+    // keyboard with it. Half a phone's screen is keyboard, and somebody who
+    // has started scrolling a wall of posters is reading it rather than still
+    // typing at it - the search is live, so there was never anything left to
+    // submit.
+    //
+    // A drag rather than any scroll at all: opening the keyboard scrolls this
+    // list by itself, to bring the field it just covered back into view. Told
+    // to let go of whatever scrolls, the field would dismiss the keyboard it
+    // had only just asked for.
+    val listState = rememberLazyListState()
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(listState) {
+        listState.interactionSource.interactions.collect { interaction ->
+            if (interaction is DragInteraction.Start) dismissSearch(focus, keyboard)
+        }
+    }
+
     LazyColumn(
+        state = listState,
         contentPadding = PaddingValues(start = ScreenEdge, end = ScreenEdge, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
         modifier = Modifier.fillMaxSize(),
     ) {
         if (!snapshot.playing) {
-            // Nothing is on, so the screen offers what could be: the films the
-            // box has, as posters, and a press starts one. A box with no
-            // library to offer - the card switched off, control switched off,
-            // an empty video database - keeps the line it always had.
-            if (library.films.isEmpty()) {
+            // Somebody is inside a series: its episodes are the screen, rather
+            // than a third list under two walls of posters. A phone has room
+            // for one thing at a time, and the thing being looked at is the
+            // show.
+            val open = series.open
+            if (open != null) {
+                episodeList(
+                    open = open,
+                    server = server,
+                    showArtwork = showArtwork,
+                    starting = series.starting,
+                    openSeasons = series.openSeasons,
+                    onBack = viewModel::closeShow,
+                    onSeason = viewModel::toggleSeason,
+                    onPlay = viewModel::playEpisode,
+                )
+                return@LazyColumn
+            }
+
+            // Nothing is on, so the screen offers what could be: the films and
+            // the series the box has, as posters. A box with neither to offer
+            // - the cards switched off, control switched off, an empty video
+            // database - keeps the line it always had.
+            if (library.films.isEmpty() && series.shows.isEmpty()) {
                 item {
                     EmptyState(
                         icon = Icons.Outlined.PlayCircle,
@@ -267,17 +344,30 @@ private fun LiveContent(
                 }
                 return@LazyColumn
             }
-            filmWall(
-                films = shown,
-                total = library.films.size,
-                columns = columns,
-                server = server,
-                showArtwork = showArtwork,
-                starting = library.starting,
-                search = search,
-                onSearch = { search = it },
-                onPlay = viewModel::playFilm,
-            )
+            if (library.films.isNotEmpty()) {
+                filmWall(
+                    films = shown,
+                    columns = columns,
+                    server = server,
+                    showArtwork = showArtwork,
+                    starting = library.starting,
+                    search = search,
+                    onSearch = { search = it },
+                    onPlay = viewModel::playFilm,
+                )
+            }
+            if (series.shows.isNotEmpty()) {
+                seriesWall(
+                    shows = shownShows,
+                    columns = columns,
+                    server = server,
+                    showArtwork = showArtwork,
+                    opening = series.opening,
+                    search = showSearch,
+                    onSearch = { showSearch = it },
+                    onOpen = viewModel::openShow,
+                )
+            }
             return@LazyColumn
         }
 
@@ -1523,7 +1613,6 @@ private val ARROW = Regex("""\s*(?:->|=>|\u2192|\u27F6)\s*""")
  */
 private fun LazyListScope.filmWall(
     films: List<LibraryFilm>,
-    total: Int,
     columns: Int,
     server: ServerConfig?,
     showArtwork: Boolean,
@@ -1533,9 +1622,10 @@ private fun LazyListScope.filmWall(
     onPlay: (LibraryFilm) -> Unit,
 ) {
     item(key = "film-wall-heading") {
-        FilmWallHeading(
-            shown = films.size,
-            total = total,
+        WallHeading(
+            title = stringResource(R.string.library_title),
+            count = pluralStringResource(R.plurals.library_count, films.size, films.size),
+            searchLabel = stringResource(R.string.library_search),
             search = search,
             onSearch = onSearch,
         )
@@ -1587,16 +1677,29 @@ private fun LazyListScope.filmWall(
 }
 
 /**
- * The line over the wall: what it is, how much of it there is, and - once
- * there is enough of it to be worth it - a box to narrow it down with.
+ * The line over a wall: what it is, how much of it there is, and a box to
+ * narrow it down with.
+ *
+ * One heading for both shelves. The films and the series are the same offer
+ * made twice, and a second heading lettered differently would read as a
+ * different screen rather than a second shelf.
+ *
+ * The box is there whatever the shelf holds. It used to arrive only above a
+ * dozen, on the grounds that a shelf which fits on a screen is read rather
+ * than searched - but a field that comes and goes with how many films somebody
+ * owns is a field nobody can learn to reach for.
  */
 @Composable
-private fun FilmWallHeading(
-    shown: Int,
-    total: Int,
+private fun WallHeading(
+    title: String,
+    count: String,
+    searchLabel: String,
     search: String,
     onSearch: (String) -> Unit,
 ) {
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1604,28 +1707,57 @@ private fun FilmWallHeading(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = stringResource(R.string.library_title),
+                text = title,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = pluralStringResource(R.plurals.library_count, shown, shown),
+                text = count,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
-        // A shelf that fits on a screen is read rather than searched, and a
-        // field over it would be one more thing to look past.
-        if (total >= FILM_SEARCH_FROM) {
-            OutlinedTextField(
-                value = search,
-                onValueChange = onSearch,
-                singleLine = true,
-                label = { Text(stringResource(R.string.library_search)) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        OutlinedTextField(
+            value = search,
+            onValueChange = onSearch,
+            singleLine = true,
+            label = { Text(searchLabel) },
+            // The cross that empties it, and only while there is something to
+            // empty: over a field nobody has typed in it is a control that
+            // does nothing.
+            //
+            // It puts the whole shelf back and then gets out of the way -
+            // field and keyboard both. Somebody who clears a search is done
+            // with it; one who meant to search for something else can press
+            // the field again, which is one press against the screenful of
+            // posters a keyboard would otherwise go on covering.
+            trailingIcon = if (search.isEmpty()) {
+                null
+            } else {
+                {
+                    IconButton(
+                        onClick = {
+                            onSearch("")
+                            dismissSearch(focus, keyboard)
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = stringResource(R.string.library_search_clear),
+                        )
+                    }
+                }
+            },
+            // The key the keyboard offers instead of a newline, and what it
+            // does: nothing but close, because the wall narrowed itself as the
+            // letters arrived.
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(
+                onSearch = { dismissSearch(focus, keyboard) },
+            ),
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -1656,57 +1788,14 @@ private fun FilmTile(
         modifier = modifier.clickable(enabled = enabled, onClick = onPlay),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(POSTER_RATIO)
-                .clip(RoundedCornerShape(10.dp)),
-        ) {
-            // A film with no poster - and every film on a phone told not to
-            // show artwork - gets the stand-in the playing title gets, which
-            // holds the same space rather than collapsing the row it is in.
-            PosterImage(
-                url = poster,
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-            )
-
-            film.progress?.let { progress ->
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .fillMaxWidth()
-                        .height(RESUME_BAR)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(progress)
-                            .fillMaxHeight()
-                            .background(MaterialTheme.colorScheme.primary),
-                    )
-                }
-            }
-
-            if (film.watched) {
-                WatchedMark(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(WATCHED_INSET),
-                )
-            }
-
-            if (starting) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.size(28.dp))
-                }
-            }
-        }
+        ArtFrame(
+            url = poster,
+            ratio = POSTER_RATIO,
+            progress = film.progress,
+            watched = film.watched,
+            busy = starting,
+            modifier = Modifier.fillMaxWidth(),
+        )
 
         Text(
             text = film.title,
@@ -1756,6 +1845,450 @@ private fun WatchedMark(modifier: Modifier = Modifier) {
     }
 }
 
+/* --- The series library -------------------------------------------------- */
+
+/**
+ * The same wall again for what Kodi knows as TV shows.
+ *
+ * A series is not something that can be put on - an episode is - so a press
+ * here does not start anything: it opens the show, and the screen becomes that
+ * show's episodes (see [episodeList]). What the poster carries instead of a
+ * resume bar is how many episodes are still waiting, which is the one number a
+ * shelf of series is scanned for.
+ */
+private fun LazyListScope.seriesWall(
+    shows: List<LibraryShow>,
+    columns: Int,
+    server: ServerConfig?,
+    showArtwork: Boolean,
+    opening: Int?,
+    search: String,
+    onSearch: (String) -> Unit,
+    onOpen: (LibraryShow) -> Unit,
+) {
+    item(key = "series-wall-heading") {
+        WallHeading(
+            title = stringResource(R.string.series_title),
+            count = pluralStringResource(R.plurals.series_count, shows.size, shows.size),
+            searchLabel = stringResource(R.string.series_search),
+            search = search,
+            onSearch = onSearch,
+        )
+    }
+
+    if (shows.isEmpty()) {
+        item(key = "series-wall-empty") {
+            Text(
+                text = stringResource(R.string.series_no_match),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 28.dp),
+            )
+        }
+        return
+    }
+
+    val rows = shows.chunked(columns)
+    items(items = rows, key = { row -> "series-row-${row.first().id}" }) { row ->
+        Row(horizontalArrangement = Arrangement.spacedBy(FILM_GAP)) {
+            for (show in row) {
+                ShowTile(
+                    show = show,
+                    poster = if (showArtwork) MediaUrls.showPoster(server, show) else null,
+                    opening = opening == show.id,
+                    // While one show's episodes are being read nothing else
+                    // may be pressed: two reads a second apart would leave
+                    // whichever won on the screen.
+                    enabled = opening == null,
+                    onOpen = { onOpen(show) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            repeat(columns - row.size) {
+                Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/**
+ * One series: its poster, its name and its year, and a press that opens it.
+ *
+ * A show seen right through wears the tick a watched film wears; one with
+ * episodes still waiting wears how many instead, in the same corner. Either
+ * way it is one mark on one corner of one picture, which is what a poster can
+ * carry without stopping being a poster.
+ */
+@Composable
+private fun ShowTile(
+    show: LibraryShow,
+    poster: String?,
+    opening: Boolean,
+    enabled: Boolean,
+    onOpen: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.clickable(enabled = enabled, onClick = onOpen),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        ArtFrame(
+            url = poster,
+            ratio = POSTER_RATIO,
+            progress = null,
+            watched = show.watched,
+            unseen = show.unseen,
+            busy = opening,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Text(
+            text = show.title,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (show.year > 0) {
+            Text(
+                text = show.year.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/**
+ * The episodes of the show somebody opened, and the way back out.
+ *
+ * Rows rather than a wall: an episode is chosen by its number and its name -
+ * the still is a reminder of which one it was, not what it is recognised by -
+ * and a row is where a number and a name fit. They arrive in the order they
+ * were made, under the season they belong to.
+ *
+ * The way back sits at the top, where it is one press away however far down a
+ * forty-episode show somebody has scrolled.
+ */
+private fun LazyListScope.episodeList(
+    open: OpenShow,
+    server: ServerConfig?,
+    showArtwork: Boolean,
+    starting: Int?,
+    openSeasons: Set<Int>,
+    onBack: () -> Unit,
+    onSeason: (Int) -> Unit,
+    onPlay: (LibraryEpisode) -> Unit,
+) {
+    item(key = "episode-heading") {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            TextButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.series_back))
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = open.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.series_episodes,
+                        open.episodes.size,
+                        open.episodes.size,
+                    ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+
+    val rows: (List<LibraryEpisode>) -> Unit = { listing ->
+        for (episode in listing) {
+            item(key = "episode-${episode.id}") {
+                EpisodeRow(
+                    episode = episode,
+                    still = if (showArtwork) MediaUrls.episodeStill(server, episode) else null,
+                    starting = starting == episode.id,
+                    enabled = starting == null,
+                    onPlay = { onPlay(episode) },
+                )
+            }
+        }
+    }
+
+    // Grouped rather than walked in order, so a library that files the same
+    // season in two places still gets one fold for it - and one key for that
+    // fold, where a second would be a crash rather than a heading out of
+    // order.
+    var ruled = false
+    for ((number, episodes) in open.episodes.groupBy { it.season }) {
+        if (number < 0) {
+            // An episode the library files under no season at all goes under
+            // no heading, and so into no fold either: there is nothing to call
+            // it, and a fold with no name on it is a row that hides things.
+            rows(episodes)
+            ruled = true
+            continue
+        }
+
+        val unfolded = number in openSeasons
+        item(key = "season-$number") {
+            SeasonHeading(
+                label = if (number == 0) {
+                    stringResource(R.string.series_specials)
+                } else {
+                    stringResource(R.string.series_season, number)
+                },
+                count = episodes.size,
+                expanded = unfolded,
+                ruled = ruled,
+                onToggle = { onSeason(number) },
+            )
+        }
+        ruled = true
+        if (unfolded) rows(episodes)
+    }
+}
+
+/**
+ * One season's heading: what it is, how much of it there is, and the arrow
+ * that unfolds it.
+ *
+ * The whole line answers to a finger and the arrow is what lights up for it -
+ * one interaction source, held by the row and drawn by the arrow, the way the
+ * cards on this screen fold (see FoldChevron). A season that only opened on
+ * its arrow would feel broken along the rest of the line.
+ */
+@Composable
+private fun SeasonHeading(
+    label: String,
+    count: Int,
+    expanded: Boolean,
+    ruled: Boolean,
+    onToggle: () -> Unit,
+) {
+    val press = remember { MutableInteractionSource() }
+
+    Column {
+        // Ruled between one season and the next rather than around each: what
+        // makes a stack of folds read as one list is the line between them.
+        if (ruled) {
+            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(interactionSource = press, indication = null, onClick = onToggle)
+                .heightIn(min = 44.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = pluralStringResource(R.plurals.series_episodes, count, count),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                FoldChevron(expanded, interactionSource = press, onClick = onToggle)
+            }
+        }
+    }
+}
+
+/** One episode: its still, which one it is, its name, and a press that starts it. */
+@Composable
+private fun EpisodeRow(
+    episode: LibraryEpisode,
+    still: String?,
+    starting: Boolean,
+    enabled: Boolean,
+    onPlay: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, onClick = onPlay),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ArtFrame(
+            url = still,
+            ratio = STILL_RATIO,
+            progress = episode.progress,
+            watched = episode.watched,
+            busy = starting,
+            modifier = Modifier.width(STILL_WIDTH),
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            if (episode.code.isNotEmpty()) {
+                Text(
+                    text = episode.code,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text(
+                // An episode the library has no name for is called by its
+                // number, which is the only name it has ever had.
+                text = episode.title.ifBlank { episode.code },
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/**
+ * The picture on a tile or a row, with whatever the library has to say on top
+ * of it.
+ *
+ * One frame for all three shelves: a film's poster, a show's poster and an
+ * episode's still carry the same marks in the same corners and hold their
+ * space the same way when there is no picture at all, and three copies of that
+ * would be three places to keep it right.
+ */
+@Composable
+private fun ArtFrame(
+    url: String?,
+    ratio: Float,
+    progress: Float?,
+    watched: Boolean,
+    busy: Boolean,
+    modifier: Modifier = Modifier,
+    unseen: Int = 0,
+) {
+    Box(
+        modifier = modifier
+            .aspectRatio(ratio)
+            .clip(RoundedCornerShape(10.dp)),
+    ) {
+        // A title with no picture - and everything on a phone told not to show
+        // artwork - gets the stand-in the playing title gets, which holds the
+        // same space rather than collapsing the row it is in.
+        PosterImage(
+            url = url,
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        progress?.let { far ->
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .height(RESUME_BAR)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(far)
+                        .fillMaxHeight()
+                        .background(MaterialTheme.colorScheme.primary),
+                )
+            }
+        }
+
+        when {
+            watched -> WatchedMark(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(WATCHED_INSET),
+            )
+            unseen > 0 -> UnseenMark(
+                count = unseen,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(WATCHED_INSET),
+            )
+        }
+
+        if (busy) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(28.dp))
+            }
+        }
+    }
+}
+
+/**
+ * How many episodes of a series are still waiting.
+ *
+ * A pill rather than the disc a tick sits on: two digits have to fit, and a
+ * circle stretched around them is an oval nobody meant to draw. The shadow is
+ * the tick's shadow and is there for the same reason - posters are
+ * photographs, and a light pill on a light one has nothing to stand on.
+ */
+@Composable
+private fun UnseenMark(count: Int, modifier: Modifier = Modifier) {
+    val label = pluralStringResource(R.plurals.series_unseen, count, count)
+    Box(
+        modifier = modifier
+            .heightIn(min = WATCHED_MARK)
+            .widthIn(min = WATCHED_MARK)
+            .shadow(3.dp, CircleShape)
+            .background(MaterialTheme.colorScheme.primary, CircleShape)
+            .padding(horizontal = 6.dp)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = count.toString(),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimary,
+        )
+    }
+}
+
+/**
+ * Let the search field go, and the keyboard with it.
+ *
+ * Clearing the focus is usually enough to put the keyboard away, but only
+ * usually: a field disposed from under it - which is what scrolling a wall
+ * does to the heading it sits in - can leave the keyboard up over a screen
+ * with nothing left to type into. Both, then, and neither costs anything when
+ * there was nothing focused to begin with.
+ */
+private fun dismissSearch(focus: FocusManager, keyboard: SoftwareKeyboardController?) {
+    focus.clearFocus()
+    keyboard?.hide()
+}
+
 /**
  * The films whose name - or year - answers what has been typed.
  *
@@ -1763,12 +2296,27 @@ private fun WatchedMark(modifier: Modifier = Modifier) {
  * phone, and a round trip per keystroke to narrow a list this app is holding
  * would be a slower answer to a question already in front of it.
  */
-private fun matching(films: List<LibraryFilm>, search: String): List<LibraryFilm> {
+private fun matching(films: List<LibraryFilm>, search: String): List<LibraryFilm> =
+    matching(films, search, { it.title }, { it.year })
+
+/**
+ * The same, for any shelf whose tiles carry a name and a year.
+ *
+ * Written once rather than once per shelf: the films and the series are
+ * narrowed by the same question, and two copies of it would be two answers to
+ * keep the same.
+ */
+private fun <T> matching(
+    items: List<T>,
+    search: String,
+    title: (T) -> String,
+    year: (T) -> Int,
+): List<T> {
     val needle = search.trim()
-    if (needle.isEmpty()) return films
-    return films.filter { film ->
-        film.title.contains(needle, ignoreCase = true) ||
-            (film.year > 0 && film.year.toString().contains(needle))
+    if (needle.isEmpty()) return items
+    return items.filter { item ->
+        title(item).contains(needle, ignoreCase = true) ||
+            (year(item) > 0 && year(item).toString().contains(needle))
     }
 }
 
@@ -1790,9 +2338,6 @@ private fun filmColumns(): Int {
     return (usable / (FILM_TILE_MIN + FILM_GAP)).toInt().coerceIn(3, 6)
 }
 
-/** Below this a search box is one more thing on the screen and nothing to use. */
-private const val FILM_SEARCH_FROM = 12
-
 /** How long a pressed tile waits for a film that never starts. */
 private const val FILM_START_TIMEOUT_MS = 6_000L
 
@@ -1811,3 +2356,13 @@ private val WATCHED_INSET = 5.dp
 private val FILM_GAP = CardGap
 private val FILM_TILE_MIN = 104.dp
 private val RESUME_BAR = 3.dp
+
+/**
+ * An episode's still: the shape a television picture is, and how wide a
+ * column of them is.
+ *
+ * A fixed width rather than a share of the row, so every still down the list
+ * is the same size and the names beside them start on one line.
+ */
+private const val STILL_RATIO = 16f / 9f
+private val STILL_WIDTH = 116.dp

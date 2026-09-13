@@ -4,13 +4,17 @@ import com.jamal2367.tinyppimobile.data.model.CommandAck
 import com.jamal2367.tinyppimobile.data.model.CommandBody
 import com.jamal2367.tinyppimobile.data.model.Hello
 import com.jamal2367.tinyppimobile.data.model.History
+import com.jamal2367.tinyppimobile.data.model.EpisodeList
 import com.jamal2367.tinyppimobile.data.model.Library
 import com.jamal2367.tinyppimobile.data.model.ModeBody
 import com.jamal2367.tinyppimobile.data.model.PlayBody
+import com.jamal2367.tinyppimobile.data.model.PlayEpisodeBody
+import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
 import kotlinx.serialization.json.JsonObject
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Query
 
 /**
  * Every endpoint the add-on's web server offers, less the two that only a
@@ -59,6 +63,24 @@ interface TinyPpiApi {
     @GET("api/library")
     suspend fun library(): Library
 
+    /**
+     * The series the box has, for the wall under the films.
+     *
+     * Refused with a 403 the same way the films are, and by a setting of its
+     * own: a box can offer the one shelf and not the other.
+     */
+    @GET("api/series")
+    suspend fun series(): SeriesLibrary
+
+    /**
+     * The episodes of one series.
+     *
+     * Asked for when a show is opened and not before, which is why it is a
+     * call of its own rather than part of the shelf.
+     */
+    @GET("api/episodes")
+    suspend fun episodes(@Query("tvshowid") showId: Int): EpisodeList
+
     /** Put the driver into one of the VS10 modes the snapshot offered. */
     @POST("api/mode")
     suspend fun setMode(@Body body: ModeBody): CommandAck
@@ -77,4 +99,14 @@ interface TinyPpiApi {
      */
     @POST("api/play")
     suspend fun play(@Body body: PlayBody): CommandAck
+
+    /**
+     * Put one episode of a series on the television.
+     *
+     * The same route a film is started through -- it is one act, something in
+     * the library being started -- and which of the two it is, is which id the
+     * body carries.
+     */
+    @POST("api/play")
+    suspend fun playEpisode(@Body body: PlayEpisodeBody): CommandAck
 }
