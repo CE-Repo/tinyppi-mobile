@@ -50,16 +50,9 @@ android {
         applicationId = "com.jamal2367.tinyppimobile"
         minSdk = 26
         targetSdk = 37
-        versionCode = 143
-        versionName = "1.4.3"
+        versionCode = 144
+        versionName = "1.4.4"
 
-        // Which run of the release workflow this build came from, or 0 for one
-        // built from a checkout by hand. It is what the update check compares
-        // against: the workflow tags every build `build-<run number>` and the
-        // version name stands still across dozens of them, so the run number is
-        // the only thing that tells two releases of `1.4.3` apart. A build that
-        // carries 0 knows of no run behind it and is never told it is behind by
-        // one -- a newer version name still reaches it.
         val buildNumber = providers.environmentVariable("BUILD_NUMBER").orNull
             ?.trim()
             ?.toIntOrNull()
