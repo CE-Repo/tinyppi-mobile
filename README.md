@@ -180,6 +180,28 @@ whichever screen is drawing it, so changing tabs asks the box nothing it has
 already answered. A shelf the box has said it will not offer loses its place in
 the bar rather than leaving a tab that leads to an apology.
 
+They keep themselves up to date without being asked. Every snapshot carries the
+version the box's library is on, and that number moves whenever what the
+shelves would say moves — a film watched to the end, one switched off in the
+middle, a scan that added a series — so a wall that is open when a title ends
+reads itself again there and then. It no longer takes restarting the app to see
+a tick appear on something that was watched last night, and a series somebody
+is inside stays open across it: the episodes are read again in place, with the
+seasons left unfolded as they were.
+
+**Pulling either shelf down** reads it again anyway. It is the answer when the
+box was off while the app was looking at it, or when its library was switched
+on in Kodi after the app had already been told there was none — a pull overrules
+every reason the app otherwise has for not asking. Inside a show it reads that
+show's episodes as well as the shelf behind them. A shelf with nothing on it can
+be pulled too, which is the one most worth pulling.
+
+It is also the only read the app says anything about when it fails. Everywhere
+else a wall is an offer, and an offer that cannot be made is not worth
+interrupting anybody over; a pull was asked for, so a box that cannot answer it
+says so along the bottom of the screen rather than leaving a gesture that
+seemed to do nothing.
+
 Opening a series gives its episodes a **cover** to stand under — the picture
 of it at the shape a television is, rather than the poster it was picked off
 the wall by — and then its seasons. The system's own back gesture closes the

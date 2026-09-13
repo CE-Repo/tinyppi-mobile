@@ -1,3 +1,8 @@
+@file:OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class,
+)
+
 package com.jamal2367.tinyppimobile.ui.library
 
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +17,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.Tv
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -68,11 +78,21 @@ fun FilmsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val library by viewModel.library.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
+
+    // What the box says its shelves are at. A film watched to the end or
+    // switched off in the middle moves it, and this is where a screen standing
+    // open through that hears about it: without it the wall went on drawing
+    // what it drew when it was opened until the app was started again.
+    LaunchedEffect(state.snapshot?.libraryRevision) {
+        state.snapshot?.let { viewModel.noteLibraryVersion(it.libraryRevision) }
+    }
 
     // Read when the screen arrives rather than when the box falls idle, which
     // is what the live screen waits for: this shelf is opened on purpose, and
-    // whoever opened it is looking at it now.
-    LaunchedEffect(state.canControl) {
+    // whoever opened it is looking at it now. And read again whenever the mark
+    // above says what is drawn is the old answer.
+    LaunchedEffect(state.canControl, library.read, library.starting) {
         if (state.canControl) viewModel.refreshLibrary()
     }
 
@@ -93,6 +113,10 @@ fun FilmsScreen(
         configured = state.isConfigured,
         empty = library.films.isEmpty(),
         icon = Icons.Outlined.Movie,
+        refreshing = library.refreshing,
+        onRefresh = viewModel::pullLibrary,
+        message = message,
+        onMessageShown = viewModel::consumeMessage,
         onOpenSettings = onOpenSettings,
     ) {
         filmWall(
@@ -122,8 +146,13 @@ fun SeriesScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val series by viewModel.series.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
 
-    LaunchedEffect(state.canControl) {
+    LaunchedEffect(state.snapshot?.libraryRevision) {
+        state.snapshot?.let { viewModel.noteLibraryVersion(it.libraryRevision) }
+    }
+
+    LaunchedEffect(state.canControl, series.read, series.starting) {
         if (state.canControl) viewModel.refreshSeries()
     }
 
@@ -153,6 +182,13 @@ fun SeriesScreen(
         // shelf behind it holds.
         empty = series.shows.isEmpty() && open == null,
         icon = Icons.Outlined.Tv,
+        refreshing = series.refreshing,
+        // Inside a show this reads that show's episodes again as well as the
+        // shelf behind it, which is what somebody looking at an episode list
+        // is pulling for.
+        onRefresh = viewModel::pullSeries,
+        message = message,
+        onMessageShown = viewModel::consumeMessage,
         onOpenSettings = onOpenSettings,
     ) {
         if (open != null) {
@@ -195,6 +231,10 @@ private fun Shelf(
     configured: Boolean,
     empty: Boolean,
     icon: ImageVector,
+    refreshing: Boolean,
+    onRefresh: () -> Unit,
+    message: String?,
+    onMessageShown: () -> Unit,
     onOpenSettings: () -> Unit,
     content: LazyListScope.() -> Unit,
 ) {
@@ -207,9 +247,27 @@ private fun Shelf(
         }
     }
 
-    Scaffold { padding ->
-        when {
-            !configured -> EmptyState(
+    // The one line a pull that could not be answered leaves behind. Nowhere
+    // else on this screen says whether the box is reachable - that line lives
+    // on the live screen - so a pull into a box that is off would otherwise
+    // spin and give nothing back.
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(message) {
+        val text = message ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(text)
+        onMessageShown()
+    }
+
+    val pullState = rememberPullToRefreshState()
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+    ) { padding ->
+        // A box nobody has named cannot be pulled for anything: there is no
+        // address to ask, and the thing to do about it is the button under the
+        // line, not a gesture.
+        if (!configured) {
+            EmptyState(
                 icon = icon,
                 title = stringResource(R.string.live_not_configured_title),
                 message = stringResource(R.string.live_not_configured_text),
@@ -217,21 +275,53 @@ private fun Shelf(
                 onAction = onOpenSettings,
                 modifier = Modifier.padding(padding),
             )
+            return@Scaffold
+        }
 
-            empty -> EmptyState(
-                icon = icon,
-                title = stringResource(R.string.library_empty_title),
-                message = stringResource(R.string.library_empty_text),
-                modifier = Modifier.padding(padding),
-            )
+        PullToRefreshBox(
+            isRefreshing = refreshing,
+            onRefresh = {
+                dismissSearch(focus, keyboard)
+                onRefresh()
+            },
+            state = pullState,
+            // The expressive indicator rather than the plain one, to match the
+            // shapes the rest of the app is drawn with.
+            indicator = {
+                PullToRefreshDefaults.LoadingIndicator(
+                    state = pullState,
+                    isRefreshing = refreshing,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+        ) {
+            // A shelf with nothing on it is the one most worth pulling - the
+            // box was off when the screen was opened, or its library setting
+            // was - so the line saying so goes in a list of its own rather
+            // than standing on the screen unable to be dragged. One item at
+            // the size of the viewport, so it is centred exactly as it was.
+            if (empty) {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    item {
+                        EmptyState(
+                            icon = icon,
+                            title = stringResource(R.string.library_empty_title),
+                            message = stringResource(R.string.library_empty_text),
+                            modifier = Modifier.fillParentMaxSize(),
+                        )
+                    }
+                }
+                return@PullToRefreshBox
+            }
 
-            else -> LazyColumn(
+            LazyColumn(
                 state = listState,
                 contentPadding = PaddingValues(start = ScreenEdge, end = ScreenEdge, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(CardGap),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier = Modifier.fillMaxSize(),
                 content = content,
             )
         }

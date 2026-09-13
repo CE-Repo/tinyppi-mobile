@@ -64,6 +64,21 @@ data class Snapshot(
     val session: SessionSummary = SessionSummary(),
     /** What the title that just ended came to; empty while one is playing. */
     val last: LastPlayed = LastPlayed(),
+    /**
+     * Which version of the box's two shelves a request now would be answered
+     * with.
+     *
+     * It moves whenever what the film and series lists would say moves: a film
+     * watched to the end, one switched off in the middle, a scan that added a
+     * series. The shelves are read once and then held on both sides, so this
+     * is the whole of how the app hears that what it is drawing is no longer
+     * what the box holds - without it a wall read this afternoon goes on
+     * showing tonight's film as unwatched until the app is started again.
+     *
+     * Zero against an add-on older than the field, which is why nothing may
+     * treat the first value it sees as a change (see `LiveViewModel`).
+     */
+    @SerialName("library") val libraryRevision: Long = 0,
     /** Whether this server accepts commands. Added per response, not by the builder. */
     val control: Boolean = false,
     /** Whether a stream would be turned away right now - every slot is taken. */
