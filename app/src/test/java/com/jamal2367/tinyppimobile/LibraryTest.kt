@@ -44,7 +44,7 @@ class LibraryTest {
             """
             {"count":2,"tag":"2-1f3a9c04","movies":[
               {"id":3,"title":"Blade","year":1998,"poster":"9a1b2c3d",
-               "duration":7140,"resume":1200},
+               "duration":7140,"resume":1200,"rating":7.1,"rating_from":"imdb"},
               {"id":9,"title":"Dune","year":2021,"duration":9300,"watched":true}
             ]}
             """.trimIndent(),
@@ -58,9 +58,18 @@ class LibraryTest {
         assertEquals(1998, blade.year)
         assertFalse(blade.watched)
         assertEquals(0.168f, blade.progress!!, 0.001f)
+        // The badge in the corner of the poster, and which house said so -
+        // which travels under a name of its own and has to be read back into
+        // one the app can spell.
+        assertEquals(7.1, blade.rating, 0.001)
+        assertEquals("imdb", blade.ratingFrom)
 
         val dune = library.movies[1]
         assertTrue(dune.watched)
+        // Nobody scraped a rating for it, so the poster wears no badge rather
+        // than a nought.
+        assertEquals(0.0, dune.rating, 0.0)
+        assertEquals("", dune.ratingFrom)
         // No resume point, so no bar - and no poster, so the tile draws the
         // stand-in rather than asking for a picture that is not there.
         assertNull(dune.progress)

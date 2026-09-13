@@ -149,6 +149,33 @@ object Formatters {
     }
 
     /**
+     * How long something runs, as hours and minutes: `1 h 38 min` is (1, 38)
+     * and `45 min` is (0, 45).
+     *
+     * The two halves rather than the words, because the words are the screen's
+     * to fetch out of a string table and the arithmetic is this file's. Whole
+     * minutes: the seconds are noise at the size a tile draws this.
+     *
+     * Null for a library that does not know how long it is, so a tile draws
+     * nothing rather than a nought.
+     */
+    fun runtimeParts(seconds: Int): Pair<Int, Int>? {
+        val minutes = (seconds + 30) / 60
+        if (minutes <= 0) return null
+        return minutes / 60 to minutes % 60
+    }
+
+    /**
+     * A rating out of ten, to one place: `8.3`, and `8.0` rather than `8`.
+     *
+     * Never trimmed, so a wall of badges is a wall of one shape. Against the
+     * root locale for the reason [trimmed] gives, and because this is a figure
+     * the add-on's own dashboard draws beside the same posters - the two
+     * should not disagree about where the point goes.
+     */
+    fun rating(value: Double): String = String.format(Locale.ROOT, "%.1f", value)
+
+    /**
      * A number followed by a `k`, and nothing else that looks like one.
      *
      * The `k` has to end the word, so the one in `4kbps` is left where it is.

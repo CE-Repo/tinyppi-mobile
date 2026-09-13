@@ -46,9 +46,10 @@ class SeriesTest {
             """
             {"count":2,"tag":"2-9f0a1b2c","shows":[
               {"id":4,"title":"The Wire","year":2002,"poster":"723bceb2",
-               "episodes":60,"unseen":3},
+               "episodes":60,"unseen":3,"rating":9.3,"rating_from":"imdb"},
               {"id":9,"title":"Chernobyl","year":2019,"poster":"ff75a665",
-               "episodes":5,"unseen":0,"watched":true}
+               "episodes":5,"unseen":0,"watched":true,
+               "rating":8.7,"rating_from":"tmdb"}
             ]}
             """.trimIndent(),
         )
@@ -59,10 +60,14 @@ class SeriesTest {
         val wire = shelf.shows[0]
         assertEquals(3, wire.unseen)
         assertFalse(wire.watched)
+        assertEquals(9.3, wire.rating, 0.001)
+        assertEquals("imdb", wire.ratingFrom)
 
         val chernobyl = shelf.shows[1]
         assertEquals(0, chernobyl.unseen)
         assertTrue(chernobyl.watched)
+        // The other house, where that is the one the library holds.
+        assertEquals("tmdb", chernobyl.ratingFrom)
     }
 
     @Test
@@ -73,6 +78,8 @@ class SeriesTest {
         assertEquals("", show.title)
         assertEquals(0, show.unseen)
         assertFalse(show.watched)
+        assertEquals(0.0, show.rating, 0.0)
+        assertEquals("", show.ratingFrom)
     }
 
     @Test
@@ -103,6 +110,8 @@ class SeriesTest {
         assertTrue(seen.watched)
         assertNull(seen.progress)
         assertEquals("S01E04", seen.code)
+        // The length the row now writes beside that number.
+        assertEquals(3540, seen.duration)
 
         assertEquals(0.25f, halfWatched.progress!!, 0.001f)
         // No name of its own, so the row calls it by its number.

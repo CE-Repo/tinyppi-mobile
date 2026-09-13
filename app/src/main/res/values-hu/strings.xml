@@ -39,6 +39,9 @@
     <string name="library_title">Filmek</string>
     <string name="library_search_clear">Keresés törlése</string>
     <string name="library_search">Filmek keresése</string>
+    <string name="library_runtime_hm">%1$d ó %2$d p</string>
+    <string name="library_runtime_h">%1$d ó</string>
+    <string name="library_runtime_m">%1$d p</string>
     <string name="library_watched">Megtekintve</string>
     <string name="library_no_match">Nincs erre illő film.</string>
     <plurals name="library_count">

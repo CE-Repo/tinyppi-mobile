@@ -39,6 +39,9 @@
     <string name="library_title">Films</string>
     <string name="library_search_clear">Clear the search</string>
     <string name="library_search">Search films</string>
+    <string name="library_runtime_hm">%1$d h %2$d min</string>
+    <string name="library_runtime_h">%1$d h</string>
+    <string name="library_runtime_m">%1$d min</string>
     <string name="library_watched">Watched</string>
     <string name="library_no_match">No film matches that.</string>
     <plurals name="library_count">

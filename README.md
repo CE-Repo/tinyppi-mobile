@@ -138,7 +138,8 @@ again the moment a film ends — which is when the next one is being looked for.
 
 A film the box left half-watched carries a bar along the bottom of its poster
 and is resumed where it was, the same as pressing it in Kodi's own window; one
-already seen wears a tick in the corner of the picture. The wall carries a
+already seen wears a tick in the corner of the picture. What **IMDb** made of it — or TMDb where IMDb has nothing to say — sits in the opposite corner of the poster, and is left off entirely where neither house has an opinion. Under the title
+are the year and how long the film runs. The wall carries a
 search box, which narrows it on this phone rather than asking the box again per
 keystroke; the cross inside it empties the field again. The posters are fetched
 as they are scrolled to and each one crosses the network once, so a library of
@@ -149,13 +150,15 @@ series is not something that can be put on — an episode is — so a tap on a
 poster does not start anything: it opens the show, and the screen becomes that
 show's episodes, in the order they were made and each season folded away under
 its own heading — all of them folded, so a show that has run for nine years
-arrives as a dozen lines rather than as several hundred rows. A tap opens a
+arrives as a dozen lines rather than as several hundred rows. Each heading says
+how many episodes the season holds and how long they run altogether. A tap opens a
 season, a tap on one of its episodes starts it, and the way back sits at the
 top of the list.
 
 Each poster carries the number of episodes still unwatched in the corner a
 watched film wears its tick in; a show seen right through wears the tick
-instead. The episodes of a show are read when that show is opened and not
+instead. What **IMDb** made of it — or TMDb where IMDb has nothing to say — sits in the opposite corner of the poster, and is left off entirely where neither house has an opinion. Each episode row says how long that episode runs beside the
+number it is. The episodes of a show are read when that show is opened and not
 before, so a house with ninety series in it is not sent every episode of all of
 them to draw a wall of ninety posters.
 

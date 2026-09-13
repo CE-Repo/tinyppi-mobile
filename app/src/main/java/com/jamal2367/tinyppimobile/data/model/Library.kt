@@ -1,5 +1,6 @@
 package com.jamal2367.tinyppimobile.data.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -46,6 +47,13 @@ data class LibraryFilm(
     val poster: String = "",
     /** How long it runs, in seconds; 0 where the library does not know. */
     val duration: Int = 0,
+    /**
+     * What IMDb made of it, or TMDb where IMDb had nothing to say; 0 where
+     * neither did, which is what a library that was never scraped looks like.
+     */
+    val rating: Double = 0.0,
+    /** Which of the two that was - `imdb` or `tmdb` - for the badge to say. */
+    @SerialName("rating_from") val ratingFrom: String = "",
     /** Whether the box counts it as seen. */
     val watched: Boolean = false,
     /**
@@ -109,6 +117,13 @@ data class LibraryShow(
      * waiting.
      */
     val unseen: Int = 0,
+    /**
+     * What IMDb made of it, or TMDb where IMDb had nothing to say; 0 where
+     * neither did, which is what a library that was never scraped looks like.
+     */
+    val rating: Double = 0.0,
+    /** Which of the two that was - `imdb` or `tmdb` - for the badge to say. */
+    @SerialName("rating_from") val ratingFrom: String = "",
     /** Whether the box counts every episode of it as seen. */
     val watched: Boolean = false,
 )

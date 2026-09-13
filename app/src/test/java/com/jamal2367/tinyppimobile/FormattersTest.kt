@@ -65,6 +65,33 @@ class FormattersTest {
     }
 
     @Test
+    fun `a runtime splits into the hours and the minutes left over`() {
+        // A film: how long an evening it is, which is what the hour says.
+        assertEquals(2 to 8, Formatters.runtimeParts(7680))
+        assertEquals(1 to 0, Formatters.runtimeParts(3600))
+        // An episode, where there is no hour to write and the screen draws the
+        // minutes on their own.
+        assertEquals(0 to 45, Formatters.runtimeParts(2700))
+        assertEquals(0 to 7, Formatters.runtimeParts(420))
+        // A whole season added up, which is how the season headings get theirs.
+        assertEquals(6 to 30, Formatters.runtimeParts(13 * 1800))
+        // Rounded to the nearest minute: the seconds are noise at the size a
+        // tile draws this.
+        assertEquals(1 to 30, Formatters.runtimeParts(5399))
+        // A library that does not know how long it is draws nothing at all.
+        assertNull(Formatters.runtimeParts(0))
+        assertNull(Formatters.runtimeParts(20))
+    }
+
+    @Test
+    fun `a rating keeps its place even when it is a whole number`() {
+        assertEquals("8.3", Formatters.rating(8.3))
+        // Never trimmed, so a wall of badges is a wall of one shape.
+        assertEquals("8.0", Formatters.rating(8.0))
+        assertEquals("10.0", Formatters.rating(10.0))
+    }
+
+    @Test
     fun `a clock the box sent reads back as the seconds it stands for`() {
         assertEquals(389.0, Formatters.clockSeconds("00:06:29"))
         assertEquals(7214.0, Formatters.clockSeconds("02:00:14"))
