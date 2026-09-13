@@ -13,6 +13,7 @@ import com.jamal2367.tinyppimobile.data.remote.ApiFailure
 import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.util.toUserMessage
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +21,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
+
+/**
+ * The shortest a pull is answered in.
+ *
+ * A box on the same network answers in a few dozen milliseconds, which is
+ * faster than the gesture that asked: the spinner would appear and be gone
+ * inside the same flick, and a shelf that comes back identical - which is what
+ * most pulls find - would read as a pull that did nothing at all. So the
+ * answer is held until it can be seen to be one. It is a floor and not a wait:
+ * a read that takes longer than this is not delayed by it.
+ */
+private val PULL_ANSWER = 450.milliseconds
 
 /**
  * Everything the live half of the app reads, and everything it can ask for.
@@ -65,6 +80,14 @@ data class LibraryUiState(
      * is a settled answer rather than a failure, so it is not asked again.
      */
     val offered: Boolean = true,
+    /**
+     * Whether somebody is being answered for having pulled the wall down.
+     *
+     * Apart from [loading], which covers every read there is: this one is the
+     * spinner's, and a spinner belongs to the gesture that asked for it rather
+     * than to a list quietly reading itself behind the screen.
+     */
+    val refreshing: Boolean = false,
     /** The film a press is waiting on, until the box says it is playing. */
     val starting: Int? = null,
 )
@@ -81,6 +104,8 @@ data class SeriesUiState(
     val loading: Boolean = false,
     /** False once the box has answered that it offers no series at all. */
     val offered: Boolean = true,
+    /** Whether a pull is being answered; see [LibraryUiState.refreshing]. */
+    val refreshing: Boolean = false,
     /** The show whose episodes are on the screen, or null for the wall. */
     val open: OpenShow? = null,
     /** The show a press is waiting on, while its episodes are being read. */
@@ -248,26 +273,66 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
         if (current.read && !force) return
 
         _library.value = current.copy(loading = true)
+        viewModelScope.launch { readLibrary() }
+    }
+
+    /**
+     * Read it now, because somebody pulled the wall down to ask.
+     *
+     * Everything [refreshLibrary] holds back for is overruled here. A pull is
+     * a person asking, and each of those guards is an assumption about what
+     * they already know: that the list is current, that a press is still
+     * coming, that a box which once said it offers no library still does not -
+     * and the reason to pull is usually that one of them has stopped being
+     * true. The setting can be switched on in Kodi while the app is looking at
+     * the shelf it switched off.
+     *
+     * It is also the one read whose failure is said out loud. Everywhere else
+     * the wall is an offer, and an offer that cannot be made is not worth
+     * interrupting anybody over; this one was asked for, and a gesture that is
+     * answered with nothing at all is a gesture somebody makes again.
+     */
+    fun pullLibrary() {
+        if (_library.value.refreshing) return
+        _library.value = _library.value.copy(refreshing = true, loading = true)
         viewModelScope.launch {
-            try {
-                val answer = repository.library()
-                _library.value = LibraryUiState(films = answer.movies, read = true)
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (failure: Throwable) {
-                // A box saying it offers no library has answered; anything
-                // else - unreachable, a token refused - is worth asking again
-                // the next time the screen finds it idle, so it does not count
-                // as having been read.
-                val refused = (failure as? ApiFailure.Api)?.isControlDisabled == true
-                _library.value = _library.value.copy(
-                    loading = false,
-                    read = refused,
-                    offered = !refused,
-                    starting = null,
-                )
-            }
+            val since = TimeSource.Monotonic.markNow()
+            val failure = readLibrary()
+            delay(PULL_ANSWER - since.elapsedNow())
+            _library.value = _library.value.copy(refreshing = false)
+            if (failure != null) report(failure)
         }
+    }
+
+    /**
+     * The read itself, the caller having already marked it in flight; what
+     * comes back is what went wrong, or null.
+     */
+    private suspend fun readLibrary(): Throwable? = try {
+        val answer = repository.library()
+        _library.value = _library.value.copy(
+            films = answer.movies,
+            read = true,
+            loading = false,
+            // It answered, so it offers one however it answered last time.
+            offered = true,
+            starting = null,
+        )
+        null
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (failure: Throwable) {
+        // A box saying it offers no library has answered; anything else -
+        // unreachable, a token refused - is worth asking again the next time
+        // the screen finds it idle, so it does not count as having been read.
+        val refused = (failure as? ApiFailure.Api)?.isControlDisabled == true
+        _library.value = _library.value.copy(
+            loading = false,
+            read = refused,
+            offered = !refused,
+            starting = null,
+        )
+        failure
     }
 
     /**
@@ -316,40 +381,59 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
         if (current.read && !force) return
 
         _series.value = current.copy(loading = true)
+        viewModelScope.launch { readSeries() }
+    }
+
+    /** The shelf read because somebody pulled it down; see [pullLibrary]. */
+    fun pullSeries() {
+        if (_series.value.refreshing) return
+        _series.value = _series.value.copy(refreshing = true, loading = true)
         viewModelScope.launch {
-            try {
-                val answer = repository.series()
-                // A shelf that has just been read again may no longer hold the
-                // show somebody was inside, and where it does not the screen
-                // comes back to the wall. Where it does, they are left where
-                // they were: this is read again every time an episode ends
-                // now, and a screen that threw whoever was watching a series
-                // back out to the wall each time would be a screen nobody
-                // could watch a series from.
-                val open = _series.value.open
-                val held = open?.takeIf { show -> answer.shows.any { it.id == show.id } }
-                _series.value = SeriesUiState(
-                    shows = answer.shows,
-                    read = true,
-                    open = held,
-                    openSeasons = if (held != null) _series.value.openSeasons else emptySet(),
-                )
-                // The episodes of that show are a list of their own, and the
-                // one that has just been watched is a row in it.
-                if (held != null) reread(held)
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (failure: Throwable) {
-                val refused = (failure as? ApiFailure.Api)?.isControlDisabled == true
-                _series.value = _series.value.copy(
-                    loading = false,
-                    read = refused,
-                    offered = !refused,
-                    opening = null,
-                    starting = null,
-                )
-            }
+            val since = TimeSource.Monotonic.markNow()
+            val failure = readSeries()
+            delay(PULL_ANSWER - since.elapsedNow())
+            _series.value = _series.value.copy(refreshing = false)
+            if (failure != null) report(failure)
         }
+    }
+
+    /** The read itself; see [readLibrary]. */
+    private suspend fun readSeries(): Throwable? = try {
+        val answer = repository.series()
+        // A shelf that has just been read again may no longer hold the show
+        // somebody was inside, and where it does not the screen comes back to
+        // the wall. Where it does, they are left where they were: this is read
+        // again every time an episode ends now, and a screen that threw
+        // whoever was watching a series back out to the wall each time would
+        // be a screen nobody could watch a series from.
+        val open = _series.value.open
+        val held = open?.takeIf { show -> answer.shows.any { it.id == show.id } }
+        _series.value = _series.value.copy(
+            shows = answer.shows,
+            read = true,
+            loading = false,
+            offered = true,
+            open = held,
+            openSeasons = if (held != null) _series.value.openSeasons else emptySet(),
+            opening = null,
+            starting = null,
+        )
+        // The episodes of that show are a list of their own, and the one that
+        // has just been watched is a row in it.
+        if (held != null) reread(held)
+        null
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (failure: Throwable) {
+        val refused = (failure as? ApiFailure.Api)?.isControlDisabled == true
+        _series.value = _series.value.copy(
+            loading = false,
+            read = refused,
+            offered = !refused,
+            opening = null,
+            starting = null,
+        )
+        failure
     }
 
     /**
