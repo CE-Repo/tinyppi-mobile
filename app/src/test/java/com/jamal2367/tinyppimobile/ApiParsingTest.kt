@@ -121,6 +121,36 @@ class ApiParsingTest {
     }
 
     @Test
+    fun `the library version rides out with every snapshot, playing or not`() {
+        // It is what tells the two shelves that what they drew is the old
+        // answer, and it is on both shapes of snapshot: a film ending moves it
+        // at the moment the box stops playing anything.
+        val idle = json.decodeFromString(
+            Snapshot.serializer(),
+            """{"seq":42,"playing":false,"groups":[],"metrics":{},"library":17}""",
+        )
+        assertEquals(17L, idle.libraryRevision)
+
+        val running = json.decodeFromString(
+            Snapshot.serializer(),
+            """{"seq":43,"playing":true,"title":"Dune","library":18}""",
+        )
+        assertEquals(18L, running.libraryRevision)
+    }
+
+    @Test
+    fun `an add-on too old to name a library version reads as nought`() {
+        // Which is why the first number a session sees is taken as the mark to
+        // measure from rather than as a move: against such a box it never
+        // changes, and the app keeps the behaviour it had.
+        val snapshot = json.decodeFromString(
+            Snapshot.serializer(),
+            """{"seq":1,"playing":false,"groups":[],"metrics":{}}""",
+        )
+        assertEquals(0L, snapshot.libraryRevision)
+    }
+
+    @Test
     fun `an incomplete set of L5 offsets is no active area at all`() {
         val snapshot = json.decodeFromString(
             Snapshot.serializer(),

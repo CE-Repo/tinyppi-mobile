@@ -69,10 +69,19 @@ fun FilmsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val library by viewModel.library.collectAsStateWithLifecycle()
 
+    // What the box says its shelves are at. A film watched to the end or
+    // switched off in the middle moves it, and this is where a screen standing
+    // open through that hears about it: without it the wall went on drawing
+    // what it drew when it was opened until the app was started again.
+    LaunchedEffect(state.snapshot?.libraryRevision) {
+        state.snapshot?.let { viewModel.noteLibraryVersion(it.libraryRevision) }
+    }
+
     // Read when the screen arrives rather than when the box falls idle, which
     // is what the live screen waits for: this shelf is opened on purpose, and
-    // whoever opened it is looking at it now.
-    LaunchedEffect(state.canControl) {
+    // whoever opened it is looking at it now. And read again whenever the mark
+    // above says what is drawn is the old answer.
+    LaunchedEffect(state.canControl, library.read, library.starting) {
         if (state.canControl) viewModel.refreshLibrary()
     }
 
@@ -123,7 +132,11 @@ fun SeriesScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val series by viewModel.series.collectAsStateWithLifecycle()
 
-    LaunchedEffect(state.canControl) {
+    LaunchedEffect(state.snapshot?.libraryRevision) {
+        state.snapshot?.let { viewModel.noteLibraryVersion(it.libraryRevision) }
+    }
+
+    LaunchedEffect(state.canControl, series.read, series.starting) {
         if (state.canControl) viewModel.refreshSeries()
     }
 

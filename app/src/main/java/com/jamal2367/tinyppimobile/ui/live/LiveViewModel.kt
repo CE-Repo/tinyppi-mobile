@@ -124,14 +124,27 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * The films the box has. Empty until something asks for them, which the
-     * live screen does whenever it finds the box idle (see [refreshLibrary]).
+     * films screen does on arrival and again whenever the box says its library
+     * has moved (see [refreshLibrary] and [noteLibraryVersion]).
      */
     val library: StateFlow<LibraryUiState> = _library.asStateFlow()
 
     private val _series = MutableStateFlow(SeriesUiState())
 
-    /** The series the box has, read whenever the live screen finds it idle. */
+    /** The series it has, read on the same two occasions the films are. */
     val series: StateFlow<SeriesUiState> = _series.asStateFlow()
+
+    /**
+     * Which version of the box's shelves the two lists above were read at, or
+     * null before a snapshot has said.
+     *
+     * The first number a session is told is where the box happens to stand and
+     * not a move, so it is taken as the mark rather than acted on. After that
+     * every change means the same thing: a film has been watched to the end or
+     * switched off in the middle, or a scan has moved something, and what is
+     * held here is the old answer.
+     */
+    private var libraryVersion: Long? = null
 
     private val _message = MutableStateFlow<String?>(null)
 
@@ -158,6 +171,29 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
 
     fun consumeMessage() {
         _message.value = null
+    }
+
+    /**
+     * What the box says its shelves are at now, left here by whichever screen
+     * is showing one.
+     *
+     * Nothing is read from the network here. Both lists are simply marked
+     * unread, and the screen that is actually showing one reads it because it
+     * watches that mark - a shelf nobody has open costs nothing until somebody
+     * opens it, which is the whole reason the lists are held rather than asked
+     * for per visit.
+     *
+     * Before this the app had no way of hearing that a library had moved at
+     * all: a wall read this afternoon went on drawing tonight's film as
+     * unwatched until the app was started again.
+     */
+    fun noteLibraryVersion(revision: Long) {
+        val held = libraryVersion
+        if (held == revision) return
+        libraryVersion = revision
+        if (held == null) return
+        _library.value = _library.value.copy(read = false)
+        _series.value = _series.value.copy(read = false)
     }
 
     fun playPause() = command { repository.playPause() }
@@ -189,12 +225,12 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
     /**
      * Read the box's film library.
      *
-     * Asked for when the screen finds the box idle and again when a film ends
-     * - which is [force], because what the library says about the film that
-     * has just finished has changed. Without it a list already read is left
-     * alone: the wall is the same wall, and re-reading it on every visit to
-     * the screen would send a library across the network to draw what is
-     * already drawn.
+     * Asked for when the screen arrives, and again whenever the box says its
+     * library has moved - which is what [noteLibraryVersion] marks and what a
+     * film ending looks like from here. Without that mark a list already read
+     * is left alone: the wall is the same wall, and re-reading it on every
+     * visit to the screen would send a library across the network to draw what
+     * is already drawn.
      *
      * A failure is not reported to the reader. The wall is an offer rather
      * than an answer to something they asked for, and a box that cannot make
@@ -204,6 +240,11 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
     fun refreshLibrary(force: Boolean = false) {
         val current = _library.value
         if (current.loading || !current.offered) return
+        // Not while a tile is waiting on the film it was pressed on: the wall
+        // arrives without that press on it and the tile would stop showing it.
+        // Nothing is lost by waiting - the list stays marked unread, and the
+        // screen reads it again as soon as the press is given back.
+        if (current.starting != null) return
         if (current.read && !force) return
 
         _library.value = current.copy(loading = true)
@@ -271,6 +312,7 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
     fun refreshSeries(force: Boolean = false) {
         val current = _series.value
         if (current.loading || !current.offered) return
+        if (current.starting != null || current.opening != null) return  // as above
         if (current.read && !force) return
 
         _series.value = current.copy(loading = true)
@@ -278,10 +320,23 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val answer = repository.series()
                 // A shelf that has just been read again may no longer hold the
-                // show somebody was inside, so the screen comes back to the
-                // wall -- which is also where it should be when this is the
-                // read that follows an episode ending.
-                _series.value = SeriesUiState(shows = answer.shows, read = true)
+                // show somebody was inside, and where it does not the screen
+                // comes back to the wall. Where it does, they are left where
+                // they were: this is read again every time an episode ends
+                // now, and a screen that threw whoever was watching a series
+                // back out to the wall each time would be a screen nobody
+                // could watch a series from.
+                val open = _series.value.open
+                val held = open?.takeIf { show -> answer.shows.any { it.id == show.id } }
+                _series.value = SeriesUiState(
+                    shows = answer.shows,
+                    read = true,
+                    open = held,
+                    openSeasons = if (held != null) _series.value.openSeasons else emptySet(),
+                )
+                // The episodes of that show are a list of their own, and the
+                // one that has just been watched is a row in it.
+                if (held != null) reread(held)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Throwable) {
@@ -327,6 +382,31 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
                 report(failure)
             }
         }
+    }
+
+    /**
+     * Read the open show's episodes again, in place.
+     *
+     * The rows carry a resume bar and a watched tick, and both move the moment
+     * an episode is stopped; without this they would go on saying it was never
+     * watched for as long as the screen stayed open on that show.
+     *
+     * In place, and quietly: which seasons are unfolded is left alone, and a
+     * box that cannot answer leaves the episodes that are drawn where they
+     * are - the shelf above them has just been read, so the screen is not
+     * showing a show that is gone.
+     */
+    private suspend fun reread(show: OpenShow) {
+        val episodes = try {
+            repository.episodes(show.id).episodes
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Throwable) {
+            return
+        }
+        val current = _series.value.open ?: return
+        if (current.id != show.id) return
+        _series.value = _series.value.copy(open = current.copy(episodes = episodes))
     }
 
     /** Back out of a show, to the wall it was opened from. */
