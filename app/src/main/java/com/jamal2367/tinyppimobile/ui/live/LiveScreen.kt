@@ -6,9 +6,6 @@
 package com.jamal2367.tinyppimobile.ui.live
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -18,10 +15,8 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,71 +26,47 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.VolumeDown
 import androidx.compose.material.icons.automirrored.rounded.VolumeOff
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
-import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.outlined.PlayCircle
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.SoftwareKeyboardController
-import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -110,17 +81,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.InfoGroup
-import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
-import com.jamal2367.tinyppimobile.data.model.LibraryFilm
-import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.PlayerControls
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.model.Track
 import com.jamal2367.tinyppimobile.data.model.Vs10State
-import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
-import com.jamal2367.tinyppimobile.ui.components.FoldChevron
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
 import com.jamal2367.tinyppimobile.ui.components.GroupCard
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
@@ -138,7 +104,6 @@ import com.jamal2367.tinyppimobile.ui.theme.neutralTonalIconButtonColors
 import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.util.MediaUrls
 import com.jamal2367.tinyppimobile.util.SourceLabel
-import kotlinx.coroutines.delay
 
 /**
  * What the box is playing, and what can be done to it.
@@ -153,45 +118,8 @@ fun LiveScreen(
     viewModel: LiveViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val library by viewModel.library.collectAsStateWithLifecycle()
-    val series by viewModel.series.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-
-    // The wall of films is read whenever this screen finds the box idle, and
-    // read again when a film ends - which is the moment somebody starts
-    // looking for the next one, and also the moment what the library says
-    // about the one that just finished stops being true.
-    val playing = state.snapshot?.playing
-    var wasPlaying by remember { mutableStateOf(false) }
-    LaunchedEffect(playing, state.canControl) {
-        if (playing == false && state.canControl) {
-            viewModel.refreshLibrary(force = wasPlaying)
-            viewModel.refreshSeries(force = wasPlaying)
-        }
-        // Something is on: the screen that comes back when it ends starts at
-        // the wall rather than inside whatever show was open when it started.
-        if (playing == true) viewModel.closeShow()
-        wasPlaying = playing == true
-    }
-
-    // The tile that was pressed stays pressed until the box says the film is
-    // on. This is for the film that never arrives - a missing file, a share
-    // that has gone away - so the wall is not left disabled for the evening.
-    LaunchedEffect(library.starting) {
-        if (library.starting != null) {
-            delay(FILM_START_TIMEOUT_MS)
-            viewModel.filmStarted()
-        }
-    }
-
-    // And the same for an episode that never arrives.
-    LaunchedEffect(series.starting) {
-        if (series.starting != null) {
-            delay(FILM_START_TIMEOUT_MS)
-            viewModel.episodeStarted()
-        }
-    }
 
     LaunchedEffect(message) {
         val text = message ?: return@LaunchedEffect
@@ -251,9 +179,6 @@ fun LiveScreen(
                     poster = poster,
                     showArtwork = state.settings.showArtwork,
                     canControl = state.canControlPlayback,
-                    library = library,
-                    series = series,
-                    server = state.live.server,
                     viewModel = viewModel,
                 )
             }
@@ -269,105 +194,25 @@ private fun LiveContent(
     poster: String?,
     showArtwork: Boolean,
     canControl: Boolean,
-    library: LibraryUiState,
-    series: SeriesUiState,
-    server: ServerConfig?,
     viewModel: LiveViewModel,
 ) {
-    // What the search boxes hold, kept outside the list: they are drawn as the
-    // first item of their wall and would otherwise be forgotten the moment
-    // they scrolled off the top. One each, because narrowing the films has
-    // nothing to say about the series.
-    var search by rememberSaveable { mutableStateOf("") }
-    var showSearch by rememberSaveable { mutableStateOf("") }
-    val shown = remember(library.films, search) { matching(library.films, search) }
-    val shownShows = remember(series.shows, showSearch) {
-        matching(series.shows, showSearch, { it.title }, { it.year })
-    }
-    val columns = filmColumns()
-
-    // The field lets go the moment a finger drags the list, and takes the
-    // keyboard with it. Half a phone's screen is keyboard, and somebody who
-    // has started scrolling a wall of posters is reading it rather than still
-    // typing at it - the search is live, so there was never anything left to
-    // submit.
-    //
-    // A drag rather than any scroll at all: opening the keyboard scrolls this
-    // list by itself, to bring the field it just covered back into view. Told
-    // to let go of whatever scrolls, the field would dismiss the keyboard it
-    // had only just asked for.
-    val listState = rememberLazyListState()
-    val focus = LocalFocusManager.current
-    val keyboard = LocalSoftwareKeyboardController.current
-    LaunchedEffect(listState) {
-        listState.interactionSource.interactions.collect { interaction ->
-            if (interaction is DragInteraction.Start) dismissSearch(focus, keyboard)
-        }
-    }
-
     LazyColumn(
-        state = listState,
         contentPadding = PaddingValues(start = ScreenEdge, end = ScreenEdge, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
         modifier = Modifier.fillMaxSize(),
     ) {
         if (!snapshot.playing) {
-            // Somebody is inside a series: its episodes are the screen, rather
-            // than a third list under two walls of posters. A phone has room
-            // for one thing at a time, and the thing being looked at is the
-            // show.
-            val open = series.open
-            if (open != null) {
-                episodeList(
-                    open = open,
-                    server = server,
-                    showArtwork = showArtwork,
-                    starting = series.starting,
-                    openSeasons = series.openSeasons,
-                    onBack = viewModel::closeShow,
-                    onSeason = viewModel::toggleSeason,
-                    onPlay = viewModel::playEpisode,
-                )
-                return@LazyColumn
-            }
-
-            // Nothing is on, so the screen offers what could be: the films and
-            // the series the box has, as posters. A box with neither to offer
-            // - the cards switched off, control switched off, an empty video
-            // database - keeps the line it always had.
-            if (library.films.isEmpty() && series.shows.isEmpty()) {
-                item {
-                    EmptyState(
-                        icon = Icons.Outlined.PlayCircle,
-                        title = stringResource(R.string.live_idle_title),
-                        message = stringResource(R.string.live_idle_text),
-                        modifier = Modifier.height(320.dp),
-                    )
-                }
-                return@LazyColumn
-            }
-            if (library.films.isNotEmpty()) {
-                filmWall(
-                    films = shown,
-                    columns = columns,
-                    server = server,
-                    showArtwork = showArtwork,
-                    starting = library.starting,
-                    search = search,
-                    onSearch = { search = it },
-                    onPlay = viewModel::playFilm,
-                )
-            }
-            if (series.shows.isNotEmpty()) {
-                seriesWall(
-                    shows = shownShows,
-                    columns = columns,
-                    server = server,
-                    showArtwork = showArtwork,
-                    opening = series.opening,
-                    search = showSearch,
-                    onSearch = { showSearch = it },
-                    onOpen = viewModel::openShow,
+            // Nothing is on, and this screen is about what is. What could be
+            // instead has two places of its own in the bar (see ui/library),
+            // reachable whether or not anything is playing - which is more
+            // than this screen could offer, since it only had room for them
+            // while the box was doing nothing.
+            item {
+                EmptyState(
+                    icon = Icons.Outlined.PlayCircle,
+                    title = stringResource(R.string.live_idle_title),
+                    message = stringResource(R.string.live_idle_text),
+                    modifier = Modifier.height(320.dp),
                 )
             }
             return@LazyColumn
@@ -1502,7 +1347,7 @@ private val BADGE_ROW_GAP = 10.dp
  * at its foot are meant to land on the poster's bottom edge.
  */
 private val POSTER_WIDTH = 104.dp
-private const val POSTER_RATIO = 2f / 3f
+internal const val POSTER_RATIO = 2f / 3f
 private val POSTER_HEIGHT = POSTER_WIDTH / POSTER_RATIO
 
 /**
@@ -1597,900 +1442,3 @@ private fun shortened(label: String): String =
 
 /** However the box wrote the arrow between the two halves of a conversion. */
 private val ARROW = Regex("""\s*(?:->|=>|\u2192|\u27F6)\s*""")
-
-/* --- The film library ---------------------------------------------------- */
-
-/**
- * What the box could be playing, while it is playing nothing.
- *
- * A wall of posters rather than a list of titles: a film is recognised by its
- * cover long before its name has been read, and the screen this replaces had
- * one line of type on it saying there was nothing to see.
- *
- * Laid out as rows of tiles inside the screen's own list rather than as a grid
- * of its own. A grid inside a scrolling column is two things that scroll, and
- * the one thing this list must keep doing is scrolling in one piece; chunked
- * into rows it stays lazy, so a library of five hundred films draws the six
- * tiles on screen and asks the box for six posters.
- */
-private fun LazyListScope.filmWall(
-    films: List<LibraryFilm>,
-    columns: Int,
-    server: ServerConfig?,
-    showArtwork: Boolean,
-    starting: Int?,
-    search: String,
-    onSearch: (String) -> Unit,
-    onPlay: (LibraryFilm) -> Unit,
-) {
-    item(key = "film-wall-heading") {
-        WallHeading(
-            title = stringResource(R.string.library_title),
-            count = pluralStringResource(R.plurals.library_count, films.size, films.size),
-            searchLabel = stringResource(R.string.library_search),
-            search = search,
-            onSearch = onSearch,
-        )
-    }
-
-    if (films.isEmpty()) {
-        // A search nothing answers. The library itself being empty is handled
-        // before the wall is drawn at all, where the screen has room to say so
-        // properly.
-        item(key = "film-wall-empty") {
-            Text(
-                text = stringResource(R.string.library_no_match),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 28.dp),
-            )
-        }
-        return
-    }
-
-    val rows = films.chunked(columns)
-    items(items = rows, key = { row -> "film-row-${row.first().id}" }) { row ->
-        Row(horizontalArrangement = Arrangement.spacedBy(FILM_GAP)) {
-            for (film in row) {
-                FilmTile(
-                    film = film,
-                    poster = if (showArtwork) MediaUrls.filmPoster(server, film) else null,
-                    starting = starting == film.id,
-                    // While one film is on its way nothing else may be
-                    // pressed: two Player.Opens a second apart leave the box
-                    // playing whichever won, which is not the one the second
-                    // press was for.
-                    enabled = starting == null,
-                    onPlay = { onPlay(film) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            // The last row is rarely full. Without this its tiles would be
-            // spread across the width instead of standing under the ones above
-            // them.
-            repeat(columns - row.size) {
-                Spacer(Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-/**
- * The line over a wall: what it is, how much of it there is, and a box to
- * narrow it down with.
- *
- * One heading for both shelves. The films and the series are the same offer
- * made twice, and a second heading lettered differently would read as a
- * different screen rather than a second shelf.
- *
- * The box is there whatever the shelf holds. It used to arrive only above a
- * dozen, on the grounds that a shelf which fits on a screen is read rather
- * than searched - but a field that comes and goes with how many films somebody
- * owns is a field nobody can learn to reach for.
- */
-@Composable
-private fun WallHeading(
-    title: String,
-    count: String,
-    searchLabel: String,
-    search: String,
-    onSearch: (String) -> Unit,
-) {
-    val focus = LocalFocusManager.current
-    val keyboard = LocalSoftwareKeyboardController.current
-
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = count,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        OutlinedTextField(
-            value = search,
-            onValueChange = onSearch,
-            singleLine = true,
-            label = { Text(searchLabel) },
-            // The cross that empties it, and only while there is something to
-            // empty: over a field nobody has typed in it is a control that
-            // does nothing.
-            //
-            // It puts the whole shelf back and then gets out of the way -
-            // field and keyboard both. Somebody who clears a search is done
-            // with it; one who meant to search for something else can press
-            // the field again, which is one press against the screenful of
-            // posters a keyboard would otherwise go on covering.
-            trailingIcon = if (search.isEmpty()) {
-                null
-            } else {
-                {
-                    IconButton(
-                        onClick = {
-                            onSearch("")
-                            dismissSearch(focus, keyboard)
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Close,
-                            contentDescription = stringResource(R.string.library_search_clear),
-                        )
-                    }
-                }
-            },
-            // The key the keyboard offers instead of a newline, and what it
-            // does: nothing but close, because the wall narrowed itself as the
-            // letters arrived.
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(
-                onSearch = { dismissSearch(focus, keyboard) },
-            ),
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
-}
-
-/**
- * One film: its poster, its name and its year, and a press that starts it.
- *
- * A film the box left half-watched carries a bar along the bottom of the
- * poster, and pressing it resumes it where it was - the box decides that from
- * its own library, the same as pressing the film in Kodi's own window. One
- * already seen wears a tick in the corner of the picture.
- *
- * A mark rather than a dimmed poster, which is what this was: dimming says
- * "not this one" about whatever it touches, and on a shelf where most of the
- * films have been watched that is most of the wall greyed out - which reads as
- * artwork that failed to load rather than as an answer. The mark costs one
- * corner of one poster and says the same thing about the smaller group.
- */
-@Composable
-private fun FilmTile(
-    film: LibraryFilm,
-    poster: String?,
-    starting: Boolean,
-    enabled: Boolean,
-    onPlay: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.clickable(enabled = enabled, onClick = onPlay),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        ArtFrame(
-            url = poster,
-            ratio = POSTER_RATIO,
-            progress = film.progress,
-            watched = film.watched,
-            busy = starting,
-            modifier = Modifier.fillMaxWidth(),
-            rating = film.rating,
-            ratingFrom = film.ratingFrom,
-        )
-
-        Text(
-            text = film.title,
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        // When it came out and how long it runs, on one line: two lines of
-        // small grey type under every poster would be a wall of them.
-        val meta = listOfNotNull(
-            film.year.takeIf { it > 0 }?.toString(),
-            runtimeLabel(film.duration),
-        ).joinToString(META_GAP)
-        if (meta.isNotEmpty()) {
-            Text(
-                text = meta,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-/**
- * The tick a film the box counts as seen wears.
- *
- * Drawn as a disc with a tick on it rather than as Material's own filled
- * `CheckCircle`, whose tick is knocked out of the disc: over a poster that
- * hole is the poster, and a tick made of whatever picture happens to be behind
- * it is a tick nobody can read.
- *
- * The shadow is not decoration either. Posters are photographs, and a disc in
- * one flat colour has nothing to stand on where the picture under it happens
- * to be light.
- */
-@Composable
-private fun WatchedMark(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .size(WATCHED_MARK)
-            .shadow(3.dp, CircleShape)
-            .background(MaterialTheme.colorScheme.primary, CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.Check,
-            contentDescription = stringResource(R.string.library_watched),
-            tint = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier.size(WATCHED_TICK),
-        )
-    }
-}
-
-/* --- The series library -------------------------------------------------- */
-
-/**
- * The same wall again for what Kodi knows as TV shows.
- *
- * A series is not something that can be put on - an episode is - so a press
- * here does not start anything: it opens the show, and the screen becomes that
- * show's episodes (see [episodeList]). What the poster carries instead of a
- * resume bar is how many episodes are still waiting, which is the one number a
- * shelf of series is scanned for.
- */
-private fun LazyListScope.seriesWall(
-    shows: List<LibraryShow>,
-    columns: Int,
-    server: ServerConfig?,
-    showArtwork: Boolean,
-    opening: Int?,
-    search: String,
-    onSearch: (String) -> Unit,
-    onOpen: (LibraryShow) -> Unit,
-) {
-    item(key = "series-wall-heading") {
-        WallHeading(
-            title = stringResource(R.string.series_title),
-            count = pluralStringResource(R.plurals.series_count, shows.size, shows.size),
-            searchLabel = stringResource(R.string.series_search),
-            search = search,
-            onSearch = onSearch,
-        )
-    }
-
-    if (shows.isEmpty()) {
-        item(key = "series-wall-empty") {
-            Text(
-                text = stringResource(R.string.series_no_match),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 28.dp),
-            )
-        }
-        return
-    }
-
-    val rows = shows.chunked(columns)
-    items(items = rows, key = { row -> "series-row-${row.first().id}" }) { row ->
-        Row(horizontalArrangement = Arrangement.spacedBy(FILM_GAP)) {
-            for (show in row) {
-                ShowTile(
-                    show = show,
-                    poster = if (showArtwork) MediaUrls.showPoster(server, show) else null,
-                    opening = opening == show.id,
-                    // While one show's episodes are being read nothing else
-                    // may be pressed: two reads a second apart would leave
-                    // whichever won on the screen.
-                    enabled = opening == null,
-                    onOpen = { onOpen(show) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            repeat(columns - row.size) {
-                Spacer(Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-/**
- * One series: its poster, its name and its year, and a press that opens it.
- *
- * A show seen right through wears the tick a watched film wears; one with
- * episodes still waiting wears how many instead, in the same corner. Either
- * way it is one mark on one corner of one picture, which is what a poster can
- * carry without stopping being a poster.
- */
-@Composable
-private fun ShowTile(
-    show: LibraryShow,
-    poster: String?,
-    opening: Boolean,
-    enabled: Boolean,
-    onOpen: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.clickable(enabled = enabled, onClick = onOpen),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        ArtFrame(
-            url = poster,
-            ratio = POSTER_RATIO,
-            progress = null,
-            watched = show.watched,
-            unseen = show.unseen,
-            busy = opening,
-            modifier = Modifier.fillMaxWidth(),
-            rating = show.rating,
-            ratingFrom = show.ratingFrom,
-        )
-
-        Text(
-            text = show.title,
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        if (show.year > 0) {
-            Text(
-                text = show.year.toString(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-/**
- * The episodes of the show somebody opened, and the way back out.
- *
- * Rows rather than a wall: an episode is chosen by its number and its name -
- * the still is a reminder of which one it was, not what it is recognised by -
- * and a row is where a number and a name fit. They arrive in the order they
- * were made, under the season they belong to.
- *
- * The way back sits at the top, where it is one press away however far down a
- * forty-episode show somebody has scrolled.
- */
-private fun LazyListScope.episodeList(
-    open: OpenShow,
-    server: ServerConfig?,
-    showArtwork: Boolean,
-    starting: Int?,
-    openSeasons: Set<Int>,
-    onBack: () -> Unit,
-    onSeason: (Int) -> Unit,
-    onPlay: (LibraryEpisode) -> Unit,
-) {
-    item(key = "episode-heading") {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            TextButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.series_back))
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = open.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                Text(
-                    text = pluralStringResource(
-                        R.plurals.series_episodes,
-                        open.episodes.size,
-                        open.episodes.size,
-                    ),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-
-    val rows: (List<LibraryEpisode>) -> Unit = { listing ->
-        for (episode in listing) {
-            item(key = "episode-${episode.id}") {
-                EpisodeRow(
-                    episode = episode,
-                    still = if (showArtwork) MediaUrls.episodeStill(server, episode) else null,
-                    starting = starting == episode.id,
-                    enabled = starting == null,
-                    onPlay = { onPlay(episode) },
-                )
-            }
-        }
-    }
-
-    // Grouped rather than walked in order, so a library that files the same
-    // season in two places still gets one fold for it - and one key for that
-    // fold, where a second would be a crash rather than a heading out of
-    // order.
-    var ruled = false
-    for ((number, episodes) in open.episodes.groupBy { it.season }) {
-        if (number < 0) {
-            // An episode the library files under no season at all goes under
-            // no heading, and so into no fold either: there is nothing to call
-            // it, and a fold with no name on it is a row that hides things.
-            rows(episodes)
-            ruled = true
-            continue
-        }
-
-        val unfolded = number in openSeasons
-        item(key = "season-$number") {
-            SeasonHeading(
-                label = if (number == 0) {
-                    stringResource(R.string.series_specials)
-                } else {
-                    stringResource(R.string.series_season, number)
-                },
-                count = episodes.size,
-                seconds = episodes.sumOf { it.duration },
-                expanded = unfolded,
-                ruled = ruled,
-                onToggle = { onSeason(number) },
-            )
-        }
-        ruled = true
-        if (unfolded) rows(episodes)
-    }
-}
-
-/**
- * One season's heading: what it is, how much of it there is, and the arrow
- * that unfolds it.
- *
- * The whole line answers to a finger and the arrow is what lights up for it -
- * one interaction source, held by the row and drawn by the arrow, the way the
- * cards on this screen fold (see FoldChevron). A season that only opened on
- * its arrow would feel broken along the rest of the line.
- */
-@Composable
-private fun SeasonHeading(
-    label: String,
-    count: Int,
-    seconds: Int,
-    expanded: Boolean,
-    ruled: Boolean,
-    onToggle: () -> Unit,
-) {
-    val press = remember { MutableInteractionSource() }
-
-    Column {
-        // Ruled between one season and the next rather than around each: what
-        // makes a stack of folds read as one list is the line between them.
-        if (ruled) {
-            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(interactionSource = press, indication = null, onClick = onToggle)
-                .heightIn(min = 44.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                // How many, and how long that is altogether - which folded
-                // away is the whole of what the season still has to say, and
-                // the one thing somebody weighing an evening against a season
-                // wants to know.
-                Text(
-                    text = listOfNotNull(
-                        pluralStringResource(R.plurals.series_episodes, count, count),
-                        runtimeLabel(seconds),
-                    ).joinToString(META_GAP),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.End,
-                )
-                FoldChevron(expanded, interactionSource = press, onClick = onToggle)
-            }
-        }
-    }
-}
-
-/** One episode: its still, which one it is, its name, and a press that starts it. */
-@Composable
-private fun EpisodeRow(
-    episode: LibraryEpisode,
-    still: String?,
-    starting: Boolean,
-    enabled: Boolean,
-    onPlay: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled, onClick = onPlay),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        ArtFrame(
-            url = still,
-            ratio = STILL_RATIO,
-            progress = episode.progress,
-            watched = episode.watched,
-            busy = starting,
-            modifier = Modifier.width(STILL_WIDTH),
-        )
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            // Which episode it is and how long it runs, on the one line: both
-            // are what somebody choosing between two of them is weighing.
-            val numbered = listOfNotNull(
-                episode.code.takeIf { it.isNotEmpty() },
-                runtimeLabel(episode.duration),
-            ).joinToString(META_GAP)
-            if (numbered.isNotEmpty()) {
-                Text(
-                    text = numbered,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Text(
-                // An episode the library has no name for is called by its
-                // number, which is the only name it has ever had.
-                text = episode.title.ifBlank { episode.code },
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
-
-/**
- * The picture on a tile or a row, with whatever the library has to say on top
- * of it.
- *
- * One frame for all three shelves: a film's poster, a show's poster and an
- * episode's still carry the same marks in the same corners and hold their
- * space the same way when there is no picture at all, and three copies of that
- * would be three places to keep it right.
- */
-@Composable
-private fun ArtFrame(
-    url: String?,
-    ratio: Float,
-    progress: Float?,
-    watched: Boolean,
-    busy: Boolean,
-    modifier: Modifier = Modifier,
-    unseen: Int = 0,
-    rating: Double = 0.0,
-    ratingFrom: String = "",
-) {
-    Box(
-        modifier = modifier
-            .aspectRatio(ratio)
-            .clip(RoundedCornerShape(10.dp)),
-    ) {
-        // A title with no picture - and everything on a phone told not to show
-        // artwork - gets the stand-in the playing title gets, which holds the
-        // same space rather than collapsing the row it is in.
-        PosterImage(
-            url = url,
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-        )
-
-        progress?.let { far ->
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth()
-                    .height(RESUME_BAR)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(far)
-                        .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.primary),
-                )
-            }
-        }
-
-        if (rating > 0) {
-            RatingMark(
-                rating = rating,
-                from = ratingFrom,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(WATCHED_INSET),
-            )
-        }
-
-        when {
-            watched -> WatchedMark(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(WATCHED_INSET),
-            )
-            unseen > 0 -> UnseenMark(
-                count = unseen,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(WATCHED_INSET),
-            )
-        }
-
-        if (busy) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator(modifier = Modifier.size(28.dp))
-            }
-        }
-    }
-}
-
-/**
- * The pill a poster wears in a corner.
- *
- * One shape for both of the remarks a poster carries - what the houses made of
- * it, and how many episodes of it are still waiting - because they are the
- * same kind of remark about the same picture. A shelf where one of them was a
- * coloured disc and the other a dark tablet read as two unrelated marks that
- * happened to land on the same posters.
- *
- * Black with white on it rather than themed. What it sits on is a photograph
- * and not the screen, so it has to read on a poster that is black at that
- * corner and on one that is white there - which is the argument the tick's
- * shadow makes, and this carries one for the same reason.
- */
-@Composable
-private fun CornerPill(
-    modifier: Modifier = Modifier,
-    content: @Composable RowScope.() -> Unit,
-) {
-    Row(
-        modifier = modifier
-            .shadow(3.dp, CircleShape)
-            .background(Color.Black.copy(alpha = 0.72f), CircleShape)
-            .padding(horizontal = 7.dp, vertical = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        content = content,
-    )
-}
-
-/**
- * What IMDb or TMDb made of it, top left of the poster.
- *
- * Left, because the other corner is taken by whichever of the tick and the
- * count the picture is wearing.
- *
- * The star is what says the number beside it is a rating and not a count -
- * which is the whole of what tells this pill from the other one. Amber rather
- * than white: it is the colour a rating star is everywhere anybody has seen
- * one, and it carries that meaning before the number has been read.
- *
- * The number alone is drawn, because a poster has room for a number and not
- * for a sentence; which house said so is what it tells a screen reader,
- * because 8.3 means different things at the two of them.
- */
-@Composable
-private fun RatingMark(rating: Double, from: String, modifier: Modifier = Modifier) {
-    val figure = Formatters.rating(rating)
-    val said = listOfNotNull(RATING_NAMES[from], figure).joinToString(" ")
-    CornerPill(modifier.semantics { contentDescription = said }) {
-        Icon(
-            imageVector = Icons.Rounded.Star,
-            contentDescription = null,
-            tint = RATING_STAR,
-            modifier = Modifier.size(RATING_STAR_SIZE),
-        )
-        Text(
-            text = figure,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-        )
-    }
-}
-
-/**
- * How long something runs, as a tile writes it: `1 h 38 min`, or `45 min`
- * where there is no hour to write.
- *
- * The hours split out rather than a hundred and ninety-eight minutes, because
- * what is being asked of a film is how long an evening it is and an hour is
- * the unit an evening is measured in.
- *
- * Null for a library that does not know how long it is, so nothing is drawn
- * rather than a nought.
- */
-@Composable
-private fun runtimeLabel(seconds: Int): String? {
-    val (hours, minutes) = Formatters.runtimeParts(seconds) ?: return null
-    return when {
-        hours <= 0 -> stringResource(R.string.library_runtime_m, minutes)
-        // An hour with nothing left over says so and stops: "1 h 0 min" is a
-        // length nobody writes, and a season adding up to a round number of
-        // hours is not rare.
-        minutes == 0 -> stringResource(R.string.library_runtime_h, hours)
-        else -> stringResource(R.string.library_runtime_hm, hours, minutes)
-    }
-}
-
-/**
- * How many episodes of a series are still waiting, top right of the poster.
- *
- * The rating's own pill without its star, because that is the difference
- * between the two: one of them is a rating and this is a count.
- */
-@Composable
-private fun UnseenMark(count: Int, modifier: Modifier = Modifier) {
-    val label = pluralStringResource(R.plurals.series_unseen, count, count)
-    CornerPill(modifier.semantics { contentDescription = label }) {
-        Text(
-            text = count.toString(),
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-        )
-    }
-}
-
-/**
- * Let the search field go, and the keyboard with it.
- *
- * Clearing the focus is usually enough to put the keyboard away, but only
- * usually: a field disposed from under it - which is what scrolling a wall
- * does to the heading it sits in - can leave the keyboard up over a screen
- * with nothing left to type into. Both, then, and neither costs anything when
- * there was nothing focused to begin with.
- */
-private fun dismissSearch(focus: FocusManager, keyboard: SoftwareKeyboardController?) {
-    focus.clearFocus()
-    keyboard?.hide()
-}
-
-/**
- * The films whose name - or year - answers what has been typed.
- *
- * Matched here rather than by the box: the whole library is already on the
- * phone, and a round trip per keystroke to narrow a list this app is holding
- * would be a slower answer to a question already in front of it.
- */
-private fun matching(films: List<LibraryFilm>, search: String): List<LibraryFilm> =
-    matching(films, search, { it.title }, { it.year })
-
-/**
- * The same, for any shelf whose tiles carry a name and a year.
- *
- * Written once rather than once per shelf: the films and the series are
- * narrowed by the same question, and two copies of it would be two answers to
- * keep the same.
- */
-private fun <T> matching(
-    items: List<T>,
-    search: String,
-    title: (T) -> String,
-    year: (T) -> Int,
-): List<T> {
-    val needle = search.trim()
-    if (needle.isEmpty()) return items
-    return items.filter { item ->
-        title(item).contains(needle, ignoreCase = true) ||
-            (year(item) > 0 && year(item).toString().contains(needle))
-    }
-}
-
-/**
- * How many posters go across, from how wide the screen is.
- *
- * A count rather than a width, because the row has to divide the screen
- * exactly: tiles that each take a fixed width leave a ragged edge down the
- * right of every row. Three on a phone, more on a tablet or a phone held
- * sideways - worked out from the same poster width the card at the top of this
- * screen uses.
- */
-@Composable
-private fun filmColumns(): Int {
-    val width = with(LocalDensity.current) {
-        LocalWindowInfo.current.containerSize.width.toDp()
-    }
-    val usable = width - ScreenEdge * 2
-    return (usable / (FILM_TILE_MIN + FILM_GAP)).toInt().coerceIn(3, 6)
-}
-
-/** The star on a rating pill, and how big it is drawn. */
-private val RATING_STAR = Color(0xFFF4C04F)
-private val RATING_STAR_SIZE = 13.dp
-
-/** What a badge calls the house whose rating it draws. Brand names, untranslated. */
-private val RATING_NAMES = mapOf("imdb" to "IMDb", "tmdb" to "TMDb")
-
-/** What stands between a year and a length, or a number and a length. */
-private const val META_GAP = " \u00b7 "
-
-/** How long a pressed tile waits for a film that never starts. */
-private const val FILM_START_TIMEOUT_MS = 6_000L
-
-/** The mark a film the box counts as seen wears, and how far off the corner. */
-private val WATCHED_MARK = 21.dp
-private val WATCHED_TICK = 14.dp
-private val WATCHED_INSET = 5.dp
-
-/**
- * The air between two posters.
- *
- * The card gap, because the rows of the wall are items of the screen's own
- * list and are spaced by it from above and below: a narrower gap across than
- * down would have drawn a grid with two different rhythms in it.
- */
-private val FILM_GAP = CardGap
-private val FILM_TILE_MIN = 104.dp
-private val RESUME_BAR = 3.dp
-
-/**
- * An episode's still: the shape a television picture is, and how wide a
- * column of them is.
- *
- * A fixed width rather than a share of the row, so every still down the list
- * is the same size and the names beside them start on one line.
- */
-private const val STILL_RATIO = 16f / 9f
-private val STILL_WIDTH = 116.dp

@@ -71,6 +71,16 @@ object MediaUrls {
         shelfArt(server, "poster", "tvshowid", show.id, show.poster)
 
     /**
+     * The picture of a series at the shape a television is, or null.
+     *
+     * Addressed by the show and a tag rather than by a model, because what
+     * asks for it is the open show's episode list, which is holding the tag
+     * and not the tile it came off.
+     */
+    fun showFanart(server: ServerConfig?, showId: Int, tag: String): String? =
+        shelfArt(server, "fanart", "tvshowid", showId, tag)
+
+    /**
      * The still of one episode, or null where it has none.
      *
      * A still rather than a poster, and at the shape a television picture is:

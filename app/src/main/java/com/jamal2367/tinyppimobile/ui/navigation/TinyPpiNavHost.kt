@@ -9,6 +9,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.jamal2367.tinyppimobile.ui.history.HistoryScreen
+import com.jamal2367.tinyppimobile.ui.library.FilmsScreen
+import com.jamal2367.tinyppimobile.ui.library.SeriesScreen
 import com.jamal2367.tinyppimobile.ui.live.LiveScreen
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
 import com.jamal2367.tinyppimobile.ui.metadata.MetadataScreen
@@ -34,6 +36,22 @@ fun TinyPpiNavHost(
     ) {
         composable(Routes.LIVE) {
             LiveScreen(
+                onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                viewModel = liveViewModel,
+            )
+        }
+
+        // Both shelves read the same view model the live screen does: one
+        // shelf held once, however many screens draw it.
+        composable(Routes.FILMS) {
+            FilmsScreen(
+                onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                viewModel = liveViewModel,
+            )
+        }
+
+        composable(Routes.SERIES) {
+            SeriesScreen(
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 viewModel = liveViewModel,
             )

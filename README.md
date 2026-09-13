@@ -131,10 +131,9 @@ the dashboard charts rather than prints. The luminance pair only exists inside
 a Dolby Vision RPU, so it is absent for every other grade rather than shown as
 zeroes.
 
-With nothing playing, the screen offers the box's **film library** instead:
-every film in Kodi's video database as a wall of posters, and a tap starts one
-on the television. The wall is read when the screen finds the box idle and read
-again the moment a film ends — which is when the next one is being looked for.
+With nothing playing, the screen says so and nothing more. What could be
+playing instead has two places of its own in the bar — see **Films and
+Series** below — which are open whether or not the box is doing anything.
 
 A film the box left half-watched carries a bar along the bottom of its poster
 and is resumed where it was, the same as pressing it in Kodi's own window; one
@@ -166,6 +165,26 @@ A box that offers neither shelf — the cards switched off in the add-on's
 settings, control switched off, or an empty video database — keeps the line
 saying nothing is playing. The two cards have a setting each, so it can offer
 the films and not the series, or the other way round.
+
+### Films and Series
+
+The same two shelves, as places of their own in the bar.
+
+What the live screen offers is the offer you come across: nothing is on, so
+here is what could be. These are the shelves gone looking for — open at any
+time, including while a film is running, because somebody deciding what to put
+on next should not have to stop what is on to go and look.
+
+They are the same walls and the same state: one reading of the library serves
+whichever screen is drawing it, so changing tabs asks the box nothing it has
+already answered. A shelf the box has said it will not offer loses its place in
+the bar rather than leaving a tab that leads to an apology.
+
+Opening a series gives its episodes a **cover** to stand under — the picture
+of it at the shape a television is, rather than the poster it was picked off
+the wall by — and then its seasons. The system's own back gesture closes the
+show and puts the wall back, which is one tab short of where it would otherwise
+have gone.
 
 ### Readings
 
@@ -322,7 +341,8 @@ app/src/main/java/com/jamal2367/tinyppimobile/
 ├── di/                 AppContainer — the whole graph, by hand
 ├── ui/
 │   ├── components/     Cards, badges, the status line, the chart
-│   ├── live/           What is playing, and what can be done to it
+│   ├── live/           What is playing, what can be done to it, and the walls
+│   ├── library/        The two shelves, as screens of their own
 │   ├── details/        The overlay's own rows
 │   ├── metadata/       The Dolby Vision metadata view
 │   ├── history/        The chart and the event list

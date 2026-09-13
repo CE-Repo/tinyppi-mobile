@@ -65,8 +65,15 @@ fun TinyPpiApp(container: AppContainer) {
     val navController = rememberNavController()
     val liveViewModel: LiveViewModel = viewModel()
     val liveState by liveViewModel.state.collectAsStateWithLifecycle()
+    val library by liveViewModel.library.collectAsStateWithLifecycle()
+    val series by liveViewModel.series.collectAsStateWithLifecycle()
     val showMetadata = HdrGrade.of(liveState.snapshot?.sourceType.orEmpty()) == HdrGrade.DOLBY_VISION
     val showHistory = liveState.snapshot?.let { it.playing || it.last.isPresent } == true
+    // A shelf the box has said it will not offer is a tab that leads to a line
+    // of apology. Both are on until it says so - which it can only say once
+    // something has asked, and both stay on for a box nobody has asked yet.
+    val showFilms = library.offered
+    val showSeries = series.offered
 
     // Wide enough for a rail: a tablet or an unfolded phone should not waste a
     // whole edge on a bar the height of a thumb.
@@ -94,7 +101,9 @@ fun TinyPpiApp(container: AppContainer) {
 
     if (useRail) {
         Row(Modifier.fillMaxSize()) {
-            TinyPpiNavigationRail(navController, showMetadata, showHistory)
+            TinyPpiNavigationRail(
+                navController, showMetadata, showHistory, showFilms, showSeries,
+            )
             Box(Modifier.weight(1f)) {
                 TinyPpiNavHost(navController = navController)
                 // No scaffold on this branch to hand the host to, so it is
@@ -116,7 +125,11 @@ fun TinyPpiApp(container: AppContainer) {
             // counted twice and every screen would start a status bar's height
             // too low.
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            bottomBar = { TinyPpiNavigationBar(navController, showMetadata, showHistory) },
+            bottomBar = {
+                TinyPpiNavigationBar(
+                    navController, showMetadata, showHistory, showFilms, showSeries,
+                )
+            },
             // Above the navigation bar rather than over it, which is what the
             // scaffold does with a host it is given.
             snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -232,12 +245,16 @@ private fun TinyPpiNavigationBar(
     navController: NavHostController,
     showMetadata: Boolean,
     showHistory: Boolean,
+    showFilms: Boolean,
+    showSeries: Boolean,
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val destinations = remember(showMetadata, showHistory) {
+    val destinations = remember(showMetadata, showHistory, showFilms, showSeries) {
         TopLevelDestination.entries.filter {
             (it != TopLevelDestination.METADATA || showMetadata) &&
-                (it != TopLevelDestination.HISTORY || showHistory)
+                (it != TopLevelDestination.HISTORY || showHistory) &&
+                (it != TopLevelDestination.FILMS || showFilms) &&
+                (it != TopLevelDestination.SERIES || showSeries)
         }
     }
 
@@ -278,12 +295,16 @@ private fun TinyPpiNavigationRail(
     navController: NavHostController,
     showMetadata: Boolean,
     showHistory: Boolean,
+    showFilms: Boolean,
+    showSeries: Boolean,
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val destinations = remember(showMetadata, showHistory) {
+    val destinations = remember(showMetadata, showHistory, showFilms, showSeries) {
         TopLevelDestination.entries.filter {
             (it != TopLevelDestination.METADATA || showMetadata) &&
-                (it != TopLevelDestination.HISTORY || showHistory)
+                (it != TopLevelDestination.HISTORY || showHistory) &&
+                (it != TopLevelDestination.FILMS || showFilms) &&
+                (it != TopLevelDestination.SERIES || showSeries)
         }
     }
 

@@ -101,6 +101,8 @@ data class SeriesUiState(
 data class OpenShow(
     val id: Int,
     val title: String,
+    /** The tag of the picture the episode list stands under; empty for none. */
+    val fanart: String = "",
     val episodes: List<LibraryEpisode> = emptyList(),
 )
 
@@ -311,7 +313,7 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val answer = repository.episodes(show.id)
                 _series.value = _series.value.copy(
-                    open = OpenShow(show.id, show.title, answer.episodes),
+                    open = OpenShow(show.id, show.title, show.fanart, answer.episodes),
                     opening = null,
                     openSeasons = emptySet(),
                 )

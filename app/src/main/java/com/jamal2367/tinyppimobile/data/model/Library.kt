@@ -107,6 +107,14 @@ data class LibraryShow(
     val year: Int = 0,
     /** The poster's own tag, or empty for a show that has none. */
     val poster: String = "",
+    /**
+     * The tag of the picture of it at the shape a television is, or empty.
+     *
+     * A show carries this where a film does not, because opening one gives its
+     * episodes a picture to stand under - and a poster turned on its side to
+     * fill that space is a poster nobody can read.
+     */
+    val fanart: String = "",
     /** How many episodes the library holds; 0 where it says nothing. */
     val episodes: Int = 0,
     /**

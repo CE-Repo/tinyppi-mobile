@@ -2,26 +2,32 @@ package com.jamal2367.tinyppimobile.ui.navigation
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Timeline
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Tv
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.jamal2367.tinyppimobile.R
 
 object Routes {
     const val LIVE = "live"
+    const val FILMS = "films"
+    const val SERIES = "series"
     const val METADATA = "metadata"
     const val HISTORY = "history"
     const val SETTINGS = "settings"
 }
 
 /**
- * The four places the bar switches between.
+ * The places the bar switches between.
  *
  * They follow the add-on's own dashboard rather than inventing a shape of
  * their own: what is playing and what can be done to it, with the overlay's
@@ -45,6 +51,13 @@ enum class TopLevelDestination(
     @StringRes val tabLabelRes: Int = labelRes,
 ) {
     LIVE(Routes.LIVE, R.string.nav_live, Icons.Filled.PlayCircle, Icons.Outlined.PlayCircle),
+
+    // The two shelves sit next to what is playing, because that is what they
+    // are for: deciding what is playing next. They wear the names the walls
+    // wear on the live screen rather than names of their own - it is the same
+    // shelf reached another way.
+    FILMS(Routes.FILMS, R.string.library_title, Icons.Filled.Movie, Icons.Outlined.Movie),
+    SERIES(Routes.SERIES, R.string.series_title, Icons.Filled.Tv, Icons.Outlined.Tv),
     METADATA(
         Routes.METADATA,
         R.string.nav_metadata,

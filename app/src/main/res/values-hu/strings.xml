@@ -38,6 +38,8 @@
     <!-- The wall of films, offered while nothing is playing -->
     <string name="library_title">Filmek</string>
     <string name="library_search_clear">Keresés törlése</string>
+    <string name="library_empty_title">Nincs médiatár</string>
+    <string name="library_empty_text">Ez a box nem kínál videótárat, vagy a kártyái ki vannak kapcsolva a kiegészítő beállításaiban.</string>
     <string name="library_search">Filmek keresése</string>
     <string name="library_runtime_hm">%1$d ó %2$d p</string>
     <string name="library_runtime_h">%1$d ó</string>

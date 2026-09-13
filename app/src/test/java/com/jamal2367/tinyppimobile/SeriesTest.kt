@@ -46,7 +46,8 @@ class SeriesTest {
             """
             {"count":2,"tag":"2-9f0a1b2c","shows":[
               {"id":4,"title":"The Wire","year":2002,"poster":"723bceb2",
-               "episodes":60,"unseen":3,"rating":9.3,"rating_from":"imdb"},
+               "episodes":60,"unseen":3,"rating":9.3,"rating_from":"imdb",
+               "fanart":"5c1d9e2f"},
               {"id":9,"title":"Chernobyl","year":2019,"poster":"ff75a665",
                "episodes":5,"unseen":0,"watched":true,
                "rating":8.7,"rating_from":"tmdb"}
@@ -62,6 +63,9 @@ class SeriesTest {
         assertFalse(wire.watched)
         assertEquals(9.3, wire.rating, 0.001)
         assertEquals("imdb", wire.ratingFrom)
+        // The picture its episode list stands under, at the shape a television
+        // is - which only a show carries.
+        assertEquals("5c1d9e2f", wire.fanart)
 
         val chernobyl = shelf.shows[1]
         assertEquals(0, chernobyl.unseen)
@@ -78,6 +82,7 @@ class SeriesTest {
         assertEquals("", show.title)
         assertEquals(0, show.unseen)
         assertFalse(show.watched)
+        assertEquals("", show.fanart)
         assertEquals(0.0, show.rating, 0.0)
         assertEquals("", show.ratingFrom)
     }
@@ -127,6 +132,17 @@ class SeriesTest {
         assertEquals(-1, episode.episode)
         assertEquals("", episode.code)
         assertNull(episode.progress)
+    }
+
+    @Test
+    fun `a series cover is addressed by the show and its own tag`() {
+        assertEquals(
+            "http://192.168.1.10:8099/api/art?kind=fanart&tvshowid=4&v=5c1d9e2f&token=AB+CD",
+            MediaUrls.showFanart(box, 4, "5c1d9e2f"),
+        )
+        // A show the library scraped no fanart for is not addressed at all,
+        // and the episode list draws its stand-in instead.
+        assertNull(MediaUrls.showFanart(box, 4, ""))
     }
 
     @Test
