@@ -43,8 +43,10 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
+import com.jamal2367.tinyppimobile.ui.live.ContinueUiState
 import com.jamal2367.tinyppimobile.ui.live.FILM_START_TIMEOUT_MS
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
+import com.jamal2367.tinyppimobile.ui.live.continueRow
 import com.jamal2367.tinyppimobile.ui.live.dismissSearch
 import com.jamal2367.tinyppimobile.ui.live.episodeList
 import com.jamal2367.tinyppimobile.ui.live.filmColumns
@@ -78,6 +80,7 @@ fun FilmsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val library by viewModel.library.collectAsStateWithLifecycle()
+    val continuing by viewModel.continuing.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
 
     // What the box says its shelves are at. A film watched to the end or
@@ -95,6 +98,7 @@ fun FilmsScreen(
     LaunchedEffect(state.canControl, library.read, library.starting) {
         if (state.canControl) viewModel.refreshLibrary()
     }
+    ContinueReader(viewModel, state.canControl, continuing)
 
     // The tile that was pressed gives itself back if the film never arrives,
     // the same as on the live screen.
@@ -107,6 +111,7 @@ fun FilmsScreen(
 
     var search by rememberSaveable { mutableStateOf("") }
     val shown = remember(library.films, search) { matching(library.films, search) }
+    val resumable = remember(continuing.items) { continuing.items.filterNot { it.isEpisode } }
     val columns = filmColumns()
 
     Shelf(
@@ -119,6 +124,19 @@ fun FilmsScreen(
         onMessageShown = viewModel::consumeMessage,
         onOpenSettings = onOpenSettings,
     ) {
+        // At the very top, above the heading and its search box - and out of
+        // the way while somebody is searching, which is looking for something
+        // else.
+        if (search.isBlank()) {
+            continueRow(
+                items = resumable,
+                columns = columns,
+                server = state.live.server,
+                showArtwork = state.settings.showArtwork,
+                starting = continuing.starting,
+                onPlay = viewModel::playContinuing,
+            )
+        }
         filmWall(
             films = shown,
             columns = columns,
@@ -146,6 +164,7 @@ fun SeriesScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val series by viewModel.series.collectAsStateWithLifecycle()
+    val continuing by viewModel.continuing.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
 
     LaunchedEffect(state.snapshot?.libraryRevision) {
@@ -155,6 +174,7 @@ fun SeriesScreen(
     LaunchedEffect(state.canControl, series.read, series.starting) {
         if (state.canControl) viewModel.refreshSeries()
     }
+    ContinueReader(viewModel, state.canControl, continuing)
 
     LaunchedEffect(series.starting) {
         if (series.starting != null) {
@@ -167,6 +187,7 @@ fun SeriesScreen(
     val shown = remember(series.shows, search) {
         matching(series.shows, search, { it.title }, { it.year })
     }
+    val resumable = remember(continuing.items) { continuing.items.filter { it.isEpisode } }
     val columns = filmColumns()
     val open = series.open
 
@@ -204,6 +225,18 @@ fun SeriesScreen(
             )
             return@Shelf
         }
+        // At the very top of the wall, as on the films screen: the episodes
+        // left half-watched, whichever show they belong to.
+        if (search.isBlank()) {
+            continueRow(
+                items = resumable,
+                columns = columns,
+                server = state.live.server,
+                showArtwork = state.settings.showArtwork,
+                starting = continuing.starting,
+                onPlay = viewModel::playContinuing,
+            )
+        }
         seriesWall(
             shows = shown,
             columns = columns,
@@ -214,6 +247,30 @@ fun SeriesScreen(
             onSearch = { search = it },
             onOpen = viewModel::openShow,
         )
+    }
+}
+
+/**
+ * Keeps the continue-watching row read for whichever shelf is showing it.
+ *
+ * Read on arrival and again whenever the box says its library moved (which
+ * marks it unread), the same as the shelves; and the tile a press is waiting
+ * on gives itself back if the title never arrives.
+ */
+@Composable
+private fun ContinueReader(
+    viewModel: LiveViewModel,
+    canControl: Boolean,
+    continuing: ContinueUiState,
+) {
+    LaunchedEffect(canControl, continuing.read, continuing.starting) {
+        if (canControl) viewModel.refreshContinuing()
+    }
+    LaunchedEffect(continuing.starting) {
+        if (continuing.starting != null) {
+            delay(FILM_START_TIMEOUT_MS)
+            viewModel.continuingStarted()
+        }
     }
 }
 

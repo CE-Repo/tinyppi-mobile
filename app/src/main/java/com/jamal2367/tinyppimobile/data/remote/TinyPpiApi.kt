@@ -2,6 +2,7 @@ package com.jamal2367.tinyppimobile.data.remote
 
 import com.jamal2367.tinyppimobile.data.model.CommandAck
 import com.jamal2367.tinyppimobile.data.model.CommandBody
+import com.jamal2367.tinyppimobile.data.model.ContinueList
 import com.jamal2367.tinyppimobile.data.model.Hello
 import com.jamal2367.tinyppimobile.data.model.History
 import com.jamal2367.tinyppimobile.data.model.EpisodeList
@@ -80,6 +81,16 @@ interface TinyPpiApi {
      */
     @GET("api/episodes")
     suspend fun episodes(@Query("tvshowid") showId: Int): EpisodeList
+
+    /**
+     * The films and episodes left half-watched, the last one seen first, for
+     * the row at the top of both shelves.
+     *
+     * Refused with a 403 where neither shelf is offered, and unknown (404) to
+     * an add-on older than the row - both of which simply mean no row.
+     */
+    @GET("api/continue")
+    suspend fun continuing(): ContinueList
 
     /** Put the driver into one of the VS10 modes the snapshot offered. */
     @POST("api/mode")

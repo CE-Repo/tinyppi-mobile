@@ -2,6 +2,7 @@ package com.jamal2367.tinyppimobile.data.repository
 
 import com.jamal2367.tinyppimobile.data.model.ApiErrorBody
 import com.jamal2367.tinyppimobile.data.model.CommandBody
+import com.jamal2367.tinyppimobile.data.model.ContinueList
 import com.jamal2367.tinyppimobile.data.model.Hello
 import com.jamal2367.tinyppimobile.data.model.History
 import com.jamal2367.tinyppimobile.data.model.EpisodeList
@@ -48,6 +49,9 @@ class PlayerRepository(
 
     /** The episodes of one of those series, read when it is opened. */
     suspend fun episodes(showId: Int): EpisodeList = call { api.episodes(showId) }
+
+    /** The films and episodes left half-watched, for the row above both shelves. */
+    suspend fun continuing(): ContinueList = call { api.continuing() }
 
     /**
      * Put one of those films on the television.

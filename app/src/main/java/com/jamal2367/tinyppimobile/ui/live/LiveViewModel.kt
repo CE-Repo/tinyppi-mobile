@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.jamal2367.tinyppimobile.TinyPpiApplication
+import com.jamal2367.tinyppimobile.data.model.ContinueItem
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
@@ -122,6 +123,27 @@ data class SeriesUiState(
     val starting: Int? = null,
 )
 
+/**
+ * The row of films and episodes left half-watched, at the top of both shelves.
+ *
+ * Its own state for the reason the shelves have theirs, and read on the same
+ * occasions they are: when a shelf screen arrives, and whenever the box says
+ * its library has moved - which is what a title being stopped looks like.
+ */
+data class ContinueUiState(
+    /** Films and episodes both, the last one seen first. */
+    val items: List<ContinueItem> = emptyList(),
+    val read: Boolean = false,
+    val loading: Boolean = false,
+    /**
+     * False once the box has said it has no row to offer: neither shelf on
+     * offer, or an add-on older than the row.
+     */
+    val offered: Boolean = true,
+    /** The tile a press is waiting on, by [ContinueItem.key]. */
+    val starting: String? = null,
+)
+
 /** One show, with the episodes that were read when it was opened. */
 data class OpenShow(
     val id: Int,
@@ -158,6 +180,11 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
 
     /** The series it has, read on the same two occasions the films are. */
     val series: StateFlow<SeriesUiState> = _series.asStateFlow()
+
+    private val _continuing = MutableStateFlow(ContinueUiState())
+
+    /** The row of titles left half-watched, read on the same occasions. */
+    val continuing: StateFlow<ContinueUiState> = _continuing.asStateFlow()
 
     /**
      * Which version of the box's shelves the two lists above were read at, or
@@ -219,6 +246,7 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
         if (held == null) return
         _library.value = _library.value.copy(read = false)
         _series.value = _series.value.copy(read = false)
+        _continuing.value = _continuing.value.copy(read = false)
     }
 
     fun playPause() = command { repository.playPause() }
@@ -298,6 +326,8 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val since = TimeSource.Monotonic.markNow()
             val failure = readLibrary()
+            // The row above the wall is part of what was pulled.
+            readContinuing()
             delay(PULL_ANSWER - since.elapsedNow())
             _library.value = _library.value.copy(refreshing = false)
             if (failure != null) report(failure)
@@ -351,6 +381,7 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
                 // Where the box got to in this film has just moved, so the
                 // list is worth reading again the next time nothing is on.
                 _library.value = _library.value.copy(read = false)
+                _continuing.value = _continuing.value.copy(read = false)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Throwable) {
@@ -391,6 +422,7 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val since = TimeSource.Monotonic.markNow()
             val failure = readSeries()
+            readContinuing()
             delay(PULL_ANSWER - since.elapsedNow())
             _series.value = _series.value.copy(refreshing = false)
             if (failure != null) report(failure)
@@ -526,6 +558,7 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
                 // What has been watched is about to move, on this episode and
                 // on the count its show's tile wears.
                 _series.value = _series.value.copy(read = false)
+                _continuing.value = _continuing.value.copy(read = false)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Throwable) {
@@ -539,6 +572,85 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
     fun episodeStarted() {
         if (_series.value.starting != null) {
             _series.value = _series.value.copy(starting = null)
+        }
+    }
+
+    /**
+     * Read the row of titles left half-watched.
+     *
+     * Quietly, the way the shelves are read: the row is an offer, and a box
+     * that cannot make it simply has no row.
+     */
+    fun refreshContinuing(force: Boolean = false) {
+        val current = _continuing.value
+        if (current.loading || !current.offered) return
+        if (current.starting != null) return  // as with the walls
+        if (current.read && !force) return
+
+        _continuing.value = current.copy(loading = true)
+        viewModelScope.launch { readContinuing() }
+    }
+
+    /** The read itself; see [readLibrary]. */
+    private suspend fun readContinuing() {
+        try {
+            val answer = repository.continuing()
+            _continuing.value = _continuing.value.copy(
+                items = answer.items,
+                read = true,
+                loading = false,
+                offered = true,
+                starting = null,
+            )
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Throwable) {
+            // Neither shelf on offer (403), or an add-on that has no row at
+            // all (404): settled answers, not asked again until a pull.
+            val status = (failure as? ApiFailure.Api)?.status
+            val refused = status == 403 || status == 404
+            _continuing.value = _continuing.value.copy(
+                loading = false,
+                read = refused,
+                offered = !refused,
+                items = if (refused) emptyList() else _continuing.value.items,
+                starting = null,
+            )
+        }
+    }
+
+    /**
+     * Resume one of the titles on the row, where it was.
+     *
+     * The same two calls the walls start things through; the box resumes it
+     * because the library holds a point to resume from.
+     */
+    fun playContinuing(item: ContinueItem) {
+        if (_continuing.value.starting != null) return
+        _continuing.value = _continuing.value.copy(starting = item.key)
+        viewModelScope.launch {
+            try {
+                if (item.isEpisode) {
+                    repository.playEpisode(item.id)
+                    _series.value = _series.value.copy(read = false)
+                } else {
+                    repository.playFilm(item.id)
+                    _library.value = _library.value.copy(read = false)
+                }
+                _continuing.value = _continuing.value.copy(read = false)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Throwable) {
+                _continuing.value = _continuing.value.copy(starting = null)
+                report(failure)
+            }
+        }
+    }
+
+    /** Give the row back, once the title that was pressed is playing. */
+    fun continuingStarted() {
+        if (_continuing.value.starting != null) {
+            _continuing.value = _continuing.value.copy(starting = null)
         }
     }
 

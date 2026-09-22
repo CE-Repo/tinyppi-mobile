@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -65,8 +66,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
+import com.jamal2367.tinyppimobile.data.model.ContinueItem
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
@@ -89,6 +92,113 @@ import com.jamal2367.tinyppimobile.util.MediaUrls
  * is the same shelf on the next, and holding it twice would be asking the box
  * twice.
  */
+
+/* --- Continue watching -------------------------------------------------- */
+
+/**
+ * The titles the box was stopped in the middle of, the last one seen first,
+ * at the very top of a shelf: the quickest way back into whatever was on.
+ *
+ * A row that scrolls sideways rather than more of the wall: it is a handful of
+ * posters, the one somebody is after is nearly always the first, and a row
+ * costs the wall under it one line of posters rather than several. The tiles
+ * are the wall's own at the wall's own width, so the two read as one shelf.
+ *
+ * Nothing at all where there is nothing to resume.
+ */
+internal fun LazyListScope.continueRow(
+    items: List<ContinueItem>,
+    columns: Int,
+    server: ServerConfig?,
+    showArtwork: Boolean,
+    starting: String?,
+    onPlay: (ContinueItem) -> Unit,
+) {
+    if (items.isEmpty()) return
+
+    item(key = "continue-row") {
+        val width = filmTileWidth(columns)
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                text = stringResource(R.string.continue_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(FILM_GAP)) {
+                items(items = items, key = { it.key }) { item ->
+                    ContinueTile(
+                        item = item,
+                        poster = if (showArtwork) MediaUrls.continuePoster(server, item) else null,
+                        starting = starting == item.key,
+                        // One press at a time, for the reason the wall gives.
+                        enabled = starting == null,
+                        onPlay = { onPlay(item) },
+                        modifier = Modifier.width(width),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * One title on the row: its poster with how far the box got along the bottom,
+ * and under it the name.
+ *
+ * An episode stands as its show - the show's poster and the show's name, which
+ * is what somebody scanning the row is looking for - with which episode it is
+ * on the line beneath.
+ */
+@Composable
+private fun ContinueTile(
+    item: ContinueItem,
+    poster: String?,
+    starting: Boolean,
+    enabled: Boolean,
+    onPlay: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.clickable(enabled = enabled, onClick = onPlay),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        ArtFrame(
+            url = poster,
+            ratio = POSTER_RATIO,
+            progress = item.progress,
+            busy = starting,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Text(
+            text = if (item.isEpisode) item.show.ifEmpty { item.title } else item.title,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        val meta = if (item.isEpisode) {
+            listOf(item.code, item.title.takeIf { item.show.isNotEmpty() }.orEmpty())
+                .filter { it.isNotEmpty() }
+                .joinToString(META_GAP)
+        } else {
+            listOfNotNull(
+                item.year.takeIf { it > 0 }?.toString(),
+                runtimeLabel(item.duration),
+            ).joinToString(META_GAP)
+        }
+        if (meta.isNotEmpty()) {
+            Text(
+                text = meta,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
 
 /* --- The film library ---------------------------------------------------- */
 
@@ -962,6 +1072,19 @@ internal fun filmColumns(): Int {
     }
     val usable = width - ScreenEdge * 2
     return (usable / (FILM_TILE_MIN + FILM_GAP)).toInt().coerceIn(3, 6)
+}
+
+/**
+ * How wide one tile of a wall of [columns] is, for a row that has to match it
+ * without being one of the wall's rows.
+ */
+@Composable
+private fun filmTileWidth(columns: Int): Dp {
+    val width = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width.toDp()
+    }
+    val usable = width - ScreenEdge * 2
+    return (usable - FILM_GAP * (columns - 1)) / columns
 }
 
 /** The star on a rating pill, and how big it is drawn. */

@@ -188,3 +188,69 @@ data class LibraryEpisode(
 /** What starting an episode asks for: Kodi's own id, and nothing else. */
 @Serializable
 data class PlayEpisodeBody(val episodeid: Int)
+
+/**
+ * The films and episodes the box was stopped in the middle of, as the add-on's
+ * `/api/continue` answers them: the last one seen first.
+ *
+ * One list for both, because that is how the box reads it (Kodi's own "in
+ * progress" filter, sorted by when each was last played); the films screen
+ * shows the films on it and the series screen the episodes. A box offering
+ * only one of the two shelves sends only that half.
+ */
+@Serializable
+data class ContinueList(
+    val items: List<ContinueItem> = emptyList(),
+    val count: Int = 0,
+    val tag: String = "",
+)
+
+/** One title on the continue-watching row. */
+@Serializable
+data class ContinueItem(
+    /** `movie` or `episode`: which of the two ids [id] is. */
+    val kind: String = "",
+    /** Kodi's own id for the film or the episode, which is what starting it names. */
+    val id: Int = 0,
+    /** The film's name, or the episode's own; empty for an unnamed episode. */
+    val title: String = "",
+    /** 0 where the library has no year for it; episodes carry none. */
+    val year: Int = 0,
+    /**
+     * The poster's tag: the film's own, or the show's for an episode - which
+     * the box hands out under the episode's id (see `MediaUrls.continuePoster`).
+     */
+    val poster: String = "",
+    val duration: Int = 0,
+    /** Where the box got to, in seconds; always more than nothing on this row. */
+    val resume: Int = 0,
+    /** The show an episode belongs to, for the name under its poster. */
+    val show: String = "",
+    val season: Int = -1,
+    val episode: Int = -1,
+    /** When it was last played, as Kodi writes it; the order the row is in. */
+    val lastplayed: String = "",
+) {
+    val isEpisode: Boolean get() = kind == "episode"
+
+    /**
+     * Which tile on the row a press is waiting on. The kind goes in with the
+     * id because a film and an episode can share a number.
+     */
+    val key: String get() = "$kind-$id"
+
+    /** How far through it the box got, 0 to 1, or null without a length. */
+    val progress: Float?
+        get() = if (resume > 0 && duration > 0) {
+            (resume.toFloat() / duration).coerceIn(0f, 1f)
+        } else {
+            null
+        }
+
+    /** S01E04, the way an episode row writes it; empty for a film. */
+    val code: String
+        get() = if (!isEpisode) "" else buildString {
+            if (season > 0) append("S%02d".format(season))
+            if (episode >= 0) append("E%02d".format(episode))
+        }
+}

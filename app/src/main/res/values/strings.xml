@@ -37,6 +37,7 @@
 
     <!-- The wall of films, offered while nothing is playing -->
     <string name="library_title">Films</string>
+    <string name="continue_title">Continue watching</string>
     <string name="library_search_clear">Clear the search</string>
     <string name="library_empty_title">No library</string>
     <string name="library_empty_text">This box offers no video library, or its cards are switched off in the add-on settings.</string>
