@@ -230,6 +230,13 @@ data class ContinueItem(
     val episode: Int = -1,
     /** When it was last played, as Kodi writes it; the order the row is in. */
     val lastplayed: String = "",
+    /**
+     * What IMDb made of it, or TMDb; 0 where neither did. An episode carries
+     * its show's rating, because it stands on the row as that show's poster.
+     */
+    val rating: Double = 0.0,
+    /** Which of the two that was - `imdb` or `tmdb` - for the badge to say. */
+    @SerialName("rating_from") val ratingFrom: String = "",
 ) {
     val isEpisode: Boolean get() = kind == "episode"
 

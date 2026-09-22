@@ -145,9 +145,9 @@ internal fun LazyListScope.continueRow(
  * One title on the row: its poster with how far the box got along the bottom,
  * and under it the name.
  *
- * An episode stands as its show - the show's poster and the show's name, which
- * is what somebody scanning the row is looking for - with which episode it is
- * on the line beneath.
+ * An episode stands as its show - the show's poster, the show's name and the
+ * show's rating, which is what somebody scanning the row is looking for - with
+ * which episode it is on the line beneath.
  */
 @Composable
 private fun ContinueTile(
@@ -168,6 +168,8 @@ private fun ContinueTile(
             progress = item.progress,
             busy = starting,
             modifier = Modifier.fillMaxWidth(),
+            rating = item.rating,
+            ratingFrom = item.ratingFrom,
         )
 
         Text(

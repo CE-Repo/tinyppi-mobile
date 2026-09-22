@@ -131,7 +131,8 @@ class LibraryTest {
             {"count":2,"tag":"11-2-7a138a7b","items":[
               {"kind":"episode","id":9,"title":"Pilot","show":"Lost","tvshowid":2,
                "season":1,"episode":1,"poster":"fe1145ba","thumb":"3bb67b34",
-               "duration":2600,"resume":1300,"lastplayed":"2026-09-21 20:00:00"},
+               "duration":2600,"resume":1300,"lastplayed":"2026-09-21 20:00:00",
+               "rating":7.9,"rating_from":"tmdb"},
               {"kind":"movie","id":9,"title":"Heat","year":1995,"poster":"cff95f27",
                "duration":10000,"resume":500,"lastplayed":"2026-09-20 20:00:00"}
             ]}
@@ -144,6 +145,9 @@ class LibraryTest {
         assertEquals("S01E01", pilot.code)
         assertEquals("", heat.code)
         assertEquals(0.5f, pilot.progress!!, 0.001f)
+        assertEquals(7.9, pilot.rating, 0.001)
+        assertEquals("tmdb", pilot.ratingFrom)
+        assertEquals(0.0, heat.rating, 0.001)
         // The same number, and still two different tiles.
         assertTrue(pilot.key != heat.key)
 

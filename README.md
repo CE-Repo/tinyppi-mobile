@@ -192,7 +192,8 @@ seasons left unfolded as they were.
 **Continue watching** sits at the very top of both: the films the box was
 stopped in the middle of at the top of Films, the episodes at the top of
 Series, the last one seen first, on a row that scrolls sideways. Each poster
-carries how far the box got, and a tap resumes it where it was. An episode
+carries how far the box got and the same rating badge as the walls — a film
+its own, an episode its show's — and a tap resumes it where it was. An episode
 stands on it as its show — the show's poster and name, with which episode it is
 underneath — so an episode of a show you have not opened in the app is one tap
 away too. The row is read on the same occasions the shelves are, steps aside
