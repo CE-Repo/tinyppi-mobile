@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,7 +47,8 @@ import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.live.ContinueUiState
 import com.jamal2367.tinyppimobile.ui.live.FILM_START_TIMEOUT_MS
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
-import com.jamal2367.tinyppimobile.ui.live.continueRow
+import com.jamal2367.tinyppimobile.ui.live.continueCard
+import com.jamal2367.tinyppimobile.ui.components.LocalCardFolds
 import com.jamal2367.tinyppimobile.ui.live.dismissSearch
 import com.jamal2367.tinyppimobile.ui.live.episodeList
 import com.jamal2367.tinyppimobile.ui.live.filmColumns
@@ -113,6 +115,9 @@ fun FilmsScreen(
     val shown = remember(library.films, search) { matching(library.films, search) }
     val resumable = remember(continuing.items) { continuing.items.filterNot { it.isEpisode } }
     val columns = filmColumns()
+    val folds = LocalCardFolds.current
+    val continueOpen = folds.isExpanded(FOLD_FILMS_CONTINUE)
+    val wallOpen = folds.isExpanded(FOLD_FILMS)
 
     Shelf(
         configured = state.isConfigured,
@@ -123,17 +128,22 @@ fun FilmsScreen(
         message = message,
         onMessageShown = viewModel::consumeMessage,
         onOpenSettings = onOpenSettings,
+        gap = 0.dp,
     ) {
-        // At the very top, above the heading and its search box - and out of
-        // the way while somebody is searching, which is looking for something
-        // else.
-        if (search.isBlank()) {
-            continueRow(
+        // Two cards, each folding under its own heading the way the live
+        // screen's do: what was left half-watched at the very top - out of the
+        // way while somebody is searching, which is looking for something
+        // else - and then the wall.
+        val resuming = search.isBlank() && resumable.isNotEmpty()
+        if (resuming) {
+            continueCard(
                 items = resumable,
                 columns = columns,
                 server = state.live.server,
                 showArtwork = state.settings.showArtwork,
                 starting = continuing.starting,
+                expanded = continueOpen,
+                onToggle = { folds.setExpanded(FOLD_FILMS_CONTINUE, !continueOpen) },
                 onPlay = viewModel::playContinuing,
             )
         }
@@ -145,6 +155,9 @@ fun FilmsScreen(
             starting = library.starting,
             search = search,
             onSearch = { search = it },
+            gapAbove = resuming,
+            expanded = wallOpen,
+            onToggle = { folds.setExpanded(FOLD_FILMS, !wallOpen) },
             onPlay = viewModel::playFilm,
         )
     }
@@ -189,6 +202,9 @@ fun SeriesScreen(
     }
     val resumable = remember(continuing.items) { continuing.items.filter { it.isEpisode } }
     val columns = filmColumns()
+    val folds = LocalCardFolds.current
+    val continueOpen = folds.isExpanded(FOLD_SERIES_CONTINUE)
+    val wallOpen = folds.isExpanded(FOLD_SERIES)
     val open = series.open
 
     // The way out of a show is the way back, and on this screen the system's
@@ -211,6 +227,9 @@ fun SeriesScreen(
         message = message,
         onMessageShown = viewModel::consumeMessage,
         onOpenSettings = onOpenSettings,
+        // The cards of the wall part themselves; an open show is rows the
+        // list spaces out.
+        gap = if (open != null) CardGap else 0.dp,
     ) {
         if (open != null) {
             episodeList(
@@ -225,15 +244,18 @@ fun SeriesScreen(
             )
             return@Shelf
         }
-        // At the very top of the wall, as on the films screen: the episodes
-        // left half-watched, whichever show they belong to.
-        if (search.isBlank()) {
-            continueRow(
+        // The same two cards as on the films screen: the episodes left
+        // half-watched, whichever show they belong to, and then the wall.
+        val resuming = search.isBlank() && resumable.isNotEmpty()
+        if (resuming) {
+            continueCard(
                 items = resumable,
                 columns = columns,
                 server = state.live.server,
                 showArtwork = state.settings.showArtwork,
                 starting = continuing.starting,
+                expanded = continueOpen,
+                onToggle = { folds.setExpanded(FOLD_SERIES_CONTINUE, !continueOpen) },
                 onPlay = viewModel::playContinuing,
             )
         }
@@ -245,6 +267,9 @@ fun SeriesScreen(
             opening = series.opening,
             search = search,
             onSearch = { search = it },
+            gapAbove = resuming,
+            expanded = wallOpen,
+            onToggle = { folds.setExpanded(FOLD_SERIES, !wallOpen) },
             onOpen = viewModel::openShow,
         )
     }
@@ -293,6 +318,7 @@ private fun Shelf(
     message: String?,
     onMessageShown: () -> Unit,
     onOpenSettings: () -> Unit,
+    gap: Dp = CardGap,
     content: LazyListScope.() -> Unit,
 ) {
     val listState = rememberLazyListState()
@@ -377,7 +403,7 @@ private fun Shelf(
             LazyColumn(
                 state = listState,
                 contentPadding = PaddingValues(start = ScreenEdge, end = ScreenEdge, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(CardGap),
+                verticalArrangement = Arrangement.spacedBy(gap),
                 modifier = Modifier.fillMaxSize(),
                 content = content,
             )
@@ -398,3 +424,12 @@ private fun sharedLiveViewModel(): LiveViewModel {
     val activity = checkNotNull(LocalActivity.current) as ViewModelStoreOwner
     return viewModel(viewModelStoreOwner = activity)
 }
+
+/**
+ * What the four shelf cards are remembered by. Named for the card rather than
+ * its heading, so a translation or a rename does not open anything again.
+ */
+private const val FOLD_FILMS_CONTINUE = "shelf.films.continue"
+private const val FOLD_FILMS = "shelf.films"
+private const val FOLD_SERIES_CONTINUE = "shelf.series.continue"
+private const val FOLD_SERIES = "shelf.series"

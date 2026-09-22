@@ -111,67 +111,17 @@ fun SectionCard(
                 .padding(16.dp),
         ) {
             if (heading) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .then(
-                            if (foldId != null) {
-                                Modifier.clickable(
-                                    interactionSource = press,
-                                    indication = null,
-                                ) {
-                                    folds.setExpanded(foldId, !expanded, foldOpenByDefault)
-                                }
-                            } else {
-                                Modifier
-                            }
-                        ),
-                    // Ends apart where there is a heading, and the arrow alone
-                    // at the right where there is not.
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (!title.isNullOrBlank()) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            modifier = Modifier.weight(1f, fill = false),
-                        ) {
-                            // The one piece of the accent a heading wears: a
-                            // tick down its left edge, the way the dashboard
-                            // marks a section. It says what colour the screen
-                            // is in without colouring the words.
-                            Box(
-                                modifier = Modifier
-                                    .width(TICK_WIDTH)
-                                    .height(TICK_HEIGHT)
-                                    .clip(PillShape)
-                                    .background(MaterialTheme.colorScheme.accentText),
-                            )
-                            Text(
-                                text = title,
-                                style = MaterialTheme.typography.titleMedium,
-                                // Plain, like the film title on the card above
-                                // it. The tick to its left is already saying
-                                // what colour the screen is in; the heading
-                                // saying it again is a heading nobody can read
-                                // as quickly as a black-and-white one.
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        trailing?.invoke()
-                        if (foldId != null) {
-                            FoldChevron(expanded, interactionSource = press) {
-                                folds.setExpanded(foldId, !expanded, foldOpenByDefault)
-                            }
-                        }
-                    }
-                }
+                SectionHeading(
+                    title = title,
+                    expanded = expanded,
+                    onToggle = if (foldId != null) {
+                        { folds.setExpanded(foldId, !expanded, foldOpenByDefault) }
+                    } else {
+                        null
+                    },
+                    trailing = trailing,
+                    interactionSource = press,
+                )
             }
             AnimatedVisibility(visible = expanded) {
                 Column(
@@ -179,6 +129,83 @@ fun SectionCard(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     content = content,
                 )
+            }
+        }
+    }
+}
+
+/**
+ * The line along the top of a card: the accent tick, the title, whatever the
+ * card puts at the end of it, and the arrow that folds it.
+ *
+ * Its own piece so that a card too long to be one piece - a shelf of several
+ * hundred posters, laid out a row at a time - can wear exactly the heading a
+ * [SectionCard] does. [onToggle] null is a card that does not fold.
+ */
+@Composable
+fun SectionHeading(
+    title: String?,
+    expanded: Boolean,
+    onToggle: (() -> Unit)?,
+    trailing: (@Composable () -> Unit)? = null,
+    interactionSource: MutableInteractionSource? = null,
+) {
+    val press = interactionSource ?: remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (onToggle != null) {
+                    Modifier.clickable(
+                        interactionSource = press,
+                        indication = null,
+                        onClick = onToggle,
+                    )
+                } else {
+                    Modifier
+                }
+            ),
+        // Ends apart where there is a heading, and the arrow alone
+        // at the right where there is not.
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (!title.isNullOrBlank()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.weight(1f, fill = false),
+            ) {
+                // The one piece of the accent a heading wears: a
+                // tick down its left edge, the way the dashboard
+                // marks a section. It says what colour the screen
+                // is in without colouring the words.
+                Box(
+                    modifier = Modifier
+                        .width(TICK_WIDTH)
+                        .height(TICK_HEIGHT)
+                        .clip(PillShape)
+                        .background(MaterialTheme.colorScheme.accentText),
+                )
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    // Plain, like the film title on the card above
+                    // it. The tick to its left is already saying
+                    // what colour the screen is in; the heading
+                    // saying it again is a heading nobody can read
+                    // as quickly as a black-and-white one.
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            trailing?.invoke()
+            if (onToggle != null) {
+                FoldChevron(expanded, interactionSource = press, onClick = onToggle)
             }
         }
     }
