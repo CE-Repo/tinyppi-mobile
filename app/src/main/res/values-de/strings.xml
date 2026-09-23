@@ -3,7 +3,7 @@
 
     <!-- Navigation -->
     <string name="nav_live">Live</string>
-    <string name="nav_metadata">Dolby-Vision-Metadaten</string>
+    <string name="nav_metadata">DV Metadaten</string>
     <string name="nav_metadata_tab">Metadaten</string>
     <string name="nav_history">Verlauf</string>
     <string name="nav_settings">Einstellungen</string>

@@ -89,10 +89,10 @@ object DemoServer {
         Film(3, "Blade Runner 2049", 2017, 164, 8.0, "Science Fiction", resumeMinutes = 132),
         Film(4, "Mad Max: Fury Road", 2015, 120, 8.1, "Action", watched = true),
         Film(5, "Interstellar", 2014, 169, 8.7, "Science Fiction", watched = true),
-        Film(6, "Arrival", 2016, 116, 7.9, "Drama"),
-        Film(7, "The Batman", 2022, 176, 7.8, "Crime"),
+        Film(6, "Arrival", 2016, 116, 7.9, "Drama", resumeMinutes = 58),
+        Film(7, "The Batman", 2022, 176, 7.8, "Crime", resumeMinutes = 104),
         Film(8, "Sicario", 2015, 121, 7.6, "Thriller", watched = true),
-        Film(9, "Tenet", 2020, 150, 7.3, "Action"),
+        Film(9, "Tenet", 2020, 150, 7.3, "Action", resumeMinutes = 22),
         Film(10, "Joker", 2019, 122, 8.4, "Drama", watched = true),
         Film(11, "Gravity", 2013, 91, 7.7, "Science Fiction"),
         Film(12, "Top Gun: Maverick", 2022, 130, 8.2, "Action"),
@@ -117,7 +117,7 @@ object DemoServer {
         Show(104, "Andor", 2022, 8.5, 2, 12, 20),
         Show(105, "True Detective", 2014, 8.9, 3, 8, 24),
         Show(106, "Dark", 2017, 8.7, 3, 8, 12),
-        Show(107, "Silo", 2023, 8.1, 2, 10, 0),
+        Show(107, "Silo", 2023, 8.1, 2, 10, 4),
         Show(108, "Fallout", 2024, 8.3, 1, 8, 3),
         Show(109, "Chernobyl", 2019, 9.3, 1, 5, 5),
     )
@@ -423,11 +423,11 @@ object DemoServer {
                 add(buildJsonObject {
                     put("kind", "movie"); put("id", f.id); put("title", f.title); put("year", f.year)
                     put("poster", "movie-${f.id}"); put("duration", f.minutes * 60); put("resume", f.resumeMinutes * 60)
-                    put("lastplayed", "2026-09-2${2 - i.coerceAtMost(2)} 21:00:00")
+                    put("lastplayed", "2026-09-%02d 21:00:00".format(22 - i))
                     put("rating", f.rating); put("rating_from", "imdb")
                 })
             }
-            shows.filter { it.seenUpTo in 1 until it.seasons * it.perSeason }.take(3).forEach { s ->
+            shows.filter { it.seenUpTo in 1 until it.seasons * it.perSeason }.take(6).forEach { s ->
                 val season = s.seenUpTo / s.perSeason + 1
                 val episode = s.seenUpTo % s.perSeason + 1
                 add(buildJsonObject {
@@ -440,7 +440,11 @@ object DemoServer {
                 })
             }
         }
-        put("count", 6)
+        put(
+            "count",
+            films.count { it.resumeMinutes > 0 } +
+                shows.count { it.seenUpTo in 1 until it.seasons * it.perSeason }.coerceAtMost(6),
+        )
         put("tag", "demo-$libraryRevision")
     }
 
