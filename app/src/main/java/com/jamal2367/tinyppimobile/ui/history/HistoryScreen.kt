@@ -30,6 +30,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.jamal2367.tinyppimobile.ui.components.centredBelowTitle
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.History
 import com.jamal2367.tinyppimobile.data.prefs.ChartRange
@@ -118,7 +119,7 @@ fun HistoryScreen(
 
             else -> LazyColumn(
                 contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = ScreenEdge),
-                verticalArrangement = Arrangement.spacedBy(CardGap),
+                verticalArrangement = centredBelowTitle(CardGap),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),

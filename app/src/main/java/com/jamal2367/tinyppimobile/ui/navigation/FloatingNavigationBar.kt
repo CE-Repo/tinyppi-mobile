@@ -55,6 +55,15 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.offset
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlin.math.abs
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * How much of the foot of the screen the floating bar sits over.
@@ -121,35 +130,88 @@ fun Modifier.aboveBottomBar(): Modifier {
 }
 
 /**
- * Whether the bar is showing, and the ear it listens to the lists with.
+ * Whether the bar is showing, and the ear it listens to the screens with.
+ *
+ * The bar keeps out of the way unless somebody is doing something: a finger on
+ * the screen or a list on the move brings it back, and once nothing has
+ * happened for [HIDE_AFTER] it steps away again, so a poster or a page of text
+ * is left to be looked at on its own.
  *
  * Handed to the shell's `nestedScroll`, which every list on every screen
- * reports its scrolling through. A list moving on towards its end is somebody
- * reading, and the bar steps out of the way; moving back towards its top is
- * somebody going back, and the bar comes back with them.
+ * reports its scrolling through - a fling carries on long after the finger has
+ * gone, and the bar stays for as long as it does. The fingers themselves are
+ * heard through [wakesBar].
  *
  * What was actually scrolled is what counts, not what was asked for: a finger
- * dragging at the end of a list that has nowhere left to go moves nothing, and
- * should not flick the bar in and out.
+ * dragging at the end of a list that has nowhere left to go moves nothing.
  */
 class BarVisibility : NestedScrollConnection {
     var visible by mutableStateOf(true)
+        private set
+
+    /** A finger is down, and the bar does not leave from under it. */
+    private var held = false
+
+    // Conflated: only that something happened matters, not how often, and a
+    // drag reports itself on every frame.
+    private val activity = Channel<Unit>(Channel.CONFLATED)
+
+    /** Brings the bar back, and starts the wait before it goes again. */
+    fun wake() {
+        visible = true
+        activity.trySend(Unit)
+    }
+
+    /**
+     * Puts the bar away once nothing has happened for [HIDE_AFTER]. Runs for
+     * as long as the bar is on the screen.
+     */
+    suspend fun hideWhenIdle() {
+        wake()
+        activity.receiveAsFlow().collectLatest {
+            delay(HIDE_AFTER)
+            // A finger still resting on the screen is still somebody there;
+            // lifting it is itself activity and starts the wait over.
+            if (!held) visible = false
+        }
+    }
 
     override fun onPostScroll(
         consumed: Offset,
         available: Offset,
         source: NestedScrollSource,
     ): Offset {
-        when {
-            consumed.y < -SCROLL_SLOP -> visible = false
-            consumed.y > SCROLL_SLOP -> visible = true
-        }
+        if (abs(consumed.x) > SCROLL_SLOP || abs(consumed.y) > SCROLL_SLOP) wake()
         return Offset.Zero
+    }
+
+    /** A finger went down, moved or came up somewhere on the screen. */
+    internal fun touched(pressed: Boolean) {
+        held = pressed
+        wake()
+    }
+}
+
+/**
+ * Listens for fingers on what it is put on - the whole shell - for [visibility],
+ * without taking them from anything: the tap still reaches the card it was
+ * meant for, and the bar comes back as it does.
+ */
+fun Modifier.wakesBar(visibility: BarVisibility): Modifier = pointerInput(visibility) {
+    awaitPointerEventScope {
+        while (true) {
+            val event = awaitPointerEvent(PointerEventPass.Initial)
+            visibility.touched(event.changes.any { it.pressed })
+        }
     }
 }
 
 @Composable
-fun rememberBarVisibility(): BarVisibility = remember { BarVisibility() }
+fun rememberBarVisibility(): BarVisibility {
+    val visibility = remember { BarVisibility() }
+    LaunchedEffect(visibility) { visibility.hideWhenIdle() }
+    return visibility
+}
 
 /**
  * The bar the tabs are switched with: a pill floating over the foot of the
@@ -297,6 +359,9 @@ private fun BarItem(
 
 /** How far a list has to have moved before the bar answers it, in pixels. */
 private const val SCROLL_SLOP = 4f
+
+/** How long the bar waits, with nothing happening, before it goes. */
+private val HIDE_AFTER = 3.seconds
 
 val BAR_HEIGHT = 64.dp
 private val BAR_MARGIN = 12.dp

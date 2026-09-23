@@ -60,6 +60,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.jamal2367.tinyppimobile.ui.components.centredBelowTitle
 import com.jamal2367.tinyppimobile.BuildConfig
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
@@ -95,7 +96,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     Scaffold { padding ->
         LazyColumn(
             contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = ScreenEdge),
-            verticalArrangement = Arrangement.spacedBy(CardGap),
+            verticalArrangement = centredBelowTitle(CardGap),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
