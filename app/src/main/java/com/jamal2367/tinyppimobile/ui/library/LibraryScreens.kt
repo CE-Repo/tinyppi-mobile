@@ -46,6 +46,13 @@ import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.live.ContinueUiState
 import com.jamal2367.tinyppimobile.ui.live.FILM_START_TIMEOUT_MS
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
+import com.jamal2367.tinyppimobile.ui.live.TitleDialog
+import com.jamal2367.tinyppimobile.ui.live.TitleQuestion
+import com.jamal2367.tinyppimobile.ui.live.markTarget
+import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
+import com.jamal2367.tinyppimobile.data.model.LibraryFilm
+import com.jamal2367.tinyppimobile.data.model.LibraryShow
+import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.ui.live.continueCard
 import com.jamal2367.tinyppimobile.ui.components.LocalCardFolds
 import com.jamal2367.tinyppimobile.ui.live.dismissSearch
@@ -117,10 +124,26 @@ fun FilmsScreen(
     var search by rememberSaveable { mutableStateOf("") }
     val shown = remember(library.films, search) { matching(library.films, search) }
     val resumable = remember(continuing.items) { continuing.items.filterNot { it.isEpisode } }
+    // What has not been seen yet, as a wall of its own under the
+    // continue-watching row: whether there is one at all is the library's
+    // answer, and which of it is shown is the search's.
+    val waiting = remember(library.films) { library.films.any { !it.watched } }
+    val unseen = remember(shown) { shown.filterNot { it.watched } }
     val columns = filmColumns()
     val folds = LocalCardFolds.current
     val continueOpen = folds.isExpanded(FOLD_FILMS_CONTINUE)
     val wallOpen = folds.isExpanded(FOLD_FILMS)
+    val unseenOpen = folds.isExpanded(FOLD_FILMS_UNSEEN)
+    var asking by remember { mutableStateOf<TitleQuestion?>(null) }
+    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume)
+    // A press on a film asks first; playing it is the first answer.
+    val askFilm: (LibraryFilm) -> Unit = { film ->
+        asking = TitleQuestion(
+            film.markTarget(),
+            if (film.resume > 0) R.string.title_resume else R.string.title_play,
+            resumable = film.resume > 0,
+        ) { fromStart -> viewModel.playFilm(film, fromStart) }
+    }
 
     Shelf(
         configured = state.isConfigured,
@@ -152,7 +175,30 @@ fun FilmsScreen(
                 starting = continuing.starting,
                 expanded = continueOpen,
                 onToggle = { folds.setExpanded(FOLD_FILMS_CONTINUE, !continueOpen) },
-                onPlay = viewModel::playContinuing,
+                onPlay = { item ->
+                    asking = TitleQuestion(
+                        item.markTarget(),
+                        R.string.title_resume,
+                        resumable = true,
+                    ) { fromStart -> viewModel.playContinuing(item, fromStart) }
+                },
+            )
+        }
+        // What is still waiting to be watched, straight under what was left
+        // half-watched; the wall of everything comes after both.
+        if (waiting) {
+            filmWall(
+                films = unseen,
+                key = "film-unseen",
+                title = { stringResource(R.string.library_unseen, it) },
+                columns = columns,
+                server = state.live.server,
+                showArtwork = state.settings.showArtwork,
+                starting = library.starting,
+                gapAbove = resuming,
+                expanded = unseenOpen,
+                onToggle = { folds.setExpanded(FOLD_FILMS_UNSEEN, !unseenOpen) },
+                onPlay = askFilm,
             )
         }
         filmWall(
@@ -161,10 +207,10 @@ fun FilmsScreen(
             server = state.live.server,
             showArtwork = state.settings.showArtwork,
             starting = library.starting,
-            gapAbove = resuming,
+            gapAbove = resuming || waiting,
             expanded = wallOpen,
             onToggle = { folds.setExpanded(FOLD_FILMS, !wallOpen) },
-            onPlay = viewModel::playFilm,
+            onPlay = askFilm,
         )
     }
 }
@@ -207,11 +253,28 @@ fun SeriesScreen(
         matching(series.shows, search, { it.title }, { it.year })
     }
     val resumable = remember(continuing.items) { continuing.items.filter { it.isEpisode } }
+    // The shows with an episode still waiting, under the continue-watching row.
+    val waiting = remember(series.shows) { series.shows.any { it.isWaiting } }
+    val unseen = remember(shown) { shown.filter { it.isWaiting } }
     val columns = filmColumns()
     val folds = LocalCardFolds.current
     val continueOpen = folds.isExpanded(FOLD_SERIES_CONTINUE)
     val wallOpen = folds.isExpanded(FOLD_SERIES)
+    val unseenOpen = folds.isExpanded(FOLD_SERIES_UNSEEN)
     val open = series.open
+    var asking by remember { mutableStateOf<TitleQuestion?>(null) }
+    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume)
+    // A series cannot be played, so its first answer opens it.
+    val askShow: (LibraryShow) -> Unit = { show ->
+        asking = TitleQuestion(show.markTarget(), R.string.title_open) { viewModel.openShow(show) }
+    }
+    val askEpisode: (LibraryEpisode) -> Unit = { episode ->
+        asking = TitleQuestion(
+            episode.markTarget(),
+            if (episode.resume > 0) R.string.title_resume else R.string.title_play,
+            resumable = episode.resume > 0,
+        ) { fromStart -> viewModel.playEpisode(episode, fromStart) }
+    }
 
     // The way out of a show is the way back, and on this screen the system's
     // own back gesture is the one nearest a thumb. Without this it would leave
@@ -248,7 +311,7 @@ fun SeriesScreen(
                 openSeasons = series.openSeasons,
                 onBack = viewModel::closeShow,
                 onSeason = viewModel::toggleSeason,
-                onPlay = viewModel::playEpisode,
+                onPlay = askEpisode,
             )
             return@Shelf
         }
@@ -271,7 +334,30 @@ fun SeriesScreen(
                 starting = continuing.starting,
                 expanded = continueOpen,
                 onToggle = { folds.setExpanded(FOLD_SERIES_CONTINUE, !continueOpen) },
-                onPlay = viewModel::playContinuing,
+                onPlay = { item ->
+                    asking = TitleQuestion(
+                        item.markTarget(),
+                        R.string.title_resume,
+                        resumable = true,
+                    ) { fromStart -> viewModel.playContinuing(item, fromStart) }
+                },
+            )
+        }
+        // What is still waiting to be watched, straight under what was left
+        // half-watched; the wall of everything comes after both.
+        if (waiting) {
+            seriesWall(
+                shows = unseen,
+                key = "series-unseen",
+                title = { stringResource(R.string.series_unseen_all, it) },
+                columns = columns,
+                server = state.live.server,
+                showArtwork = state.settings.showArtwork,
+                opening = series.opening,
+                gapAbove = resuming,
+                expanded = unseenOpen,
+                onToggle = { folds.setExpanded(FOLD_SERIES_UNSEEN, !unseenOpen) },
+                onOpen = askShow,
             )
         }
         seriesWall(
@@ -280,13 +366,51 @@ fun SeriesScreen(
             server = state.live.server,
             showArtwork = state.settings.showArtwork,
             opening = series.opening,
-            gapAbove = resuming,
+            gapAbove = resuming || waiting,
             expanded = wallOpen,
             onToggle = { folds.setExpanded(FOLD_SERIES, !wallOpen) },
-            onOpen = viewModel::openShow,
+            onOpen = askShow,
         )
     }
 }
+
+/**
+ * The question a press on a title asks, while one is open: play it (open it,
+ * for a series), or count it as seen or as unseen.
+ *
+ * Held by the screen rather than by the view model: it is a question on the
+ * screen in front of somebody, and one left open when they switch tabs is a
+ * question about a title they are no longer looking at.
+ */
+@Composable
+private fun TitleAsker(
+    question: TitleQuestion?,
+    onDone: () -> Unit,
+    onMark: (MarkTarget, Boolean) -> Unit,
+    onClearResume: (MarkTarget) -> Unit,
+) {
+    val asked = question ?: return
+    TitleDialog(
+        question = asked,
+        onDismiss = onDone,
+        onPlay = { fromStart ->
+            onDone()
+            asked.onPlay(fromStart)
+        },
+        onMark = { watched ->
+            onDone()
+            onMark(asked.target, watched)
+        },
+        onClearResume = {
+            onDone()
+            onClearResume(asked.target)
+        },
+    )
+}
+
+/** Whether a show has an episode still to be seen. */
+private val LibraryShow.isWaiting: Boolean
+    get() = !watched && unseen > 0
 
 /**
  * Keeps the continue-watching row read for whichever shelf is showing it.
@@ -444,10 +568,12 @@ private fun sharedLiveViewModel(): LiveViewModel {
 }
 
 /**
- * What the four shelf cards are remembered by. Named for the card rather than
+ * What the six shelf cards are remembered by. Named for the card rather than
  * its heading, so a translation or a rename does not open anything again.
  */
 private const val FOLD_FILMS_CONTINUE = "shelf.films.continue"
 private const val FOLD_FILMS = "shelf.films"
 private const val FOLD_SERIES_CONTINUE = "shelf.series.continue"
 private const val FOLD_SERIES = "shelf.series"
+private const val FOLD_FILMS_UNSEEN = "shelf.films.unseen"
+private const val FOLD_SERIES_UNSEEN = "shelf.series.unseen"

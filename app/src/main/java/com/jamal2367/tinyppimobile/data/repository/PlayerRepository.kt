@@ -10,7 +10,11 @@ import com.jamal2367.tinyppimobile.data.model.Library
 import com.jamal2367.tinyppimobile.data.model.ModeBody
 import com.jamal2367.tinyppimobile.data.model.PlayBody
 import com.jamal2367.tinyppimobile.data.model.PlayEpisodeBody
+import com.jamal2367.tinyppimobile.data.model.ResumeBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
+import com.jamal2367.tinyppimobile.data.model.WatchedBody
+import com.jamal2367.tinyppimobile.data.model.MarkTarget
+import com.jamal2367.tinyppimobile.data.model.PlaybackEventKind
 import com.jamal2367.tinyppimobile.data.model.PlayerAction
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
 import com.jamal2367.tinyppimobile.data.remote.NoServerConfiguredException
@@ -39,7 +43,10 @@ class PlayerRepository(
     suspend fun hello(): Hello = call { api.hello() }
 
     /** The playing title's chart samples and its event list. */
-    suspend fun history(): History = call { api.history() }
+    suspend fun history(): History = call { api.history() }.let { history ->
+        // Events this app no longer shows, from an add-on that still writes them.
+        history.copy(events = history.events.filterNot { it.kind in PlaybackEventKind.RETIRED })
+    }
 
     /** The films the box has, for the wall shown while nothing is playing. */
     suspend fun library(): Library = call { api.library() }
@@ -60,8 +67,8 @@ class PlayerRepository(
      * resume from; nothing here decides that, because the point is the
      * library's and Kodi's own window would do the same.
      */
-    suspend fun playFilm(movieId: Int) {
-        call { api.play(PlayBody(movieId)) }
+    suspend fun playFilm(movieId: Int, fromStart: Boolean = false) {
+        call { api.play(PlayBody(movieId, resume = false.takeIf { fromStart })) }
     }
 
     /**
@@ -70,8 +77,33 @@ class PlayerRepository(
      * Resumed by the box where the library holds a point to resume from, the
      * same as a film.
      */
-    suspend fun playEpisode(episodeId: Int) {
-        call { api.playEpisode(PlayEpisodeBody(episodeId)) }
+    suspend fun playEpisode(episodeId: Int, fromStart: Boolean = false) {
+        call { api.playEpisode(PlayEpisodeBody(episodeId, resume = false.takeIf { fromStart })) }
+    }
+
+    /**
+     * Mark a film, a series or an episode as seen or unseen.
+     *
+     * The box writes it into Kodi's library the way Kodi's own context menu
+     * does, and drops every list it holds, so the next read is the new answer.
+     */
+    suspend fun setWatched(target: MarkTarget, watched: Boolean) {
+        val body = when (target.kind) {
+            MarkTarget.Kind.MOVIE -> WatchedBody(movieid = target.id, watched = watched)
+            MarkTarget.Kind.SHOW -> WatchedBody(tvshowid = target.id, watched = watched)
+            MarkTarget.Kind.EPISODE -> WatchedBody(episodeid = target.id, watched = watched)
+        }
+        call { api.setWatched(body) }
+    }
+
+    /** Forget where a film or an episode got to; a series has no such point. */
+    suspend fun clearResume(target: MarkTarget) {
+        val body = when (target.kind) {
+            MarkTarget.Kind.MOVIE -> ResumeBody(movieid = target.id)
+            MarkTarget.Kind.EPISODE -> ResumeBody(episodeid = target.id)
+            MarkTarget.Kind.SHOW -> return
+        }
+        call { api.clearResume(body) }
     }
 
     /**

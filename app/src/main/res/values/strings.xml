@@ -53,6 +53,16 @@
     <string name="series_title">Series</string>
     <string name="series_search">Search series</string>
     <string name="series_all">All series · %1$d</string>
+    <string name="library_unseen">Unwatched films · %1$d</string>
+    <string name="series_unseen_all">Unwatched series · %1$d</string>
+    <string name="title_play">Play</string>
+    <string name="title_resume">Resume</string>
+    <string name="title_open">Open</string>
+    <string name="title_restart">Play from the beginning</string>
+    <string name="resume_clear">Clear resume point</string>
+    <string name="mark_watched">Mark as watched</string>
+    <string name="mark_unwatched">Mark as unwatched</string>
+    <string name="mark_cancel">Cancel</string>
     <string name="series_back">All series</string>
     <string name="series_no_match">No series matches that.</string>
     <string name="series_specials">Specials</string>
@@ -141,8 +151,6 @@
     <string name="event_mode">Display mode</string>
     <string name="event_audio">Audio track</string>
     <string name="event_subtitle">Subtitles</string>
-    <string name="event_cache_low">Player cache low</string>
-    <string name="event_cache_recovered">Player cache recovered</string>
     <string name="event_temperature">Temperature</string>
     <string name="event_cpu">Processor</string>
     <string name="event_fps">Frame rate</string>

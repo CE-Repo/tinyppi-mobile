@@ -53,6 +53,16 @@
     <string name="series_title">Sorozatok</string>
     <string name="series_search">Sorozatok keresése</string>
     <string name="series_all">Összes sorozat · %1$d</string>
+    <string name="library_unseen">Nem látott filmek · %1$d</string>
+    <string name="series_unseen_all">Nem látott sorozatok · %1$d</string>
+    <string name="title_play">Lejátszás</string>
+    <string name="title_resume">Folytatás</string>
+    <string name="title_open">Megnyitás</string>
+    <string name="title_restart">Lejátszás az elejéről</string>
+    <string name="resume_clear">Folytatási pont törlése</string>
+    <string name="mark_watched">Megjelölés látottként</string>
+    <string name="mark_unwatched">Megjelölés nem látottként</string>
+    <string name="mark_cancel">Mégse</string>
     <string name="series_back">Összes sorozat</string>
     <string name="series_no_match">Ehhez nincs találat.</string>
     <string name="series_specials">Különkiadások</string>
@@ -141,8 +151,6 @@
     <string name="event_mode">Kijező mód</string>
     <string name="event_audio">Hangsáv</string>
     <string name="event_subtitle">Feliratok</string>
-    <string name="event_cache_low">Lejátszó gyorsítótár alacsony</string>
-    <string name="event_cache_recovered">Lejátszó gyorsítótár visszaállt</string>
     <string name="event_temperature">Hőmérséklet</string>
     <string name="event_cpu">Processzor</string>
     <string name="event_fps">Képkockasebesség</string>

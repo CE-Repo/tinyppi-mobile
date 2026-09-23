@@ -108,8 +108,6 @@ private fun PlaybackEvent.describe(): String {
         isTransition -> state(to)
         eventKind == PlaybackEventKind.TEMPERATURE -> Formatters.celsius(value) ?: "–"
         eventKind == PlaybackEventKind.CPU -> Formatters.percent(value) ?: "–"
-        eventKind == PlaybackEventKind.CACHE_LOW -> Formatters.percent(value) ?: "–"
-        eventKind == PlaybackEventKind.CACHE_RECOVERED -> Formatters.percent(value) ?: "–"
         value != null -> Formatters.trimmed(value, 1)
         else -> "–"
     }
@@ -120,8 +118,6 @@ private fun PlaybackEventKind?.labelRes(): Int = when (this) {
     PlaybackEventKind.MODE -> R.string.event_mode
     PlaybackEventKind.AUDIO -> R.string.event_audio
     PlaybackEventKind.SUBTITLE -> R.string.event_subtitle
-    PlaybackEventKind.CACHE_LOW -> R.string.event_cache_low
-    PlaybackEventKind.CACHE_RECOVERED -> R.string.event_cache_recovered
     PlaybackEventKind.TEMPERATURE -> R.string.event_temperature
     PlaybackEventKind.CPU -> R.string.event_cpu
     PlaybackEventKind.FPS -> R.string.event_fps

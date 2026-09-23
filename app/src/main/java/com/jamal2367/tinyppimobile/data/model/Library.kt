@@ -76,9 +76,13 @@ data class LibraryFilm(
         }
 }
 
-/** What starting a film asks for: Kodi's own id, and nothing else. */
+/**
+ * What starting a film asks for: Kodi's own id, and - only when it is false -
+ * whether to resume it. Left out, the box resumes where the library holds a
+ * point to resume from; false starts it from the beginning.
+ */
 @Serializable
-data class PlayBody(val movieid: Int)
+data class PlayBody(val movieid: Int, val resume: Boolean? = null)
 
 /**
  * The series the box has, as the add-on's `/api/series` answers them.
@@ -185,9 +189,33 @@ data class LibraryEpisode(
         }
 }
 
-/** What starting an episode asks for: Kodi's own id, and nothing else. */
+/** What starting an episode asks for; see [PlayBody]. */
 @Serializable
-data class PlayEpisodeBody(val episodeid: Int)
+data class PlayEpisodeBody(val episodeid: Int, val resume: Boolean? = null)
+
+/**
+ * What forgetting where a film or an episode got to asks for: exactly one of
+ * the two ids. A series has no resume point of its own.
+ */
+@Serializable
+data class ResumeBody(val movieid: Int? = null, val episodeid: Int? = null)
+
+/**
+ * What marking a title as seen or unseen asks for: exactly one of the three
+ * ids, and which way.
+ *
+ * The ids left null are left out of the body altogether (the app's reader and
+ * writer drop nulls), so the box reads which kind of title it is from which id
+ * is there - the same way `/api/play` tells a film from an episode. A series
+ * marked either way is every episode of it.
+ */
+@Serializable
+data class WatchedBody(
+    val movieid: Int? = null,
+    val tvshowid: Int? = null,
+    val episodeid: Int? = null,
+    val watched: Boolean,
+)
 
 /**
  * The films and episodes the box was stopped in the middle of, as the add-on's
@@ -260,4 +288,16 @@ data class ContinueItem(
             if (season > 0) append("S%02d".format(season))
             if (episode >= 0) append("E%02d".format(episode))
         }
+}
+
+/**
+ * Something in the library that was pressed, to be marked seen or unseen:
+ * which kind of title it is, Kodi's id for it, and what the question names it.
+ */
+data class MarkTarget(
+    val kind: Kind,
+    val id: Int,
+    val title: String,
+) {
+    enum class Kind { MOVIE, SHOW, EPISODE }
 }

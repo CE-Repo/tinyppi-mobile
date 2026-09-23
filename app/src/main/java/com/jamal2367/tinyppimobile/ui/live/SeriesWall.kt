@@ -60,17 +60,19 @@ internal fun LazyListScope.seriesWall(
     expanded: Boolean,
     onToggle: () -> Unit,
     onOpen: (LibraryShow) -> Unit,
+    key: String = "series-wall",
+    title: @Composable (Int) -> String = { stringResource(R.string.series_all, it) },
 ) {
     shelfCard(
-        key = "series-wall",
+        key = key,
         gapAbove = gapAbove,
         expanded = expanded,
         onToggle = onToggle,
-        title = { stringResource(R.string.series_all, shows.size) },
+        title = { title(shows.size) },
         noMatch = { stringResource(R.string.series_no_match) },
         tiles = shows,
         columns = columns,
-        rowKey = { row -> "series-row-${row.first().id}" },
+        rowKey = { row -> "$key-row-${row.first().id}" },
     ) { show ->
         ShowTile(
             show = show,

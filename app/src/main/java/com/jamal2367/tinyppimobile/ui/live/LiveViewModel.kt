@@ -10,6 +10,7 @@ import com.jamal2367.tinyppimobile.data.model.ContinueItem
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
+import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
@@ -385,12 +386,12 @@ class LiveViewModel(
      * [LibraryUiState.starting] carries; a film that never starts gives the
      * wall back when the next read does (see the live screen).
      */
-    fun playFilm(film: LibraryFilm) {
+    fun playFilm(film: LibraryFilm, fromStart: Boolean = false) {
         if (_library.value.starting != null) return
         _library.value = _library.value.copy(starting = film.id)
         viewModelScope.launch {
             try {
-                repository.playFilm(film.id)
+                repository.playFilm(film.id, fromStart)
                 // Where the box got to in this film has just moved, so the
                 // list is worth reading again the next time nothing is on.
                 _library.value = _library.value.copy(read = false)
@@ -562,12 +563,12 @@ class LiveViewModel(
     }
 
     /** Put one episode of the open show on the television. */
-    fun playEpisode(episode: LibraryEpisode) {
+    fun playEpisode(episode: LibraryEpisode, fromStart: Boolean = false) {
         if (_series.value.starting != null) return
         _series.value = _series.value.copy(starting = episode.id)
         viewModelScope.launch {
             try {
-                repository.playEpisode(episode.id)
+                repository.playEpisode(episode.id, fromStart)
                 // What has been watched is about to move, on this episode and
                 // on the count its show's tile wears.
                 _series.value = _series.value.copy(read = false)
@@ -638,16 +639,16 @@ class LiveViewModel(
      * The same two calls the walls start things through; the box resumes it
      * because the library holds a point to resume from.
      */
-    fun playContinuing(item: ContinueItem) {
+    fun playContinuing(item: ContinueItem, fromStart: Boolean = false) {
         if (_continuing.value.starting != null) return
         _continuing.value = _continuing.value.copy(starting = item.key)
         viewModelScope.launch {
             try {
                 if (item.isEpisode) {
-                    repository.playEpisode(item.id)
+                    repository.playEpisode(item.id, fromStart)
                     _series.value = _series.value.copy(read = false)
                 } else {
-                    repository.playFilm(item.id)
+                    repository.playFilm(item.id, fromStart)
                     _library.value = _library.value.copy(read = false)
                 }
                 _continuing.value = _continuing.value.copy(read = false)
@@ -664,6 +665,48 @@ class LiveViewModel(
     fun continuingStarted() {
         if (_continuing.value.starting != null) {
             _continuing.value = _continuing.value.copy(starting = null)
+        }
+    }
+
+    /**
+     * Mark a film, a series or an episode as seen or unseen, as the dialog a
+     * press on it opens asked.
+     *
+     * Nothing is drawn from here: the box drops what it holds the moment it
+     * has written, and every list the shelves are drawn from is read again at
+     * once - the walls, the row, and the episodes of whichever show is open -
+     * so the tick that appears is the library's and not a guess of this app's.
+     * A failure is said out loud, because this one was asked for.
+     */
+    fun setWatched(target: MarkTarget, watched: Boolean) =
+        write { repository.setWatched(target, watched) }
+
+    /**
+     * Forget where a film or an episode got to, leaving it seen or unseen as
+     * it was: it leaves the continue-watching row, and its bar leaves the wall.
+     */
+    fun clearResume(target: MarkTarget) = write { repository.clearResume(target) }
+
+    /** One write to the library, and every shelf read again after it. */
+    private fun write(block: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                block()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Throwable) {
+                report(failure)
+                return@launch
+            }
+            _library.value = _library.value.copy(read = false)
+            _series.value = _series.value.copy(read = false)
+            _continuing.value = _continuing.value.copy(read = false)
+            // Read here rather than left to the screens that watch the marks:
+            // the screen showing the press may be one that is not watching
+            // every list the title stands on.
+            refreshLibrary()
+            refreshSeries()
+            refreshContinuing()
         }
     }
 
