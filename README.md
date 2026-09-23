@@ -223,6 +223,11 @@ written into Kodi's own library — a series marked either way is every episode
 of it — and every shelf is read again at once, so the tick and the unwatched
 cards show what the library now holds.
 
+A film or an episode that was stopped part-way through gets two more options:
+**Play from the beginning**, which starts it from the top instead of resuming,
+and **Clear resume point**, which forgets where it got to — taking it off
+Continue watching — while leaving it watched or unwatched as it was.
+
 **Pulling either shelf down** reads it again anyway. It is the answer when the
 box was off while the app was looking at it, or when its library was switched
 on in Kodi after the app had already been told there was none — a pull overrules
@@ -289,8 +294,9 @@ All of it.
 | `GET /api/continue` | The films and episodes left half-watched, for the row at the top of both shelves. |
 | `POST /api/mode` | The VS10 buttons. |
 | `POST /api/command` | Play/pause, stop, previous/next chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track. |
-| `POST /api/play` | Starting one of the library's films, or one episode of a series. |
+| `POST /api/play` | Starting one of the library's films, or one episode of a series — resumed, or from the beginning. |
 | `POST /api/watched` | Marking a film, a series or an episode as watched or unwatched. |
+| `POST /api/resume` | Clearing the resume point of a film or an episode. |
 
 The token travels as `X-TinyPPI-Token` on everything Retrofit sends, and as
 `?token=` on the event stream and the artwork — the two the add-on documents

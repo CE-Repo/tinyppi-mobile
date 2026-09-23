@@ -10,6 +10,7 @@ import com.jamal2367.tinyppimobile.data.model.Library
 import com.jamal2367.tinyppimobile.data.model.ModeBody
 import com.jamal2367.tinyppimobile.data.model.PlayBody
 import com.jamal2367.tinyppimobile.data.model.PlayEpisodeBody
+import com.jamal2367.tinyppimobile.data.model.ResumeBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
 import com.jamal2367.tinyppimobile.data.model.WatchedBody
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
@@ -62,8 +63,8 @@ class PlayerRepository(
      * resume from; nothing here decides that, because the point is the
      * library's and Kodi's own window would do the same.
      */
-    suspend fun playFilm(movieId: Int) {
-        call { api.play(PlayBody(movieId)) }
+    suspend fun playFilm(movieId: Int, fromStart: Boolean = false) {
+        call { api.play(PlayBody(movieId, resume = false.takeIf { fromStart })) }
     }
 
     /**
@@ -72,8 +73,8 @@ class PlayerRepository(
      * Resumed by the box where the library holds a point to resume from, the
      * same as a film.
      */
-    suspend fun playEpisode(episodeId: Int) {
-        call { api.playEpisode(PlayEpisodeBody(episodeId)) }
+    suspend fun playEpisode(episodeId: Int, fromStart: Boolean = false) {
+        call { api.playEpisode(PlayEpisodeBody(episodeId, resume = false.takeIf { fromStart })) }
     }
 
     /**
@@ -89,6 +90,16 @@ class PlayerRepository(
             MarkTarget.Kind.EPISODE -> WatchedBody(episodeid = target.id, watched = watched)
         }
         call { api.setWatched(body) }
+    }
+
+    /** Forget where a film or an episode got to; a series has no such point. */
+    suspend fun clearResume(target: MarkTarget) {
+        val body = when (target.kind) {
+            MarkTarget.Kind.MOVIE -> ResumeBody(movieid = target.id)
+            MarkTarget.Kind.EPISODE -> ResumeBody(episodeid = target.id)
+            MarkTarget.Kind.SHOW -> return
+        }
+        call { api.clearResume(body) }
     }
 
     /**

@@ -10,6 +10,7 @@ import com.jamal2367.tinyppimobile.data.model.Library
 import com.jamal2367.tinyppimobile.data.model.ModeBody
 import com.jamal2367.tinyppimobile.data.model.PlayBody
 import com.jamal2367.tinyppimobile.data.model.PlayEpisodeBody
+import com.jamal2367.tinyppimobile.data.model.ResumeBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
 import com.jamal2367.tinyppimobile.data.model.WatchedBody
 import com.jamal2367.tinyppimobile.data.remote.TinyPpiApi
@@ -33,6 +34,9 @@ class FakeApi : TinyPpiApi {
     var continuing: suspend () -> ContinueList = { ContinueList() }
     var command: suspend (CommandBody) -> CommandAck = { CommandAck(ok = true, action = it.action) }
     var play: suspend (Int) -> CommandAck = { CommandAck(ok = true) }
+    /** Every film start as it was sent, resume flag and all. */
+    val plays = mutableListOf<PlayBody>()
+    var clearResume: suspend (ResumeBody) -> CommandAck = { CommandAck(ok = true) }
     var playEpisode: suspend (Int) -> CommandAck = { CommandAck(ok = true) }
     var setWatched: suspend (WatchedBody) -> CommandAck = { CommandAck(ok = true) }
 
@@ -87,12 +91,18 @@ class FakeApi : TinyPpiApi {
 
     override suspend fun play(body: PlayBody): CommandAck {
         calls += "play"
+        plays += body
         return play.invoke(body.movieid)
     }
 
     override suspend fun playEpisode(body: PlayEpisodeBody): CommandAck {
         calls += "playEpisode"
         return playEpisode.invoke(body.episodeid)
+    }
+
+    override suspend fun clearResume(body: ResumeBody): CommandAck {
+        calls += "clearResume"
+        return clearResume.invoke(body)
     }
 
     override suspend fun setWatched(body: WatchedBody): CommandAck {

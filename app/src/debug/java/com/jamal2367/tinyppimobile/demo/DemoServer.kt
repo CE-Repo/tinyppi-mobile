@@ -162,6 +162,13 @@ object DemoServer {
 
     private fun filmWatched(film: Film) = marked[film.id] ?: film.watched
 
+    /** Films whose resume point has been forgotten from the app. */
+    private val cleared: MutableSet<Int> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
+    /** Whether a film still stands on the continue-watching row. */
+    private val Film.resumesAt: Boolean
+        get() = resumeMinutes > 0 && id !in cleared && !filmWatched(this)
+
     private fun episodeWatched(show: Show, season: Int, episode: Int, n: Int) =
         marked[episodeId(show, season, episode)] ?: (n <= show.seenUpTo)
 
@@ -389,7 +396,7 @@ object DemoServer {
                     put("id", f.id); put("title", f.title); put("year", f.year)
                     put("poster", "movie-${f.id}"); put("duration", f.minutes * 60)
                     put("rating", f.rating); put("rating_from", "imdb")
-                    put("watched", filmWatched(f)); put("resume", if (filmWatched(f)) 0 else f.resumeMinutes * 60)
+                    put("watched", filmWatched(f)); put("resume", if (filmWatched(f) || f.id in cleared) 0 else f.resumeMinutes * 60)
                 })
             }
         }
@@ -442,7 +449,7 @@ object DemoServer {
 
     private fun continuing() = buildJsonObject {
         putJsonArray("items") {
-            films.filter { it.resumeMinutes > 0 }.forEachIndexed { i, f ->
+            films.filter { it.resumesAt }.forEachIndexed { i, f ->
                 add(buildJsonObject {
                     put("kind", "movie"); put("id", f.id); put("title", f.title); put("year", f.year)
                     put("poster", "movie-${f.id}"); put("duration", f.minutes * 60); put("resume", f.resumeMinutes * 60)
@@ -465,7 +472,7 @@ object DemoServer {
         }
         put(
             "count",
-            films.count { it.resumeMinutes > 0 } +
+            films.count { it.resumesAt } +
                 shows.count { it.seenUpTo in 1 until it.seasons * it.perSeason }.coerceAtMost(6),
         )
         put("tag", "demo-$libraryRevision")
@@ -476,12 +483,14 @@ object DemoServer {
     private fun command(path: String, body: String): JsonObject = synchronized(lock) {
         tick()
         val payload = runCatching { json.parseToJsonElement(body).jsonObject }.getOrNull() ?: JsonObject(emptyMap())
+        val fromStart = payload["resume"]?.jsonPrimitive?.content == "false"
         when (path) {
             "/api/play" -> {
                 payload["movieid"]?.jsonPrimitive?.int?.let { id -> films.firstOrNull { it.id == id } }?.let { f ->
                     playingTitle = f.title; playingTag = "movie-${f.id}"; playingYear = f.year; playingGenre = f.genre
                     playingShow = ""; playingSeason = ""; playingEpisode = ""
-                    durationSeconds = f.minutes * 60; positionSeconds = f.resumeMinutes * 60.0
+                    durationSeconds = f.minutes * 60
+                    positionSeconds = if (fromStart || filmWatched(f)) 0.0 else f.resumeMinutes * 60.0
                 }
                 payload["episodeid"]?.jsonPrimitive?.int?.let { id ->
                     val show = showOfEpisode(id) ?: return@let
@@ -501,6 +510,13 @@ object DemoServer {
                     for (season in 1..show.seasons) for (episode in 1..show.perSeason) {
                         marked[episodeId(show, season, episode)] = watched
                     }
+                }
+                libraryRevision++
+            }
+            "/api/resume" -> {
+                // Where the film got to is forgotten; its tick is left alone.
+                payload["movieid"]?.jsonPrimitive?.int?.let { id ->
+                    films.firstOrNull { it.id == id }?.let { cleared += it.id }
                 }
                 libraryRevision++
             }

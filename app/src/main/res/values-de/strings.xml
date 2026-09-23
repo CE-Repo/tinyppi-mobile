@@ -55,6 +55,8 @@
     <string name="title_play">Abspielen</string>
     <string name="title_resume">Fortsetzen</string>
     <string name="title_open">Öffnen</string>
+    <string name="title_restart">Von vorne abspielen</string>
+    <string name="resume_clear">Fortsetzungspunkt entfernen</string>
     <string name="mark_watched">Als gesehen markieren</string>
     <string name="mark_unwatched">Als ungesehen markieren</string>
     <string name="mark_cancel">Abbrechen</string>

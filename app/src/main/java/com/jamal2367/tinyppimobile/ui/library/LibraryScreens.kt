@@ -135,13 +135,14 @@ fun FilmsScreen(
     val wallOpen = folds.isExpanded(FOLD_FILMS)
     val unseenOpen = folds.isExpanded(FOLD_FILMS_UNSEEN)
     var asking by remember { mutableStateOf<TitleQuestion?>(null) }
-    TitleAsker(asking, onDone = { asking = null }, onMark = viewModel::setWatched)
+    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume)
     // A press on a film asks first; playing it is the first answer.
     val askFilm: (LibraryFilm) -> Unit = { film ->
         asking = TitleQuestion(
             film.markTarget(),
             if (film.resume > 0) R.string.title_resume else R.string.title_play,
-        ) { viewModel.playFilm(film) }
+            resumable = film.resume > 0,
+        ) { fromStart -> viewModel.playFilm(film, fromStart) }
     }
 
     Shelf(
@@ -175,9 +176,11 @@ fun FilmsScreen(
                 expanded = continueOpen,
                 onToggle = { folds.setExpanded(FOLD_FILMS_CONTINUE, !continueOpen) },
                 onPlay = { item ->
-                    asking = TitleQuestion(item.markTarget(), R.string.title_resume) {
-                        viewModel.playContinuing(item)
-                    }
+                    asking = TitleQuestion(
+                        item.markTarget(),
+                        R.string.title_resume,
+                        resumable = true,
+                    ) { fromStart -> viewModel.playContinuing(item, fromStart) }
                 },
             )
         }
@@ -258,7 +261,7 @@ fun SeriesScreen(
     val unseenOpen = folds.isExpanded(FOLD_SERIES_UNSEEN)
     val open = series.open
     var asking by remember { mutableStateOf<TitleQuestion?>(null) }
-    TitleAsker(asking, onDone = { asking = null }, onMark = viewModel::setWatched)
+    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume)
     // A series cannot be played, so its first answer opens it.
     val askShow: (LibraryShow) -> Unit = { show ->
         asking = TitleQuestion(show.markTarget(), R.string.title_open) { viewModel.openShow(show) }
@@ -267,7 +270,8 @@ fun SeriesScreen(
         asking = TitleQuestion(
             episode.markTarget(),
             if (episode.resume > 0) R.string.title_resume else R.string.title_play,
-        ) { viewModel.playEpisode(episode) }
+            resumable = episode.resume > 0,
+        ) { fromStart -> viewModel.playEpisode(episode, fromStart) }
     }
 
     // The way out of a show is the way back, and on this screen the system's
@@ -329,9 +333,11 @@ fun SeriesScreen(
                 expanded = continueOpen,
                 onToggle = { folds.setExpanded(FOLD_SERIES_CONTINUE, !continueOpen) },
                 onPlay = { item ->
-                    asking = TitleQuestion(item.markTarget(), R.string.title_resume) {
-                        viewModel.playContinuing(item)
-                    }
+                    asking = TitleQuestion(
+                        item.markTarget(),
+                        R.string.title_resume,
+                        resumable = true,
+                    ) { fromStart -> viewModel.playContinuing(item, fromStart) }
                 },
             )
         }
@@ -377,18 +383,23 @@ private fun TitleAsker(
     question: TitleQuestion?,
     onDone: () -> Unit,
     onMark: (MarkTarget, Boolean) -> Unit,
+    onClearResume: (MarkTarget) -> Unit,
 ) {
     val asked = question ?: return
     TitleDialog(
         question = asked,
         onDismiss = onDone,
-        onPlay = {
+        onPlay = { fromStart ->
             onDone()
-            asked.onPlay()
+            asked.onPlay(fromStart)
         },
         onMark = { watched ->
             onDone()
             onMark(asked.target, watched)
+        },
+        onClearResume = {
+            onDone()
+            onClearResume(asked.target)
         },
     )
 }

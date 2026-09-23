@@ -76,9 +76,13 @@ data class LibraryFilm(
         }
 }
 
-/** What starting a film asks for: Kodi's own id, and nothing else. */
+/**
+ * What starting a film asks for: Kodi's own id, and - only when it is false -
+ * whether to resume it. Left out, the box resumes where the library holds a
+ * point to resume from; false starts it from the beginning.
+ */
 @Serializable
-data class PlayBody(val movieid: Int)
+data class PlayBody(val movieid: Int, val resume: Boolean? = null)
 
 /**
  * The series the box has, as the add-on's `/api/series` answers them.
@@ -185,9 +189,16 @@ data class LibraryEpisode(
         }
 }
 
-/** What starting an episode asks for: Kodi's own id, and nothing else. */
+/** What starting an episode asks for; see [PlayBody]. */
 @Serializable
-data class PlayEpisodeBody(val episodeid: Int)
+data class PlayEpisodeBody(val episodeid: Int, val resume: Boolean? = null)
+
+/**
+ * What forgetting where a film or an episode got to asks for: exactly one of
+ * the two ids. A series has no resume point of its own.
+ */
+@Serializable
+data class ResumeBody(val movieid: Int? = null, val episodeid: Int? = null)
 
 /**
  * What marking a title as seen or unseen asks for: exactly one of the three

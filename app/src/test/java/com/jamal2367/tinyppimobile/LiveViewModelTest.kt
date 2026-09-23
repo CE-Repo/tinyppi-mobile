@@ -9,6 +9,8 @@ import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
+import com.jamal2367.tinyppimobile.data.model.PlayBody
+import com.jamal2367.tinyppimobile.data.model.ResumeBody
 import com.jamal2367.tinyppimobile.data.model.WatchedBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
 import com.jamal2367.tinyppimobile.data.model.Snapshot
@@ -380,5 +382,35 @@ class LiveViewModelTest {
 
         assertEquals("failed: 400", vm.message.value)
         assertEquals(0, api.count("library"))
+    }
+
+    @Test
+    fun `a film asked for from the beginning says so, and only then`() = runTest(dispatcher) {
+        val vm = viewModel()
+        vm.playFilm(heat)
+        advanceUntilIdle()
+        vm.filmStarted()
+        vm.playFilm(heat, fromStart = true)
+        advanceUntilIdle()
+
+        assertEquals(listOf(PlayBody(heat.id), PlayBody(heat.id, resume = false)), api.plays)
+        assertEquals(
+            """{"movieid":2}""",
+            FakeApi.json.encodeToString(PlayBody.serializer(), api.plays.first()),
+        )
+    }
+
+    @Test
+    fun `clearing a resume point names the episode and reads the shelves again`() = runTest(dispatcher) {
+        val vm = viewModel()
+        var sent: ResumeBody? = null
+        api.clearResume = { body -> sent = body; CommandAck(ok = true) }
+
+        vm.clearResume(MarkTarget(MarkTarget.Kind.EPISODE, 9, "S01E02"))
+        advanceUntilIdle()
+
+        assertEquals(ResumeBody(episodeid = 9), sent)
+        assertEquals(1, api.count("continuing"))
+        assertNull(vm.message.value)
     }
 }

@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Replay
+import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -38,12 +40,16 @@ import com.jamal2367.tinyppimobile.data.model.MarkTarget
  *
  * [play] names that answer - Play, Resume, or Open for a series, which is not
  * something that can be put on - and [onPlay] is what the press used to do by
- * itself before it asked.
+ * itself before it asked, told whether to start from the beginning instead.
+ *
+ * [resumable] is a film or an episode the box has a point to resume from: it
+ * is offered from the beginning as well, and the point can be forgotten.
  */
 internal class TitleQuestion(
     val target: MarkTarget,
     @StringRes val play: Int,
-    val onPlay: () -> Unit,
+    val resumable: Boolean = false,
+    val onPlay: (fromStart: Boolean) -> Unit,
 )
 
 /**
@@ -60,8 +66,9 @@ internal class TitleQuestion(
 internal fun TitleDialog(
     question: TitleQuestion,
     onDismiss: () -> Unit,
-    onPlay: () -> Unit,
+    onPlay: (fromStart: Boolean) -> Unit,
     onMark: (watched: Boolean) -> Unit,
+    onClearResume: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -81,8 +88,15 @@ internal fun TitleDialog(
                         Icons.Rounded.PlayArrow
                     },
                     label = stringResource(question.play),
-                    onClick = onPlay,
+                    onClick = { onPlay(false) },
                 )
+                if (question.resumable) {
+                    TitleOption(
+                        icon = Icons.Rounded.Replay,
+                        label = stringResource(R.string.title_restart),
+                        onClick = { onPlay(true) },
+                    )
+                }
                 TitleOption(
                     icon = Icons.Rounded.Visibility,
                     label = stringResource(R.string.mark_watched),
@@ -93,6 +107,13 @@ internal fun TitleDialog(
                     label = stringResource(R.string.mark_unwatched),
                     onClick = { onMark(false) },
                 )
+                if (question.resumable) {
+                    TitleOption(
+                        icon = Icons.Rounded.RestartAlt,
+                        label = stringResource(R.string.resume_clear),
+                        onClick = onClearResume,
+                    )
+                }
             }
         },
         confirmButton = {},

@@ -58,6 +58,8 @@
     <string name="title_play">Lejátszás</string>
     <string name="title_resume">Folytatás</string>
     <string name="title_open">Megnyitás</string>
+    <string name="title_restart">Lejátszás az elejéről</string>
+    <string name="resume_clear">Folytatási pont törlése</string>
     <string name="mark_watched">Megjelölés látottként</string>
     <string name="mark_unwatched">Megjelölés nem látottként</string>
     <string name="mark_cancel">Mégse</string>

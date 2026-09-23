@@ -10,6 +10,7 @@ import com.jamal2367.tinyppimobile.data.model.Library
 import com.jamal2367.tinyppimobile.data.model.ModeBody
 import com.jamal2367.tinyppimobile.data.model.PlayBody
 import com.jamal2367.tinyppimobile.data.model.PlayEpisodeBody
+import com.jamal2367.tinyppimobile.data.model.ResumeBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
 import com.jamal2367.tinyppimobile.data.model.WatchedBody
 import kotlinx.serialization.json.JsonObject
@@ -131,4 +132,11 @@ interface TinyPpiApi {
      */
     @POST("api/watched")
     suspend fun setWatched(@Body body: WatchedBody): CommandAck
+
+    /**
+     * Forget where a film or an episode got to, leaving it seen or unseen as
+     * it was.
+     */
+    @POST("api/resume")
+    suspend fun clearResume(@Body body: ResumeBody): CommandAck
 }
