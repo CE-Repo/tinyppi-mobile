@@ -109,16 +109,6 @@ import com.jamal2367.tinyppimobile.ui.components.ScreenTitle
 /* --- Continue watching -------------------------------------------------- */
 
 /**
- * How many items of the list [continueCard] takes: its heading, and when it is
- * open the row and the foot under it. Kept beside it so the two cannot drift.
- */
-internal fun continueCardItems(items: List<ContinueItem>, expanded: Boolean): Int = when {
-    items.isEmpty() -> 0
-    expanded -> 3
-    else -> 1
-}
-
-/**
  * The titles the box was stopped in the middle of, the last one seen first,
  * as a card of their own at the very top of a shelf: the quickest way back
  * into whatever was on.
