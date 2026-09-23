@@ -55,7 +55,9 @@
     <string name="series_all">Összes sorozat · %1$d</string>
     <string name="library_unseen">Nem látott filmek · %1$d</string>
     <string name="series_unseen_all">Nem látott sorozatok · %1$d</string>
-    <string name="mark_title">Megjelölés látottként vagy nem látottként</string>
+    <string name="title_play">Lejátszás</string>
+    <string name="title_resume">Folytatás</string>
+    <string name="title_open">Megnyitás</string>
     <string name="mark_watched">Megjelölés látottként</string>
     <string name="mark_unwatched">Megjelölés nem látottként</string>
     <string name="mark_cancel">Mégse</string>

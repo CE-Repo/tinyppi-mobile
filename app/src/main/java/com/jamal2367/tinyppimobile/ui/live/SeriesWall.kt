@@ -60,7 +60,6 @@ internal fun LazyListScope.seriesWall(
     expanded: Boolean,
     onToggle: () -> Unit,
     onOpen: (LibraryShow) -> Unit,
-    onMark: (LibraryShow) -> Unit,
     key: String = "series-wall",
     title: @Composable (Int) -> String = { stringResource(R.string.series_all, it) },
 ) {
@@ -84,7 +83,6 @@ internal fun LazyListScope.seriesWall(
             // the screen.
             enabled = opening == null,
             onOpen = { onOpen(show) },
-            onMark = { onMark(show) },
             modifier = Modifier.weight(1f),
         )
     }
@@ -105,11 +103,10 @@ private fun ShowTile(
     opening: Boolean,
     enabled: Boolean,
     onOpen: () -> Unit,
-    onMark: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.markable(enabled = enabled, onClick = onOpen, onHold = onMark),
+        modifier = modifier.clickable(enabled = enabled, onClick = onOpen),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         ArtFrame(
@@ -162,7 +159,6 @@ internal fun LazyListScope.episodeList(
     onBack: () -> Unit,
     onSeason: (Int) -> Unit,
     onPlay: (LibraryEpisode) -> Unit,
-    onMark: (LibraryEpisode) -> Unit,
 ) {
     item(key = "episode-heading") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -226,7 +222,6 @@ internal fun LazyListScope.episodeList(
                     starting = starting == episode.id,
                     enabled = starting == null,
                     onPlay = { onPlay(episode) },
-                    onMark = { onMark(episode) },
                 )
             }
         }
@@ -345,12 +340,11 @@ private fun EpisodeRow(
     starting: Boolean,
     enabled: Boolean,
     onPlay: () -> Unit,
-    onMark: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .markable(enabled = enabled, onClick = onPlay, onHold = onMark),
+            .clickable(enabled = enabled, onClick = onPlay),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

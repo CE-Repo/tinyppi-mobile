@@ -215,11 +215,13 @@ episode still waiting. Same tiles, same search, same tap; it folds and is
 remembered like the others, and is not there at all once everything has been
 seen.
 
-**Holding a finger on** a film, a series, an episode or a Continue watching
-tile opens a dialog asking whether the box should count it as **watched** or
-**unwatched**. The answer is written into Kodi's own library — a series marked
-either way is every episode of it — and every shelf is read again at once, so
-the tick and the unwatched cards show what the library now holds.
+**A tap on** a film, a series, an episode or a Continue watching tile opens a
+dialog with three options: **Play** (**Resume** where the box has a point to
+resume from), **Mark as watched** and **Mark as unwatched**. A series cannot be
+played, so its first option is **Open**, which shows its episodes. Marking is
+written into Kodi's own library — a series marked either way is every episode
+of it — and every shelf is read again at once, so the tick and the unwatched
+cards show what the library now holds.
 
 **Pulling either shelf down** reads it again anyway. It is the answer when the
 box was off while the app was looking at it, or when its library was switched

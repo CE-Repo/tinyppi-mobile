@@ -52,7 +52,9 @@
     <string name="series_all">Alle Serien · %1$d</string>
     <string name="library_unseen">Ungesehene Filme · %1$d</string>
     <string name="series_unseen_all">Ungesehene Serien · %1$d</string>
-    <string name="mark_title">Als gesehen oder ungesehen markieren</string>
+    <string name="title_play">Abspielen</string>
+    <string name="title_resume">Fortsetzen</string>
+    <string name="title_open">Öffnen</string>
     <string name="mark_watched">Als gesehen markieren</string>
     <string name="mark_unwatched">Als ungesehen markieren</string>
     <string name="mark_cancel">Abbrechen</string>

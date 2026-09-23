@@ -670,7 +670,7 @@ class LiveViewModel(
 
     /**
      * Mark a film, a series or an episode as seen or unseen, as the dialog a
-     * held finger opens asked.
+     * press on it opens asked.
      *
      * Nothing is drawn from here: the box drops what it holds the moment it
      * has written, and every list the shelves are drawn from is read again at

@@ -280,7 +280,7 @@ data class ContinueItem(
 }
 
 /**
- * Something in the library a finger was held on, to be marked seen or unseen:
+ * Something in the library that was pressed, to be marked seen or unseen:
  * which kind of title it is, Kodi's id for it, and what the question names it.
  */
 data class MarkTarget(

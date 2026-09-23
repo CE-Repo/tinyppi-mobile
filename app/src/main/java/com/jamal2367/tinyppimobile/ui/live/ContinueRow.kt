@@ -5,6 +5,7 @@
 
 package com.jamal2367.tinyppimobile.ui.live
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,7 +50,6 @@ internal fun LazyListScope.continueCard(
     expanded: Boolean,
     onToggle: () -> Unit,
     onPlay: (ContinueItem) -> Unit,
-    onMark: (ContinueItem) -> Unit,
 ) {
     if (items.isEmpty()) return
 
@@ -77,7 +77,6 @@ internal fun LazyListScope.continueCard(
                         // One press at a time, for the reason the wall gives.
                         enabled = starting == null,
                         onPlay = { onPlay(item) },
-                        onMark = { onMark(item) },
                         modifier = Modifier.width(width),
                     )
                 }
@@ -102,11 +101,10 @@ private fun ContinueTile(
     starting: Boolean,
     enabled: Boolean,
     onPlay: () -> Unit,
-    onMark: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.markable(enabled = enabled, onClick = onPlay, onHold = onMark),
+        modifier = modifier.clickable(enabled = enabled, onClick = onPlay),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         ArtFrame(

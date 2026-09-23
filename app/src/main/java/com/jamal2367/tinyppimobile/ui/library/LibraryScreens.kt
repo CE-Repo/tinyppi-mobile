@@ -46,8 +46,11 @@ import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.live.ContinueUiState
 import com.jamal2367.tinyppimobile.ui.live.FILM_START_TIMEOUT_MS
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
-import com.jamal2367.tinyppimobile.ui.live.MarkWatchedDialog
+import com.jamal2367.tinyppimobile.ui.live.TitleDialog
+import com.jamal2367.tinyppimobile.ui.live.TitleQuestion
 import com.jamal2367.tinyppimobile.ui.live.markTarget
+import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
+import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.ui.live.continueCard
@@ -131,8 +134,15 @@ fun FilmsScreen(
     val continueOpen = folds.isExpanded(FOLD_FILMS_CONTINUE)
     val wallOpen = folds.isExpanded(FOLD_FILMS)
     val unseenOpen = folds.isExpanded(FOLD_FILMS_UNSEEN)
-    var marking by remember { mutableStateOf<MarkTarget?>(null) }
-    MarkReader(marking, onDone = { marking = null }, onMark = viewModel::setWatched)
+    var asking by remember { mutableStateOf<TitleQuestion?>(null) }
+    TitleAsker(asking, onDone = { asking = null }, onMark = viewModel::setWatched)
+    // A press on a film asks first; playing it is the first answer.
+    val askFilm: (LibraryFilm) -> Unit = { film ->
+        asking = TitleQuestion(
+            film.markTarget(),
+            if (film.resume > 0) R.string.title_resume else R.string.title_play,
+        ) { viewModel.playFilm(film) }
+    }
 
     Shelf(
         configured = state.isConfigured,
@@ -164,8 +174,11 @@ fun FilmsScreen(
                 starting = continuing.starting,
                 expanded = continueOpen,
                 onToggle = { folds.setExpanded(FOLD_FILMS_CONTINUE, !continueOpen) },
-                onPlay = viewModel::playContinuing,
-                onMark = { marking = it.markTarget() },
+                onPlay = { item ->
+                    asking = TitleQuestion(item.markTarget(), R.string.title_resume) {
+                        viewModel.playContinuing(item)
+                    }
+                },
             )
         }
         filmWall(
@@ -177,8 +190,7 @@ fun FilmsScreen(
             gapAbove = resuming,
             expanded = wallOpen,
             onToggle = { folds.setExpanded(FOLD_FILMS, !wallOpen) },
-            onPlay = viewModel::playFilm,
-            onMark = { marking = it.markTarget() },
+            onPlay = askFilm,
         )
         if (waiting) {
             filmWall(
@@ -192,8 +204,7 @@ fun FilmsScreen(
                 gapAbove = true,
                 expanded = unseenOpen,
                 onToggle = { folds.setExpanded(FOLD_FILMS_UNSEEN, !unseenOpen) },
-                onPlay = viewModel::playFilm,
-                onMark = { marking = it.markTarget() },
+                onPlay = askFilm,
             )
         }
     }
@@ -246,8 +257,18 @@ fun SeriesScreen(
     val wallOpen = folds.isExpanded(FOLD_SERIES)
     val unseenOpen = folds.isExpanded(FOLD_SERIES_UNSEEN)
     val open = series.open
-    var marking by remember { mutableStateOf<MarkTarget?>(null) }
-    MarkReader(marking, onDone = { marking = null }, onMark = viewModel::setWatched)
+    var asking by remember { mutableStateOf<TitleQuestion?>(null) }
+    TitleAsker(asking, onDone = { asking = null }, onMark = viewModel::setWatched)
+    // A series cannot be played, so its first answer opens it.
+    val askShow: (LibraryShow) -> Unit = { show ->
+        asking = TitleQuestion(show.markTarget(), R.string.title_open) { viewModel.openShow(show) }
+    }
+    val askEpisode: (LibraryEpisode) -> Unit = { episode ->
+        asking = TitleQuestion(
+            episode.markTarget(),
+            if (episode.resume > 0) R.string.title_resume else R.string.title_play,
+        ) { viewModel.playEpisode(episode) }
+    }
 
     // The way out of a show is the way back, and on this screen the system's
     // own back gesture is the one nearest a thumb. Without this it would leave
@@ -284,8 +305,7 @@ fun SeriesScreen(
                 openSeasons = series.openSeasons,
                 onBack = viewModel::closeShow,
                 onSeason = viewModel::toggleSeason,
-                onPlay = viewModel::playEpisode,
-                onMark = { marking = it.markTarget() },
+                onPlay = askEpisode,
             )
             return@Shelf
         }
@@ -308,8 +328,11 @@ fun SeriesScreen(
                 starting = continuing.starting,
                 expanded = continueOpen,
                 onToggle = { folds.setExpanded(FOLD_SERIES_CONTINUE, !continueOpen) },
-                onPlay = viewModel::playContinuing,
-                onMark = { marking = it.markTarget() },
+                onPlay = { item ->
+                    asking = TitleQuestion(item.markTarget(), R.string.title_resume) {
+                        viewModel.playContinuing(item)
+                    }
+                },
             )
         }
         seriesWall(
@@ -321,8 +344,7 @@ fun SeriesScreen(
             gapAbove = resuming,
             expanded = wallOpen,
             onToggle = { folds.setExpanded(FOLD_SERIES, !wallOpen) },
-            onOpen = viewModel::openShow,
-            onMark = { marking = it.markTarget() },
+            onOpen = askShow,
         )
         if (waiting) {
             seriesWall(
@@ -336,33 +358,37 @@ fun SeriesScreen(
                 gapAbove = true,
                 expanded = unseenOpen,
                 onToggle = { folds.setExpanded(FOLD_SERIES_UNSEEN, !unseenOpen) },
-                onOpen = viewModel::openShow,
-                onMark = { marking = it.markTarget() },
+                onOpen = askShow,
             )
         }
     }
 }
 
 /**
- * The seen-or-unseen question, while a held finger has one open.
+ * The question a press on a title asks, while one is open: play it (open it,
+ * for a series), or count it as seen or as unseen.
  *
  * Held by the screen rather than by the view model: it is a question on the
  * screen in front of somebody, and one left open when they switch tabs is a
  * question about a title they are no longer looking at.
  */
 @Composable
-private fun MarkReader(
-    target: MarkTarget?,
+private fun TitleAsker(
+    question: TitleQuestion?,
     onDone: () -> Unit,
     onMark: (MarkTarget, Boolean) -> Unit,
 ) {
-    val asked = target ?: return
-    MarkWatchedDialog(
-        target = asked,
+    val asked = question ?: return
+    TitleDialog(
+        question = asked,
         onDismiss = onDone,
+        onPlay = {
+            onDone()
+            asked.onPlay()
+        },
         onMark = { watched ->
             onDone()
-            onMark(asked, watched)
+            onMark(asked.target, watched)
         },
     )
 }
