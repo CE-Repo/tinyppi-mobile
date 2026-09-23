@@ -6,6 +6,7 @@
 package com.jamal2367.tinyppimobile.ui.live
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -450,8 +451,8 @@ internal fun LazyListScope.shelfTop(
 }
 
 /**
- * The box a shelf is narrowed down with: a filled pill with a magnifier in
- * it, the shape the rest of the app's controls are cut in.
+ * The box a shelf is narrowed down with: a pill with a magnifier in it, in
+ * the colour of the cards under it.
  *
  * The cross empties it, and only while there is something to empty: over a
  * field nobody has typed in it is a control that does nothing. It puts the
@@ -469,7 +470,10 @@ private fun WallSearch(
 ) {
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
-    val fill = MaterialTheme.colorScheme.surfaceContainerHigh
+    // The cards' own ground and hairline, so the box reads as one more piece
+    // of the same screen rather than a control laid on top of it.
+    val fill = MaterialTheme.colorScheme.surfaceContainerLow
+    val line = MaterialTheme.colorScheme.surfaceContainerHigh
 
     TextField(
         value = search,
@@ -517,7 +521,9 @@ private fun WallSearch(
         keyboardActions = KeyboardActions(
             onSearch = { dismissSearch(focus, keyboard) },
         ),
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .border(1.dp, line, PillShape),
     )
 }
 
