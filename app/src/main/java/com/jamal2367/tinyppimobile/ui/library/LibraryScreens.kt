@@ -124,9 +124,9 @@ fun FilmsScreen(
     var search by rememberSaveable { mutableStateOf("") }
     val shown = remember(library.films, search) { matching(library.films, search) }
     val resumable = remember(continuing.items) { continuing.items.filterNot { it.isEpisode } }
-    // What has not been seen yet, as a wall of its own under the wall of
-    // everything: whether there is one at all is the library's answer, and
-    // which of it is shown is the search's.
+    // What has not been seen yet, as a wall of its own under the
+    // continue-watching row: whether there is one at all is the library's
+    // answer, and which of it is shown is the search's.
     val waiting = remember(library.films) { library.films.any { !it.watched } }
     val unseen = remember(shown) { shown.filterNot { it.watched } }
     val columns = filmColumns()
@@ -184,17 +184,8 @@ fun FilmsScreen(
                 },
             )
         }
-        filmWall(
-            films = shown,
-            columns = columns,
-            server = state.live.server,
-            showArtwork = state.settings.showArtwork,
-            starting = library.starting,
-            gapAbove = resuming,
-            expanded = wallOpen,
-            onToggle = { folds.setExpanded(FOLD_FILMS, !wallOpen) },
-            onPlay = askFilm,
-        )
+        // What is still waiting to be watched, straight under what was left
+        // half-watched; the wall of everything comes after both.
         if (waiting) {
             filmWall(
                 films = unseen,
@@ -204,12 +195,23 @@ fun FilmsScreen(
                 server = state.live.server,
                 showArtwork = state.settings.showArtwork,
                 starting = library.starting,
-                gapAbove = true,
+                gapAbove = resuming,
                 expanded = unseenOpen,
                 onToggle = { folds.setExpanded(FOLD_FILMS_UNSEEN, !unseenOpen) },
                 onPlay = askFilm,
             )
         }
+        filmWall(
+            films = shown,
+            columns = columns,
+            server = state.live.server,
+            showArtwork = state.settings.showArtwork,
+            starting = library.starting,
+            gapAbove = resuming || waiting,
+            expanded = wallOpen,
+            onToggle = { folds.setExpanded(FOLD_FILMS, !wallOpen) },
+            onPlay = askFilm,
+        )
     }
 }
 
@@ -251,7 +253,7 @@ fun SeriesScreen(
         matching(series.shows, search, { it.title }, { it.year })
     }
     val resumable = remember(continuing.items) { continuing.items.filter { it.isEpisode } }
-    // The shows with an episode still waiting, under the wall of all of them.
+    // The shows with an episode still waiting, under the continue-watching row.
     val waiting = remember(series.shows) { series.shows.any { it.isWaiting } }
     val unseen = remember(shown) { shown.filter { it.isWaiting } }
     val columns = filmColumns()
@@ -341,17 +343,8 @@ fun SeriesScreen(
                 },
             )
         }
-        seriesWall(
-            shows = shown,
-            columns = columns,
-            server = state.live.server,
-            showArtwork = state.settings.showArtwork,
-            opening = series.opening,
-            gapAbove = resuming,
-            expanded = wallOpen,
-            onToggle = { folds.setExpanded(FOLD_SERIES, !wallOpen) },
-            onOpen = askShow,
-        )
+        // What is still waiting to be watched, straight under what was left
+        // half-watched; the wall of everything comes after both.
         if (waiting) {
             seriesWall(
                 shows = unseen,
@@ -361,12 +354,23 @@ fun SeriesScreen(
                 server = state.live.server,
                 showArtwork = state.settings.showArtwork,
                 opening = series.opening,
-                gapAbove = true,
+                gapAbove = resuming,
                 expanded = unseenOpen,
                 onToggle = { folds.setExpanded(FOLD_SERIES_UNSEEN, !unseenOpen) },
                 onOpen = askShow,
             )
         }
+        seriesWall(
+            shows = shown,
+            columns = columns,
+            server = state.live.server,
+            showArtwork = state.settings.showArtwork,
+            opening = series.opening,
+            gapAbove = resuming || waiting,
+            expanded = wallOpen,
+            onToggle = { folds.setExpanded(FOLD_SERIES, !wallOpen) },
+            onOpen = askShow,
+        )
     }
 }
 

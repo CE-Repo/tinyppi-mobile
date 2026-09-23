@@ -209,9 +209,9 @@ away too. The row is read on the same occasions the shelves are, steps aside
 while you search, and its card is not there at all when nothing is
 half-watched.
 
-Under **All films** and **All series** is a second card on each: **Unwatched
+Straight under **Continue watching** is a second card on each: **Unwatched
 films**, the films without a tick, and **Unwatched series**, the shows with an
-episode still waiting. Same tiles, same search, same tap; it folds and is
+episode still waiting; **All films** and **All series** come after it. Same tiles, same search, same tap; it folds and is
 remembered like the others, and is not there at all once everything has been
 seen.
 
