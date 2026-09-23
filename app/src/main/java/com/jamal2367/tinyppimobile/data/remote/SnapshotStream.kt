@@ -46,6 +46,18 @@ sealed interface StreamEvent {
 }
 
 /**
+ * Somewhere a live session can open a stream of events from.
+ *
+ * [SnapshotStream] is the only one the app has. The seam is here so the
+ * session's loop - which address next, how long to wait, what to say while
+ * waiting - can be run against a box made up in a test, where the waits pass
+ * in virtual time and a dropped stream is one line to write.
+ */
+fun interface SnapshotSource {
+    fun connect(server: ServerConfig): Flow<StreamEvent>
+}
+
+/**
  * One connection to a box's `/api/stream`, for as long as it lasts.
  *
  * Deliberately one connection and not a retry loop: what to do after a stream
@@ -61,7 +73,7 @@ sealed interface StreamEvent {
 class SnapshotStream(
     private val client: OkHttpClient,
     private val json: Json,
-) {
+) : SnapshotSource {
 
     /**
      * Open a stream to [server] and emit what arrives until it closes.
@@ -71,7 +83,7 @@ class SnapshotStream(
      * connection, not per app - two clients can be at different points, and a
      * reconnect is sent the whole thing again whatever this one holds.
      */
-    fun connect(server: ServerConfig): Flow<StreamEvent> = callbackFlow {
+    override fun connect(server: ServerConfig): Flow<StreamEvent> = callbackFlow {
         var base: JsonObject? = null
 
         val request = Request.Builder()
