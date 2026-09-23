@@ -130,6 +130,10 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
 
+    // The frosted glass under the floating navigation bar.
+    implementation(libs.haze)
+    implementation(libs.haze.blur)
+
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)

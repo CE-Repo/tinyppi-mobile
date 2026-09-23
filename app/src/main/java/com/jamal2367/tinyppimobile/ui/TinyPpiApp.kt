@@ -14,10 +14,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ShortNavigationBar
-import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -55,7 +51,17 @@ import com.jamal2367.tinyppimobile.ui.navigation.TinyPpiNavHost
 import com.jamal2367.tinyppimobile.ui.navigation.TopLevelDestination
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
-import com.jamal2367.tinyppimobile.ui.theme.accentText
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import com.jamal2367.tinyppimobile.ui.navigation.BAR_BOTTOM
+import com.jamal2367.tinyppimobile.ui.navigation.BAR_HEIGHT
+import com.jamal2367.tinyppimobile.ui.navigation.FloatingNavigationBar
+import com.jamal2367.tinyppimobile.ui.navigation.LocalBottomBarSpace
+import com.jamal2367.tinyppimobile.ui.navigation.rememberBarVisibility
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -118,28 +124,54 @@ fun TinyPpiApp(container: AppContainer) {
             }
         }
     } else {
-        Scaffold(
-            // This shell holds no top bar, so it must not claim the status bar
-            // either: each screen has a top bar of its own that pads for it and
-            // draws underneath it. Left at the default, the inset would be
-            // counted twice and every screen would start a status bar's height
-            // too low.
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            bottomBar = {
-                TinyPpiNavigationBar(
-                    navController, showMetadata, showHistory, showFilms, showSeries,
+        // The bar floats over the screens rather than taking a strip of its
+        // own, so the screens run the full height of the phone - under the
+        // bar and the system's gesture bar both - and leave room at the foot
+        // of their lists for the bar to sit over (see LocalBottomBarSpace).
+        val hazeState = rememberHazeState()
+        val barVisibility = rememberBarVisibility()
+        val barSpace = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() +
+            BAR_HEIGHT + BAR_BOTTOM
+
+        // A new tab is a new place to be, and whoever just pressed the bar to
+        // get there should not find it gone from under their thumb.
+        LaunchedEffect(backStackEntry?.destination?.route) { barVisibility.visible = true }
+
+        CompositionLocalProvider(LocalBottomBarSpace provides barSpace) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .nestedScroll(barVisibility),
+            ) {
+                TinyPpiNavHost(
+                    navController = navController,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .hazeSource(hazeState)
+                        // Each screen's own scaffold would otherwise stop its
+                        // list short of the gesture bar; the list runs on under
+                        // it and pads its own end instead.
+                        .consumeWindowInsets(WindowInsets.navigationBars),
                 )
-            },
-            // Above the navigation bar rather than over it, which is what the
-            // scaffold does with a host it is given.
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-        ) { padding ->
-            TinyPpiNavHost(
-                navController = navController,
-                modifier = Modifier
-                    .padding(padding)
-                    .consumeWindowInsets(padding),
-            )
+                TinyPpiNavigationBar(
+                    navController = navController,
+                    showMetadata = showMetadata,
+                    showHistory = showHistory,
+                    showFilms = showFilms,
+                    showSeries = showSeries,
+                    hazeState = hazeState,
+                    visible = barVisibility.visible,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+                // Over the bar's place rather than under it, where the bar
+                // would cover it.
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = barSpace),
+                )
+            }
         }
     }
 }
@@ -247,6 +279,9 @@ private fun TinyPpiNavigationBar(
     showHistory: Boolean,
     showFilms: Boolean,
     showSeries: Boolean,
+    hazeState: HazeState,
+    visible: Boolean,
+    modifier: Modifier = Modifier,
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val destinations = remember(showMetadata, showHistory, showFilms, showSeries) {
@@ -257,37 +292,18 @@ private fun TinyPpiNavigationBar(
                 (it != TopLevelDestination.SERIES || showSeries)
         }
     }
-
-    // Material's short bar rather than the tall one: 64dp with the label under
-    // the icon, instead of 80dp with a strip of nothing above it. The system's
-    // own gesture bar is added underneath rather than eaten into.
-    ShortNavigationBar {
-        destinations.forEach { destination ->
-            val selected = backStackEntry?.destination?.hierarchy
-                ?.any { it.route == destination.route } == true
-            ShortNavigationBarItem(
-                selected = selected,
-                onClick = { navController.switchTo(destination) },
-                icon = {
-                    Icon(
-                        imageVector = if (selected) destination.selectedIcon else destination.icon,
-                        contentDescription = null,
-                    )
-                },
-                label = {
-                    Text(
-                        text = stringResource(destination.tabLabelRes),
-                        color = if (selected) {
-                            MaterialTheme.colorScheme.accentText
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        maxLines = 1,
-                    )
-                },
-            )
-        }
+    val selected = destinations.firstOrNull { destination ->
+        backStackEntry?.destination?.hierarchy?.any { it.route == destination.route } == true
     }
+
+    FloatingNavigationBar(
+        destinations = destinations,
+        selected = selected,
+        onSelect = navController::switchTo,
+        hazeState = hazeState,
+        visible = visible,
+        modifier = modifier,
+    )
 }
 
 @Composable

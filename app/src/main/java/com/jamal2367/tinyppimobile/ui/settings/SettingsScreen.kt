@@ -76,6 +76,7 @@ import com.jamal2367.tinyppimobile.ui.theme.SlimSliderTrack
 import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
+import com.jamal2367.tinyppimobile.ui.navigation.LocalBottomBarSpace
 
 /**
  * Where the two addresses live.
@@ -96,7 +97,12 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_settings)) }) },
     ) { padding ->
         LazyColumn(
-            contentPadding = PaddingValues(ScreenEdge),
+            contentPadding = PaddingValues(
+                start = ScreenEdge,
+                top = ScreenEdge,
+                end = ScreenEdge,
+                bottom = ScreenEdge + LocalBottomBarSpace.current,
+            ),
             verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
             modifier = Modifier
                 .fillMaxSize()

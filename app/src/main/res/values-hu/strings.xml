@@ -42,6 +42,7 @@
     <string name="library_empty_title">Nincs médiatár</string>
     <string name="library_empty_text">Ez a box nem kínál videótárat, vagy a kártyái ki vannak kapcsolva a kiegészítő beállításaiban.</string>
     <string name="library_search">Filmek keresése</string>
+    <string name="library_all">Összes film · %1$d</string>
     <string name="library_runtime_hm">%1$d ó %2$d p</string>
     <string name="library_runtime_h">%1$d ó</string>
     <string name="library_runtime_m">%1$d p</string>
@@ -55,6 +56,7 @@
     <!-- The wall of series under the films, and the episodes of one of them -->
     <string name="series_title">Sorozatok</string>
     <string name="series_search">Sorozatok keresése</string>
+    <string name="series_all">Összes sorozat · %1$d</string>
     <string name="series_back">Összes sorozat</string>
     <string name="series_no_match">Ehhez nincs találat.</string>
     <string name="series_specials">Különkiadások</string>

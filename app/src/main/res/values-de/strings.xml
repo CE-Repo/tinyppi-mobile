@@ -38,7 +38,8 @@
     <string name="library_search_clear">Suche leeren</string>
     <string name="library_empty_title">Keine Bibliothek</string>
     <string name="library_empty_text">Diese Box bietet keine Videobibliothek an, oder die Karten sind in den Add-on-Einstellungen ausgeschaltet.</string>
-    <string name="library_search">Filme suchen</string>
+    <string name="library_search">Filme durchsuchen</string>
+    <string name="library_all">Alle Filme · %1$d</string>
     <string name="library_runtime_hm">%1$d h %2$d min</string>
     <string name="library_runtime_h">%1$d h</string>
     <string name="library_runtime_m">%1$d min</string>
@@ -51,7 +52,8 @@
 
     <!-- The wall of series under the films, and the episodes of one of them -->
     <string name="series_title">Serien</string>
-    <string name="series_search">Serien suchen</string>
+    <string name="series_search">Serien durchsuchen</string>
+    <string name="series_all">Alle Serien · %1$d</string>
     <string name="series_back">Alle Serien</string>
     <string name="series_no_match">Dazu passt keine Serie.</string>
     <string name="series_specials">Specials</string>

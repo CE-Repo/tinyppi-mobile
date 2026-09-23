@@ -104,6 +104,7 @@ import com.jamal2367.tinyppimobile.ui.theme.neutralTonalIconButtonColors
 import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.util.MediaUrls
 import com.jamal2367.tinyppimobile.util.SourceLabel
+import com.jamal2367.tinyppimobile.ui.navigation.LocalBottomBarSpace
 
 /**
  * What the box is playing, and what can be done to it.
@@ -132,7 +133,12 @@ fun LiveScreen(
         ?.let { MediaUrls.art(state.live.server, it.art, MediaUrls.ArtKind.POSTER) }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                snackbarHostState,
+                modifier = Modifier.padding(bottom = LocalBottomBarSpace.current),
+            )
+        },
     ) { padding ->
         val snapshot = state.snapshot
 
@@ -197,7 +203,11 @@ private fun LiveContent(
     viewModel: LiveViewModel,
 ) {
     LazyColumn(
-        contentPadding = PaddingValues(start = ScreenEdge, end = ScreenEdge, bottom = 24.dp),
+        contentPadding = PaddingValues(
+            start = ScreenEdge,
+            end = ScreenEdge,
+            bottom = 24.dp + LocalBottomBarSpace.current,
+        ),
         verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
         modifier = Modifier.fillMaxSize(),
     ) {

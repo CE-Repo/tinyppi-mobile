@@ -18,7 +18,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
-import com.jamal2367.tinyppimobile.ui.components.SectionHeading
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -44,7 +43,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -63,7 +61,6 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.res.pluralStringResource
@@ -85,6 +82,12 @@ import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.ui.components.FoldChevron
 import com.jamal2367.tinyppimobile.ui.components.PosterImage
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import com.jamal2367.tinyppimobile.ui.theme.PillShape
+import com.jamal2367.tinyppimobile.ui.theme.PosterShape
+import com.jamal2367.tinyppimobile.ui.theme.accentText
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.util.MediaUrls
@@ -113,9 +116,8 @@ import com.jamal2367.tinyppimobile.util.MediaUrls
  * costs the screen one line of posters rather than several. The tiles are the
  * wall's own at the wall's own width, so the two cards read as one shelf.
  *
- * It folds like every other card, and is not there at all where there is
- * nothing to resume - an empty card with a heading over it would be a card
- * saying nothing.
+ * It is not there at all where there is nothing to resume - an empty card
+ * with a heading over it would be a card saying nothing.
  */
 internal fun LazyListScope.continueCard(
     items: List<ContinueItem>,
@@ -123,8 +125,6 @@ internal fun LazyListScope.continueCard(
     server: ServerConfig?,
     showArtwork: Boolean,
     starting: String?,
-    expanded: Boolean,
-    onToggle: () -> Unit,
     onPlay: (ContinueItem) -> Unit,
 ) {
     if (items.isEmpty()) return
@@ -132,12 +132,8 @@ internal fun LazyListScope.continueCard(
     cardTop(
         key = "continue",
         gapAbove = false,
-        expanded = expanded,
-        onToggle = onToggle,
         title = { stringResource(R.string.continue_title) },
-        count = { items.size.toString() },
     )
-    if (!expanded) return
 
     item(key = "continue-row") {
         val width = filmTileWidth(columns)
@@ -239,7 +235,6 @@ private fun ContinueTile(
  * laid out at once; chunked into rows it stays lazy, so a library of five
  * hundred films draws the six tiles on screen and asks the box for six posters.
  *
- * Folded, it is its heading and the count beside it.
  */
 internal fun LazyListScope.filmWall(
     films: List<LibraryFilm>,
@@ -247,23 +242,13 @@ internal fun LazyListScope.filmWall(
     server: ServerConfig?,
     showArtwork: Boolean,
     starting: Int?,
-    search: String,
-    onSearch: (String) -> Unit,
     gapAbove: Boolean,
-    expanded: Boolean,
-    onToggle: () -> Unit,
     onPlay: (LibraryFilm) -> Unit,
 ) {
     shelfCard(
         key = "film-wall",
         gapAbove = gapAbove,
-        expanded = expanded,
-        onToggle = onToggle,
-        title = { stringResource(R.string.library_title) },
-        count = { pluralStringResource(R.plurals.library_count, films.size, films.size) },
-        searchLabel = { stringResource(R.string.library_search) },
-        search = search,
-        onSearch = onSearch,
+        title = { stringResource(R.string.library_all, films.size) },
         noMatch = { stringResource(R.string.library_no_match) },
         tiles = films,
         columns = columns,
@@ -284,47 +269,27 @@ internal fun LazyListScope.filmWall(
 }
 
 /**
- * One shelf as a card: its heading, a box to narrow it down with, and the wall
- * a row at a time.
+ * One shelf as a card: its heading and the wall a row at a time.
  *
  * One builder for both shelves. The films and the series are the same offer
  * made twice, and a second card drawn differently would read as a different
  * screen rather than a second shelf.
  *
- * The box is there whatever the shelf holds. It used to arrive only above a
- * dozen, on the grounds that a shelf which fits on a screen is read rather
- * than searched - but a field that comes and goes with how many films somebody
- * owns is a field nobody can learn to reach for.
+ * The box that narrows it down is not in here: it sits at the very top of the
+ * screen, above the continue-watching row as well (see [shelfTop]), because
+ * it is where somebody who came to look for one title starts.
  */
 private fun <T> LazyListScope.shelfCard(
     key: String,
     gapAbove: Boolean,
-    expanded: Boolean,
-    onToggle: () -> Unit,
     title: @Composable () -> String,
-    count: @Composable () -> String,
-    searchLabel: @Composable () -> String,
-    search: String,
-    onSearch: (String) -> Unit,
     noMatch: @Composable () -> String,
     tiles: List<T>,
     columns: Int,
     rowKey: (List<T>) -> String,
     tile: @Composable RowScope.(T) -> Unit,
 ) {
-    cardTop(key, gapAbove, expanded, onToggle, title, count)
-    if (!expanded) return
-
-    item(key = "$key-search") {
-        CardSegment(CardPart.MIDDLE) {
-            WallSearch(
-                label = searchLabel(),
-                search = search,
-                onSearch = onSearch,
-                modifier = Modifier.padding(top = CARD_INNER_GAP),
-            )
-        }
-    }
+    cardTop(key, gapAbove, title)
 
     if (tiles.isEmpty()) {
         // A search nothing answers. The library itself being empty is handled
@@ -366,44 +331,27 @@ private fun <T> LazyListScope.shelfCard(
 
 /**
  * The top of a card on a shelf: the gap that parts it from the card above,
- * and the heading - the same heading every other card in the app wears, with
- * how much is on it where the others put their extras.
- *
- * Folded, this is the whole card, rounded at the bottom as well.
+ * and the heading - the name of the shelf in the accent, with how much is on
+ * it written into the name where there is a count to give.
  */
 private fun LazyListScope.cardTop(
     key: String,
     gapAbove: Boolean,
-    expanded: Boolean,
-    onToggle: () -> Unit,
     title: @Composable () -> String,
-    count: @Composable () -> String,
 ) {
     if (gapAbove) {
         item(key = "$key-gap") { Spacer(Modifier.height(CardGap)) }
     }
     item(key = "$key-heading") {
-        CardSegment(if (expanded) CardPart.TOP else CardPart.WHOLE) {
-            Box(
-                modifier = Modifier.padding(
-                    top = CARD_PADDING,
-                    bottom = if (expanded) 0.dp else CARD_PADDING,
-                ),
-            ) {
-                val label = count()
-                SectionHeading(
-                    title = title(),
-                    expanded = expanded,
-                    onToggle = onToggle,
-                    trailing = {
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    },
-                )
-            }
+        CardSegment(CardPart.TOP) {
+            Text(
+                text = title(),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.accentText,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = CARD_PADDING),
+            )
         }
     }
 }
@@ -472,7 +420,38 @@ private fun CardSegment(
 }
 
 /**
- * The box a shelf is narrowed down with.
+ * The head of a shelf screen: its name, and under it the box the shelf is
+ * narrowed down with - above everything else on the screen, the
+ * continue-watching row included, because it is where somebody who came to
+ * look for one title starts.
+ */
+internal fun LazyListScope.shelfTop(
+    title: @Composable () -> String,
+    searchLabel: @Composable () -> String,
+    search: String,
+    onSearch: (String) -> Unit,
+) {
+    item(key = "shelf-title") {
+        Text(
+            text = title(),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 14.dp),
+        )
+    }
+    item(key = "shelf-search") {
+        WallSearch(
+            label = searchLabel(),
+            search = search,
+            onSearch = onSearch,
+            modifier = Modifier.padding(bottom = CardGap),
+        )
+    }
+}
+
+/**
+ * The box a shelf is narrowed down with: a filled pill with a magnifier in
+ * it, the shape the rest of the app's controls are cut in.
  *
  * The cross empties it, and only while there is something to empty: over a
  * field nobody has typed in it is a control that does nothing. It puts the
@@ -490,12 +469,20 @@ private fun WallSearch(
 ) {
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
+    val fill = MaterialTheme.colorScheme.surfaceContainerHigh
 
-    OutlinedTextField(
+    TextField(
         value = search,
         onValueChange = onSearch,
         singleLine = true,
-        label = { Text(label) },
+        shape = PillShape,
+        placeholder = { Text(label) },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Rounded.Search,
+                contentDescription = null,
+            )
+        },
         trailingIcon = if (search.isEmpty()) {
             null
         } else {
@@ -513,6 +500,16 @@ private fun WallSearch(
                 }
             }
         },
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = fill,
+            unfocusedContainerColor = fill,
+            disabledContainerColor = fill,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            focusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
         // The key the keyboard offers instead of a newline, and what it does:
         // nothing but close, because the wall narrowed itself as the letters
         // arrived.
@@ -633,23 +630,13 @@ internal fun LazyListScope.seriesWall(
     server: ServerConfig?,
     showArtwork: Boolean,
     opening: Int?,
-    search: String,
-    onSearch: (String) -> Unit,
     gapAbove: Boolean,
-    expanded: Boolean,
-    onToggle: () -> Unit,
     onOpen: (LibraryShow) -> Unit,
 ) {
     shelfCard(
         key = "series-wall",
         gapAbove = gapAbove,
-        expanded = expanded,
-        onToggle = onToggle,
-        title = { stringResource(R.string.series_title) },
-        count = { pluralStringResource(R.plurals.series_count, shows.size, shows.size) },
-        searchLabel = { stringResource(R.string.series_search) },
-        search = search,
-        onSearch = onSearch,
+        title = { stringResource(R.string.series_all, shows.size) },
         noMatch = { stringResource(R.string.series_no_match) },
         tiles = shows,
         columns = columns,
@@ -981,7 +968,7 @@ private fun ArtFrame(
     Box(
         modifier = modifier
             .aspectRatio(ratio)
-            .clip(RoundedCornerShape(10.dp)),
+            .clip(PosterShape),
     ) {
         // A title with no picture - and everything on a phone told not to show
         // artwork - gets the stand-in the playing title gets, which holds the
