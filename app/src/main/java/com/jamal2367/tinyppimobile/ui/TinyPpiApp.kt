@@ -56,6 +56,7 @@ import com.jamal2367.tinyppimobile.ui.navigation.BAR_HEIGHT
 import com.jamal2367.tinyppimobile.ui.navigation.FloatingNavigationBar
 import com.jamal2367.tinyppimobile.ui.navigation.LocalBottomBarSpace
 import com.jamal2367.tinyppimobile.ui.navigation.rememberBarVisibility
+import com.jamal2367.tinyppimobile.ui.navigation.wakesBar
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -207,13 +208,14 @@ fun TinyPpiApp(container: AppContainer) {
 
         // A new tab is a new place to be, and whoever just pressed the bar or
         // swiped to get there should not find it gone from under their thumb.
-        LaunchedEffect(shown) { barVisibility.visible = true }
+        LaunchedEffect(shown) { barVisibility.wake() }
 
         CompositionLocalProvider(LocalBottomBarSpace provides barSpace) {
             Box(
                 Modifier
                     .fillMaxSize()
-                    .nestedScroll(barVisibility),
+                    .nestedScroll(barVisibility)
+                    .wakesBar(barVisibility),
             ) {
                 TinyPpiPager(
                     destinations = destinations,
