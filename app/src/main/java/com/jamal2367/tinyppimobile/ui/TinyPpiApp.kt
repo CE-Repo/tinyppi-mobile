@@ -51,7 +51,10 @@ import com.jamal2367.tinyppimobile.ui.navigation.TinyPpiNavHost
 import com.jamal2367.tinyppimobile.ui.navigation.TopLevelDestination
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.jamal2367.tinyppimobile.ui.navigation.BAR_BOTTOM
@@ -130,8 +133,15 @@ fun TinyPpiApp(container: AppContainer) {
         // of their lists for the bar to sit over (see LocalBottomBarSpace).
         val hazeState = rememberHazeState()
         val barVisibility = rememberBarVisibility()
-        val barSpace = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() +
-            BAR_HEIGHT + BAR_BOTTOM
+        val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        // Without the expressive spring's overshoot: a room that bounced past
+        // nothing would be a negative padding, which is a crash.
+        val animatedSpace by animateDpAsState(
+            targetValue = navigationBar + if (barVisibility.visible) BAR_HEIGHT + BAR_BOTTOM else 0.dp,
+            animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+            label = "bar-space",
+        )
+        val barSpace = animatedSpace.coerceAtLeast(0.dp)
 
         // A new tab is a new place to be, and whoever just pressed the bar to
         // get there should not find it gone from under their thumb.

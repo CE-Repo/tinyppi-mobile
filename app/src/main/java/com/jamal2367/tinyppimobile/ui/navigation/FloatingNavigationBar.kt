@@ -2,23 +2,22 @@
 
 package com.jamal2367.tinyppimobile.ui.navigation
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -46,6 +45,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.ui.theme.PillShape
 import dev.chrisbanes.haze.HazeInput
@@ -53,6 +53,7 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.HazeBlurStyle
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.hazeBlur
+import kotlin.math.roundToInt
 
 /**
  * How much of the foot of the screen the floating bar sits over.
@@ -61,6 +62,10 @@ import dev.chrisbanes.haze.blur.hazeBlur
  * on underneath it and show through. What they have to do in return is leave
  * this much room after their last item, or the last card could never be
  * scrolled out from under the bar. Nothing where the rail is showing instead.
+ *
+ * It follows the bar out and back: while the bar is away the lists keep only
+ * the room the system's gesture bar needs, so the end of a shelf is not left
+ * standing over an empty strip where the bar used to be.
  */
 val LocalBottomBarSpace = compositionLocalOf { 0.dp }
 
@@ -116,14 +121,27 @@ fun FloatingNavigationBar(
     visible: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = slideInVertically { it * 2 } + fadeIn(),
-        exit = slideOutVertically { it * 2 } + fadeOut(),
+    // Moved off the foot of the screen rather than taken out of it. A bar that
+    // leaves the composition takes its glass with it half-way through being
+    // drawn, and the blur behind it is laid out from where the bar is - so it
+    // is slid by its layout position, which the blur follows, and never
+    // removed.
+    val hidden by animateFloatAsState(
+        targetValue = if (visible) 0f else 1f,
+        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+        label = "bar-hidden",
+    )
+    val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(start = BAR_MARGIN, end = BAR_MARGIN, bottom = BAR_BOTTOM),
+            .padding(start = BAR_MARGIN, end = BAR_MARGIN, bottom = BAR_BOTTOM)
+            .offset {
+                val away = (BAR_HEIGHT + BAR_BOTTOM + navigationBar + BAR_SHADOW_ROOM).roundToPx()
+                IntOffset(0, (away * hidden).roundToInt())
+            },
     ) {
         BoxWithConstraints(contentAlignment = Alignment.Center) {
             // The icons share whatever the open tab's pill leaves over, up to
@@ -236,6 +254,9 @@ private val BAR_MARGIN = 12.dp
 
 /** How far the bar floats above the system's own gesture bar. */
 val BAR_BOTTOM = 12.dp
+
+/** A little further than the bar is tall, so nothing of its edge is left showing. */
+private val BAR_SHADOW_ROOM = 8.dp
 private val BAR_PADDING = 8.dp
 private val ITEM_HEIGHT = 48.dp
 private val ITEM_GAP = 2.dp
