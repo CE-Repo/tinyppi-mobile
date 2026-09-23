@@ -9,6 +9,7 @@ import android.graphics.Paint
 import android.graphics.Shader
 import android.graphics.Typeface
 import android.util.Log
+import androidx.core.graphics.createBitmap
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -514,7 +515,7 @@ object DemoServer {
             val (w, h) = if (wide) 480 to 270 else 300 to 450
             val label = labelFor(tag)
             val (from, to) = palettes[abs(tag.hashCode()) % palettes.size]
-            val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+            val bitmap = createBitmap(w, h)
             val canvas = Canvas(bitmap)
             canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), Paint().apply {
                 shader = LinearGradient(0f, 0f, w * 0.6f, h.toFloat(), from.toInt(), to.toInt(), Shader.TileMode.CLAMP)
@@ -579,7 +580,7 @@ object DemoServer {
                     URLDecoder.decode(it.substringBefore('='), "UTF-8") to URLDecoder.decode(it.substringAfter('='), "UTF-8")
                 }
                 val length = headers["content-length"]?.toIntOrNull() ?: 0
-                val body = if (length > 0) String(input.readNBytes(length), Charsets.UTF_8) else ""
+                val body = if (length > 0) String(readBytes(input, length), Charsets.UTF_8) else ""
                 val out = socket.getOutputStream()
 
                 when {
@@ -628,6 +629,18 @@ object DemoServer {
         )
         out.write(body)
         out.flush()
+    }
+
+    /** Exactly [length] bytes, or as many as arrive before the app hangs up. */
+    private fun readBytes(input: BufferedInputStream, length: Int): ByteArray {
+        val buffer = ByteArray(length)
+        var read = 0
+        while (read < length) {
+            val n = input.read(buffer, read, length - read)
+            if (n == -1) break
+            read += n
+        }
+        return buffer.copyOf(read)
     }
 
     private fun readLine(input: BufferedInputStream): String? {

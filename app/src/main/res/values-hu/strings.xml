@@ -48,10 +48,6 @@
     <string name="library_runtime_m">%1$d p</string>
     <string name="library_watched">Megtekintve</string>
     <string name="library_no_match">Nincs erre illő film.</string>
-    <plurals name="library_count">
-        <item quantity="one">%1$d film</item>
-        <item quantity="other">%1$d film</item>
-    </plurals>
 
     <!-- The wall of series under the films, and the episodes of one of them -->
     <string name="series_title">Sorozatok</string>
@@ -61,10 +57,6 @@
     <string name="series_no_match">Ehhez nincs találat.</string>
     <string name="series_specials">Különkiadások</string>
     <string name="series_season">%1$d. évad</string>
-    <plurals name="series_count">
-        <item quantity="one">%1$d sorozat</item>
-        <item quantity="other">%1$d sorozat</item>
-    </plurals>
     <plurals name="series_episodes">
         <item quantity="one">%1$d epizód</item>
         <item quantity="other">%1$d epizód</item>
