@@ -11,6 +11,7 @@ import com.jamal2367.tinyppimobile.data.model.ModeBody
 import com.jamal2367.tinyppimobile.data.model.PlayBody
 import com.jamal2367.tinyppimobile.data.model.PlayEpisodeBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
+import com.jamal2367.tinyppimobile.data.model.WatchedBody
 import kotlinx.serialization.json.JsonObject
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -120,4 +121,14 @@ interface TinyPpiApi {
      */
     @POST("api/play")
     suspend fun playEpisode(@Body body: PlayEpisodeBody): CommandAck
+
+    /**
+     * Mark a film, a series or one episode as seen or unseen in the box's own
+     * library.
+     *
+     * Unknown (404) to an add-on older than the dialog that asks, which the
+     * screen reports the way it reports any other refusal.
+     */
+    @POST("api/watched")
+    suspend fun setWatched(@Body body: WatchedBody): CommandAck
 }

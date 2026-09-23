@@ -46,6 +46,10 @@ import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.live.ContinueUiState
 import com.jamal2367.tinyppimobile.ui.live.FILM_START_TIMEOUT_MS
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
+import com.jamal2367.tinyppimobile.ui.live.MarkWatchedDialog
+import com.jamal2367.tinyppimobile.ui.live.markTarget
+import com.jamal2367.tinyppimobile.data.model.LibraryShow
+import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.ui.live.continueCard
 import com.jamal2367.tinyppimobile.ui.components.LocalCardFolds
 import com.jamal2367.tinyppimobile.ui.live.dismissSearch
@@ -117,10 +121,18 @@ fun FilmsScreen(
     var search by rememberSaveable { mutableStateOf("") }
     val shown = remember(library.films, search) { matching(library.films, search) }
     val resumable = remember(continuing.items) { continuing.items.filterNot { it.isEpisode } }
+    // What has not been seen yet, as a wall of its own under the wall of
+    // everything: whether there is one at all is the library's answer, and
+    // which of it is shown is the search's.
+    val waiting = remember(library.films) { library.films.any { !it.watched } }
+    val unseen = remember(shown) { shown.filterNot { it.watched } }
     val columns = filmColumns()
     val folds = LocalCardFolds.current
     val continueOpen = folds.isExpanded(FOLD_FILMS_CONTINUE)
     val wallOpen = folds.isExpanded(FOLD_FILMS)
+    val unseenOpen = folds.isExpanded(FOLD_FILMS_UNSEEN)
+    var marking by remember { mutableStateOf<MarkTarget?>(null) }
+    MarkReader(marking, onDone = { marking = null }, onMark = viewModel::setWatched)
 
     Shelf(
         configured = state.isConfigured,
@@ -153,6 +165,7 @@ fun FilmsScreen(
                 expanded = continueOpen,
                 onToggle = { folds.setExpanded(FOLD_FILMS_CONTINUE, !continueOpen) },
                 onPlay = viewModel::playContinuing,
+                onMark = { marking = it.markTarget() },
             )
         }
         filmWall(
@@ -165,7 +178,24 @@ fun FilmsScreen(
             expanded = wallOpen,
             onToggle = { folds.setExpanded(FOLD_FILMS, !wallOpen) },
             onPlay = viewModel::playFilm,
+            onMark = { marking = it.markTarget() },
         )
+        if (waiting) {
+            filmWall(
+                films = unseen,
+                key = "film-unseen",
+                title = { stringResource(R.string.library_unseen, it) },
+                columns = columns,
+                server = state.live.server,
+                showArtwork = state.settings.showArtwork,
+                starting = library.starting,
+                gapAbove = true,
+                expanded = unseenOpen,
+                onToggle = { folds.setExpanded(FOLD_FILMS_UNSEEN, !unseenOpen) },
+                onPlay = viewModel::playFilm,
+                onMark = { marking = it.markTarget() },
+            )
+        }
     }
 }
 
@@ -207,11 +237,17 @@ fun SeriesScreen(
         matching(series.shows, search, { it.title }, { it.year })
     }
     val resumable = remember(continuing.items) { continuing.items.filter { it.isEpisode } }
+    // The shows with an episode still waiting, under the wall of all of them.
+    val waiting = remember(series.shows) { series.shows.any { it.isWaiting } }
+    val unseen = remember(shown) { shown.filter { it.isWaiting } }
     val columns = filmColumns()
     val folds = LocalCardFolds.current
     val continueOpen = folds.isExpanded(FOLD_SERIES_CONTINUE)
     val wallOpen = folds.isExpanded(FOLD_SERIES)
+    val unseenOpen = folds.isExpanded(FOLD_SERIES_UNSEEN)
     val open = series.open
+    var marking by remember { mutableStateOf<MarkTarget?>(null) }
+    MarkReader(marking, onDone = { marking = null }, onMark = viewModel::setWatched)
 
     // The way out of a show is the way back, and on this screen the system's
     // own back gesture is the one nearest a thumb. Without this it would leave
@@ -249,6 +285,7 @@ fun SeriesScreen(
                 onBack = viewModel::closeShow,
                 onSeason = viewModel::toggleSeason,
                 onPlay = viewModel::playEpisode,
+                onMark = { marking = it.markTarget() },
             )
             return@Shelf
         }
@@ -272,6 +309,7 @@ fun SeriesScreen(
                 expanded = continueOpen,
                 onToggle = { folds.setExpanded(FOLD_SERIES_CONTINUE, !continueOpen) },
                 onPlay = viewModel::playContinuing,
+                onMark = { marking = it.markTarget() },
             )
         }
         seriesWall(
@@ -284,9 +322,54 @@ fun SeriesScreen(
             expanded = wallOpen,
             onToggle = { folds.setExpanded(FOLD_SERIES, !wallOpen) },
             onOpen = viewModel::openShow,
+            onMark = { marking = it.markTarget() },
         )
+        if (waiting) {
+            seriesWall(
+                shows = unseen,
+                key = "series-unseen",
+                title = { stringResource(R.string.series_unseen_all, it) },
+                columns = columns,
+                server = state.live.server,
+                showArtwork = state.settings.showArtwork,
+                opening = series.opening,
+                gapAbove = true,
+                expanded = unseenOpen,
+                onToggle = { folds.setExpanded(FOLD_SERIES_UNSEEN, !unseenOpen) },
+                onOpen = viewModel::openShow,
+                onMark = { marking = it.markTarget() },
+            )
+        }
     }
 }
+
+/**
+ * The seen-or-unseen question, while a held finger has one open.
+ *
+ * Held by the screen rather than by the view model: it is a question on the
+ * screen in front of somebody, and one left open when they switch tabs is a
+ * question about a title they are no longer looking at.
+ */
+@Composable
+private fun MarkReader(
+    target: MarkTarget?,
+    onDone: () -> Unit,
+    onMark: (MarkTarget, Boolean) -> Unit,
+) {
+    val asked = target ?: return
+    MarkWatchedDialog(
+        target = asked,
+        onDismiss = onDone,
+        onMark = { watched ->
+            onDone()
+            onMark(asked, watched)
+        },
+    )
+}
+
+/** Whether a show has an episode still to be seen. */
+private val LibraryShow.isWaiting: Boolean
+    get() = !watched && unseen > 0
 
 /**
  * Keeps the continue-watching row read for whichever shelf is showing it.
@@ -444,10 +527,12 @@ private fun sharedLiveViewModel(): LiveViewModel {
 }
 
 /**
- * What the four shelf cards are remembered by. Named for the card rather than
+ * What the six shelf cards are remembered by. Named for the card rather than
  * its heading, so a translation or a rename does not open anything again.
  */
 private const val FOLD_FILMS_CONTINUE = "shelf.films.continue"
 private const val FOLD_FILMS = "shelf.films"
 private const val FOLD_SERIES_CONTINUE = "shelf.series.continue"
 private const val FOLD_SERIES = "shelf.series"
+private const val FOLD_FILMS_UNSEEN = "shelf.films.unseen"
+private const val FOLD_SERIES_UNSEEN = "shelf.series.unseen"

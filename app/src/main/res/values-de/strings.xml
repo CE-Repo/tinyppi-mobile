@@ -50,6 +50,12 @@
     <string name="series_title">Serien</string>
     <string name="series_search">Serien durchsuchen</string>
     <string name="series_all">Alle Serien · %1$d</string>
+    <string name="library_unseen">Ungesehene Filme · %1$d</string>
+    <string name="series_unseen_all">Ungesehene Serien · %1$d</string>
+    <string name="mark_title">Als gesehen oder ungesehen markieren</string>
+    <string name="mark_watched">Als gesehen markieren</string>
+    <string name="mark_unwatched">Als ungesehen markieren</string>
+    <string name="mark_cancel">Abbrechen</string>
     <string name="series_back">Alle Serien</string>
     <string name="series_no_match">Dazu passt keine Serie.</string>
     <string name="series_specials">Specials</string>

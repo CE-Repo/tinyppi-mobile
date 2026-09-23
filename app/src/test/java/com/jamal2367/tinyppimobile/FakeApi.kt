@@ -11,6 +11,7 @@ import com.jamal2367.tinyppimobile.data.model.ModeBody
 import com.jamal2367.tinyppimobile.data.model.PlayBody
 import com.jamal2367.tinyppimobile.data.model.PlayEpisodeBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
+import com.jamal2367.tinyppimobile.data.model.WatchedBody
 import com.jamal2367.tinyppimobile.data.remote.TinyPpiApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -33,6 +34,7 @@ class FakeApi : TinyPpiApi {
     var command: suspend (CommandBody) -> CommandAck = { CommandAck(ok = true, action = it.action) }
     var play: suspend (Int) -> CommandAck = { CommandAck(ok = true) }
     var playEpisode: suspend (Int) -> CommandAck = { CommandAck(ok = true) }
+    var setWatched: suspend (WatchedBody) -> CommandAck = { CommandAck(ok = true) }
 
     val calls = mutableListOf<String>()
 
@@ -91,6 +93,11 @@ class FakeApi : TinyPpiApi {
     override suspend fun playEpisode(body: PlayEpisodeBody): CommandAck {
         calls += "playEpisode"
         return playEpisode.invoke(body.episodeid)
+    }
+
+    override suspend fun setWatched(body: WatchedBody): CommandAck {
+        calls += "setWatched"
+        return setWatched.invoke(body)
     }
 
     companion object {

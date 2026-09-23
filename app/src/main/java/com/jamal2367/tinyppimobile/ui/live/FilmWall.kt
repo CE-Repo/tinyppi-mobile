@@ -6,7 +6,6 @@
 package com.jamal2367.tinyppimobile.ui.live
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,6 +48,8 @@ import com.jamal2367.tinyppimobile.util.MediaUrls
  */
 internal fun LazyListScope.filmWall(
     films: List<LibraryFilm>,
+    key: String = "film-wall",
+    title: @Composable (Int) -> String = { stringResource(R.string.library_all, it) },
     columns: Int,
     server: ServerConfig?,
     showArtwork: Boolean,
@@ -57,17 +58,18 @@ internal fun LazyListScope.filmWall(
     expanded: Boolean,
     onToggle: () -> Unit,
     onPlay: (LibraryFilm) -> Unit,
+    onMark: (LibraryFilm) -> Unit,
 ) {
     shelfCard(
-        key = "film-wall",
+        key = key,
         gapAbove = gapAbove,
         expanded = expanded,
         onToggle = onToggle,
-        title = { stringResource(R.string.library_all, films.size) },
+        title = { title(films.size) },
         noMatch = { stringResource(R.string.library_no_match) },
         tiles = films,
         columns = columns,
-        rowKey = { row -> "film-row-${row.first().id}" },
+        rowKey = { row -> "$key-row-${row.first().id}" },
     ) { film ->
         FilmTile(
             film = film,
@@ -78,6 +80,7 @@ internal fun LazyListScope.filmWall(
             // won, which is not the one the second press was for.
             enabled = starting == null,
             onPlay = { onPlay(film) },
+            onMark = { onMark(film) },
             modifier = Modifier.weight(1f),
         )
     }
@@ -104,10 +107,11 @@ private fun FilmTile(
     starting: Boolean,
     enabled: Boolean,
     onPlay: () -> Unit,
+    onMark: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.clickable(enabled = enabled, onClick = onPlay),
+        modifier = modifier.markable(enabled = enabled, onClick = onPlay, onHold = onMark),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         ArtFrame(

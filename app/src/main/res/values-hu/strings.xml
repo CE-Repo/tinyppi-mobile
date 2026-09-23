@@ -53,6 +53,12 @@
     <string name="series_title">Sorozatok</string>
     <string name="series_search">Sorozatok keresése</string>
     <string name="series_all">Összes sorozat · %1$d</string>
+    <string name="library_unseen">Nem látott filmek · %1$d</string>
+    <string name="series_unseen_all">Nem látott sorozatok · %1$d</string>
+    <string name="mark_title">Megjelölés látottként vagy nem látottként</string>
+    <string name="mark_watched">Megjelölés látottként</string>
+    <string name="mark_unwatched">Megjelölés nem látottként</string>
+    <string name="mark_cancel">Mégse</string>
     <string name="series_back">Összes sorozat</string>
     <string name="series_no_match">Ehhez nincs találat.</string>
     <string name="series_specials">Különkiadások</string>

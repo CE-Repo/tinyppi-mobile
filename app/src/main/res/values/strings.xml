@@ -53,6 +53,12 @@
     <string name="series_title">Series</string>
     <string name="series_search">Search series</string>
     <string name="series_all">All series · %1$d</string>
+    <string name="library_unseen">Unwatched films · %1$d</string>
+    <string name="series_unseen_all">Unwatched series · %1$d</string>
+    <string name="mark_title">Mark as watched or unwatched</string>
+    <string name="mark_watched">Mark as watched</string>
+    <string name="mark_unwatched">Mark as unwatched</string>
+    <string name="mark_cancel">Cancel</string>
     <string name="series_back">All series</string>
     <string name="series_no_match">No series matches that.</string>
     <string name="series_specials">Specials</string>

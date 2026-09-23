@@ -11,6 +11,8 @@ import com.jamal2367.tinyppimobile.data.model.ModeBody
 import com.jamal2367.tinyppimobile.data.model.PlayBody
 import com.jamal2367.tinyppimobile.data.model.PlayEpisodeBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
+import com.jamal2367.tinyppimobile.data.model.WatchedBody
+import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.data.model.PlayerAction
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
 import com.jamal2367.tinyppimobile.data.remote.NoServerConfiguredException
@@ -72,6 +74,21 @@ class PlayerRepository(
      */
     suspend fun playEpisode(episodeId: Int) {
         call { api.playEpisode(PlayEpisodeBody(episodeId)) }
+    }
+
+    /**
+     * Mark a film, a series or an episode as seen or unseen.
+     *
+     * The box writes it into Kodi's library the way Kodi's own context menu
+     * does, and drops every list it holds, so the next read is the new answer.
+     */
+    suspend fun setWatched(target: MarkTarget, watched: Boolean) {
+        val body = when (target.kind) {
+            MarkTarget.Kind.MOVIE -> WatchedBody(movieid = target.id, watched = watched)
+            MarkTarget.Kind.SHOW -> WatchedBody(tvshowid = target.id, watched = watched)
+            MarkTarget.Kind.EPISODE -> WatchedBody(episodeid = target.id, watched = watched)
+        }
+        call { api.setWatched(body) }
     }
 
     /**

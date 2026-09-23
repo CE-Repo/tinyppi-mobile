@@ -152,6 +152,28 @@ object DemoServer {
     private var seq = 0L
     private var switches = 2
     private var libraryRevision = 1L
+
+    /**
+     * What has been marked seen or unseen from the app, by film id or by
+     * episode id - the two never collide, an episode's id carrying its show's
+     * in the thousands. Anything not in here is as the made-up library has it.
+     */
+    private val marked = java.util.concurrent.ConcurrentHashMap<Int, Boolean>()
+
+    private fun filmWatched(film: Film) = marked[film.id] ?: film.watched
+
+    private fun episodeWatched(show: Show, season: Int, episode: Int, n: Int) =
+        marked[episodeId(show, season, episode)] ?: (n <= show.seenUpTo)
+
+    private fun unseenOf(show: Show): Int {
+        var n = 0
+        var unseen = 0
+        for (season in 1..show.seasons) for (episode in 1..show.perSeason) {
+            n++
+            if (!episodeWatched(show, season, episode, n)) unseen++
+        }
+        return unseen
+    }
     private var sessionStart = System.currentTimeMillis()
 
     private fun tick() {
@@ -367,7 +389,7 @@ object DemoServer {
                     put("id", f.id); put("title", f.title); put("year", f.year)
                     put("poster", "movie-${f.id}"); put("duration", f.minutes * 60)
                     put("rating", f.rating); put("rating_from", "imdb")
-                    put("watched", f.watched); put("resume", f.resumeMinutes * 60)
+                    put("watched", filmWatched(f)); put("resume", if (filmWatched(f)) 0 else f.resumeMinutes * 60)
                 })
             }
         }
@@ -382,9 +404,10 @@ object DemoServer {
                 add(buildJsonObject {
                     put("id", s.id); put("title", s.title); put("year", s.year)
                     put("poster", "show-${s.id}"); put("fanart", "fanart-${s.id}")
-                    put("episodes", total); put("unseen", total - s.seenUpTo)
+                    val unseen = unseenOf(s)
+                    put("episodes", total); put("unseen", unseen)
                     put("rating", s.rating); put("rating_from", "imdb")
-                    put("watched", s.seenUpTo >= total)
+                    put("watched", unseen == 0)
                 })
             }
         }
@@ -407,7 +430,7 @@ object DemoServer {
                         put("season", season); put("episode", episode)
                         put("thumb", "thumb-${episodeId(show, season, episode)}")
                         put("duration", 52 * 60)
-                        put("watched", n <= show.seenUpTo)
+                        put("watched", episodeWatched(show, season, episode, n))
                         put("resume", if (n == show.seenUpTo + 1 && show.seenUpTo > 0) 19 * 60 else 0)
                     })
                 }
@@ -469,6 +492,17 @@ object DemoServer {
                     durationSeconds = 52 * 60; positionSeconds = 0.0
                 }
                 paused = false
+            }
+            "/api/watched" -> {
+                val watched = payload["watched"]?.jsonPrimitive?.content == "true"
+                payload["movieid"]?.jsonPrimitive?.int?.let { marked[it] = watched }
+                payload["episodeid"]?.jsonPrimitive?.int?.let { marked[it] = watched }
+                payload["tvshowid"]?.jsonPrimitive?.int?.let { id -> shows.firstOrNull { it.id == id } }?.let { show ->
+                    for (season in 1..show.seasons) for (episode in 1..show.perSeason) {
+                        marked[episodeId(show, season, episode)] = watched
+                    }
+                }
+                libraryRevision++
             }
             "/api/mode" -> {
                 vs10Output = when (payload["mode"]?.jsonPrimitive?.content) {

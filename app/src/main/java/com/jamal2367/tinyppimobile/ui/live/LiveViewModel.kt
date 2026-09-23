@@ -10,6 +10,7 @@ import com.jamal2367.tinyppimobile.data.model.ContinueItem
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
+import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
@@ -664,6 +665,38 @@ class LiveViewModel(
     fun continuingStarted() {
         if (_continuing.value.starting != null) {
             _continuing.value = _continuing.value.copy(starting = null)
+        }
+    }
+
+    /**
+     * Mark a film, a series or an episode as seen or unseen, as the dialog a
+     * held finger opens asked.
+     *
+     * Nothing is drawn from here: the box drops what it holds the moment it
+     * has written, and every list the shelves are drawn from is read again at
+     * once - the walls, the row, and the episodes of whichever show is open -
+     * so the tick that appears is the library's and not a guess of this app's.
+     * A failure is said out loud, because this one was asked for.
+     */
+    fun setWatched(target: MarkTarget, watched: Boolean) {
+        viewModelScope.launch {
+            try {
+                repository.setWatched(target, watched)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Throwable) {
+                report(failure)
+                return@launch
+            }
+            _library.value = _library.value.copy(read = false)
+            _series.value = _series.value.copy(read = false)
+            _continuing.value = _continuing.value.copy(read = false)
+            // Read here rather than left to the screens that watch the marks:
+            // the screen showing the press may be one that is not watching
+            // every list the title stands on.
+            refreshLibrary()
+            refreshSeries()
+            refreshContinuing()
         }
     }
 

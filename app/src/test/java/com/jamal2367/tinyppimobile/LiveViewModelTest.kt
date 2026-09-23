@@ -8,6 +8,8 @@ import com.jamal2367.tinyppimobile.data.model.Library
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
+import com.jamal2367.tinyppimobile.data.model.MarkTarget
+import com.jamal2367.tinyppimobile.data.model.WatchedBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
@@ -332,5 +334,51 @@ class LiveViewModelTest {
         assertEquals(1, api.count("playEpisode"))
         assertEquals(0, api.count("play"))
         assertFalse("the row is worth reading again", vm.continuing.value.read)
+    }
+
+    @Test
+    fun `marking a film sends its id and reads the shelves again`() = runTest(dispatcher) {
+        val vm = viewModel()
+        var sent: WatchedBody? = null
+        api.setWatched = { body -> sent = body; CommandAck(ok = true) }
+        api.library = { Library(movies = listOf(blade.copy(watched = true), heat)) }
+        vm.refreshLibrary()
+        advanceUntilIdle()
+        assertEquals(1, api.count("library"))
+
+        vm.setWatched(MarkTarget(MarkTarget.Kind.MOVIE, blade.id, blade.title), watched = false)
+        advanceUntilIdle()
+
+        assertEquals(WatchedBody(movieid = blade.id, watched = false), sent)
+        assertEquals(2, api.count("library"))
+        assertEquals(1, api.count("series"))
+        assertEquals(1, api.count("continuing"))
+        assertNull(vm.message.value)
+    }
+
+    @Test
+    fun `a series is marked by its show id alone`() = runTest(dispatcher) {
+        val vm = viewModel()
+        var sent: WatchedBody? = null
+        api.setWatched = { body -> sent = body; CommandAck(ok = true) }
+
+        vm.setWatched(MarkTarget(MarkTarget.Kind.SHOW, 7, "Dark"), watched = true)
+        advanceUntilIdle()
+
+        assertEquals(WatchedBody(tvshowid = 7, watched = true), sent)
+        val encoded = FakeApi.json.encodeToString(WatchedBody.serializer(), sent!!)
+        assertEquals("""{"tvshowid":7,"watched":true}""", encoded)
+    }
+
+    @Test
+    fun `a mark the box refuses is said out loud and reads nothing`() = runTest(dispatcher) {
+        val vm = viewModel()
+        api.setWatched = { throw ApiFailure.Api(400, "update failed") }
+
+        vm.setWatched(MarkTarget(MarkTarget.Kind.EPISODE, 3, "S01E01"), watched = true)
+        advanceUntilIdle()
+
+        assertEquals("failed: 400", vm.message.value)
+        assertEquals(0, api.count("library"))
     }
 }
