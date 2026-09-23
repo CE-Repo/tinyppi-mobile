@@ -144,6 +144,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { repository.setKeepScreenOn(enabled) }
     }
 
+    fun setVolumeKeys(enabled: Boolean) {
+        viewModelScope.launch { repository.setVolumeKeys(enabled) }
+    }
+
     fun setShowArtwork(enabled: Boolean) {
         viewModelScope.launch { repository.setShowArtwork(enabled) }
     }

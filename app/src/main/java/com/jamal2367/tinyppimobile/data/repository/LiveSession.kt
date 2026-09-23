@@ -3,7 +3,7 @@ package com.jamal2367.tinyppimobile.data.repository
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.data.remote.ServerRouter
-import com.jamal2367.tinyppimobile.data.remote.SnapshotStream
+import com.jamal2367.tinyppimobile.data.remote.SnapshotSource
 import com.jamal2367.tinyppimobile.data.remote.StreamEvent
 import com.jamal2367.tinyppimobile.data.remote.TinyPpiApi
 import com.jamal2367.tinyppimobile.data.remote.asSnapshotObject
@@ -79,7 +79,7 @@ data class LiveState(
  */
 class LiveSession(
     private val api: TinyPpiApi,
-    private val stream: SnapshotStream,
+    private val stream: SnapshotSource,
     private val router: ServerRouter,
     private val json: Json,
 ) {

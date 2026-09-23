@@ -65,7 +65,8 @@
 
     <string name="card_expand">Karte ausklappen</string>
     <string name="card_collapse">Karte einklappen</string>
-    <string name="live_playpause">Wiedergabe / Pause</string>
+    <string name="live_play">Wiedergabe</string>
+    <string name="live_pause">Pause</string>
     <string name="live_transport">Player</string>
     <string name="live_stop">Stopp</string>
     <string name="live_chapter_previous">Vorheriges Kapitel</string>
@@ -91,6 +92,12 @@
     <string name="live_volume">Lautstärke</string>
     <string name="live_mute">Stummschalten</string>
     <string name="live_unmute">Ton an</string>
+    <string name="live_volume_muted">Stumm</string>
+    <plurals name="live_volume_percent">
+        <item quantity="one">%1$d Prozent</item>
+        <item quantity="other">%1$d Prozent</item>
+    </plurals>
+    <string name="a11y_conversion">%1$s, umgewandelt in %2$s</string>
 
     <string name="live_audio_track">Tonspur</string>
     <string name="live_subtitles">Untertitel</string>
@@ -180,6 +187,9 @@
     <string name="settings_seconds">%1$d s</string>
     <string name="settings_keep_screen_on">Bildschirm anlassen</string>
     <string name="settings_keep_screen_on_desc">Für ein Handy, das am Fernseher lehnt.</string>
+    <string name="settings_volume_keys">Lautstärketasten steuern die Box</string>
+    <string name="settings_volume_keys_desc">Während etwas läuft, regeln die Lautstärketasten des Handys die Box statt des Handys.</string>
+    <string name="settings_server_answering">Antwortet</string>
 
     <!-- Einstellungen: Aussehen -->
     <string name="settings_appearance">Aussehen</string>

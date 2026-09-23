@@ -4,8 +4,8 @@ buildscript {
     dependencies {
         // AGP 9 has built-in Kotlin support and ships with KGP 2.2.10. Declaring the
         // classpath here is the documented way to run a newer Kotlin Gradle Plugin.
-        // Keep this in sync with `kotlin` in gradle/libs.versions.toml -- version
-        // catalog accessors are not available inside a buildscript block.
+        // It reads the same `kotlin` version the Kotlin plugins below are
+        // declared with, so the compiler and those plugins cannot drift apart.
         classpath(libs.kotlin.gradle.plugin)
     }
 }

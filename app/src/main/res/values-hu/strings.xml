@@ -68,7 +68,8 @@
 
     <string name="card_expand">Kártya kibontása</string>
     <string name="card_collapse">Kártya összecsukása</string>
-    <string name="live_playpause">Lejátszás / szünet</string>
+    <string name="live_play">Lejátszás</string>
+    <string name="live_pause">Szünet</string>
     <string name="live_transport">Lejátszó</string>
     <string name="live_stop">Stop</string>
     <string name="live_chapter_previous">Előző fejezet</string>
@@ -94,6 +95,12 @@
     <string name="live_volume">Hangerő</string>
     <string name="live_mute">Némítás</string>
     <string name="live_unmute">Némítás feloldása</string>
+    <string name="live_volume_muted">Némítva</string>
+    <plurals name="live_volume_percent">
+        <item quantity="one">%1$d százalék</item>
+        <item quantity="other">%1$d százalék</item>
+    </plurals>
+    <string name="a11y_conversion">%1$s, átalakítva erre: %2$s</string>
 
     <string name="live_audio_track">Hangsáv</string>
     <string name="live_subtitles">Feliratok</string>
@@ -183,6 +190,9 @@
     <string name="settings_seconds">%1$d mp</string>
     <string name="settings_keep_screen_on">Képernyő bekapcsolva tartása</string>
     <string name="settings_keep_screen_on_desc">Televízióhoz kapcsolt a telefon esetén.</string>
+    <string name="settings_volume_keys">A hangerőgombok a boxot vezérlik</string>
+    <string name="settings_volume_keys_desc">Lejátszás közben a telefon hangerőgombjai a box hangerejét állítják a telefoné helyett.</string>
+    <string name="settings_server_answering">Válaszol</string>
 
     <!-- Settings: appearance -->
     <string name="settings_appearance">Megjelenés</string>

@@ -151,6 +151,9 @@ fun SectionHeading(
     interactionSource: MutableInteractionSource? = null,
 ) {
     val press = interactionSource ?: remember { MutableInteractionSource() }
+    // Said with the press, so a screen reader hears which way the card goes -
+    // the heading alone told it there was something to press, not what.
+    val foldLabel = stringResource(if (expanded) R.string.card_collapse else R.string.card_expand)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -159,6 +162,7 @@ fun SectionHeading(
                     Modifier.clickable(
                         interactionSource = press,
                         indication = null,
+                        onClickLabel = foldLabel,
                         onClick = onToggle,
                     )
                 } else {

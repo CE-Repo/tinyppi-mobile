@@ -440,7 +440,7 @@ private fun Shelf(
 @Composable
 private fun sharedLiveViewModel(): LiveViewModel {
     val activity = checkNotNull(LocalActivity.current) as ViewModelStoreOwner
-    return viewModel(viewModelStoreOwner = activity)
+    return viewModel(viewModelStoreOwner = activity, factory = LiveViewModel.Factory)
 }
 
 /**

@@ -1,8 +1,10 @@
 package com.jamal2367.tinyppimobile.ui.live
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.jamal2367.tinyppimobile.TinyPpiApplication
 import com.jamal2367.tinyppimobile.data.model.ContinueItem
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
@@ -12,9 +14,11 @@ import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
 import com.jamal2367.tinyppimobile.data.repository.LiveState
+import com.jamal2367.tinyppimobile.data.repository.PlayerRepository
 import com.jamal2367.tinyppimobile.util.toUserMessage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -153,13 +157,22 @@ data class OpenShow(
     val episodes: List<LibraryEpisode> = emptyList(),
 )
 
-class LiveViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val container = (application as TinyPpiApplication).container
-    private val repository = container.repository
+/**
+ * Everything is handed in rather than fetched from the application, so the
+ * whole of what the shelves and the commands decide can be run against a
+ * made-up box in a unit test. [Factory] is where the real ones come from.
+ */
+class LiveViewModel(
+    private val repository: PlayerRepository,
+    liveState: Flow<LiveState>,
+    settings: Flow<AppSettings>,
+    private val reconnectLive: () -> Unit,
+    /** How a failure is put into words for the snackbar. */
+    private val describe: (Throwable) -> String,
+) : ViewModel() {
 
     val state: StateFlow<LiveUiState> =
-        combine(container.liveState, container.settingsRepository.settings) { live, settings ->
+        combine(liveState, settings) { live, settings ->
             LiveUiState(live = live, settings = settings)
         }.stateIn(
             scope = viewModelScope,
@@ -218,7 +231,7 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
      * back and the session is still sitting on its back-off.
      */
     fun reconnect() {
-        container.reconnect()
+        reconnectLive()
     }
 
     fun consumeMessage() {
@@ -667,6 +680,30 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun report(failure: Throwable) {
-        _message.value = failure.toUserMessage(getApplication())
+        _message.value = describe(failure)
+    }
+
+    companion object {
+        /**
+         * The one every screen asks for, wired to the app's own graph.
+         *
+         * Every caller passes it with the activity as the owner, so the three
+         * live screens and the two shelves share one instance - which is what
+         * lets the shelves be read once rather than once per screen.
+         */
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application =
+                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as TinyPpiApplication
+                val container = application.container
+                LiveViewModel(
+                    repository = container.repository,
+                    liveState = container.liveState,
+                    settings = container.settingsRepository.settings,
+                    reconnectLive = container::reconnect,
+                    describe = { it.toUserMessage(application) },
+                )
+            }
+        }
     }
 }
