@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds only: a pretend box on 127.0.0.1:8099 to try the app against. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <provider
+            android:name=".demo.DemoServerStarter"
+            android:authorities="${applicationId}.demo"
+            android:exported="false" />
+    </application>
+</manifest>
