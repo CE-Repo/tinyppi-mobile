@@ -41,7 +41,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
-import com.jamal2367.tinyppimobile.ui.components.centredBelowTitle
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.live.ContinueUiState
@@ -133,7 +132,6 @@ fun FilmsScreen(
         onMessageShown = viewModel::consumeMessage,
         onOpenSettings = onOpenSettings,
         gap = 0.dp,
-        head = SHELF_HEAD,
     ) {
         // The screen's name and the search box first, then two cards: what
         // was left half-watched - out of the way while somebody is searching,
@@ -240,8 +238,6 @@ fun SeriesScreen(
         // The cards of the wall part themselves; an open show is rows the
         // list spaces out.
         gap = if (open != null) CardGap else 0.dp,
-        // An open show's episodes read from the top, under its name.
-        head = if (open != null) 0 else SHELF_HEAD,
     ) {
         if (open != null) {
             episodeList(
@@ -336,10 +332,6 @@ private fun Shelf(
     onMessageShown: () -> Unit,
     onOpenSettings: () -> Unit,
     gap: Dp = CardGap,
-    // How many items at the head of the list - the title and the search
-    // field - stay at the top while the cards under them are centred. None
-    // for a list that is not to be centred at all.
-    head: Int = 0,
     content: LazyListScope.() -> Unit,
 ) {
     val listState = rememberLazyListState()
@@ -429,7 +421,7 @@ private fun Shelf(
             LazyColumn(
                 state = listState,
                 contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = 24.dp),
-                verticalArrangement = if (head > 0) centredBelowTitle(gap, head) else Arrangement.spacedBy(gap),
+                verticalArrangement = Arrangement.spacedBy(gap),
                 modifier = Modifier.fillMaxSize(),
                 content = content,
             )
@@ -450,9 +442,6 @@ private fun sharedLiveViewModel(): LiveViewModel {
     val activity = checkNotNull(LocalActivity.current) as ViewModelStoreOwner
     return viewModel(viewModelStoreOwner = activity)
 }
-
-/** What `shelfTop` puts at the head of a shelf: its title and its search field. */
-private const val SHELF_HEAD = 2
 
 /**
  * What the four shelf cards are remembered by. Named for the card rather than
