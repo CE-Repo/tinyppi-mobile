@@ -45,6 +45,7 @@ import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 import com.jamal2367.tinyppimobile.ui.navigation.LocalBottomBarSpace
+import com.jamal2367.tinyppimobile.ui.components.ScreenTitle
 import kotlinx.coroutines.delay
 
 /**
@@ -117,15 +118,15 @@ fun HistoryScreen(
             else -> LazyColumn(
                 contentPadding = PaddingValues(
                     start = ScreenEdge,
-                    top = ScreenEdge,
                     end = ScreenEdge,
                     bottom = ScreenEdge + LocalBottomBarSpace.current,
                 ),
-                verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
+                verticalArrangement = Arrangement.spacedBy(CardGap),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
             ) {
+                item(key = "screen-title") { ScreenTitle(stringResource(R.string.nav_history)) }
                 item { SummaryCard(state, history) }
                 item { EventsCard(events = history.events, foldId = "history.events") }
             }

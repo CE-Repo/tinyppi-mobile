@@ -92,6 +92,7 @@ import com.jamal2367.tinyppimobile.ui.theme.PosterShape
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.util.MediaUrls
+import com.jamal2367.tinyppimobile.ui.components.ScreenTitle
 
 /**
  * The walls of posters the box's library is offered as, and everything they
@@ -454,12 +455,7 @@ internal fun LazyListScope.shelfTop(
     onSearch: (String) -> Unit,
 ) {
     item(key = "shelf-title") {
-        Text(
-            text = title(),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 14.dp),
-        )
+        ScreenTitle(text = title(), modifier = Modifier.padding(bottom = 14.dp))
     }
     item(key = "shelf-search") {
         WallSearch(

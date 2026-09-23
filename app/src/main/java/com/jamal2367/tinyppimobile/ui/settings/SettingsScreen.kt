@@ -44,7 +44,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,6 +76,7 @@ import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 import com.jamal2367.tinyppimobile.ui.navigation.LocalBottomBarSpace
+import com.jamal2367.tinyppimobile.ui.components.ScreenTitle
 
 /**
  * Where the two addresses live.
@@ -93,21 +93,21 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val settings = state.settings
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_settings)) }) },
-    ) { padding ->
+    Scaffold { padding ->
         LazyColumn(
             contentPadding = PaddingValues(
                 start = ScreenEdge,
-                top = ScreenEdge,
                 end = ScreenEdge,
                 bottom = ScreenEdge + LocalBottomBarSpace.current,
             ),
-            verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
+            verticalArrangement = Arrangement.spacedBy(CardGap),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
         ) {
+            // The same title the other tabs wear, in the list rather than in a
+            // bar of its own above it.
+            item(key = "screen-title") { ScreenTitle(stringResource(R.string.nav_settings)) }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(

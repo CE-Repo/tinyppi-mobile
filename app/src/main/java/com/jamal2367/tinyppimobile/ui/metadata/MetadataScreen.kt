@@ -41,6 +41,7 @@ import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 import com.jamal2367.tinyppimobile.ui.navigation.LocalBottomBarSpace
+import com.jamal2367.tinyppimobile.ui.components.ScreenTitle
 
 /**
  * The Dolby Vision metadata view, as the overlay's own second window draws it.
@@ -115,13 +116,15 @@ private fun MetadataList(
     LazyColumn(
         contentPadding = PaddingValues(
             start = ScreenEdge,
-            top = ScreenEdge,
             end = ScreenEdge,
             bottom = ScreenEdge + LocalBottomBarSpace.current,
         ),
-        verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
+        // From the top, under the title, rather than centred: a short list
+        // centred on the screen would carry its title down into the middle.
+        verticalArrangement = Arrangement.spacedBy(CardGap),
         modifier = modifier,
     ) {
+        item(key = "screen-title") { ScreenTitle(stringResource(R.string.nav_metadata)) }
         chartHistory?.let { history ->
             item { ChartCard(history, chartRange, onChartRangeChange) }
         }
