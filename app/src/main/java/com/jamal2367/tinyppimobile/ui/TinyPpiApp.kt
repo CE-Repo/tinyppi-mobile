@@ -71,7 +71,7 @@ import com.jamal2367.tinyppimobile.ui.navigation.aboveBottomBar
 
 @Composable
 fun TinyPpiApp(container: AppContainer) {
-    val liveViewModel: LiveViewModel = viewModel()
+    val liveViewModel: LiveViewModel = viewModel(factory = LiveViewModel.Factory)
     val liveState by liveViewModel.state.collectAsStateWithLifecycle()
     val library by liveViewModel.library.collectAsStateWithLifecycle()
     val series by liveViewModel.series.collectAsStateWithLifecycle()

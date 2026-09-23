@@ -6,7 +6,9 @@
 
 package com.jamal2367.tinyppimobile.ui.settings
 
-import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.background
@@ -215,7 +217,8 @@ private fun ServerCard(
             if (isActive) {
                 Icon(
                     imageVector = Icons.Outlined.CheckCircle,
-                    contentDescription = null,
+                    // The only place the card says it is the one answering.
+                    contentDescription = stringResource(R.string.settings_server_answering),
                     tint = MaterialTheme.colorScheme.accentText,
                     modifier = Modifier.size(20.dp),
                 )
@@ -435,13 +438,21 @@ private fun ConnectionModeCard(current: ConnectionMode, onSelect: (ConnectionMod
                     R.string.settings_mode_secondary to R.string.settings_mode_secondary_desc
             }
 
+            // The row is the control and the button only its drawing: one stop
+            // for a screen reader, read as a radio button with its label and
+            // its description, rather than a bare button and two lines of
+            // text beside it that could be pressed but were not said to be.
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onSelect(mode) },
+                    .selectable(
+                        selected = current == mode,
+                        onClick = { onSelect(mode) },
+                        role = Role.RadioButton,
+                    ),
                 verticalAlignment = Alignment.Top,
             ) {
-                RadioButton(selected = current == mode, onClick = { onSelect(mode) })
+                RadioButton(selected = current == mode, onClick = null)
                 Column(modifier = Modifier.padding(start = 4.dp, top = 12.dp)) {
                     Text(
                         text = stringResource(labelRes),
@@ -498,6 +509,12 @@ private fun UpdatesCard(settings: AppSettings, viewModel: SettingsViewModel) {
             description = stringResource(R.string.settings_keep_screen_on_desc),
             checked = settings.keepScreenOn,
             onCheckedChange = viewModel::setKeepScreenOn,
+        )
+        SwitchRow(
+            label = stringResource(R.string.settings_volume_keys),
+            description = stringResource(R.string.settings_volume_keys_desc),
+            checked = settings.volumeKeys,
+            onCheckedChange = viewModel::setVolumeKeys,
         )
     }
 }
@@ -664,9 +681,15 @@ private fun SwitchRow(
     val dim = if (enabled) 1f else DISABLED_ALPHA
 
     Row(
+        // The row is the switch, the same way a mode row is its radio button.
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = enabled) { onCheckedChange(!checked) },
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = Role.Switch,
+                onValueChange = onCheckedChange,
+            ),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -686,7 +709,7 @@ private fun SwitchRow(
         }
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange,
+            onCheckedChange = null,
             enabled = enabled,
         )
     }

@@ -126,6 +126,11 @@ The title with its poster, the source and output badges, the video and audio
 formats named in badges of their own, the progress, and — on a box that allows
 it — the transport row, the track pickers and the VS10 conversions.
 
+While something is playing on such a box, the phone's own volume buttons turn
+the box up and down instead of the phone; a switch under *Readings* in the
+settings hands them back. Every key that acts on the box gives a short tick
+under the thumb, as far as the system's touch-feedback setting allows.
+
 The measurements at the bottom are the numeric half of a snapshot: the readings
 the dashboard charts rather than prints. The luminance pair only exists inside
 a Dolby Vision RPU, so it is absent for every other grade rather than shown as

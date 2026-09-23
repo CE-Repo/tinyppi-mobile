@@ -4,6 +4,9 @@ build/
 captures/
 .cxx/
 
+# Kotlin 2 compiler caches
+.kotlin/
+
 # Android Studio / IntelliJ
 .idea/
 *.iml

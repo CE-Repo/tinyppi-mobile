@@ -108,6 +108,16 @@ data class AppSettings(
      * wants its battery spent on a lit screen.
      */
     val keepScreenOn: Boolean = false,
+    /**
+     * Whether the phone's volume buttons turn the box up and down.
+     *
+     * On by default. The app plays nothing of its own, so the buttons had
+     * nothing to do here but set the ringer - and a phone held in front of
+     * the television is a phone whose volume buttons are wanted for the
+     * television. Only while something is playing on a box that allows
+     * control; everywhere else they are the phone's again.
+     */
+    val volumeKeys: Boolean = true,
     /** Whether the poster of what is playing is fetched at all. */
     val showArtwork: Boolean = true,
     /**

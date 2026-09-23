@@ -1,10 +1,12 @@
 package com.jamal2367.tinyppimobile
 
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -22,6 +24,7 @@ import com.jamal2367.tinyppimobile.di.AppContainer
 import com.jamal2367.tinyppimobile.ui.TinyPpiApp
 import com.jamal2367.tinyppimobile.ui.components.CardFolds
 import com.jamal2367.tinyppimobile.ui.components.LocalCardFolds
+import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
 import com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import com.jamal2367.tinyppimobile.ui.theme.isDarkTheme
@@ -91,6 +94,13 @@ class MainActivity : ComponentActivity() {
      * that was refused before anyone decided anything.
      */
     private val networkAccessDecided = MutableStateFlow(false)
+
+    /**
+     * The same instance every screen draws from - same owner, same factory -
+     * so a volume button pressed here fails into the snackbar those screens
+     * already show, rather than into nothing.
+     */
+    private val liveViewModel: LiveViewModel by viewModels { LiveViewModel.Factory }
 
     private val requestLocalNetwork =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -170,5 +180,45 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    /**
+     * The phone's volume buttons, handed to the box while something plays.
+     *
+     * Taken here rather than in a composable because a key event reaches a
+     * composable only through whatever holds focus, and on a screen of cards
+     * nothing does - so it falls through to the activity, which is here.
+     * Both halves of a press are consumed, so the system's own volume panel
+     * does not open over the screen as well.
+     *
+     * Held down, a button repeats far faster than the box needs to be told
+     * anything - so only every few repeats is passed on, which walks the level
+     * along at about the pace the on-screen keys can be tapped.
+     */
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (!isVolumeKey(keyCode) || !volumeKeysDriveTheBox()) return super.onKeyDown(keyCode, event)
+
+        if (event.repeatCount % VOLUME_REPEAT_EVERY == 0) {
+            if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) liveViewModel.volumeUp() else liveViewModel.volumeDown()
+        }
+        return true
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        if (!isVolumeKey(keyCode) || !volumeKeysDriveTheBox()) return super.onKeyUp(keyCode, event)
+        return true
+    }
+
+    private fun isVolumeKey(keyCode: Int): Boolean =
+        keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
+
+    private fun volumeKeysDriveTheBox(): Boolean {
+        val state = liveViewModel.state.value
+        return state.settings.volumeKeys && state.canControlPlayback
+    }
+
+    private companion object {
+        /** How many of a held button's repeats go by for each one sent on. */
+        const val VOLUME_REPEAT_EVERY = 4
     }
 }

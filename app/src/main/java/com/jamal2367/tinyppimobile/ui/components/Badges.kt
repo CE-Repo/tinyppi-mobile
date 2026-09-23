@@ -17,9 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.ui.theme.PillShape
 
 /**
@@ -56,8 +60,19 @@ fun FormatBadge(
         MaterialTheme.typography.labelSmall.lineHeight.toDp()
     }
 
+    // The arrow is drawn and says nothing aloud, so a converting badge is
+    // handed to a screen reader as the sentence it stands for.
+    val spoken = arrowSuffix?.let { stringResource(R.string.a11y_conversion, text, it) }
+
     Row(
         modifier = modifier
+            .then(
+                if (spoken != null) {
+                    Modifier.clearAndSetSemantics { contentDescription = spoken }
+                } else {
+                    Modifier
+                }
+            )
             .clip(PillShape)
             .background(MaterialTheme.colorScheme.secondaryContainer)
             .padding(horizontal = 10.dp, vertical = 5.dp),

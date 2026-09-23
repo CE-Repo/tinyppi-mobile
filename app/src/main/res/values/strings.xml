@@ -68,7 +68,8 @@
 
     <string name="card_expand">Expand card</string>
     <string name="card_collapse">Collapse card</string>
-    <string name="live_playpause">Play / pause</string>
+    <string name="live_play">Play</string>
+    <string name="live_pause">Pause</string>
     <string name="live_transport">Player</string>
     <string name="live_stop">Stop</string>
     <string name="live_chapter_previous">Previous chapter</string>
@@ -94,6 +95,12 @@
     <string name="live_volume">Volume</string>
     <string name="live_mute">Mute</string>
     <string name="live_unmute">Unmute</string>
+    <string name="live_volume_muted">Muted</string>
+    <plurals name="live_volume_percent">
+        <item quantity="one">%1$d percent</item>
+        <item quantity="other">%1$d percent</item>
+    </plurals>
+    <string name="a11y_conversion">%1$s, converted to %2$s</string>
 
     <string name="live_audio_track">Audio track</string>
     <string name="live_subtitles">Subtitles</string>
@@ -183,6 +190,9 @@
     <string name="settings_seconds">%1$d s</string>
     <string name="settings_keep_screen_on">Keep the screen on</string>
     <string name="settings_keep_screen_on_desc">For a phone propped against the television.</string>
+    <string name="settings_volume_keys">Volume buttons control the box</string>
+    <string name="settings_volume_keys_desc">While something is playing, the phone\'s volume buttons turn the box up and down instead of the phone.</string>
+    <string name="settings_server_answering">Answering</string>
 
     <!-- Settings: appearance -->
     <string name="settings_appearance">Appearance</string>

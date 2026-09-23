@@ -43,7 +43,8 @@ fun TinyPpiPager(
     // the same snapshot, and a view model each would be several objects
     // collecting the same flow.
     val activity = checkNotNull(LocalActivity.current) as ViewModelStoreOwner
-    val liveViewModel: LiveViewModel = viewModel(viewModelStoreOwner = activity)
+    val liveViewModel: LiveViewModel =
+        viewModel(viewModelStoreOwner = activity, factory = LiveViewModel.Factory)
 
     HorizontalPager(
         state = pagerState,

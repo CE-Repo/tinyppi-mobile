@@ -45,6 +45,8 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setKeepScreenOn(enabled: Boolean) = edit { it[KEY_KEEP_SCREEN_ON] = enabled }
 
+    suspend fun setVolumeKeys(enabled: Boolean) = edit { it[KEY_VOLUME_KEYS] = enabled }
+
     suspend fun setShowArtwork(enabled: Boolean) = edit { it[KEY_SHOW_ARTWORK] = enabled }
 
     suspend fun setAdaptiveColor(enabled: Boolean) = edit { it[KEY_ADAPTIVE_COLOR] = enabled }
@@ -96,6 +98,7 @@ class SettingsRepository(private val context: Context) {
             .coerceIn(POLL_RANGE),
         chartRange = this[KEY_CHART_RANGE].toEnum(ChartRange.TEN_MINUTES),
         keepScreenOn = this[KEY_KEEP_SCREEN_ON] ?: false,
+        volumeKeys = this[KEY_VOLUME_KEYS] ?: true,
         showArtwork = this[KEY_SHOW_ARTWORK] ?: true,
         adaptiveColor = this[KEY_ADAPTIVE_COLOR] ?: true,
         adaptiveColorIntensity = (this[KEY_ADAPTIVE_COLOR_INTENSITY] ?: 1f)
@@ -131,6 +134,7 @@ class SettingsRepository(private val context: Context) {
         val KEY_POLL_SECONDS = intPreferencesKey("poll_seconds")
         val KEY_CHART_RANGE = stringPreferencesKey("chart_range")
         val KEY_KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
+        val KEY_VOLUME_KEYS = booleanPreferencesKey("volume_keys")
         val KEY_SHOW_ARTWORK = booleanPreferencesKey("show_artwork")
         val KEY_ADAPTIVE_COLOR = booleanPreferencesKey("adaptive_color")
         val KEY_ADAPTIVE_COLOR_INTENSITY = floatPreferencesKey("adaptive_color_intensity")
