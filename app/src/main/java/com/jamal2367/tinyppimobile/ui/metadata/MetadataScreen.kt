@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jamal2367.tinyppimobile.ui.components.centredBelowTitle
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.History
 import com.jamal2367.tinyppimobile.data.model.MetadataRow
@@ -114,9 +115,10 @@ private fun MetadataList(
 
     LazyColumn(
         contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = ScreenEdge),
-        // From the top, under the title, rather than centred: a short list
-        // centred on the screen would carry its title down into the middle.
-        verticalArrangement = Arrangement.spacedBy(CardGap),
+        // The title at the top and the cards centred under it, as on the
+        // live screen: centring the whole list would carry the title down
+        // into the middle with them.
+        verticalArrangement = centredBelowTitle(CardGap),
         modifier = modifier,
     ) {
         item(key = "screen-title") { ScreenTitle(stringResource(R.string.nav_metadata)) }
