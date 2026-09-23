@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,7 +43,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,6 +74,8 @@ import com.jamal2367.tinyppimobile.ui.theme.SlimSliderTrack
 import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
+import com.jamal2367.tinyppimobile.ui.components.ScreenTitle
+import com.jamal2367.tinyppimobile.ui.navigation.barAwarePadding
 
 /**
  * Where the two addresses live.
@@ -92,16 +92,17 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val settings = state.settings
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_settings)) }) },
-    ) { padding ->
+    Scaffold { padding ->
         LazyColumn(
-            contentPadding = PaddingValues(ScreenEdge),
-            verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
+            contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = ScreenEdge),
+            verticalArrangement = Arrangement.spacedBy(CardGap),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
         ) {
+            // The same title the other tabs wear, in the list rather than in a
+            // bar of its own above it.
+            item(key = "screen-title") { ScreenTitle(stringResource(R.string.nav_settings)) }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(

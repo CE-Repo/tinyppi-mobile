@@ -11,6 +11,15 @@ import androidx.compose.ui.unit.dp
 val PillShape = RoundedCornerShape(percent = 50)
 
 /**
+ * The corners a poster is cut with - on the live card and on every shelf.
+ *
+ * Its own figure rather than one of the scale's: a poster is a picture sitting
+ * inside a card, and it wants a tighter corner than the card round it so the
+ * two curves nest rather than fight.
+ */
+val PosterShape = RoundedCornerShape(12.dp)
+
+/**
  * The corners the whole app is cut with.
  *
  * Material's expressive scale rather than the one Android 12 shipped with:

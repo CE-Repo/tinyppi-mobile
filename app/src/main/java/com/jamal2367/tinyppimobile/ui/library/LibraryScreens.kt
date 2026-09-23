@@ -6,7 +6,6 @@
 package com.jamal2367.tinyppimobile.ui.library
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -55,9 +54,13 @@ import com.jamal2367.tinyppimobile.ui.live.filmColumns
 import com.jamal2367.tinyppimobile.ui.live.filmWall
 import com.jamal2367.tinyppimobile.ui.live.matching
 import com.jamal2367.tinyppimobile.ui.live.seriesWall
+import com.jamal2367.tinyppimobile.ui.live.shelfTop
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 import kotlinx.coroutines.delay
+import com.jamal2367.tinyppimobile.ui.navigation.barAwarePadding
+import com.jamal2367.tinyppimobile.ui.navigation.aboveBottomBar
+import com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage
 
 /**
  * The two shelves, as screens of their own.
@@ -130,10 +133,15 @@ fun FilmsScreen(
         onOpenSettings = onOpenSettings,
         gap = 0.dp,
     ) {
-        // Two cards, each folding under its own heading the way the live
-        // screen's do: what was left half-watched at the very top - out of the
-        // way while somebody is searching, which is looking for something
-        // else - and then the wall.
+        // The screen's name and the search box first, then two cards: what
+        // was left half-watched - out of the way while somebody is searching,
+        // which is looking for something else - and then the wall.
+        shelfTop(
+            title = { stringResource(R.string.library_title) },
+            searchLabel = { stringResource(R.string.library_search) },
+            search = search,
+            onSearch = { search = it },
+        )
         val resuming = search.isBlank() && resumable.isNotEmpty()
         if (resuming) {
             continueCard(
@@ -153,8 +161,6 @@ fun FilmsScreen(
             server = state.live.server,
             showArtwork = state.settings.showArtwork,
             starting = library.starting,
-            search = search,
-            onSearch = { search = it },
             gapAbove = resuming,
             expanded = wallOpen,
             onToggle = { folds.setExpanded(FOLD_FILMS, !wallOpen) },
@@ -211,7 +217,9 @@ fun SeriesScreen(
     // own back gesture is the one nearest a thumb. Without this it would leave
     // the shelf altogether, which is a whole tab further than anybody pressing
     // it meant to go.
-    BackHandler(enabled = open != null) { viewModel.closeShow() }
+    // Only on the tab in front: composed beside another one, it would take
+    // back away from a screen that has nothing to do with it.
+    BackHandler(enabled = open != null && LocalIsCurrentPage.current) { viewModel.closeShow() }
 
     Shelf(
         configured = state.isConfigured,
@@ -244,8 +252,15 @@ fun SeriesScreen(
             )
             return@Shelf
         }
-        // The same two cards as on the films screen: the episodes left
-        // half-watched, whichever show they belong to, and then the wall.
+        // The same head and the same two cards as on the films screen: the
+        // episodes left half-watched, whichever show they belong to, and then
+        // the wall.
+        shelfTop(
+            title = { stringResource(R.string.series_title) },
+            searchLabel = { stringResource(R.string.series_search) },
+            search = search,
+            onSearch = { search = it },
+        )
         val resuming = search.isBlank() && resumable.isNotEmpty()
         if (resuming) {
             continueCard(
@@ -265,8 +280,6 @@ fun SeriesScreen(
             server = state.live.server,
             showArtwork = state.settings.showArtwork,
             opening = series.opening,
-            search = search,
-            onSearch = { search = it },
             gapAbove = resuming,
             expanded = wallOpen,
             onToggle = { folds.setExpanded(FOLD_SERIES, !wallOpen) },
@@ -344,7 +357,12 @@ private fun Shelf(
     val pullState = rememberPullToRefreshState()
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                snackbarHostState,
+                modifier = Modifier.aboveBottomBar(),
+            )
+        },
     ) { padding ->
         // A box nobody has named cannot be pulled for anything: there is no
         // address to ask, and the thing to do about it is the button under the
@@ -402,7 +420,7 @@ private fun Shelf(
 
             LazyColumn(
                 state = listState,
-                contentPadding = PaddingValues(start = ScreenEdge, end = ScreenEdge, bottom = 24.dp),
+                contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(gap),
                 modifier = Modifier.fillMaxSize(),
                 content = content,

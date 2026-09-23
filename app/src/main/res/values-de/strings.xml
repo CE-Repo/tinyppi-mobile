@@ -3,7 +3,7 @@
 
     <!-- Navigation -->
     <string name="nav_live">Live</string>
-    <string name="nav_metadata">Dolby-Vision-Metadaten</string>
+    <string name="nav_metadata">DV Metadaten</string>
     <string name="nav_metadata_tab">Metadaten</string>
     <string name="nav_history">Verlauf</string>
     <string name="nav_settings">Einstellungen</string>
@@ -38,28 +38,22 @@
     <string name="library_search_clear">Suche leeren</string>
     <string name="library_empty_title">Keine Bibliothek</string>
     <string name="library_empty_text">Diese Box bietet keine Videobibliothek an, oder die Karten sind in den Add-on-Einstellungen ausgeschaltet.</string>
-    <string name="library_search">Filme suchen</string>
+    <string name="library_search">Filme durchsuchen</string>
+    <string name="library_all">Alle Filme · %1$d</string>
     <string name="library_runtime_hm">%1$d h %2$d min</string>
     <string name="library_runtime_h">%1$d h</string>
     <string name="library_runtime_m">%1$d min</string>
     <string name="library_watched">Gesehen</string>
     <string name="library_no_match">Dazu passt kein Film.</string>
-    <plurals name="library_count">
-        <item quantity="one">%1$d Film</item>
-        <item quantity="other">%1$d Filme</item>
-    </plurals>
 
     <!-- The wall of series under the films, and the episodes of one of them -->
     <string name="series_title">Serien</string>
-    <string name="series_search">Serien suchen</string>
+    <string name="series_search">Serien durchsuchen</string>
+    <string name="series_all">Alle Serien · %1$d</string>
     <string name="series_back">Alle Serien</string>
     <string name="series_no_match">Dazu passt keine Serie.</string>
     <string name="series_specials">Specials</string>
     <string name="series_season">Staffel %1$d</string>
-    <plurals name="series_count">
-        <item quantity="one">%1$d Serie</item>
-        <item quantity="other">%1$d Serien</item>
-    </plurals>
     <plurals name="series_episodes">
         <item quantity="one">%1$d Folge</item>
         <item quantity="other">%1$d Folgen</item>

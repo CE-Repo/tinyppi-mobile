@@ -4,7 +4,6 @@ package com.jamal2367.tinyppimobile.ui.metadata
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,6 +39,8 @@ import com.jamal2367.tinyppimobile.ui.components.flashOnChange
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
+import com.jamal2367.tinyppimobile.ui.components.ScreenTitle
+import com.jamal2367.tinyppimobile.ui.navigation.barAwarePadding
 
 /**
  * The Dolby Vision metadata view, as the overlay's own second window draws it.
@@ -112,10 +113,13 @@ private fun MetadataList(
     val sections = remember(rows) { rows.toSections() }
 
     LazyColumn(
-        contentPadding = PaddingValues(ScreenEdge),
-        verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
+        contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = ScreenEdge),
+        // From the top, under the title, rather than centred: a short list
+        // centred on the screen would carry its title down into the middle.
+        verticalArrangement = Arrangement.spacedBy(CardGap),
         modifier = modifier,
     ) {
+        item(key = "screen-title") { ScreenTitle(stringResource(R.string.nav_metadata)) }
         chartHistory?.let { history ->
             item { ChartCard(history, chartRange, onChartRangeChange) }
         }

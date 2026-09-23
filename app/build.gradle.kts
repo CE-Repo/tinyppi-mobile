@@ -116,7 +116,6 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material3.window)
     implementation(libs.androidx.compose.material.icons)
-    implementation(libs.androidx.navigation.compose)
 
     implementation(libs.androidx.datastore.preferences)
 
@@ -129,6 +128,10 @@ dependencies {
 
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+
+    // The frosted glass under the floating navigation bar.
+    implementation(libs.haze)
+    implementation(libs.haze.blur)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
 

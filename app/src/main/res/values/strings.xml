@@ -6,7 +6,7 @@
 
     <!-- Navigation -->
     <string name="nav_live">Live</string>
-    <string name="nav_metadata">Dolby Vision metadata</string>
+    <string name="nav_metadata">DV metadata</string>
     <string name="nav_metadata_tab">Metadata</string>
     <string name="nav_history">History</string>
     <string name="nav_settings">Settings</string>
@@ -42,27 +42,21 @@
     <string name="library_empty_title">No library</string>
     <string name="library_empty_text">This box offers no video library, or its cards are switched off in the add-on settings.</string>
     <string name="library_search">Search films</string>
+    <string name="library_all">All films · %1$d</string>
     <string name="library_runtime_hm">%1$d h %2$d min</string>
     <string name="library_runtime_h">%1$d h</string>
     <string name="library_runtime_m">%1$d min</string>
     <string name="library_watched">Watched</string>
     <string name="library_no_match">No film matches that.</string>
-    <plurals name="library_count">
-        <item quantity="one">%1$d film</item>
-        <item quantity="other">%1$d films</item>
-    </plurals>
 
     <!-- The wall of series under the films, and the episodes of one of them -->
     <string name="series_title">Series</string>
     <string name="series_search">Search series</string>
+    <string name="series_all">All series · %1$d</string>
     <string name="series_back">All series</string>
     <string name="series_no_match">No series matches that.</string>
     <string name="series_specials">Specials</string>
     <string name="series_season">Season %1$d</string>
-    <plurals name="series_count">
-        <item quantity="one">%1$d series</item>
-        <item quantity="other">%1$d series</item>
-    </plurals>
     <plurals name="series_episodes">
         <item quantity="one">%1$d episode</item>
         <item quantity="other">%1$d episodes</item>
