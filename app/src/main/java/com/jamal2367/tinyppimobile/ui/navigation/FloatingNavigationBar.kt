@@ -3,7 +3,7 @@
 package com.jamal2367.tinyppimobile.ui.navigation
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.asPaddingValues
@@ -20,13 +19,11 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -42,8 +39,6 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -108,9 +103,9 @@ fun rememberBarVisibility(): BarVisibility = remember { BarVisibility() }
  * a shelf are still there under the bar, just out of focus - so the bar costs
  * the screen a pill's worth of picture rather than a whole strip of it.
  *
- * Only the tab that is open carries its name. Six names under six icons is a
- * row of small type that has to be read; one name in the accent is where the
- * reader is, and the icons either side are where they could go.
+ * Icons only. The open tab is a wider pill in the accent, which says where
+ * the reader is without a line of type; the names are there for a screen
+ * reader, not for the eye.
  */
 @Composable
 fun FloatingNavigationBar(
@@ -153,7 +148,7 @@ fun FloatingNavigationBar(
             // the width of a finger each: on a narrow phone with every tab
             // showing they close up rather than push the bar off the screen.
             val others = (destinations.size - 1).coerceAtLeast(1)
-            val itemWidth = ((maxWidth - BAR_PADDING * 2 - SELECTED_ALLOWANCE) / others)
+            val itemWidth = ((maxWidth - BAR_PADDING * 2 - SELECTED_WIDTH) / others)
                 .coerceIn(ITEM_MIN, ITEM_MAX)
 
             val colors = MaterialTheme.colorScheme
@@ -184,7 +179,7 @@ fun FloatingNavigationBar(
                     BarItem(
                         destination = destination,
                         selected = destination == selected,
-                        width = itemWidth,
+                        width = if (destination == selected) SELECTED_WIDTH else itemWidth,
                         onClick = { onSelect(destination) },
                     )
                 }
@@ -194,8 +189,8 @@ fun FloatingNavigationBar(
 }
 
 /**
- * One tab: an icon, and where it is the open one, a pill in the accent with
- * its name beside the icon.
+ * One tab: an icon, and where it is the open one, a wider pill in the accent
+ * behind it.
  */
 @Composable
 private fun BarItem(
@@ -217,37 +212,30 @@ private fun BarItem(
         label = "tab-content",
     )
 
-    Row(
+    // Animated rather than set, so the pill slides wide from one tab to the
+    // next instead of jumping. Without the spring's overshoot: a width that
+    // bounced below nothing would be a crash.
+    val animatedWidth by animateDpAsState(
+        targetValue = width,
+        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+        label = "tab-width",
+    )
+
+    Box(
         modifier = Modifier
             .height(ITEM_HEIGHT)
-            .widthIn(min = width)
+            .width(animatedWidth.coerceAtLeast(0.dp))
             .clip(PillShape)
             .background(container)
-            .selectable(selected = selected, onClick = onClick, role = Role.Tab)
-            .animateContentSize(MaterialTheme.motionScheme.defaultSpatialSpec())
-            .padding(horizontal = if (selected) SELECTED_PADDING else 0.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
+            .selectable(selected = selected, onClick = onClick, role = Role.Tab),
+        contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = if (selected) destination.selectedIcon else destination.icon,
-            // The open tab's name is written beside it; the others have only
-            // the icon to be read out by.
-            contentDescription = if (selected) null else label,
+            // Nothing is written on the bar, so every tab is read out by name.
+            contentDescription = label,
             tint = content,
         )
-        if (selected) {
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = content,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.widthIn(max = LABEL_MAX),
-            )
-        }
     }
 }
 
@@ -267,11 +255,8 @@ private val ITEM_HEIGHT = 48.dp
 private val ITEM_GAP = 2.dp
 private val ITEM_MIN = 40.dp
 private val ITEM_MAX = 52.dp
-private val SELECTED_PADDING = 16.dp
-private val LABEL_MAX = 96.dp
-
-/** What the open tab's pill is budgeted at when the icons share out the rest. */
-private val SELECTED_ALLOWANCE = 128.dp
+/** How wide the open tab's pill is drawn. */
+private val SELECTED_WIDTH = 64.dp
 
 private val BLUR_RADIUS = 24.dp
 private const val GLASS_TINT = 0.62f
