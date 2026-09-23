@@ -82,13 +82,13 @@ import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.ui.components.FoldChevron
 import com.jamal2367.tinyppimobile.ui.components.PosterImage
+import com.jamal2367.tinyppimobile.ui.components.SectionHeading
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import com.jamal2367.tinyppimobile.ui.theme.PillShape
 import com.jamal2367.tinyppimobile.ui.theme.PosterShape
-import com.jamal2367.tinyppimobile.ui.theme.accentText
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.util.MediaUrls
@@ -117,8 +117,9 @@ import com.jamal2367.tinyppimobile.util.MediaUrls
  * costs the screen one line of posters rather than several. The tiles are the
  * wall's own at the wall's own width, so the two cards read as one shelf.
  *
- * It is not there at all where there is nothing to resume - an empty card
- * with a heading over it would be a card saying nothing.
+ * It folds like every other card, and is not there at all where there is
+ * nothing to resume - an empty card with a heading over it would be a card
+ * saying nothing.
  */
 internal fun LazyListScope.continueCard(
     items: List<ContinueItem>,
@@ -126,6 +127,8 @@ internal fun LazyListScope.continueCard(
     server: ServerConfig?,
     showArtwork: Boolean,
     starting: String?,
+    expanded: Boolean,
+    onToggle: () -> Unit,
     onPlay: (ContinueItem) -> Unit,
 ) {
     if (items.isEmpty()) return
@@ -133,8 +136,11 @@ internal fun LazyListScope.continueCard(
     cardTop(
         key = "continue",
         gapAbove = false,
+        expanded = expanded,
+        onToggle = onToggle,
         title = { stringResource(R.string.continue_title) },
     )
+    if (!expanded) return
 
     item(key = "continue-row") {
         val width = filmTileWidth(columns)
@@ -244,11 +250,15 @@ internal fun LazyListScope.filmWall(
     showArtwork: Boolean,
     starting: Int?,
     gapAbove: Boolean,
+    expanded: Boolean,
+    onToggle: () -> Unit,
     onPlay: (LibraryFilm) -> Unit,
 ) {
     shelfCard(
         key = "film-wall",
         gapAbove = gapAbove,
+        expanded = expanded,
+        onToggle = onToggle,
         title = { stringResource(R.string.library_all, films.size) },
         noMatch = { stringResource(R.string.library_no_match) },
         tiles = films,
@@ -283,6 +293,8 @@ internal fun LazyListScope.filmWall(
 private fun <T> LazyListScope.shelfCard(
     key: String,
     gapAbove: Boolean,
+    expanded: Boolean,
+    onToggle: () -> Unit,
     title: @Composable () -> String,
     noMatch: @Composable () -> String,
     tiles: List<T>,
@@ -290,7 +302,8 @@ private fun <T> LazyListScope.shelfCard(
     rowKey: (List<T>) -> String,
     tile: @Composable RowScope.(T) -> Unit,
 ) {
-    cardTop(key, gapAbove, title)
+    cardTop(key, gapAbove, expanded, onToggle, title)
+    if (!expanded) return
 
     if (tiles.isEmpty()) {
         // A search nothing answers. The library itself being empty is handled
@@ -332,27 +345,35 @@ private fun <T> LazyListScope.shelfCard(
 
 /**
  * The top of a card on a shelf: the gap that parts it from the card above,
- * and the heading - the name of the shelf in the accent, with how much is on
- * it written into the name where there is a count to give.
+ * and the heading - the same heading every other card in the app wears, the
+ * accent tick, the title and the arrow that folds it.
+ *
+ * Folded, this is the whole card, rounded at the bottom as well.
  */
 private fun LazyListScope.cardTop(
     key: String,
     gapAbove: Boolean,
+    expanded: Boolean,
+    onToggle: () -> Unit,
     title: @Composable () -> String,
 ) {
     if (gapAbove) {
         item(key = "$key-gap") { Spacer(Modifier.height(CardGap)) }
     }
     item(key = "$key-heading") {
-        CardSegment(CardPart.TOP) {
-            Text(
-                text = title(),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.accentText,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = CARD_PADDING),
-            )
+        CardSegment(if (expanded) CardPart.TOP else CardPart.WHOLE) {
+            Box(
+                modifier = Modifier.padding(
+                    top = CARD_PADDING,
+                    bottom = if (expanded) 0.dp else CARD_PADDING,
+                ),
+            ) {
+                SectionHeading(
+                    title = title(),
+                    expanded = expanded,
+                    onToggle = onToggle,
+                )
+            }
         }
     }
 }
@@ -637,11 +658,15 @@ internal fun LazyListScope.seriesWall(
     showArtwork: Boolean,
     opening: Int?,
     gapAbove: Boolean,
+    expanded: Boolean,
+    onToggle: () -> Unit,
     onOpen: (LibraryShow) -> Unit,
 ) {
     shelfCard(
         key = "series-wall",
         gapAbove = gapAbove,
+        expanded = expanded,
+        onToggle = onToggle,
         title = { stringResource(R.string.series_all, shows.size) },
         noMatch = { stringResource(R.string.series_no_match) },
         tiles = shows,
