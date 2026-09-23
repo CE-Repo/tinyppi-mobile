@@ -1,5 +1,6 @@
 package com.jamal2367.tinyppimobile
 
+import com.jamal2367.tinyppimobile.data.model.ContinueList
 import com.jamal2367.tinyppimobile.data.model.Library
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
@@ -119,6 +120,44 @@ class LibraryTest {
         assertEquals(
             "http://192.168.1.10:8099/api/art?kind=poster&movieid=3&v=9a1b2c3d",
             MediaUrls.filmPoster(box.copy(token = "  "), film),
+        )
+    }
+
+    @Test
+    fun `the continue row reads films and episodes, and addresses both posters`() {
+        val row = json.decodeFromString(
+            ContinueList.serializer(),
+            """
+            {"count":2,"tag":"11-2-7a138a7b","items":[
+              {"kind":"episode","id":9,"title":"Pilot","show":"Lost","tvshowid":2,
+               "season":1,"episode":1,"poster":"fe1145ba","thumb":"3bb67b34",
+               "duration":2600,"resume":1300,"lastplayed":"2026-09-21 20:00:00",
+               "rating":7.9,"rating_from":"tmdb"},
+              {"kind":"movie","id":9,"title":"Heat","year":1995,"poster":"cff95f27",
+               "duration":10000,"resume":500,"lastplayed":"2026-09-20 20:00:00"}
+            ]}
+            """.trimIndent(),
+        )
+
+        val (pilot, heat) = row.items
+        assertTrue(pilot.isEpisode)
+        assertFalse(heat.isEpisode)
+        assertEquals("S01E01", pilot.code)
+        assertEquals("", heat.code)
+        assertEquals(0.5f, pilot.progress!!, 0.001f)
+        assertEquals(7.9, pilot.rating, 0.001)
+        assertEquals("tmdb", pilot.ratingFrom)
+        assertEquals(0.0, heat.rating, 0.001)
+        // The same number, and still two different tiles.
+        assertTrue(pilot.key != heat.key)
+
+        assertEquals(
+            "http://192.168.1.10:8099/api/art?kind=poster&episodeid=9&v=fe1145ba&token=AB+CD",
+            MediaUrls.continuePoster(box, pilot),
+        )
+        assertEquals(
+            "http://192.168.1.10:8099/api/art?kind=poster&movieid=9&v=cff95f27&token=AB+CD",
+            MediaUrls.continuePoster(box, heat),
         )
     }
 }

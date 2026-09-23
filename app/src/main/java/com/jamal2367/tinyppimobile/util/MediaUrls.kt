@@ -1,6 +1,7 @@
 package com.jamal2367.tinyppimobile.util
 
 import com.jamal2367.tinyppimobile.data.model.ArtTags
+import com.jamal2367.tinyppimobile.data.model.ContinueItem
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
@@ -89,6 +90,18 @@ object MediaUrls {
      */
     fun episodeStill(server: ServerConfig?, episode: LibraryEpisode): String? =
         shelfArt(server, "thumb", "episodeid", episode.id, episode.thumb)
+
+    /**
+     * The poster on the continue-watching row: a film's own, or an episode's
+     * show's - which the box files under the episode's id, so an episode of a
+     * show nobody has opened still has one.
+     */
+    fun continuePoster(server: ServerConfig?, item: ContinueItem): String? =
+        if (item.isEpisode) {
+            shelfArt(server, "poster", "episodeid", item.id, item.poster)
+        } else {
+            shelfArt(server, "poster", "movieid", item.id, item.poster)
+        }
 
     /**
      * One picture off one of the library shelves.

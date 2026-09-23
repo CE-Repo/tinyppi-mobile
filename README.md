@@ -189,6 +189,21 @@ a tick appear on something that was watched last night, and a series somebody
 is inside stays open across it: the episodes are read again in place, with the
 seasons left unfolded as they were.
 
+Both are cards that fold under their heading like the live screen's, and are
+found the way they were left: **Continue watching** and the wall on each. A
+folded card is its heading and how much is on it.
+
+**Continue watching** sits at the very top of both: the films the box was
+stopped in the middle of at the top of Films, the episodes at the top of
+Series, the last one seen first, on a row that scrolls sideways. Each poster
+carries how far the box got and the same rating badge as the walls — a film
+its own, an episode its show's — and a tap resumes it where it was. An episode
+stands on it as its show — the show's poster and name, with which episode it is
+underneath — so an episode of a show you have not opened in the app is one tap
+away too. The row is read on the same occasions the shelves are, steps aside
+while you search, and its card is not there at all when nothing is
+half-watched.
+
 **Pulling either shelf down** reads it again anyway. It is the answer when the
 box was off while the app was looking at it, or when its library was switched
 on in Kodi after the app had already been told there was none — a pull overrules
@@ -252,6 +267,7 @@ All of it.
 | `GET /api/library` | The films the box has, for the wall shown while nothing is playing. |
 | `GET /api/series` | The series it has, for the wall under them. |
 | `GET /api/episodes` | The episodes of one series, read when it is opened. |
+| `GET /api/continue` | The films and episodes left half-watched, for the row at the top of both shelves. |
 | `POST /api/mode` | The VS10 buttons. |
 | `POST /api/command` | Play/pause, stop, previous/next chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track. |
 | `POST /api/play` | Starting one of the library's films, or one episode of a series. |

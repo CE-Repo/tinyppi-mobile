@@ -11,6 +11,14 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
+import com.jamal2367.tinyppimobile.ui.components.SectionHeading
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -24,6 +32,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -65,8 +74,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
+import com.jamal2367.tinyppimobile.data.model.ContinueItem
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
@@ -90,20 +101,145 @@ import com.jamal2367.tinyppimobile.util.MediaUrls
  * twice.
  */
 
+/* --- Continue watching -------------------------------------------------- */
+
+/**
+ * The titles the box was stopped in the middle of, the last one seen first,
+ * as a card of their own at the very top of a shelf: the quickest way back
+ * into whatever was on.
+ *
+ * A row that scrolls sideways rather than more of the wall: it is a handful of
+ * posters, the one somebody is after is nearly always the first, and a row
+ * costs the screen one line of posters rather than several. The tiles are the
+ * wall's own at the wall's own width, so the two cards read as one shelf.
+ *
+ * It folds like every other card, and is not there at all where there is
+ * nothing to resume - an empty card with a heading over it would be a card
+ * saying nothing.
+ */
+internal fun LazyListScope.continueCard(
+    items: List<ContinueItem>,
+    columns: Int,
+    server: ServerConfig?,
+    showArtwork: Boolean,
+    starting: String?,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    onPlay: (ContinueItem) -> Unit,
+) {
+    if (items.isEmpty()) return
+
+    cardTop(
+        key = "continue",
+        gapAbove = false,
+        expanded = expanded,
+        onToggle = onToggle,
+        title = { stringResource(R.string.continue_title) },
+        count = { items.size.toString() },
+    )
+    if (!expanded) return
+
+    item(key = "continue-row") {
+        val width = filmTileWidth(columns)
+        CardSegment(CardPart.MIDDLE) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(FILM_GAP),
+                modifier = Modifier.padding(top = CARD_INNER_GAP),
+            ) {
+                items(items = items, key = { it.key }) { item ->
+                    ContinueTile(
+                        item = item,
+                        poster = if (showArtwork) MediaUrls.continuePoster(server, item) else null,
+                        starting = starting == item.key,
+                        // One press at a time, for the reason the wall gives.
+                        enabled = starting == null,
+                        onPlay = { onPlay(item) },
+                        modifier = Modifier.width(width),
+                    )
+                }
+            }
+        }
+    }
+    cardBottom("continue")
+}
+
+/**
+ * One title on the row: its poster with how far the box got along the bottom,
+ * and under it the name.
+ *
+ * An episode stands as its show - the show's poster, the show's name and the
+ * show's rating, which is what somebody scanning the row is looking for - with
+ * which episode it is on the line beneath.
+ */
+@Composable
+private fun ContinueTile(
+    item: ContinueItem,
+    poster: String?,
+    starting: Boolean,
+    enabled: Boolean,
+    onPlay: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.clickable(enabled = enabled, onClick = onPlay),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        ArtFrame(
+            url = poster,
+            ratio = POSTER_RATIO,
+            progress = item.progress,
+            busy = starting,
+            modifier = Modifier.fillMaxWidth(),
+            rating = item.rating,
+            ratingFrom = item.ratingFrom,
+        )
+
+        Text(
+            text = if (item.isEpisode) item.show.ifEmpty { item.title } else item.title,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        val meta = if (item.isEpisode) {
+            listOf(item.code, item.title.takeIf { item.show.isNotEmpty() }.orEmpty())
+                .filter { it.isNotEmpty() }
+                .joinToString(META_GAP)
+        } else {
+            listOfNotNull(
+                item.year.takeIf { it > 0 }?.toString(),
+                runtimeLabel(item.duration),
+            ).joinToString(META_GAP)
+        }
+        if (meta.isNotEmpty()) {
+            Text(
+                text = meta,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
 /* --- The film library ---------------------------------------------------- */
 
 /**
- * What the box could be playing, while it is playing nothing.
+ * What the box could be playing, as a card of posters.
  *
  * A wall of posters rather than a list of titles: a film is recognised by its
- * cover long before its name has been read, and the screen this replaces had
- * one line of type on it saying there was nothing to see.
+ * cover long before its name has been read.
  *
  * Laid out as rows of tiles inside the screen's own list rather than as a grid
- * of its own. A grid inside a scrolling column is two things that scroll, and
- * the one thing this list must keep doing is scrolling in one piece; chunked
- * into rows it stays lazy, so a library of five hundred films draws the six
- * tiles on screen and asks the box for six posters.
+ * of its own, and the card around them drawn a row at a time (see
+ * [CardSegment]). A grid inside a scrolling column is two things that scroll,
+ * and a card holding five hundred posters in one piece is five hundred posters
+ * laid out at once; chunked into rows it stays lazy, so a library of five
+ * hundred films draws the six tiles on screen and asks the box for six posters.
+ *
+ * Folded, it is its heading and the count beside it.
  */
 internal fun LazyListScope.filmWall(
     films: List<LibraryFilm>,
@@ -113,146 +249,279 @@ internal fun LazyListScope.filmWall(
     starting: Int?,
     search: String,
     onSearch: (String) -> Unit,
+    gapAbove: Boolean,
+    expanded: Boolean,
+    onToggle: () -> Unit,
     onPlay: (LibraryFilm) -> Unit,
 ) {
-    item(key = "film-wall-heading") {
-        WallHeading(
-            title = stringResource(R.string.library_title),
-            count = pluralStringResource(R.plurals.library_count, films.size, films.size),
-            searchLabel = stringResource(R.string.library_search),
-            search = search,
-            onSearch = onSearch,
+    shelfCard(
+        key = "film-wall",
+        gapAbove = gapAbove,
+        expanded = expanded,
+        onToggle = onToggle,
+        title = { stringResource(R.string.library_title) },
+        count = { pluralStringResource(R.plurals.library_count, films.size, films.size) },
+        searchLabel = { stringResource(R.string.library_search) },
+        search = search,
+        onSearch = onSearch,
+        noMatch = { stringResource(R.string.library_no_match) },
+        tiles = films,
+        columns = columns,
+        rowKey = { row -> "film-row-${row.first().id}" },
+    ) { film ->
+        FilmTile(
+            film = film,
+            poster = if (showArtwork) MediaUrls.filmPoster(server, film) else null,
+            starting = starting == film.id,
+            // While one film is on its way nothing else may be pressed: two
+            // Player.Opens a second apart leave the box playing whichever
+            // won, which is not the one the second press was for.
+            enabled = starting == null,
+            onPlay = { onPlay(film) },
+            modifier = Modifier.weight(1f),
         )
-    }
-
-    if (films.isEmpty()) {
-        // A search nothing answers. The library itself being empty is handled
-        // before the wall is drawn at all, where the screen has room to say so
-        // properly.
-        item(key = "film-wall-empty") {
-            Text(
-                text = stringResource(R.string.library_no_match),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 28.dp),
-            )
-        }
-        return
-    }
-
-    val rows = films.chunked(columns)
-    items(items = rows, key = { row -> "film-row-${row.first().id}" }) { row ->
-        Row(horizontalArrangement = Arrangement.spacedBy(FILM_GAP)) {
-            for (film in row) {
-                FilmTile(
-                    film = film,
-                    poster = if (showArtwork) MediaUrls.filmPoster(server, film) else null,
-                    starting = starting == film.id,
-                    // While one film is on its way nothing else may be
-                    // pressed: two Player.Opens a second apart leave the box
-                    // playing whichever won, which is not the one the second
-                    // press was for.
-                    enabled = starting == null,
-                    onPlay = { onPlay(film) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            // The last row is rarely full. Without this its tiles would be
-            // spread across the width instead of standing under the ones above
-            // them.
-            repeat(columns - row.size) {
-                Spacer(Modifier.weight(1f))
-            }
-        }
     }
 }
 
 /**
- * The line over a wall: what it is, how much of it there is, and a box to
- * narrow it down with.
+ * One shelf as a card: its heading, a box to narrow it down with, and the wall
+ * a row at a time.
  *
- * One heading for both shelves. The films and the series are the same offer
- * made twice, and a second heading lettered differently would read as a
- * different screen rather than a second shelf.
+ * One builder for both shelves. The films and the series are the same offer
+ * made twice, and a second card drawn differently would read as a different
+ * screen rather than a second shelf.
  *
  * The box is there whatever the shelf holds. It used to arrive only above a
  * dozen, on the grounds that a shelf which fits on a screen is read rather
  * than searched - but a field that comes and goes with how many films somebody
  * owns is a field nobody can learn to reach for.
  */
-@Composable
-private fun WallHeading(
-    title: String,
-    count: String,
-    searchLabel: String,
+private fun <T> LazyListScope.shelfCard(
+    key: String,
+    gapAbove: Boolean,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    title: @Composable () -> String,
+    count: @Composable () -> String,
+    searchLabel: @Composable () -> String,
     search: String,
     onSearch: (String) -> Unit,
+    noMatch: @Composable () -> String,
+    tiles: List<T>,
+    columns: Int,
+    rowKey: (List<T>) -> String,
+    tile: @Composable RowScope.(T) -> Unit,
+) {
+    cardTop(key, gapAbove, expanded, onToggle, title, count)
+    if (!expanded) return
+
+    item(key = "$key-search") {
+        CardSegment(CardPart.MIDDLE) {
+            WallSearch(
+                label = searchLabel(),
+                search = search,
+                onSearch = onSearch,
+                modifier = Modifier.padding(top = CARD_INNER_GAP),
+            )
+        }
+    }
+
+    if (tiles.isEmpty()) {
+        // A search nothing answers. The library itself being empty is handled
+        // before the card is drawn at all, where the screen has room to say so
+        // properly.
+        item(key = "$key-empty") {
+            CardSegment(CardPart.MIDDLE) {
+                Text(
+                    text = noMatch(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 28.dp),
+                )
+            }
+        }
+    } else {
+        items(items = tiles.chunked(columns), key = rowKey) { row ->
+            CardSegment(CardPart.MIDDLE) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(FILM_GAP),
+                    modifier = Modifier.padding(top = FILM_GAP),
+                ) {
+                    for (entry in row) tile(entry)
+                    // The last row is rarely full. Without this its tiles
+                    // would be spread across the width instead of standing
+                    // under the ones above them.
+                    repeat(columns - row.size) {
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+    cardBottom(key)
+}
+
+/**
+ * The top of a card on a shelf: the gap that parts it from the card above,
+ * and the heading - the same heading every other card in the app wears, with
+ * how much is on it where the others put their extras.
+ *
+ * Folded, this is the whole card, rounded at the bottom as well.
+ */
+private fun LazyListScope.cardTop(
+    key: String,
+    gapAbove: Boolean,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    title: @Composable () -> String,
+    count: @Composable () -> String,
+) {
+    if (gapAbove) {
+        item(key = "$key-gap") { Spacer(Modifier.height(CardGap)) }
+    }
+    item(key = "$key-heading") {
+        CardSegment(if (expanded) CardPart.TOP else CardPart.WHOLE) {
+            Box(
+                modifier = Modifier.padding(
+                    top = CARD_PADDING,
+                    bottom = if (expanded) 0.dp else CARD_PADDING,
+                ),
+            ) {
+                val label = count()
+                SectionHeading(
+                    title = title(),
+                    expanded = expanded,
+                    onToggle = onToggle,
+                    trailing = {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** The foot of an open card: its padding, and its rounded bottom edge. */
+private fun LazyListScope.cardBottom(key: String) {
+    item(key = "$key-foot") {
+        CardSegment(CardPart.BOTTOM) {
+            Spacer(Modifier.height(CARD_PADDING))
+        }
+    }
+}
+
+/** Which part of a card a [CardSegment] is. */
+private enum class CardPart { TOP, MIDDLE, BOTTOM, WHOLE }
+
+/**
+ * One slice of a card that is laid out a row at a time.
+ *
+ * A shelf cannot be one `SectionCard`: a card is laid out in one piece, and
+ * one holding five hundred posters would lay out five hundred posters. So the
+ * card is drawn in slices, each an item of the screen's own lazy list, and
+ * each slice paints the part of the card that falls inside it - the rounded
+ * top, the two sides, the rounded bottom - out of one card shape drawn
+ * taller than the slice and cut to it. The slices meet with no gap between
+ * them, so what the eye sees is one card in the same colour, with the same
+ * hairline and the same corners as every card elsewhere in the app.
+ */
+@Composable
+private fun CardSegment(
+    part: CardPart,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val shape = MaterialTheme.shapes.medium
+    val fill = MaterialTheme.colorScheme.surfaceContainerLow
+    val line = MaterialTheme.colorScheme.surfaceContainerHigh
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clipToBounds()
+            .drawBehind {
+                // Well past any corner, so the corner of a slice that is not
+                // meant to have one is always outside it.
+                val beyond = 64.dp.toPx()
+                val stroke = 1.dp.toPx()
+                val (top, height) = when (part) {
+                    CardPart.TOP -> 0f to size.height + beyond
+                    CardPart.MIDDLE -> -beyond to size.height + beyond * 2
+                    CardPart.BOTTOM -> -beyond to size.height + beyond
+                    CardPart.WHOLE -> 0f to size.height
+                }
+                // The hairline inside the edge, the way a card's border is.
+                val outline = shape.createOutline(
+                    Size(size.width - stroke, height - stroke),
+                    layoutDirection,
+                    this,
+                )
+                translate(left = stroke / 2, top = top + stroke / 2) {
+                    drawOutline(outline, fill)
+                    drawOutline(outline, line, style = Stroke(stroke))
+                }
+            }
+            .padding(horizontal = CARD_PADDING),
+        content = content,
+    )
+}
+
+/**
+ * The box a shelf is narrowed down with.
+ *
+ * The cross empties it, and only while there is something to empty: over a
+ * field nobody has typed in it is a control that does nothing. It puts the
+ * whole shelf back and then gets out of the way - field and keyboard both.
+ * Somebody who clears a search is done with it; one who meant to search for
+ * something else can press the field again, which is one press against the
+ * screenful of posters a keyboard would otherwise go on covering.
+ */
+@Composable
+private fun WallSearch(
+    label: String,
+    search: String,
+    onSearch: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
 
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = count,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        OutlinedTextField(
-            value = search,
-            onValueChange = onSearch,
-            singleLine = true,
-            label = { Text(searchLabel) },
-            // The cross that empties it, and only while there is something to
-            // empty: over a field nobody has typed in it is a control that
-            // does nothing.
-            //
-            // It puts the whole shelf back and then gets out of the way -
-            // field and keyboard both. Somebody who clears a search is done
-            // with it; one who meant to search for something else can press
-            // the field again, which is one press against the screenful of
-            // posters a keyboard would otherwise go on covering.
-            trailingIcon = if (search.isEmpty()) {
-                null
-            } else {
-                {
-                    IconButton(
-                        onClick = {
-                            onSearch("")
-                            dismissSearch(focus, keyboard)
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Close,
-                            contentDescription = stringResource(R.string.library_search_clear),
-                        )
-                    }
+    OutlinedTextField(
+        value = search,
+        onValueChange = onSearch,
+        singleLine = true,
+        label = { Text(label) },
+        trailingIcon = if (search.isEmpty()) {
+            null
+        } else {
+            {
+                IconButton(
+                    onClick = {
+                        onSearch("")
+                        dismissSearch(focus, keyboard)
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = stringResource(R.string.library_search_clear),
+                    )
                 }
-            },
-            // The key the keyboard offers instead of a newline, and what it
-            // does: nothing but close, because the wall narrowed itself as the
-            // letters arrived.
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(
-                onSearch = { dismissSearch(focus, keyboard) },
-            ),
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
+            }
+        },
+        // The key the keyboard offers instead of a newline, and what it does:
+        // nothing but close, because the wall narrowed itself as the letters
+        // arrived.
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(
+            onSearch = { dismissSearch(focus, keyboard) },
+        ),
+        modifier = modifier.fillMaxWidth(),
+    )
 }
 
 /**
@@ -350,7 +619,7 @@ private fun WatchedMark(modifier: Modifier = Modifier) {
 /* --- The series library -------------------------------------------------- */
 
 /**
- * The same wall again for what Kodi knows as TV shows.
+ * The same card again for what Kodi knows as TV shows.
  *
  * A series is not something that can be put on - an episode is - so a press
  * here does not start anything: it opens the show, and the screen becomes that
@@ -366,53 +635,37 @@ internal fun LazyListScope.seriesWall(
     opening: Int?,
     search: String,
     onSearch: (String) -> Unit,
+    gapAbove: Boolean,
+    expanded: Boolean,
+    onToggle: () -> Unit,
     onOpen: (LibraryShow) -> Unit,
 ) {
-    item(key = "series-wall-heading") {
-        WallHeading(
-            title = stringResource(R.string.series_title),
-            count = pluralStringResource(R.plurals.series_count, shows.size, shows.size),
-            searchLabel = stringResource(R.string.series_search),
-            search = search,
-            onSearch = onSearch,
+    shelfCard(
+        key = "series-wall",
+        gapAbove = gapAbove,
+        expanded = expanded,
+        onToggle = onToggle,
+        title = { stringResource(R.string.series_title) },
+        count = { pluralStringResource(R.plurals.series_count, shows.size, shows.size) },
+        searchLabel = { stringResource(R.string.series_search) },
+        search = search,
+        onSearch = onSearch,
+        noMatch = { stringResource(R.string.series_no_match) },
+        tiles = shows,
+        columns = columns,
+        rowKey = { row -> "series-row-${row.first().id}" },
+    ) { show ->
+        ShowTile(
+            show = show,
+            poster = if (showArtwork) MediaUrls.showPoster(server, show) else null,
+            opening = opening == show.id,
+            // While one show's episodes are being read nothing else may be
+            // pressed: two reads a second apart would leave whichever won on
+            // the screen.
+            enabled = opening == null,
+            onOpen = { onOpen(show) },
+            modifier = Modifier.weight(1f),
         )
-    }
-
-    if (shows.isEmpty()) {
-        item(key = "series-wall-empty") {
-            Text(
-                text = stringResource(R.string.series_no_match),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 28.dp),
-            )
-        }
-        return
-    }
-
-    val rows = shows.chunked(columns)
-    items(items = rows, key = { row -> "series-row-${row.first().id}" }) { row ->
-        Row(horizontalArrangement = Arrangement.spacedBy(FILM_GAP)) {
-            for (show in row) {
-                ShowTile(
-                    show = show,
-                    poster = if (showArtwork) MediaUrls.showPoster(server, show) else null,
-                    opening = opening == show.id,
-                    // While one show's episodes are being read nothing else
-                    // may be pressed: two reads a second apart would leave
-                    // whichever won on the screen.
-                    enabled = opening == null,
-                    onOpen = { onOpen(show) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            repeat(columns - row.size) {
-                Spacer(Modifier.weight(1f))
-            }
-        }
     }
 }
 
@@ -960,8 +1213,22 @@ internal fun filmColumns(): Int {
     val width = with(LocalDensity.current) {
         LocalWindowInfo.current.containerSize.width.toDp()
     }
-    val usable = width - ScreenEdge * 2
+    // Inside a card now, so its padding comes off both sides as well.
+    val usable = width - ScreenEdge * 2 - CARD_PADDING * 2
     return (usable / (FILM_TILE_MIN + FILM_GAP)).toInt().coerceIn(3, 6)
+}
+
+/**
+ * How wide one tile of a wall of [columns] is, for a row that has to match it
+ * without being one of the wall's rows.
+ */
+@Composable
+private fun filmTileWidth(columns: Int): Dp {
+    val width = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width.toDp()
+    }
+    val usable = width - ScreenEdge * 2 - CARD_PADDING * 2
+    return (usable - FILM_GAP * (columns - 1)) / columns
 }
 
 /** The star on a rating pill, and how big it is drawn. */
@@ -990,6 +1257,10 @@ private val WATCHED_INSET = 5.dp
  * down would have drawn a grid with two different rhythms in it.
  */
 private val FILM_GAP = CardGap
+
+/** A shelf card's padding, and the room between its heading and what it holds - a `SectionCard`'s. */
+private val CARD_PADDING = 16.dp
+private val CARD_INNER_GAP = 12.dp
 private val FILM_TILE_MIN = 104.dp
 private val RESUME_BAR = 3.dp
 
