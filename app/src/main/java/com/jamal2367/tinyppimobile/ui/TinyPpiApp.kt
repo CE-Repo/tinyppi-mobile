@@ -38,16 +38,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.net.toUri
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.jamal2367.tinyppimobile.BuildConfig
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.remote.ReleaseId
 import com.jamal2367.tinyppimobile.di.AppContainer
-import com.jamal2367.tinyppimobile.ui.navigation.TinyPpiNavHost
 import com.jamal2367.tinyppimobile.ui.navigation.TopLevelDestination
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
@@ -62,16 +56,18 @@ import com.jamal2367.tinyppimobile.ui.navigation.BAR_HEIGHT
 import com.jamal2367.tinyppimobile.ui.navigation.FloatingNavigationBar
 import com.jamal2367.tinyppimobile.ui.navigation.LocalBottomBarSpace
 import com.jamal2367.tinyppimobile.ui.navigation.rememberBarVisibility
-import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import com.jamal2367.tinyppimobile.ui.navigation.TinyPpiPager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun TinyPpiApp(container: AppContainer) {
-    val navController = rememberNavController()
     val liveViewModel: LiveViewModel = viewModel()
     val liveState by liveViewModel.state.collectAsStateWithLifecycle()
     val library by liveViewModel.library.collectAsStateWithLifecycle()
@@ -83,6 +79,15 @@ fun TinyPpiApp(container: AppContainer) {
     // something has asked, and both stay on for a box nobody has asked yet.
     val showFilms = library.offered
     val showSeries = series.offered
+
+    val destinations = remember(showMetadata, showHistory, showFilms, showSeries) {
+        TopLevelDestination.entries.filter {
+            (it != TopLevelDestination.METADATA || showMetadata) &&
+                (it != TopLevelDestination.HISTORY || showHistory) &&
+                (it != TopLevelDestination.FILMS || showFilms) &&
+                (it != TopLevelDestination.SERIES || showSeries)
+        }
+    }
 
     // Wide enough for a rail: a tablet or an unfolded phone should not waste a
     // whole edge on a bar the height of a thumb.
@@ -98,23 +103,72 @@ fun TinyPpiApp(container: AppContainer) {
     // moment someone changed tabs.
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val backStackEntry by navController.currentBackStackEntryAsState()
+    // Which tab is open is remembered by the tab and not by its place in the
+    // row: the row changes under it - the metadata tab arrives with a Dolby
+    // Vision title and goes with it - and the page number of what somebody is
+    // reading moves with it.
+    var current by rememberSaveable { mutableStateOf(TopLevelDestination.LIVE) }
+    val pagerState = rememberPagerState(
+        initialPage = destinations.indexOf(current).coerceAtLeast(0),
+    ) { destinations.size }
+    val latestDestinations by rememberUpdatedState(destinations)
+    val scope = rememberCoroutineScope()
 
-    // Back on the first screen with nothing to return to is back out of the
-    // app, and that is the only place the second press is asked for. Anywhere
-    // else the navigation still has somewhere to go, and it goes there.
-    val atRoot = backStackEntry != null && navController.previousBackStackEntry == null
+    // A swipe that has come to rest is a tab that has been opened.
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }.collect { page ->
+            latestDestinations.getOrNull(page)?.let { current = it }
+        }
+    }
+
+    // The row changed: stay on the tab that was open, wherever it now is. A tab
+    // that has gone altogether hands over to the nearest one before it.
+    LaunchedEffect(destinations) {
+        val target = destinations.indexOf(current).takeIf { it >= 0 }
+            ?: destinations.indexOfLast { it.ordinal < current.ordinal }.coerceAtLeast(0)
+        if (target != pagerState.currentPage) pagerState.scrollToPage(target)
+        destinations.getOrNull(target)?.let { current = it }
+    }
+
+    fun open(destination: TopLevelDestination) {
+        val page = destinations.indexOf(destination)
+        if (page < 0) return
+        current = destination
+        scope.launch { pagerState.animateScrollToPage(page) }
+    }
+
+    // What the bar lights up. The page under the middle of the screen, so the
+    // pill moves across as soon as a swipe is past half-way rather than when
+    // it has finished.
+    val shown = destinations.getOrNull(pagerState.currentPage)
+
+    // Back from any tab but the first is back to the first, the way it was
+    // when the tabs were a back stack. A screen with somewhere of its own to
+    // go back to - an open series - is composed after this and asked first.
+    BackHandler(enabled = current != TopLevelDestination.LIVE) {
+        open(TopLevelDestination.LIVE)
+    }
 
     UpdateCheck(container, snackbarHostState)
-    DoubleBackToExit(enabled = atRoot, snackbarHostState = snackbarHostState)
+    DoubleBackToExit(
+        enabled = current == TopLevelDestination.LIVE,
+        snackbarHostState = snackbarHostState,
+    )
 
     if (useRail) {
         Row(Modifier.fillMaxSize()) {
             TinyPpiNavigationRail(
-                navController, showMetadata, showHistory, showFilms, showSeries,
+                destinations = destinations,
+                selected = shown,
+                onSelect = ::open,
             )
             Box(Modifier.weight(1f)) {
-                TinyPpiNavHost(navController = navController)
+                TinyPpiPager(
+                    destinations = destinations,
+                    pagerState = pagerState,
+                    onOpenSettings = { open(TopLevelDestination.SETTINGS) },
+                    modifier = Modifier.fillMaxSize(),
+                )
                 // No scaffold on this branch to hand the host to, so it is
                 // placed where one would have put it: along the bottom, and
                 // clear of the system's gesture bar.
@@ -143,9 +197,9 @@ fun TinyPpiApp(container: AppContainer) {
         )
         val barSpace = animatedSpace.coerceAtLeast(0.dp)
 
-        // A new tab is a new place to be, and whoever just pressed the bar to
-        // get there should not find it gone from under their thumb.
-        LaunchedEffect(backStackEntry?.destination?.route) { barVisibility.visible = true }
+        // A new tab is a new place to be, and whoever just pressed the bar or
+        // swiped to get there should not find it gone from under their thumb.
+        LaunchedEffect(shown) { barVisibility.visible = true }
 
         CompositionLocalProvider(LocalBottomBarSpace provides barSpace) {
             Box(
@@ -153,8 +207,10 @@ fun TinyPpiApp(container: AppContainer) {
                     .fillMaxSize()
                     .nestedScroll(barVisibility),
             ) {
-                TinyPpiNavHost(
-                    navController = navController,
+                TinyPpiPager(
+                    destinations = destinations,
+                    pagerState = pagerState,
+                    onOpenSettings = { open(TopLevelDestination.SETTINGS) },
                     modifier = Modifier
                         .fillMaxSize()
                         .hazeSource(hazeState)
@@ -163,12 +219,10 @@ fun TinyPpiApp(container: AppContainer) {
                         // it and pads its own end instead.
                         .consumeWindowInsets(WindowInsets.navigationBars),
                 )
-                TinyPpiNavigationBar(
-                    navController = navController,
-                    showMetadata = showMetadata,
-                    showHistory = showHistory,
-                    showFilms = showFilms,
-                    showSeries = showSeries,
+                FloatingNavigationBar(
+                    destinations = destinations,
+                    selected = shown,
+                    onSelect = ::open,
                     hazeState = hazeState,
                     visible = barVisibility.visible,
                     modifier = Modifier.align(Alignment.BottomCenter),
@@ -256,8 +310,9 @@ private fun DoubleBackToExit(enabled: Boolean, snackbarHostState: SnackbarHostSt
     // be waiting to close it.
     var armed by remember { mutableStateOf(false) }
 
-    // Back somewhere else on the stack is a screen to return to, and the
-    // navigation's own handler - added later, so asked first - takes it.
+    // Only on the first tab: back anywhere else goes to it first (see the
+    // handler in the shell), and a screen with a way back of its own - added
+    // later, so asked first - takes it before either.
     BackHandler(enabled = enabled) {
         if (armed) {
             activity?.finish()
@@ -283,67 +338,20 @@ private fun DoubleBackToExit(enabled: Boolean, snackbarHostState: SnackbarHostSt
 }
 
 @Composable
-private fun TinyPpiNavigationBar(
-    navController: NavHostController,
-    showMetadata: Boolean,
-    showHistory: Boolean,
-    showFilms: Boolean,
-    showSeries: Boolean,
-    hazeState: HazeState,
-    visible: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    val backStackEntry by navController.currentBackStackEntryAsState()
-    val destinations = remember(showMetadata, showHistory, showFilms, showSeries) {
-        TopLevelDestination.entries.filter {
-            (it != TopLevelDestination.METADATA || showMetadata) &&
-                (it != TopLevelDestination.HISTORY || showHistory) &&
-                (it != TopLevelDestination.FILMS || showFilms) &&
-                (it != TopLevelDestination.SERIES || showSeries)
-        }
-    }
-    val selected = destinations.firstOrNull { destination ->
-        backStackEntry?.destination?.hierarchy?.any { it.route == destination.route } == true
-    }
-
-    FloatingNavigationBar(
-        destinations = destinations,
-        selected = selected,
-        onSelect = navController::switchTo,
-        hazeState = hazeState,
-        visible = visible,
-        modifier = modifier,
-    )
-}
-
-@Composable
 private fun TinyPpiNavigationRail(
-    navController: NavHostController,
-    showMetadata: Boolean,
-    showHistory: Boolean,
-    showFilms: Boolean,
-    showSeries: Boolean,
+    destinations: List<TopLevelDestination>,
+    selected: TopLevelDestination?,
+    onSelect: (TopLevelDestination) -> Unit,
 ) {
-    val backStackEntry by navController.currentBackStackEntryAsState()
-    val destinations = remember(showMetadata, showHistory, showFilms, showSeries) {
-        TopLevelDestination.entries.filter {
-            (it != TopLevelDestination.METADATA || showMetadata) &&
-                (it != TopLevelDestination.HISTORY || showHistory) &&
-                (it != TopLevelDestination.FILMS || showFilms) &&
-                (it != TopLevelDestination.SERIES || showSeries)
-        }
-    }
-
     WideNavigationRail {
         destinations.forEach { destination ->
-            val selected = backStackEntry?.destination?.hierarchy
-                ?.any { it.route == destination.route } == true
+            val isSelected = destination == selected
             WideNavigationRailItem(
-                selected = selected,
-                onClick = { navController.switchTo(destination) },
+                selected = isSelected,
+                onClick = { onSelect(destination) },
                 icon = {
                     Icon(
-                        imageVector = if (selected) destination.selectedIcon else destination.icon,
+                        imageVector = if (isSelected) destination.selectedIcon else destination.icon,
                         contentDescription = null,
                     )
                 },
@@ -356,18 +364,6 @@ private fun TinyPpiNavigationRail(
                 railExpanded = false,
             )
         }
-    }
-}
-
-/**
- * Switch tabs the way a bar is expected to behave: one entry per tab on the
- * back stack, each remembering where it was left.
- */
-private fun NavHostController.switchTo(destination: TopLevelDestination) {
-    navigate(destination.route) {
-        popUpTo(graph.findStartDestination().id) { saveState = true }
-        launchSingleTop = true
-        restoreState = true
     }
 }
 
