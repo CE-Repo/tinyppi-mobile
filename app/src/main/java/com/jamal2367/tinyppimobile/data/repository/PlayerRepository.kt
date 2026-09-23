@@ -14,6 +14,7 @@ import com.jamal2367.tinyppimobile.data.model.ResumeBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
 import com.jamal2367.tinyppimobile.data.model.WatchedBody
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
+import com.jamal2367.tinyppimobile.data.model.PlaybackEventKind
 import com.jamal2367.tinyppimobile.data.model.PlayerAction
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
 import com.jamal2367.tinyppimobile.data.remote.NoServerConfiguredException
@@ -42,7 +43,10 @@ class PlayerRepository(
     suspend fun hello(): Hello = call { api.hello() }
 
     /** The playing title's chart samples and its event list. */
-    suspend fun history(): History = call { api.history() }
+    suspend fun history(): History = call { api.history() }.let { history ->
+        // Events this app no longer shows, from an add-on that still writes them.
+        history.copy(events = history.events.filterNot { it.kind in PlaybackEventKind.RETIRED })
+    }
 
     /** The films the box has, for the wall shown while nothing is playing. */
     suspend fun library(): Library = call { api.library() }

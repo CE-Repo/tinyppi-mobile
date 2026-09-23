@@ -32,6 +32,7 @@ class FakeApi : TinyPpiApi {
     var series: suspend () -> SeriesLibrary = { SeriesLibrary() }
     var episodes: suspend (Int) -> EpisodeList = { EpisodeList(tvshowid = it) }
     var continuing: suspend () -> ContinueList = { ContinueList() }
+    var history: suspend () -> History = { History() }
     var command: suspend (CommandBody) -> CommandAck = { CommandAck(ok = true, action = it.action) }
     var play: suspend (Int) -> CommandAck = { CommandAck(ok = true) }
     /** Every film start as it was sent, resume flag and all. */
@@ -56,7 +57,7 @@ class FakeApi : TinyPpiApi {
 
     override suspend fun history(): History {
         calls += "history"
-        return History()
+        return history.invoke()
     }
 
     override suspend fun library(): Library {

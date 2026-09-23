@@ -86,18 +86,23 @@ enum class PlaybackEventKind(val id: String) {
     MODE("mode"),
     AUDIO("audio"),
     SUBTITLE("subtitle"),
-    CACHE_LOW("cache_low"),
-    CACHE_RECOVERED("cache_recovered"),
     TEMPERATURE("temperature"),
     CPU("cpu"),
     FPS("fps");
 
     val isSwitch: Boolean get() = this in setOf(VS10, MODE, AUDIO, SUBTITLE)
 
-    val isWarning: Boolean get() = this in setOf(CACHE_LOW, TEMPERATURE, CPU)
+    val isWarning: Boolean get() = this in setOf(TEMPERATURE, CPU)
 
     companion object {
         fun of(id: String): PlaybackEventKind? = entries.firstOrNull { it.id == id }
+
+        /**
+         * Events the add-on used to write and no longer does - the player
+         * cache dipping and recovering. An older add-on still sends them, and
+         * they are dropped on arrival rather than shown under their own name.
+         */
+        val RETIRED = setOf("cache_low", "cache_recovered")
 
         /** The token the add-on sends for subtitles that were switched off. */
         const val SUBTITLES_OFF = "__off__"

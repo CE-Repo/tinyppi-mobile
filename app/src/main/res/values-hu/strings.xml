@@ -151,8 +151,6 @@
     <string name="event_mode">Kijező mód</string>
     <string name="event_audio">Hangsáv</string>
     <string name="event_subtitle">Feliratok</string>
-    <string name="event_cache_low">Lejátszó gyorsítótár alacsony</string>
-    <string name="event_cache_recovered">Lejátszó gyorsítótár visszaállt</string>
     <string name="event_temperature">Hőmérséklet</string>
     <string name="event_cpu">Processzor</string>
     <string name="event_fps">Képkockasebesség</string>

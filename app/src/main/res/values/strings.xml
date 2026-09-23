@@ -151,8 +151,6 @@
     <string name="event_mode">Display mode</string>
     <string name="event_audio">Audio track</string>
     <string name="event_subtitle">Subtitles</string>
-    <string name="event_cache_low">Player cache low</string>
-    <string name="event_cache_recovered">Player cache recovered</string>
     <string name="event_temperature">Temperature</string>
     <string name="event_cpu">Processor</string>
     <string name="event_fps">Frame rate</string>

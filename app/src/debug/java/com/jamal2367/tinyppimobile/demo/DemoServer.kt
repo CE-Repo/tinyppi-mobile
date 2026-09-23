@@ -224,7 +224,7 @@ object DemoServer {
                     put("switches", switches)
                     put("warnings", 1)
                     put("peak", 1000.0)
-                    put("events", 6)
+                    put("events", 5)
                 }
             }
         }
@@ -332,7 +332,7 @@ object DemoServer {
                 put("chapters", 24)
             }
             putJsonObject("session") {
-                put("seq", 6)
+                put("seq", 5)
                 put("switches", switches)
                 put("warnings", 1)
             }
@@ -372,12 +372,11 @@ object DemoServer {
             putJsonArray("events") {
                 add(event(4.0, "0:00:04", "mode", "SDR", "DV"))
                 add(event(12.0, "0:00:12", "audio", "Deutsch", "English"))
-                add(event(310.0, "0:05:10", "cache_low", null, null, 18.0))
-                add(event(318.0, "0:05:18", "cache_recovered", null, null, 100.0))
+                add(event(310.0, "0:05:10", "temperature", null, null, 77.0))
                 add(event(640.0, "0:10:40", "vs10", "DV-LL", "HDR10"))
                 add(event(655.0, "0:10:55", "vs10", "HDR10", "DV-LL"))
             }
-            put("seq", 6)
+            put("seq", 5)
             put("switches", switches)
         }
     }

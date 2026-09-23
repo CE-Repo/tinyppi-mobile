@@ -148,8 +148,6 @@
     <string name="event_mode">Anzeigemodus</string>
     <string name="event_audio">Tonspur</string>
     <string name="event_subtitle">Untertitel</string>
-    <string name="event_cache_low">Player-Cache niedrig</string>
-    <string name="event_cache_recovered">Player-Cache erholt</string>
     <string name="event_temperature">Temperatur</string>
     <string name="event_cpu">Prozessor</string>
     <string name="event_fps">Bildrate</string>

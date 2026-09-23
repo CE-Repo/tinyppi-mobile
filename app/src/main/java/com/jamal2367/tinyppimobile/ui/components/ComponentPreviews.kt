@@ -88,7 +88,7 @@ private fun EventsCardPreview() = PreviewSurface {
         events = listOf(
             PlaybackEvent(t = 12.0, pos = "0:00:12", kind = "vs10", from = "DV", to = "HDR10"),
             PlaybackEvent(t = 1805.0, pos = "0:30:05", kind = "audio", from = "English TrueHD", to = "German DTS"),
-            PlaybackEvent(t = 3620.0, pos = "1:00:20", kind = "cache_low", value = 4.0),
+            PlaybackEvent(t = 3620.0, pos = "1:00:20", kind = "temperature", value = 78.0),
         ),
         foldId = "preview.events",
     )
