@@ -6,7 +6,6 @@
 package com.jamal2367.tinyppimobile.ui.library
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -58,8 +57,10 @@ import com.jamal2367.tinyppimobile.ui.live.seriesWall
 import com.jamal2367.tinyppimobile.ui.live.shelfTop
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
-import com.jamal2367.tinyppimobile.ui.navigation.LocalBottomBarSpace
 import kotlinx.coroutines.delay
+import com.jamal2367.tinyppimobile.ui.navigation.barAwarePadding
+import com.jamal2367.tinyppimobile.ui.navigation.aboveBottomBar
+import com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage
 
 /**
  * The two shelves, as screens of their own.
@@ -216,7 +217,9 @@ fun SeriesScreen(
     // own back gesture is the one nearest a thumb. Without this it would leave
     // the shelf altogether, which is a whole tab further than anybody pressing
     // it meant to go.
-    BackHandler(enabled = open != null) { viewModel.closeShow() }
+    // Only on the tab in front: composed beside another one, it would take
+    // back away from a screen that has nothing to do with it.
+    BackHandler(enabled = open != null && LocalIsCurrentPage.current) { viewModel.closeShow() }
 
     Shelf(
         configured = state.isConfigured,
@@ -357,7 +360,7 @@ private fun Shelf(
         snackbarHost = {
             SnackbarHost(
                 snackbarHostState,
-                modifier = Modifier.padding(bottom = LocalBottomBarSpace.current),
+                modifier = Modifier.aboveBottomBar(),
             )
         },
     ) { padding ->
@@ -417,11 +420,7 @@ private fun Shelf(
 
             LazyColumn(
                 state = listState,
-                contentPadding = PaddingValues(
-                    start = ScreenEdge,
-                    end = ScreenEdge,
-                    bottom = 24.dp + LocalBottomBarSpace.current,
-                ),
+                contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(gap),
                 modifier = Modifier.fillMaxSize(),
                 content = content,

@@ -104,7 +104,8 @@ import com.jamal2367.tinyppimobile.ui.theme.neutralTonalIconButtonColors
 import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.util.MediaUrls
 import com.jamal2367.tinyppimobile.util.SourceLabel
-import com.jamal2367.tinyppimobile.ui.navigation.LocalBottomBarSpace
+import com.jamal2367.tinyppimobile.ui.navigation.barAwarePadding
+import com.jamal2367.tinyppimobile.ui.navigation.aboveBottomBar
 
 /**
  * What the box is playing, and what can be done to it.
@@ -136,7 +137,7 @@ fun LiveScreen(
         snackbarHost = {
             SnackbarHost(
                 snackbarHostState,
-                modifier = Modifier.padding(bottom = LocalBottomBarSpace.current),
+                modifier = Modifier.aboveBottomBar(),
             )
         },
     ) { padding ->
@@ -203,11 +204,7 @@ private fun LiveContent(
     viewModel: LiveViewModel,
 ) {
     LazyColumn(
-        contentPadding = PaddingValues(
-            start = ScreenEdge,
-            end = ScreenEdge,
-            bottom = 24.dp + LocalBottomBarSpace.current,
-        ),
+        contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
         modifier = Modifier.fillMaxSize(),
     ) {

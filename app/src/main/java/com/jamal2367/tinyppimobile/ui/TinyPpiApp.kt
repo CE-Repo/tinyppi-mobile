@@ -65,6 +65,8 @@ import com.jamal2367.tinyppimobile.ui.navigation.TinyPpiPager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
+import androidx.compose.runtime.derivedStateOf
+import com.jamal2367.tinyppimobile.ui.navigation.aboveBottomBar
 
 @Composable
 fun TinyPpiApp(container: AppContainer) {
@@ -190,12 +192,18 @@ fun TinyPpiApp(container: AppContainer) {
         val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         // Without the expressive spring's overshoot: a room that bounced past
         // nothing would be a negative padding, which is a crash.
-        val animatedSpace by animateDpAsState(
+        //
+        // Handed on as a state and never read here: the screens read it as they
+        // are measured, so the room animating changes their layout and nothing
+        // is composed again for it (see barAwarePadding).
+        val animatedSpace = animateDpAsState(
             targetValue = navigationBar + if (barVisibility.visible) BAR_HEIGHT + BAR_BOTTOM else 0.dp,
             animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
             label = "bar-space",
         )
-        val barSpace = animatedSpace.coerceAtLeast(0.dp)
+        val barSpace = remember(animatedSpace) {
+            derivedStateOf { animatedSpace.value.coerceAtLeast(0.dp) }
+        }
 
         // A new tab is a new place to be, and whoever just pressed the bar or
         // swiped to get there should not find it gone from under their thumb.
@@ -233,7 +241,7 @@ fun TinyPpiApp(container: AppContainer) {
                     hostState = snackbarHostState,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = barSpace),
+                        .aboveBottomBar(),
                 )
             }
         }

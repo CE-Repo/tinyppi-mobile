@@ -25,7 +25,6 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +48,13 @@ import dev.chrisbanes.haze.blur.HazeBlurStyle
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.hazeBlur
 import kotlin.math.roundToInt
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.runtime.State
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.offset
 
 /**
  * How much of the foot of the screen the floating bar sits over.
@@ -62,7 +68,57 @@ import kotlin.math.roundToInt
  * the room the system's gesture bar needs, so the end of a shelf is not left
  * standing over an empty strip where the bar used to be.
  */
-val LocalBottomBarSpace = compositionLocalOf { 0.dp }
+val LocalBottomBarSpace = staticCompositionLocalOf<State<Dp>> { NoBarSpace }
+
+private val NoBarSpace: State<Dp> = mutableStateOf(0.dp)
+
+/**
+ * A list's content padding with the bar's room added to its foot.
+ *
+ * The room is read when the list is measured, not when it is composed. It
+ * animates every time the bar comes or goes - which is every tab change - and
+ * read in composition that was every screen recomposing on every frame of it,
+ * the whole of the app at once, in the middle of a swipe.
+ */
+@Composable
+fun barAwarePadding(horizontal: Dp, top: Dp = 0.dp, bottom: Dp): PaddingValues =
+    BarAwarePadding(horizontal, top, bottom, LocalBottomBarSpace.current)
+
+@Stable
+private class BarAwarePadding(
+    private val horizontal: Dp,
+    private val top: Dp,
+    private val bottom: Dp,
+    private val bar: State<Dp>,
+) : PaddingValues {
+    override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp = horizontal
+    override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp = horizontal
+    override fun calculateTopPadding(): Dp = top
+    override fun calculateBottomPadding(): Dp = bottom + bar.value
+
+    override fun equals(other: Any?): Boolean = other is BarAwarePadding &&
+        other.horizontal == horizontal && other.top == top && other.bottom == bottom && other.bar === bar
+
+    override fun hashCode(): Int = ((horizontal.hashCode() * 31 + top.hashCode()) * 31 + bottom.hashCode()) * 31 +
+        System.identityHashCode(bar)
+}
+
+/**
+ * Lifts what it is put on - a snackbar - clear of the bar.
+ *
+ * In layout rather than as a padding for the reason [barAwarePadding] gives:
+ * the room moves on every frame of a tab change, and only this should move
+ * with it.
+ */
+@Composable
+fun Modifier.aboveBottomBar(): Modifier {
+    val space = LocalBottomBarSpace.current
+    return layout { measurable, constraints ->
+        val lift = space.value.roundToPx().coerceAtLeast(0)
+        val placeable = measurable.measure(constraints.offset(vertical = -lift))
+        layout(placeable.width, placeable.height + lift) { placeable.place(0, 0) }
+    }
+}
 
 /**
  * Whether the bar is showing, and the ear it listens to the lists with.

@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -75,8 +74,8 @@ import com.jamal2367.tinyppimobile.ui.theme.SlimSliderTrack
 import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
-import com.jamal2367.tinyppimobile.ui.navigation.LocalBottomBarSpace
 import com.jamal2367.tinyppimobile.ui.components.ScreenTitle
+import com.jamal2367.tinyppimobile.ui.navigation.barAwarePadding
 
 /**
  * Where the two addresses live.
@@ -95,11 +94,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
 
     Scaffold { padding ->
         LazyColumn(
-            contentPadding = PaddingValues(
-                start = ScreenEdge,
-                end = ScreenEdge,
-                bottom = ScreenEdge + LocalBottomBarSpace.current,
-            ),
+            contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = ScreenEdge),
             verticalArrangement = Arrangement.spacedBy(CardGap),
             modifier = Modifier
                 .fillMaxSize()

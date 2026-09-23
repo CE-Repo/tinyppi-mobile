@@ -7,7 +7,6 @@ package com.jamal2367.tinyppimobile.ui.history
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -44,9 +43,10 @@ import com.jamal2367.tinyppimobile.ui.components.StatTile
 import com.jamal2367.tinyppimobile.util.Formatters
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
-import com.jamal2367.tinyppimobile.ui.navigation.LocalBottomBarSpace
 import com.jamal2367.tinyppimobile.ui.components.ScreenTitle
 import kotlinx.coroutines.delay
+import com.jamal2367.tinyppimobile.ui.navigation.barAwarePadding
+import com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage
 
 /**
  * What the playing title has done so far.
@@ -72,7 +72,8 @@ import kotlinx.coroutines.delay
  */
 @Composable
 private fun ChartHeartbeat(playing: Boolean, onBeat: () -> Unit) {
-    if (!playing) return
+    // A tab waiting beside the one in front is composed but not looked at.
+    if (!playing || !LocalIsCurrentPage.current) return
 
     val owner = LocalLifecycleOwner.current
 
@@ -116,11 +117,7 @@ fun HistoryScreen(
             )
 
             else -> LazyColumn(
-                contentPadding = PaddingValues(
-                    start = ScreenEdge,
-                    end = ScreenEdge,
-                    bottom = ScreenEdge + LocalBottomBarSpace.current,
-                ),
+                contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = ScreenEdge),
                 verticalArrangement = Arrangement.spacedBy(CardGap),
                 modifier = Modifier
                     .fillMaxSize()
