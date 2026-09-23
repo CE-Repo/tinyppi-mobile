@@ -143,7 +143,12 @@ fun FloatingNavigationBar(
                 IntOffset(0, (away * hidden).roundToInt())
             },
     ) {
-        BoxWithConstraints(contentAlignment = Alignment.Center) {
+        BoxWithConstraints(
+            // The full width, so the pill is centred across the screen rather
+            // than set down at its left edge.
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
             // The icons share whatever the open tab's pill leaves over, up to
             // the width of a finger each: on a narrow phone with every tab
             // showing they close up rather than push the bar off the screen.
