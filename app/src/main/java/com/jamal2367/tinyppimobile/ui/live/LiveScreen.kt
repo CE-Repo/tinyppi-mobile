@@ -221,7 +221,7 @@ private fun LiveContent(
         // Under the card of what is playing, which has no heading to be
         // long-pressed: without this there would be no way back to the rest.
         if (present.isNotEmpty() && shown.isEmpty()) {
-            allCardsHidden(CardScreens.LIVE, layout)
+            allCardsHidden(CardScreens.LIVE, layout, R.string.cards_rest_hidden)
             return@LazyColumn
         }
 
