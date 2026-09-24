@@ -34,7 +34,7 @@
 
     <!-- The wall of films, offered while nothing is playing -->
     <string name="library_title">Filme</string>
-    <string name="continue_title">Weiterschauen</string>
+    <string name="continue_count">Weiterschauen · %1$d</string>
     <string name="library_search_clear">Suche leeren</string>
     <string name="library_empty_title">Keine Bibliothek</string>
     <string name="library_empty_text">Diese Box bietet keine Videobibliothek an, oder die Karten sind in den Add-on-Einstellungen ausgeschaltet.</string>

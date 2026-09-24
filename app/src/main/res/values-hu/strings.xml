@@ -37,7 +37,7 @@
 
     <!-- The wall of films, offered while nothing is playing -->
     <string name="library_title">Filmek</string>
-    <string name="continue_title">Megtekintés folytatása</string>
+    <string name="continue_count">Megtekintés folytatása · %1$d</string>
     <string name="library_search_clear">Keresés törlése</string>
     <string name="library_empty_title">Nincs médiatár</string>
     <string name="library_empty_text">Ez a box nem kínál videótárat, vagy a kártyái ki vannak kapcsolva a kiegészítő beállításaiban.</string>

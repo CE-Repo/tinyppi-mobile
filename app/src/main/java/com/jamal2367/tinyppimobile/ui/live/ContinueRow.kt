@@ -54,7 +54,8 @@ internal fun LazyListScope.continueCard(
 ) {
     posterRowCard(
         key = "continue",
-        title = { stringResource(R.string.continue_title) },
+        // How many are on it, the way the other cards on the shelf say.
+        title = { stringResource(R.string.continue_count, items.size) },
         items = items,
         itemKey = { it.key },
         columns = columns,

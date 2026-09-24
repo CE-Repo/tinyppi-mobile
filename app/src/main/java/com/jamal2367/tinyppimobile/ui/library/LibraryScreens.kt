@@ -153,7 +153,7 @@ fun FilmsScreen(
     val layout = LocalCardLayout.current
     val editing = layout.isEditing(CardScreens.FILMS)
     val labels = listOf(
-        ArrangeableCard(FOLD_FILMS_CONTINUE, stringResource(R.string.continue_title)),
+        ArrangeableCard(FOLD_FILMS_CONTINUE, stringResource(R.string.continue_count, resumable.size)),
         ArrangeableCard(FOLD_FILMS_RECENT, stringResource(R.string.recent_title)),
         ArrangeableCard(FOLD_FILMS_UNSEEN, stringResource(R.string.library_unseen, unseen.size)),
         ArrangeableCard(FOLD_FILMS, stringResource(R.string.library_all, shown.size)),
@@ -358,7 +358,7 @@ fun SeriesScreen(
     // Inside a show there are episodes on the screen and no cards to move.
     val editing = open == null && layout.isEditing(CardScreens.SERIES)
     val labels = listOf(
-        ArrangeableCard(FOLD_SERIES_CONTINUE, stringResource(R.string.continue_title)),
+        ArrangeableCard(FOLD_SERIES_CONTINUE, stringResource(R.string.continue_count, resumable.size)),
         ArrangeableCard(FOLD_SERIES_RECENT, stringResource(R.string.recent_title)),
         ArrangeableCard(FOLD_SERIES_UNSEEN, stringResource(R.string.series_unseen_all, unseen.size)),
         ArrangeableCard(FOLD_SERIES, stringResource(R.string.series_all, shown.size)),
