@@ -10,6 +10,7 @@ import com.jamal2367.tinyppimobile.data.prefs.ConnectionMode
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.data.prefs.ThemeMode
 import com.jamal2367.tinyppimobile.data.remote.ConnectionTestResult
+import com.jamal2367.tinyppimobile.ui.navigation.TopLevelDestination
 import com.jamal2367.tinyppimobile.util.toUserMessage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -131,6 +132,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     /** Every card on every screen back where it starts, and back on its screen. */
     fun resetCards() {
         viewModelScope.launch { repository.resetCards() }
+    }
+
+    fun setTabHidden(destination: TopLevelDestination, hidden: Boolean) {
+        if (!destination.canHide) return
+        viewModelScope.launch { repository.setTabHidden(destination.route, hidden) }
     }
 
     fun setThemeMode(mode: ThemeMode) {

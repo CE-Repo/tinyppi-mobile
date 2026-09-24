@@ -258,6 +258,8 @@
     <string name="cards_show">Show card again</string>
     <string name="cards_hidden">Hidden</string>
     <string name="cards_all_hidden">Every card on this screen is hidden.</string>
+    <string name="settings_tabs">Tabs</string>
+    <string name="settings_tabs_desc">Choose which tabs appear in the bar. Live and Settings are always there. Some tabs only appear when there is something to show.</string>
     <string name="settings_cards">Cards</string>
     <string name="settings_cards_desc">Long-press the heading of a card to move cards around on that screen, remove them or put them back.</string>
     <string name="settings_cards_reset">Reset all cards</string>

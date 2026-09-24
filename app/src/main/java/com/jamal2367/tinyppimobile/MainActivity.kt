@@ -208,7 +208,7 @@ class MainActivity : ComponentActivity() {
                             LocalCardFolds provides rememberCardFolds(container, settings),
                             LocalCardLayout provides rememberCardLayout(container, settings),
                         ) {
-                            TinyPpiApp(container = container)
+                            TinyPpiApp(container = container, hiddenTabs = settings.hiddenTabs)
                         }
                     }
                 }

@@ -253,6 +253,8 @@
     <string name="cards_show">Karte wieder anzeigen</string>
     <string name="cards_hidden">Ausgeblendet</string>
     <string name="cards_all_hidden">Alle Karten auf dieser Seite sind ausgeblendet.</string>
+    <string name="settings_tabs">Tabs</string>
+    <string name="settings_tabs_desc">Lege fest, welche Tabs in der Leiste erscheinen. Live und Einstellungen sind immer da. Manche Tabs erscheinen nur, wenn es dort etwas zu zeigen gibt.</string>
     <string name="settings_cards">Karten</string>
     <string name="settings_cards_desc">Halte die Überschrift einer Karte gedrückt, um die Karten dieser Seite zu verschieben, zu entfernen oder zurückzuholen.</string>
     <string name="settings_cards_reset">Alle Karten zurücksetzen</string>

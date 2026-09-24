@@ -80,6 +80,12 @@ class SettingsRepository(private val context: Context) {
         it[KEY_CARD_HIDDEN] = if (hidden) cards + key else cards - key
     }
 
+    /** Take one tab off the bar, or put it back. */
+    suspend fun setTabHidden(route: String, hidden: Boolean) = edit {
+        val tabs = it[KEY_HIDDEN_TABS].orEmpty()
+        it[KEY_HIDDEN_TABS] = if (hidden) tabs + route else tabs - route
+    }
+
     /**
      * Every card of [screen] back where it starts and back on it; every card
      * of every screen, where [screen] is null.
@@ -145,6 +151,7 @@ class SettingsRepository(private val context: Context) {
             }
             .toMap(),
         cardHidden = this[KEY_CARD_HIDDEN].orEmpty(),
+        hiddenTabs = this[KEY_HIDDEN_TABS].orEmpty(),
     )
 
     private fun Preferences.readServer(prefix: String, defaultEnabled: Boolean) = ServerConfig(
@@ -181,6 +188,7 @@ class SettingsRepository(private val context: Context) {
         val KEY_ADAPTIVE_COLOR_INTENSITY = floatPreferencesKey("adaptive_color_intensity")
         val KEY_CARD_FOLDS = stringSetPreferencesKey("card_folds")
         val KEY_CARD_HIDDEN = stringSetPreferencesKey("card_hidden")
+        val KEY_HIDDEN_TABS = stringSetPreferencesKey("hidden_tabs")
 
         /**
          * Each screen's card order is a key of its own, so moving a card on
