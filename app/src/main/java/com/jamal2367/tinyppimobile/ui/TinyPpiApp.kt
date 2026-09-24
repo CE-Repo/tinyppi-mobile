@@ -70,7 +70,7 @@ import androidx.compose.runtime.derivedStateOf
 import com.jamal2367.tinyppimobile.ui.navigation.aboveBottomBar
 
 @Composable
-fun TinyPpiApp(container: AppContainer) {
+fun TinyPpiApp(container: AppContainer, hiddenTabs: Set<String> = emptySet()) {
     val liveViewModel: LiveViewModel = viewModel(factory = LiveViewModel.Factory)
     val liveState by liveViewModel.state.collectAsStateWithLifecycle()
     val library by liveViewModel.library.collectAsStateWithLifecycle()
@@ -83,9 +83,12 @@ fun TinyPpiApp(container: AppContainer) {
     val showFilms = library.offered
     val showSeries = series.offered
 
-    val destinations = remember(showMetadata, showHistory, showFilms, showSeries) {
+    val destinations = remember(showMetadata, showHistory, showFilms, showSeries, hiddenTabs) {
         TopLevelDestination.entries.filter {
-            (it != TopLevelDestination.METADATA || showMetadata) &&
+            // A tab the reader took off the bar in the settings stays off it,
+            // whatever the box has to show there.
+            (!it.canHide || it.route !in hiddenTabs) &&
+                (it != TopLevelDestination.METADATA || showMetadata) &&
                 (it != TopLevelDestination.HISTORY || showHistory) &&
                 (it != TopLevelDestination.FILMS || showFilms) &&
                 (it != TopLevelDestination.SERIES || showSeries)

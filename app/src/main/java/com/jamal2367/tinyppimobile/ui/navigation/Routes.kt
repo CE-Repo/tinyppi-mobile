@@ -70,4 +70,14 @@ enum class TopLevelDestination(
         Icons.Outlined.Settings,
         tabLabelRes = R.string.nav_settings_tab,
     ),
+    ;
+
+    /**
+     * Whether the reader may take this tab off the bar.
+     *
+     * Not the live screen, which is what the app is opened for, and not the
+     * settings, which are the only way to put a tab back.
+     */
+    val canHide: Boolean
+        get() = this != LIVE && this != SETTINGS
 }

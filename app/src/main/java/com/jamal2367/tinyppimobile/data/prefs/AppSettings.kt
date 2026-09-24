@@ -149,6 +149,13 @@ data class AppSettings(
     val cardOrders: Map<String, List<String>> = emptyMap(),
     /** The cards the reader took off their screens, as `screen/card`. */
     val cardHidden: Set<String> = emptySet(),
+    /**
+     * The tabs the reader took off the bar, by route.
+     *
+     * Only ever the ones that can go: the live screen is what the app is for,
+     * and the settings are the only way to bring a tab back.
+     */
+    val hiddenTabs: Set<String> = emptySet(),
 ) {
     /** Whether any card anywhere has been moved or taken off its screen. */
     val cardsArranged: Boolean

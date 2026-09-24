@@ -78,6 +78,7 @@ import com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 import com.jamal2367.tinyppimobile.ui.components.ScreenTitle
+import com.jamal2367.tinyppimobile.ui.navigation.TopLevelDestination
 import com.jamal2367.tinyppimobile.ui.navigation.barAwarePadding
 
 /**
@@ -167,6 +168,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             item { ConnectionModeCard(settings.connectionMode, viewModel::setConnectionMode) }
             item { UpdatesCard(settings, viewModel) }
             item { AppearanceCard(settings, viewModel) }
+            item { TabsCard(settings, viewModel::setTabHidden) }
             item { CardsCard(settings, viewModel::resetCards) }
             item { AboutCard() }
         }
@@ -649,6 +651,33 @@ private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) 
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
+    }
+}
+
+/**
+ * Which tabs are on the bar.
+ *
+ * A switch for each one that may go; the live screen and the settings are
+ * always there, so there is always a way back to this card.
+ */
+@Composable
+private fun TabsCard(
+    settings: AppSettings,
+    onTabHidden: (TopLevelDestination, Boolean) -> Unit,
+) {
+    SectionCard(title = stringResource(R.string.settings_tabs), foldId = "settings.tabs") {
+        Text(
+            text = stringResource(R.string.settings_tabs_desc),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        TopLevelDestination.entries.filter { it.canHide }.forEach { destination ->
+            SwitchRow(
+                label = stringResource(destination.labelRes),
+                checked = destination.route !in settings.hiddenTabs,
+                onCheckedChange = { shown -> onTabHidden(destination, !shown) },
+            )
         }
     }
 }
