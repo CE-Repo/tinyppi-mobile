@@ -219,9 +219,10 @@ send the date.
 
 Under those is a card on each: **Unwatched
 films**, the films without a tick, and **Unwatched series**, the shows with an
-episode still waiting; **All films** and **All series** come after it. Same tiles, same search, same tap; it folds and is
-remembered like the others, and is not there at all once everything has been
-seen.
+episode still waiting, again on a row that scrolls sideways; **All films** and
+**All series** come after it. Same tiles, same search, same tap; it folds and
+is remembered like the others, and is not there at all once everything has
+been seen, or while a search finds nothing unwatched.
 
 **A tap on** a film, a series, an episode or a Continue watching tile opens a
 dialog with three options: **Play** (**Resume** where the box has a point to

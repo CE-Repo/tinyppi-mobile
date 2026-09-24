@@ -255,20 +255,34 @@ fun FilmsScreen(
                     above = true
                 }
 
-                FOLD_FILMS_UNSEEN -> if (waiting) {
-                    filmWall(
-                        films = unseen,
+                // A row that scrolls sideways, like the two above it, rather
+                // than a second wall: it is a way in to what is still waiting,
+                // and the wall of everything is the card under it. A search
+                // nothing unseen answers takes the row away with it.
+                FOLD_FILMS_UNSEEN -> if (waiting && unseen.isNotEmpty()) {
+                    posterRowCard(
                         key = "film-unseen",
-                        title = { stringResource(R.string.library_unseen, it) },
+                        title = { stringResource(R.string.library_unseen, unseen.size) },
+                        items = unseen,
+                        itemKey = { it.id },
                         columns = columns,
-                        server = state.live.server,
-                        showArtwork = state.settings.showArtwork,
-                        starting = library.starting,
                         gapAbove = above,
                         expanded = unseenOpen,
                         onToggle = { folds.setExpanded(FOLD_FILMS_UNSEEN, !unseenOpen) },
-                        onPlay = askFilm,
-                    )
+                    ) { film, modifier ->
+                        FilmTile(
+                            film = film,
+                            poster = if (state.settings.showArtwork) {
+                                MediaUrls.filmPoster(state.live.server, film)
+                            } else {
+                                null
+                            },
+                            starting = library.starting == film.id,
+                            enabled = library.starting == null,
+                            onPlay = { askFilm(film) },
+                            modifier = modifier,
+                        )
+                    }
                     above = true
                 }
 
@@ -472,20 +486,31 @@ fun SeriesScreen(
                     above = true
                 }
 
-                FOLD_SERIES_UNSEEN -> if (waiting) {
-                    seriesWall(
-                        shows = unseen,
+                // A sideways row, as on the films screen.
+                FOLD_SERIES_UNSEEN -> if (waiting && unseen.isNotEmpty()) {
+                    posterRowCard(
                         key = "series-unseen",
-                        title = { stringResource(R.string.series_unseen_all, it) },
+                        title = { stringResource(R.string.series_unseen_all, unseen.size) },
+                        items = unseen,
+                        itemKey = { it.id },
                         columns = columns,
-                        server = state.live.server,
-                        showArtwork = state.settings.showArtwork,
-                        opening = series.opening,
                         gapAbove = above,
                         expanded = unseenOpen,
                         onToggle = { folds.setExpanded(FOLD_SERIES_UNSEEN, !unseenOpen) },
-                        onOpen = askShow,
-                    )
+                    ) { show, modifier ->
+                        ShowTile(
+                            show = show,
+                            poster = if (state.settings.showArtwork) {
+                                MediaUrls.showPoster(state.live.server, show)
+                            } else {
+                                null
+                            },
+                            opening = series.opening == show.id,
+                            enabled = series.opening == null,
+                            onOpen = { askShow(show) },
+                            modifier = modifier,
+                        )
+                    }
                     above = true
                 }
 
