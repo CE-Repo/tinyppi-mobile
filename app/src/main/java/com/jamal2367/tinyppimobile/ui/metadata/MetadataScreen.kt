@@ -2,6 +2,14 @@
 
 package com.jamal2367.tinyppimobile.ui.metadata
 
+import androidx.compose.runtime.CompositionLocalProvider
+import com.jamal2367.tinyppimobile.ui.components.ArrangeBackHandler
+import com.jamal2367.tinyppimobile.ui.components.ArrangeableCard
+import com.jamal2367.tinyppimobile.ui.components.CardScreens
+import com.jamal2367.tinyppimobile.ui.components.LocalCardLayout
+import com.jamal2367.tinyppimobile.ui.components.LocalCardScreen
+import com.jamal2367.tinyppimobile.ui.components.allCardsHidden
+import com.jamal2367.tinyppimobile.ui.components.cardArranger
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -82,7 +90,8 @@ fun MetadataScreen(
                 modifier = Modifier.padding(padding),
             )
 
-            else -> MetadataList(
+            else -> CompositionLocalProvider(LocalCardScreen provides CardScreens.METADATA) {
+                MetadataList(
                 rows = rows,
                 chartHistory = historyState.history,
                 chartRange = historyState.range,
@@ -90,7 +99,8 @@ fun MetadataScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
-            )
+                )
+            }
         }
     }
 }
@@ -113,6 +123,29 @@ private fun MetadataList(
 ) {
     val sections = remember(rows) { rows.toSections() }
 
+    val layout = LocalCardLayout.current
+    // Each section is named by the box, and filed under that name the way its
+    // fold is. The first block of a view can arrive before any name at all,
+    // and that one is filed under where it sits instead - there is only ever
+    // one of it.
+    //
+    // Two sections under one name would be two cards under one key, which a
+    // lazy list refuses outright, so the second is told apart by where it sits.
+    val sectionIds = remember(sections) {
+        val taken = mutableSetOf<String>()
+        sections.mapIndexed { index, section ->
+            val name = "metadata.${section.title.ifBlank { "section$index" }}"
+            if (taken.add(name)) name else "$name#$index".also { taken.add(it) }
+        }
+    }
+    val byId = sectionIds.zip(sections).toMap()
+    val present = buildList {
+        if (chartHistory != null) add(CARD_CHART)
+        addAll(byId.keys)
+    }
+    val chartLabel = stringResource(R.string.history_chart)
+    ArrangeBackHandler(CardScreens.METADATA, layout)
+
     LazyColumn(
         contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = ScreenEdge),
         // The title at the top and the cards centred under it, as on the
@@ -122,45 +155,61 @@ private fun MetadataList(
         modifier = modifier,
     ) {
         item(key = "screen-title") { ScreenTitle(stringResource(R.string.nav_metadata)) }
-        chartHistory?.let { history ->
-            item { ChartCard(history, chartRange, onChartRangeChange) }
+        if (layout.isEditing(CardScreens.METADATA)) {
+            cardArranger(
+                screen = CardScreens.METADATA,
+                cards = present.map { id ->
+                    ArrangeableCard(id, if (id == CARD_CHART) chartLabel else byId[id]?.title.orEmpty())
+                },
+                layout = layout,
+            )
+            return@LazyColumn
         }
-        items(sections.size) { index ->
-            val section = sections[index]
-            // The box names its own sections. The first block of a view can
-            // arrive before any name at all, and that one is filed under where
-            // it sits instead - there is only ever one of it.
-            val foldId = "metadata.${section.title.ifBlank { "section$index" }}"
+        val shown = layout.visible(CardScreens.METADATA, present)
+        if (shown.isEmpty()) allCardsHidden(CardScreens.METADATA, layout)
+        for (id in shown) {
+            if (id == CARD_CHART) {
+                chartHistory?.let { history ->
+                    item(key = id) { ChartCard(history, chartRange, onChartRangeChange) }
+                }
+                continue
+            }
+            val section = byId[id] ?: continue
+            item(key = id) {
+                // A blank row is the overlay's way of setting a heading apart
+                // in a list of fixed-height items, and a section row has
+                // already been read as the card's own title. Both are dropped
+                // here rather than inside the loop: a rule goes between one
+                // row and the next, and a row that draws nothing would leave
+                // its rule behind.
+                val drawn = section.rows.filter { MetadataKind.of(it.kind) !in SKIPPED }
 
-            // A blank row is the overlay's way of setting a heading apart in
-            // a list of fixed-height items, and a section row has already been
-            // read as the card's own title. Both are dropped here rather than
-            // inside the loop: a rule goes between one row and the next, and a
-            // row that draws nothing would leave its rule behind.
-            val drawn = section.rows.filter { MetadataKind.of(it.kind) !in SKIPPED }
+                SectionCard(title = section.title, foldId = id) {
+                    drawn.forEachIndexed { position, row ->
+                        // Ruled between the rows and not around them: what
+                        // makes a list of name-and-value pairs read as a table
+                        // is the line between one pair and the next, and a
+                        // card already draws the outside edge.
+                        if (position > 0) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
+                        }
 
-            SectionCard(title = section.title, foldId = foldId) {
-                drawn.forEachIndexed { position, row ->
-                    // Ruled between the rows and not around them: what makes a
-                    // list of name-and-value pairs read as a table is the line
-                    // between one pair and the next, and a card already draws
-                    // the outside edge.
-                    if (position > 0) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
-                    }
-
-                    when (MetadataKind.of(row.kind)) {
-                        MetadataKind.HEADINGS -> CellRow(row, heading = true)
-                        MetadataKind.COLUMNS -> CellRow(row, heading = false)
-                        MetadataKind.WIDE -> WideRow(row)
-                        MetadataKind.SPACE, MetadataKind.SECTION -> Unit
-                        MetadataKind.ROW -> ValueRow(row)
+                        when (MetadataKind.of(row.kind)) {
+                            MetadataKind.HEADINGS -> CellRow(row, heading = true)
+                            MetadataKind.COLUMNS -> CellRow(row, heading = false)
+                            MetadataKind.WIDE -> WideRow(row)
+                            MetadataKind.SPACE, MetadataKind.SECTION -> Unit
+                            MetadataKind.ROW -> ValueRow(row)
+                        }
                     }
                 }
             }
         }
     }
 }
+
+/** The luminance chart, filed under the name its fold has always had. */
+private const val CARD_CHART = "history.chart"
 
 @Composable
 private fun ValueRow(row: MetadataRow) {

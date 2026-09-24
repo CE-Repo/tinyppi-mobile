@@ -1,5 +1,7 @@
 package com.jamal2367.tinyppimobile.demo
 
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -54,6 +56,7 @@ import kotlin.math.sin
 object DemoServer {
     private const val TAG = "DemoServer"
     private const val PORT = 8099
+    private val ADDED_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
     @Volatile private var started = false
     private val json = Json { encodeDefaults = true }
@@ -396,12 +399,28 @@ object DemoServer {
                     put("poster", "movie-${f.id}"); put("duration", f.minutes * 60)
                     put("rating", f.rating); put("rating_from", "imdb")
                     put("watched", filmWatched(f)); put("resume", if (filmWatched(f) || f.id in cleared) 0 else f.resumeMinutes * 60)
+                    put("added", addedDaysAgo((f.id * 7) % films.size, f.id))
                 })
             }
         }
         put("count", films.size)
         put("tag", "demo-$libraryRevision")
     }
+
+    /**
+     * When a made-up title arrived, the way Kodi writes it, counted back from
+     * today so the row of what arrived last always looks like last week. The
+     * callers spread the days across the library with a step that shares no
+     * factor with its size, so no two titles land on the same day and the row
+     * is not simply the list read backwards.
+     */
+    private fun addedDaysAgo(days: Int, id: Int): String =
+        LocalDateTime.now()
+            .minusDays(days.toLong())
+            .withHour(8 + id % 12)
+            .withMinute(id * 7 % 60)
+            .withSecond(0)
+            .format(ADDED_FORMAT)
 
     private fun series() = buildJsonObject {
         putJsonArray("shows") {
@@ -414,6 +433,7 @@ object DemoServer {
                     put("episodes", total); put("unseen", unseen)
                     put("rating", s.rating); put("rating_from", "imdb")
                     put("watched", unseen == 0)
+                    put("added", addedDaysAgo(((s.id - 100) * 4) % shows.size, s.id))
                 })
             }
         }

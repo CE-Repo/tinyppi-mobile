@@ -37,7 +37,7 @@
 
     <!-- The wall of films, offered while nothing is playing -->
     <string name="library_title">Films</string>
-    <string name="continue_title">Continue watching</string>
+    <string name="continue_count">Continue watching · %1$d</string>
     <string name="library_search_clear">Clear the search</string>
     <string name="library_empty_title">No library</string>
     <string name="library_empty_text">This box offers no video library, or its cards are switched off in the add-on settings.</string>
@@ -245,5 +245,22 @@
     <string name="update_check_url" translatable="false">https://api.github.com/repos/CE-Repo/tinyppi-mobile/releases/latest</string>
 
     <string name="exit_confirm">Press back again to exit</string>
+
+    <!-- Arranging the cards on a screen, and the row of what arrived last -->
+    <string name="recent_title">Recently added</string>
+    <string name="cards_edit">Arrange cards</string>
+    <string name="cards_edit_hint">Move a card with the arrows, or take it off this screen with the eye. Long-press any card heading to come back here.</string>
+    <string name="cards_done">Done</string>
+    <string name="cards_reset">Reset</string>
+    <string name="cards_move_up">Move up</string>
+    <string name="cards_move_down">Move down</string>
+    <string name="cards_hide">Remove card</string>
+    <string name="cards_show">Show card again</string>
+    <string name="cards_hidden">Hidden</string>
+    <string name="cards_all_hidden">Every card on this screen is hidden.</string>
+    <string name="settings_cards">Cards</string>
+    <string name="settings_cards_desc">Long-press the heading of a card to move cards around on that screen, remove them or put them back.</string>
+    <string name="settings_cards_reset">Reset all cards</string>
+    <string name="settings_cards_reset_desc">Every card back in its place on every screen, and every removed card shown again.</string>
 
 </resources>

@@ -209,11 +209,20 @@ away too. The row is read on the same occasions the shelves are, steps aside
 while you search, and its card is not there at all when nothing is
 half-watched.
 
-Straight under **Continue watching** is a second card on each: **Unwatched
+Under it is **Recently added**: the ten films that arrived in the library last,
+and on Series the ten shows that gained an episode last (Kodi dates a show by
+its newest episode), newest first, on a row that scrolls sideways like the one
+above it. The tiles are the walls' own and a tap on one does what it does
+there. The row is taken from the list the wall is drawn from, so it moves with
+it; it steps aside while you search, and is not there with an add-on too old to
+send the date.
+
+Under those is a card on each: **Unwatched
 films**, the films without a tick, and **Unwatched series**, the shows with an
-episode still waiting; **All films** and **All series** come after it. Same tiles, same search, same tap; it folds and is
-remembered like the others, and is not there at all once everything has been
-seen.
+episode still waiting, again on a row that scrolls sideways; **All films** and
+**All series** come after it. Same tiles, same search, same tap; it folds and
+is remembered like the others, and is not there at all once everything has
+been seen, or while a search finds nothing unwatched.
 
 **A tap on** a film, a series, an episode or a Continue watching tile opens a
 dialog with three options: **Play** (**Resume** where the box has a point to
@@ -247,6 +256,24 @@ the wall by — and then its seasons. The system's own back gesture closes the
 show and puts the wall back, which is one tab short of where it would otherwise
 have gone.
 
+### Arranging the cards
+
+**A long press on the heading of any card** — on Live, Metadata, Films, Series
+or History — opens that screen for arranging: every card on it as one row,
+with arrows to move it up or down and an eye to take it off the screen or put
+it back. The card of what is playing is not among them: it
+always stays at the top of Live, and a long press on the card itself opens
+Live for arranging. **Reset** puts that screen back the way the
+app draws it; **Done**, or
+the back gesture, returns to the cards. The order and the removed cards are
+remembered per screen, by the card's own name rather than its heading, so they
+survive a change of language. A card that only comes with some titles — the
+VS10 card, the HDR10 panel — keeps its place for when it comes back, and a card
+the app has never shown before arrives next to the one it follows by default.
+Any other screen whose cards have all been removed says so, with the way back
+to them.
+**Settings → Cards → Reset all cards** puts every screen back at once.
+
 ### Readings
 
 Every row the overlay prints, grouped into the panels it groups them into. A
@@ -272,8 +299,8 @@ hour of samples already on screen is still the whole story.
 
 ### Settings
 
-The two addresses, which one to use, how the readings arrive, and the
-appearance.
+The two addresses, which one to use, how the readings arrive, the
+appearance, and a card that puts every screen's cards back where they started.
 
 ---
 

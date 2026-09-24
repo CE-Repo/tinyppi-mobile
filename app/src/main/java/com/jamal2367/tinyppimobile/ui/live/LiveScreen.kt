@@ -12,13 +12,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -29,10 +29,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.R
-import com.jamal2367.tinyppimobile.data.model.InfoGroup
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.repository.LiveState
+import com.jamal2367.tinyppimobile.ui.components.ArrangeBackHandler
+import com.jamal2367.tinyppimobile.ui.components.ArrangeableCard
+import com.jamal2367.tinyppimobile.ui.components.CardScreens
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
+import com.jamal2367.tinyppimobile.ui.components.LocalCardLayout
+import com.jamal2367.tinyppimobile.ui.components.LocalCardScreen
+import com.jamal2367.tinyppimobile.ui.components.cardArranger
 import com.jamal2367.tinyppimobile.ui.components.GroupCard
 import com.jamal2367.tinyppimobile.ui.components.StatusLine
 import com.jamal2367.tinyppimobile.ui.navigation.aboveBottomBar
@@ -113,7 +118,8 @@ fun LiveScreen(
                     message = stringResource(R.string.live_waiting_text),
                 )
 
-                else -> LiveContent(
+                else -> CompositionLocalProvider(LocalCardScreen provides CardScreens.LIVE) {
+                    LiveContent(
                     snapshot = snapshot,
                     connection = state.live.connection,
                     serverLabel = state.live.server?.label,
@@ -121,7 +127,8 @@ fun LiveScreen(
                     showArtwork = state.settings.showArtwork,
                     canControl = state.canControlPlayback,
                     viewModel = viewModel,
-                )
+                    )
+                }
             }
         }
     }
@@ -137,6 +144,13 @@ private fun LiveContent(
     canControl: Boolean,
     viewModel: LiveViewModel,
 ) {
+    val layout = LocalCardLayout.current
+    val labels = LiveCardLabels(
+        controls = stringResource(R.string.live_transport),
+        vs10 = stringResource(R.string.live_vs10),
+    )
+    ArrangeBackHandler(CardScreens.LIVE, layout)
+
     LazyColumn(
         contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(CardGap, Alignment.CenterVertically),
@@ -159,7 +173,10 @@ private fun LiveContent(
             return@LazyColumn
         }
 
-        item {
+        // What is playing is always the first card, and is not one that can
+        // be moved or taken off: it is what this screen is opened for, and
+        // every other card on it is about it.
+        item(key = CARD_NOW_PLAYING) {
             NowPlayingCard(
                 snapshot = snapshot,
                 connection = connection,
@@ -171,37 +188,72 @@ private fun LiveContent(
             )
         }
 
-        if (canControl) {
-            item {
-                ControlsCard(
-                    snapshot = snapshot,
-                    viewModel = viewModel,
-                )
-            }
+        // Every other card the screen has now, in the order it draws them
+        // until the reader moves one: what can be done to what is playing,
+        // and the readings the overlay prints (see CardLayout).
+        val groups = snapshot.groups.associateBy { "$GROUP_PREFIX${it.id}" }
+        val present = buildList {
+            if (canControl) add(FOLD_CONTROLS)
+            if (snapshot.vs10.options.isNotEmpty()) add(FOLD_VS10)
+            addAll(groups.keys)
         }
 
-        if (snapshot.vs10.options.isNotEmpty()) {
-            item {
-                Vs10Card(
-                    snapshot.vs10,
-                    canControl = snapshot.control,
-                    viewModel = viewModel,
-                )
-            }
+        if (layout.isEditing(CardScreens.LIVE)) {
+            cardArranger(
+                screen = CardScreens.LIVE,
+                cards = present.map { id ->
+                    ArrangeableCard(
+                        id,
+                        when (id) {
+                            FOLD_CONTROLS -> labels.controls
+                            FOLD_VS10 -> labels.vs10
+                            else -> groups[id]?.title.orEmpty()
+                        },
+                    )
+                },
+                layout = layout,
+            )
+            return@LazyColumn
         }
 
-        // The readings the overlay prints, at the foot of the same screen
-        // rather than behind a tab of their own. They answer questions the card
-        // at the top raises - what this file actually is, what the box is doing
-        // with it - and an answer a tab away is an answer nobody goes and gets.
-        //
-        // Keyed by the group's own id, so a card keeps its place in the list
+        // With every other card taken off, the card of what is playing is
+        // the way back to them: a long press on it opens the arranging list.
+        val shown = layout.visible(CardScreens.LIVE, present)
+
+        // Keyed by the card's own name, so a card keeps its place in the list
         // and its fold as the box adds and drops panels mid-film.
-        items(items = snapshot.groups, key = InfoGroup::id) { group ->
-            GroupCard(group)
+        for (id in shown) {
+            when (id) {
+                FOLD_CONTROLS -> item(key = id) {
+                    ControlsCard(
+                        snapshot = snapshot,
+                        viewModel = viewModel,
+                    )
+                }
+
+                FOLD_VS10 -> item(key = id) {
+                    Vs10Card(
+                        snapshot.vs10,
+                        canControl = snapshot.control,
+                        viewModel = viewModel,
+                    )
+                }
+
+                // The readings the overlay prints, on the same screen rather
+                // than behind a tab of their own. They answer questions the
+                // card at the top raises - what this file actually is, what
+                // the box is doing with it - and an answer a tab away is an
+                // answer nobody goes and gets.
+                else -> groups[id]?.let { group ->
+                    item(key = id) { GroupCard(group) }
+                }
+            }
         }
     }
 }
+
+/** What the arranging list calls the cards that do not carry a heading of the box's. */
+private class LiveCardLabels(val controls: String, val vs10: String)
 
 /**
  * What each card on this screen is remembered by.
@@ -211,3 +263,9 @@ private fun LiveContent(
  */
 internal const val FOLD_CONTROLS = "live.controls"
 internal const val FOLD_VS10 = "live.vs10"
+
+/** The card of what is playing, which stays at the top and is never arranged. */
+internal const val CARD_NOW_PLAYING = "live.now"
+
+/** What a card of the box's readings is named by, before the group's own id. */
+internal const val GROUP_PREFIX = "details."

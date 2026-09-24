@@ -13,8 +13,11 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -23,7 +26,9 @@ import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.di.AppContainer
 import com.jamal2367.tinyppimobile.ui.TinyPpiApp
 import com.jamal2367.tinyppimobile.ui.components.CardFolds
+import com.jamal2367.tinyppimobile.ui.components.CardLayout
 import com.jamal2367.tinyppimobile.ui.components.LocalCardFolds
+import com.jamal2367.tinyppimobile.ui.components.LocalCardLayout
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
 import com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
@@ -81,6 +86,34 @@ private fun rememberCardFolds(container: AppContainer, settings: AppSettings): C
         CardFolds(settings.cardFolds) { id, moved ->
             scope.launch { container.settingsRepository.setCardFold(id, moved) }
         }
+    }
+}
+
+/**
+ * Where the cards on each screen go, wired to where that is remembered, and
+ * which screen is being rearranged.
+ *
+ * The screen being rearranged is held here and not stored: an app opened
+ * tomorrow should open on its cards, not on the list of them it was left on.
+ */
+@Composable
+private fun rememberCardLayout(container: AppContainer, settings: AppSettings): CardLayout {
+    val scope = rememberCoroutineScope()
+    var editing by rememberSaveable { mutableStateOf<String?>(null) }
+    val repository = container.settingsRepository
+
+    return remember(settings.cardOrders, settings.cardHidden, editing) {
+        CardLayout(
+            orders = settings.cardOrders,
+            hidden = settings.cardHidden,
+            editing = editing,
+            onOrder = { screen, order -> scope.launch { repository.setCardOrder(screen, order) } },
+            onHidden = { screen, id, hidden ->
+                scope.launch { repository.setCardHidden(screen, id, hidden) }
+            },
+            onEditing = { editing = it },
+            onReset = { screen -> scope.launch { repository.resetCards(screen) } },
+        )
     }
 }
 
@@ -173,6 +206,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                         CompositionLocalProvider(
                             LocalCardFolds provides rememberCardFolds(container, settings),
+                            LocalCardLayout provides rememberCardLayout(container, settings),
                         ) {
                             TinyPpiApp(container = container)
                         }

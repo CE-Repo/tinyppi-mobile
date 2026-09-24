@@ -140,7 +140,20 @@ data class AppSettings(
      * again on every launch.
      */
     val cardFolds: Set<String> = emptySet(),
+    /**
+     * The order the reader put the cards of each screen in, by screen.
+     *
+     * A screen that is not in here is in the order the app draws it, and so
+     * is a card that is not named in its screen's list (see `CardLayout`).
+     */
+    val cardOrders: Map<String, List<String>> = emptyMap(),
+    /** The cards the reader took off their screens, as `screen/card`. */
+    val cardHidden: Set<String> = emptySet(),
 ) {
+    /** Whether any card anywhere has been moved or taken off its screen. */
+    val cardsArranged: Boolean
+        get() = cardOrders.isNotEmpty() || cardHidden.isNotEmpty()
+
     /** True once at least one box is filled in far enough to try. */
     val isConfigured: Boolean
         get() = servers().isNotEmpty()

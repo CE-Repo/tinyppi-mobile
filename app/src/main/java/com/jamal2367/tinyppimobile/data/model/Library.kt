@@ -66,6 +66,14 @@ data class LibraryFilm(
      * in Kodi's own window.
      */
     val resume: Int = 0,
+    /**
+     * When it arrived in the library, as Kodi writes it - "2026-09-22 20:15:00"
+     * - or empty where the add-on is older than the field or Kodi has no date.
+     *
+     * Kept as the text rather than parsed: it sorts in the order it happened,
+     * and ordering the row of what arrived last is all it is used for.
+     */
+    val added: String = "",
 ) {
     /** How far through it the box got, 0 to 1, or null for one to start fresh. */
     val progress: Float?
@@ -138,6 +146,12 @@ data class LibraryShow(
     @SerialName("rating_from") val ratingFrom: String = "",
     /** Whether the box counts every episode of it as seen. */
     val watched: Boolean = false,
+    /**
+     * When it last gained an episode, as Kodi writes it, or empty: Kodi dates
+     * a show by its newest episode, so this is what puts a show that got one
+     * last night at the front of the row of what arrived last.
+     */
+    val added: String = "",
 )
 
 /** The episodes of one show, as `/api/episodes?tvshowid=` answers them. */
