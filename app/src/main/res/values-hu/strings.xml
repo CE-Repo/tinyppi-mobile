@@ -246,4 +246,22 @@
 
     <string name="exit_confirm">Nyomd meg ismét a Vissza gombot a kilépéshez</string>
 
+    <!-- Arranging the cards on a screen, and the row of what arrived last -->
+    <string name="recent_title">Nemrég hozzáadott</string>
+    <string name="cards_now_playing">Most megy</string>
+    <string name="cards_edit">Kártyák elrendezése</string>
+    <string name="cards_edit_hint">A nyilakkal mozgathatsz egy kártyát, a szemmel leveheted erről a képernyőről. Bármelyik kártya fejlécének hosszú megnyomásával ide jutsz vissza.</string>
+    <string name="cards_done">Kész</string>
+    <string name="cards_reset">Visszaállítás</string>
+    <string name="cards_move_up">Feljebb</string>
+    <string name="cards_move_down">Lejjebb</string>
+    <string name="cards_hide">Kártya eltávolítása</string>
+    <string name="cards_show">Kártya megjelenítése</string>
+    <string name="cards_hidden">Rejtett</string>
+    <string name="cards_all_hidden">A képernyő összes kártyája el van rejtve.</string>
+    <string name="settings_cards">Kártyák</string>
+    <string name="settings_cards_desc">Egy kártya fejlécének hosszú megnyomásával átrendezheted, eltávolíthatod vagy visszahozhatod a képernyő kártyáit.</string>
+    <string name="settings_cards_reset">Összes kártya visszaállítása</string>
+    <string name="settings_cards_reset_desc">Minden kártya visszakerül a helyére minden képernyőn, és minden eltávolított kártya újra látható.</string>
+
 </resources>

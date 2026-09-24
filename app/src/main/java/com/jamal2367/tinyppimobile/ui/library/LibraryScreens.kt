@@ -22,6 +22,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,7 +43,20 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import com.jamal2367.tinyppimobile.R
+import com.jamal2367.tinyppimobile.ui.components.ArrangeBackHandler
+import com.jamal2367.tinyppimobile.ui.components.ArrangeableCard
+import com.jamal2367.tinyppimobile.ui.components.CardScreens
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
+import com.jamal2367.tinyppimobile.ui.components.LocalCardLayout
+import com.jamal2367.tinyppimobile.ui.components.LocalCardScreen
+import com.jamal2367.tinyppimobile.ui.components.ScreenTitle
+import com.jamal2367.tinyppimobile.ui.components.allCardsHidden
+import com.jamal2367.tinyppimobile.ui.components.cardArranger
+import com.jamal2367.tinyppimobile.ui.live.FilmTile
+import com.jamal2367.tinyppimobile.ui.live.ShowTile
+import com.jamal2367.tinyppimobile.ui.live.newest
+import com.jamal2367.tinyppimobile.ui.live.posterRowCard
+import com.jamal2367.tinyppimobile.util.MediaUrls
 import com.jamal2367.tinyppimobile.ui.live.ContinueUiState
 import com.jamal2367.tinyppimobile.ui.live.FILM_START_TIMEOUT_MS
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
@@ -129,11 +143,22 @@ fun FilmsScreen(
     // answer, and which of it is shown is the search's.
     val waiting = remember(library.films) { library.films.any { !it.watched } }
     val unseen = remember(shown) { shown.filterNot { it.watched } }
+    val recent = remember(library.films) { newest(library.films, { it.added }, { it.id }) }
     val columns = filmColumns()
     val folds = LocalCardFolds.current
     val continueOpen = folds.isExpanded(FOLD_FILMS_CONTINUE)
+    val recentOpen = folds.isExpanded(FOLD_FILMS_RECENT)
     val wallOpen = folds.isExpanded(FOLD_FILMS)
     val unseenOpen = folds.isExpanded(FOLD_FILMS_UNSEEN)
+    val layout = LocalCardLayout.current
+    val editing = layout.isEditing(CardScreens.FILMS)
+    val labels = listOf(
+        ArrangeableCard(FOLD_FILMS_CONTINUE, stringResource(R.string.continue_title)),
+        ArrangeableCard(FOLD_FILMS_RECENT, stringResource(R.string.recent_title)),
+        ArrangeableCard(FOLD_FILMS_UNSEEN, stringResource(R.string.library_unseen, unseen.size)),
+        ArrangeableCard(FOLD_FILMS, stringResource(R.string.library_all, shown.size)),
+    )
+    ArrangeBackHandler(CardScreens.FILMS, layout)
     var asking by remember { mutableStateOf<TitleQuestion?>(null) }
     TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume)
     // A press on a film asks first; playing it is the first answer.
@@ -154,64 +179,115 @@ fun FilmsScreen(
         message = message,
         onMessageShown = viewModel::consumeMessage,
         onOpenSettings = onOpenSettings,
-        gap = 0.dp,
+        // The cards of the wall part themselves; the arranging rows are
+        // spaced out by the list.
+        gap = if (editing) CardGap else 0.dp,
+        screen = CardScreens.FILMS,
     ) {
-        // The screen's name and the search box first, then two cards: what
-        // was left half-watched - out of the way while somebody is searching,
-        // which is looking for something else - and then the wall.
+        // The screen's name and the search box first, then the cards: what
+        // was left half-watched and what arrived last - both out of the way
+        // while somebody is searching, which is looking for something else -
+        // what is still waiting to be watched, and the wall. In that order
+        // until the reader moves them (see CardLayout).
+        if (editing) {
+            arrangeTop { stringResource(R.string.library_title) }
+            cardArranger(CardScreens.FILMS, labels, layout)
+            return@Shelf
+        }
         shelfTop(
             title = { stringResource(R.string.library_title) },
             searchLabel = { stringResource(R.string.library_search) },
             search = search,
             onSearch = { search = it },
         )
-        val resuming = search.isBlank() && resumable.isNotEmpty()
-        if (resuming) {
-            continueCard(
-                items = resumable,
-                columns = columns,
-                server = state.live.server,
-                showArtwork = state.settings.showArtwork,
-                starting = continuing.starting,
-                expanded = continueOpen,
-                onToggle = { folds.setExpanded(FOLD_FILMS_CONTINUE, !continueOpen) },
-                onPlay = { item ->
-                    asking = TitleQuestion(
-                        item.markTarget(),
-                        R.string.title_resume,
-                        resumable = true,
-                    ) { fromStart -> viewModel.playContinuing(item, fromStart) }
-                },
-            )
+        val shownCards = layout.visible(CardScreens.FILMS, labels.map { it.id })
+        if (shownCards.isEmpty()) allCardsHidden(CardScreens.FILMS, layout)
+        // Whether a card has been drawn above the next one, which parts itself
+        // from it; the first card sits straight under the search box.
+        var above = false
+        for (id in shownCards) {
+            when (id) {
+                FOLD_FILMS_CONTINUE -> if (search.isBlank() && resumable.isNotEmpty()) {
+                    continueCard(
+                        items = resumable,
+                        columns = columns,
+                        server = state.live.server,
+                        showArtwork = state.settings.showArtwork,
+                        starting = continuing.starting,
+                        gapAbove = above,
+                        expanded = continueOpen,
+                        onToggle = { folds.setExpanded(FOLD_FILMS_CONTINUE, !continueOpen) },
+                        onPlay = { item ->
+                            asking = TitleQuestion(
+                                item.markTarget(),
+                                R.string.title_resume,
+                                resumable = true,
+                            ) { fromStart -> viewModel.playContinuing(item, fromStart) }
+                        },
+                    )
+                    above = true
+                }
+
+                FOLD_FILMS_RECENT -> if (search.isBlank() && recent.isNotEmpty()) {
+                    posterRowCard(
+                        key = "film-recent",
+                        title = { stringResource(R.string.recent_title) },
+                        items = recent,
+                        itemKey = { it.id },
+                        columns = columns,
+                        gapAbove = above,
+                        expanded = recentOpen,
+                        onToggle = { folds.setExpanded(FOLD_FILMS_RECENT, !recentOpen) },
+                    ) { film, modifier ->
+                        FilmTile(
+                            film = film,
+                            poster = if (state.settings.showArtwork) {
+                                MediaUrls.filmPoster(state.live.server, film)
+                            } else {
+                                null
+                            },
+                            starting = library.starting == film.id,
+                            enabled = library.starting == null,
+                            onPlay = { askFilm(film) },
+                            modifier = modifier,
+                        )
+                    }
+                    above = true
+                }
+
+                FOLD_FILMS_UNSEEN -> if (waiting) {
+                    filmWall(
+                        films = unseen,
+                        key = "film-unseen",
+                        title = { stringResource(R.string.library_unseen, it) },
+                        columns = columns,
+                        server = state.live.server,
+                        showArtwork = state.settings.showArtwork,
+                        starting = library.starting,
+                        gapAbove = above,
+                        expanded = unseenOpen,
+                        onToggle = { folds.setExpanded(FOLD_FILMS_UNSEEN, !unseenOpen) },
+                        onPlay = askFilm,
+                    )
+                    above = true
+                }
+
+                FOLD_FILMS -> {
+                    filmWall(
+                        films = shown,
+                        columns = columns,
+                        server = state.live.server,
+                        showArtwork = state.settings.showArtwork,
+                        starting = library.starting,
+                        gapAbove = above,
+                        expanded = wallOpen,
+                        onToggle = { folds.setExpanded(FOLD_FILMS, !wallOpen) },
+                        onPlay = askFilm,
+                    )
+                    above = true
+                }
+            }
         }
-        // What is still waiting to be watched, straight under what was left
-        // half-watched; the wall of everything comes after both.
-        if (waiting) {
-            filmWall(
-                films = unseen,
-                key = "film-unseen",
-                title = { stringResource(R.string.library_unseen, it) },
-                columns = columns,
-                server = state.live.server,
-                showArtwork = state.settings.showArtwork,
-                starting = library.starting,
-                gapAbove = resuming,
-                expanded = unseenOpen,
-                onToggle = { folds.setExpanded(FOLD_FILMS_UNSEEN, !unseenOpen) },
-                onPlay = askFilm,
-            )
-        }
-        filmWall(
-            films = shown,
-            columns = columns,
-            server = state.live.server,
-            showArtwork = state.settings.showArtwork,
-            starting = library.starting,
-            gapAbove = resuming || waiting,
-            expanded = wallOpen,
-            onToggle = { folds.setExpanded(FOLD_FILMS, !wallOpen) },
-            onPlay = askFilm,
-        )
     }
 }
 
@@ -256,12 +332,24 @@ fun SeriesScreen(
     // The shows with an episode still waiting, under the continue-watching row.
     val waiting = remember(series.shows) { series.shows.any { it.isWaiting } }
     val unseen = remember(shown) { shown.filter { it.isWaiting } }
+    val recent = remember(series.shows) { newest(series.shows, { it.added }, { it.id }) }
     val columns = filmColumns()
     val folds = LocalCardFolds.current
     val continueOpen = folds.isExpanded(FOLD_SERIES_CONTINUE)
+    val recentOpen = folds.isExpanded(FOLD_SERIES_RECENT)
     val wallOpen = folds.isExpanded(FOLD_SERIES)
     val unseenOpen = folds.isExpanded(FOLD_SERIES_UNSEEN)
     val open = series.open
+    val layout = LocalCardLayout.current
+    // Inside a show there are episodes on the screen and no cards to move.
+    val editing = open == null && layout.isEditing(CardScreens.SERIES)
+    val labels = listOf(
+        ArrangeableCard(FOLD_SERIES_CONTINUE, stringResource(R.string.continue_title)),
+        ArrangeableCard(FOLD_SERIES_RECENT, stringResource(R.string.recent_title)),
+        ArrangeableCard(FOLD_SERIES_UNSEEN, stringResource(R.string.series_unseen_all, unseen.size)),
+        ArrangeableCard(FOLD_SERIES, stringResource(R.string.series_all, shown.size)),
+    )
+    ArrangeBackHandler(CardScreens.SERIES, layout)
     var asking by remember { mutableStateOf<TitleQuestion?>(null) }
     TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume)
     // A series cannot be played, so its first answer opens it.
@@ -298,9 +386,10 @@ fun SeriesScreen(
         message = message,
         onMessageShown = viewModel::consumeMessage,
         onOpenSettings = onOpenSettings,
-        // The cards of the wall part themselves; an open show is rows the
-        // list spaces out.
-        gap = if (open != null) CardGap else 0.dp,
+        // The cards of the wall part themselves; an open show, and the
+        // arranging rows, are rows the list spaces out.
+        gap = if (open != null || editing) CardGap else 0.dp,
+        screen = CardScreens.SERIES,
     ) {
         if (open != null) {
             episodeList(
@@ -315,62 +404,107 @@ fun SeriesScreen(
             )
             return@Shelf
         }
-        // The same head and the same two cards as on the films screen: the
-        // episodes left half-watched, whichever show they belong to, and then
-        // the wall.
+        // The same head and the same cards as on the films screen: the
+        // episodes left half-watched, whichever show they belong to, the shows
+        // that gained an episode last, the shows with one still waiting, and
+        // then the wall.
+        if (editing) {
+            arrangeTop { stringResource(R.string.series_title) }
+            cardArranger(CardScreens.SERIES, labels, layout)
+            return@Shelf
+        }
         shelfTop(
             title = { stringResource(R.string.series_title) },
             searchLabel = { stringResource(R.string.series_search) },
             search = search,
             onSearch = { search = it },
         )
-        val resuming = search.isBlank() && resumable.isNotEmpty()
-        if (resuming) {
-            continueCard(
-                items = resumable,
-                columns = columns,
-                server = state.live.server,
-                showArtwork = state.settings.showArtwork,
-                starting = continuing.starting,
-                expanded = continueOpen,
-                onToggle = { folds.setExpanded(FOLD_SERIES_CONTINUE, !continueOpen) },
-                onPlay = { item ->
-                    asking = TitleQuestion(
-                        item.markTarget(),
-                        R.string.title_resume,
-                        resumable = true,
-                    ) { fromStart -> viewModel.playContinuing(item, fromStart) }
-                },
-            )
+        val shownCards = layout.visible(CardScreens.SERIES, labels.map { it.id })
+        if (shownCards.isEmpty()) allCardsHidden(CardScreens.SERIES, layout)
+        var above = false
+        for (id in shownCards) {
+            when (id) {
+                FOLD_SERIES_CONTINUE -> if (search.isBlank() && resumable.isNotEmpty()) {
+                    continueCard(
+                        items = resumable,
+                        columns = columns,
+                        server = state.live.server,
+                        showArtwork = state.settings.showArtwork,
+                        starting = continuing.starting,
+                        gapAbove = above,
+                        expanded = continueOpen,
+                        onToggle = { folds.setExpanded(FOLD_SERIES_CONTINUE, !continueOpen) },
+                        onPlay = { item ->
+                            asking = TitleQuestion(
+                                item.markTarget(),
+                                R.string.title_resume,
+                                resumable = true,
+                            ) { fromStart -> viewModel.playContinuing(item, fromStart) }
+                        },
+                    )
+                    above = true
+                }
+
+                FOLD_SERIES_RECENT -> if (search.isBlank() && recent.isNotEmpty()) {
+                    posterRowCard(
+                        key = "series-recent",
+                        title = { stringResource(R.string.recent_title) },
+                        items = recent,
+                        itemKey = { it.id },
+                        columns = columns,
+                        gapAbove = above,
+                        expanded = recentOpen,
+                        onToggle = { folds.setExpanded(FOLD_SERIES_RECENT, !recentOpen) },
+                    ) { show, modifier ->
+                        ShowTile(
+                            show = show,
+                            poster = if (state.settings.showArtwork) {
+                                MediaUrls.showPoster(state.live.server, show)
+                            } else {
+                                null
+                            },
+                            opening = series.opening == show.id,
+                            enabled = series.opening == null,
+                            onOpen = { askShow(show) },
+                            modifier = modifier,
+                        )
+                    }
+                    above = true
+                }
+
+                FOLD_SERIES_UNSEEN -> if (waiting) {
+                    seriesWall(
+                        shows = unseen,
+                        key = "series-unseen",
+                        title = { stringResource(R.string.series_unseen_all, it) },
+                        columns = columns,
+                        server = state.live.server,
+                        showArtwork = state.settings.showArtwork,
+                        opening = series.opening,
+                        gapAbove = above,
+                        expanded = unseenOpen,
+                        onToggle = { folds.setExpanded(FOLD_SERIES_UNSEEN, !unseenOpen) },
+                        onOpen = askShow,
+                    )
+                    above = true
+                }
+
+                FOLD_SERIES -> {
+                    seriesWall(
+                        shows = shown,
+                        columns = columns,
+                        server = state.live.server,
+                        showArtwork = state.settings.showArtwork,
+                        opening = series.opening,
+                        gapAbove = above,
+                        expanded = wallOpen,
+                        onToggle = { folds.setExpanded(FOLD_SERIES, !wallOpen) },
+                        onOpen = askShow,
+                    )
+                    above = true
+                }
+            }
         }
-        // What is still waiting to be watched, straight under what was left
-        // half-watched; the wall of everything comes after both.
-        if (waiting) {
-            seriesWall(
-                shows = unseen,
-                key = "series-unseen",
-                title = { stringResource(R.string.series_unseen_all, it) },
-                columns = columns,
-                server = state.live.server,
-                showArtwork = state.settings.showArtwork,
-                opening = series.opening,
-                gapAbove = resuming,
-                expanded = unseenOpen,
-                onToggle = { folds.setExpanded(FOLD_SERIES_UNSEEN, !unseenOpen) },
-                onOpen = askShow,
-            )
-        }
-        seriesWall(
-            shows = shown,
-            columns = columns,
-            server = state.live.server,
-            showArtwork = state.settings.showArtwork,
-            opening = series.opening,
-            gapAbove = resuming || waiting,
-            expanded = wallOpen,
-            onToggle = { folds.setExpanded(FOLD_SERIES, !wallOpen) },
-            onOpen = askShow,
-        )
     }
 }
 
@@ -456,6 +590,7 @@ private fun Shelf(
     onMessageShown: () -> Unit,
     onOpenSettings: () -> Unit,
     gap: Dp = CardGap,
+    screen: String? = null,
     content: LazyListScope.() -> Unit,
 ) {
     val listState = rememberLazyListState()
@@ -542,13 +677,17 @@ private fun Shelf(
                 return@PullToRefreshBox
             }
 
-            LazyColumn(
-                state = listState,
-                contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(gap),
-                modifier = Modifier.fillMaxSize(),
-                content = content,
-            )
+            // The headings on the shelf answer a long press by opening this
+            // screen for rearranging (see SectionHeading).
+            CompositionLocalProvider(LocalCardScreen provides screen) {
+                LazyColumn(
+                    state = listState,
+                    contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(gap),
+                    modifier = Modifier.fillMaxSize(),
+                    content = content,
+                )
+            }
         }
     }
 }
@@ -568,7 +707,7 @@ private fun sharedLiveViewModel(): LiveViewModel {
 }
 
 /**
- * What the six shelf cards are remembered by. Named for the card rather than
+ * What the eight shelf cards are remembered by - folded, moved or taken off. Named for the card rather than
  * its heading, so a translation or a rename does not open anything again.
  */
 private const val FOLD_FILMS_CONTINUE = "shelf.films.continue"
@@ -577,3 +716,10 @@ private const val FOLD_SERIES_CONTINUE = "shelf.series.continue"
 private const val FOLD_SERIES = "shelf.series"
 private const val FOLD_FILMS_UNSEEN = "shelf.films.unseen"
 private const val FOLD_SERIES_UNSEEN = "shelf.series.unseen"
+private const val FOLD_FILMS_RECENT = "shelf.films.recent"
+private const val FOLD_SERIES_RECENT = "shelf.series.recent"
+
+/** The screen's name alone over the arranging rows: there is no wall to search. */
+private fun LazyListScope.arrangeTop(title: @Composable () -> String) {
+    item(key = "shelf-title") { ScreenTitle(text = title()) }
+}

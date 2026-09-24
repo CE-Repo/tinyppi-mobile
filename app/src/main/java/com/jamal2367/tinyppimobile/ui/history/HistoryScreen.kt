@@ -5,6 +5,14 @@
 
 package com.jamal2367.tinyppimobile.ui.history
 
+import androidx.compose.runtime.CompositionLocalProvider
+import com.jamal2367.tinyppimobile.ui.components.ArrangeBackHandler
+import com.jamal2367.tinyppimobile.ui.components.ArrangeableCard
+import com.jamal2367.tinyppimobile.ui.components.CardScreens
+import com.jamal2367.tinyppimobile.ui.components.LocalCardLayout
+import com.jamal2367.tinyppimobile.ui.components.LocalCardScreen
+import com.jamal2367.tinyppimobile.ui.components.allCardsHidden
+import com.jamal2367.tinyppimobile.ui.components.cardArranger
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
@@ -117,16 +125,36 @@ fun HistoryScreen(
                 modifier = Modifier.padding(padding),
             )
 
-            else -> LazyColumn(
-                contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = ScreenEdge),
-                verticalArrangement = centredBelowTitle(CardGap),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-            ) {
-                item(key = "screen-title") { ScreenTitle(stringResource(R.string.nav_history)) }
-                item { SummaryCard(state, history) }
-                item { EventsCard(events = history.events, foldId = "history.events") }
+            else -> CompositionLocalProvider(LocalCardScreen provides CardScreens.HISTORY) {
+                val layout = LocalCardLayout.current
+                val cards = listOf(
+                    ArrangeableCard(CARD_SUMMARY, stringResource(R.string.history_summary)),
+                    ArrangeableCard(CARD_EVENTS, stringResource(R.string.history_events)),
+                )
+                ArrangeBackHandler(CardScreens.HISTORY, layout)
+                LazyColumn(
+                    contentPadding = barAwarePadding(horizontal = ScreenEdge, bottom = ScreenEdge),
+                    verticalArrangement = centredBelowTitle(CardGap),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                ) {
+                    item(key = "screen-title") { ScreenTitle(stringResource(R.string.nav_history)) }
+                    if (layout.isEditing(CardScreens.HISTORY)) {
+                        cardArranger(CardScreens.HISTORY, cards, layout)
+                        return@LazyColumn
+                    }
+                    val shown = layout.visible(CardScreens.HISTORY, cards.map { it.id })
+                    if (shown.isEmpty()) allCardsHidden(CardScreens.HISTORY, layout)
+                    for (id in shown) {
+                        when (id) {
+                            CARD_SUMMARY -> item(key = id) { SummaryCard(state, history) }
+                            CARD_EVENTS -> item(key = id) {
+                                EventsCard(events = history.events, foldId = CARD_EVENTS)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -134,7 +162,7 @@ fun HistoryScreen(
 
 @Composable
 private fun SummaryCard(state: HistoryUiState, history: History) {
-    SectionCard(title = stringResource(R.string.history_summary), foldId = "history.summary") {
+    SectionCard(title = stringResource(R.string.history_summary), foldId = CARD_SUMMARY) {
         state.snapshot?.title?.takeIf { it.isNotBlank() }?.let { title ->
             Text(
                 text = title,
@@ -238,3 +266,7 @@ private fun ChartRange.labelRes(): Int = when (this) {
 
 /** How often the chart asks for the samples it has gained since. */
 private const val CHART_BEAT_MS = 1_000L
+
+/** What the two cards on this screen are remembered by: folded, moved or taken off. */
+private const val CARD_SUMMARY = "history.summary"
+private const val CARD_EVENTS = "history.events"

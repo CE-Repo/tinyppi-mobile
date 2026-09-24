@@ -68,6 +68,36 @@ class SettingsRepository(private val context: Context) {
         it[KEY_CARD_FOLDS] = if (moved) folds + id else folds - id
     }
 
+    /** The order the cards of one screen are in now, from the top. */
+    suspend fun setCardOrder(screen: String, order: List<String>) = edit {
+        it[cardOrderKey(screen)] = order.joinToString(ORDER_SEPARATOR)
+    }
+
+    /** Take one card off its screen, or put it back. */
+    suspend fun setCardHidden(screen: String, id: String, hidden: Boolean) = edit {
+        val key = "$screen/$id"
+        val cards = it[KEY_CARD_HIDDEN].orEmpty()
+        it[KEY_CARD_HIDDEN] = if (hidden) cards + key else cards - key
+    }
+
+    /**
+     * Every card of [screen] back where it starts and back on it; every card
+     * of every screen, where [screen] is null.
+     */
+    suspend fun resetCards(screen: String? = null) = edit { prefs ->
+        if (screen == null) {
+            prefs.asMap().keys
+                .filter { it.name.startsWith(ORDER_PREFIX) }
+                .forEach { prefs.remove(it) }
+            prefs.remove(KEY_CARD_HIDDEN)
+        } else {
+            prefs.remove(cardOrderKey(screen))
+            prefs[KEY_CARD_HIDDEN] = prefs[KEY_CARD_HIDDEN].orEmpty()
+                .filterNot { it.startsWith("$screen/") }
+                .toSet()
+        }
+    }
+
     private suspend fun writeServer(prefix: String, config: ServerConfig) = edit {
         it[booleanPreferencesKey("$prefix$SUFFIX_ENABLED")] = config.enabled
         it[booleanPreferencesKey("$prefix$SUFFIX_HTTPS")] = config.useHttps
@@ -104,6 +134,17 @@ class SettingsRepository(private val context: Context) {
         adaptiveColorIntensity = (this[KEY_ADAPTIVE_COLOR_INTENSITY] ?: 1f)
             .coerceIn(0.5f, 1f),
         cardFolds = this[KEY_CARD_FOLDS].orEmpty(),
+        cardOrders = asMap().entries
+            .filter { it.key.name.startsWith(ORDER_PREFIX) }
+            .mapNotNull { (key, value) ->
+                val order = (value as? String)
+                    ?.split(ORDER_SEPARATOR)
+                    ?.filter { it.isNotEmpty() }
+                    .orEmpty()
+                if (order.isEmpty()) null else key.name.removePrefix(ORDER_PREFIX) to order
+            }
+            .toMap(),
+        cardHidden = this[KEY_CARD_HIDDEN].orEmpty(),
     )
 
     private fun Preferences.readServer(prefix: String, defaultEnabled: Boolean) = ServerConfig(
@@ -139,5 +180,16 @@ class SettingsRepository(private val context: Context) {
         val KEY_ADAPTIVE_COLOR = booleanPreferencesKey("adaptive_color")
         val KEY_ADAPTIVE_COLOR_INTENSITY = floatPreferencesKey("adaptive_color_intensity")
         val KEY_CARD_FOLDS = stringSetPreferencesKey("card_folds")
+        val KEY_CARD_HIDDEN = stringSetPreferencesKey("card_hidden")
+
+        /**
+         * Each screen's card order is a key of its own, so moving a card on
+         * one screen rewrites that screen's line and nothing else. A card's
+         * name never holds a line break, which is what they are joined with.
+         */
+        const val ORDER_PREFIX = "card_order."
+        const val ORDER_SEPARATOR = "\n"
+
+        fun cardOrderKey(screen: String) = stringPreferencesKey("$ORDER_PREFIX$screen")
     }
 }

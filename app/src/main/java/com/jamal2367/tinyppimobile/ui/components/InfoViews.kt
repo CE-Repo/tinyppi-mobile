@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,6 +35,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -154,16 +157,30 @@ fun SectionHeading(
     // Said with the press, so a screen reader hears which way the card goes -
     // the heading alone told it there was something to press, not what.
     val foldLabel = stringResource(if (expanded) R.string.card_collapse else R.string.card_expand)
+    // A long press on the heading of a card on a screen that can be
+    // rearranged opens that screen for it (see CardLayout). The settings
+    // name no screen, and their headings only fold.
+    val screen = LocalCardScreen.current
+    val layout = LocalCardLayout.current
+    val haptics = LocalHapticFeedback.current
+    val onLongPress: (() -> Unit)? = screen?.let {
+        {
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            layout.edit(it)
+        }
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .then(
-                if (onToggle != null) {
-                    Modifier.clickable(
+                if (onToggle != null || onLongPress != null) {
+                    Modifier.combinedClickable(
                         interactionSource = press,
                         indication = null,
-                        onClickLabel = foldLabel,
-                        onClick = onToggle,
+                        onClickLabel = if (onToggle != null) foldLabel else null,
+                        onClick = onToggle ?: {},
+                        onLongClickLabel = stringResource(R.string.cards_edit),
+                        onLongClick = onLongPress,
                     )
                 } else {
                     Modifier

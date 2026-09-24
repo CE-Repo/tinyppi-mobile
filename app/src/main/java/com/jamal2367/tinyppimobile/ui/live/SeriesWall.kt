@@ -97,7 +97,7 @@ internal fun LazyListScope.seriesWall(
  * carry without stopping being a poster.
  */
 @Composable
-private fun ShowTile(
+internal fun ShowTile(
     show: LibraryShow,
     poster: String?,
     opening: Boolean,

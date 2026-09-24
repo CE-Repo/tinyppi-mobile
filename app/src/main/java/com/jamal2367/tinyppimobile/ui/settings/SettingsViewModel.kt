@@ -128,6 +128,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { repository.setConnectionMode(mode) }
     }
 
+    /** Every card on every screen back where it starts, and back on its screen. */
+    fun resetCards() {
+        viewModelScope.launch { repository.resetCards() }
+    }
+
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { repository.setThemeMode(mode) }
     }

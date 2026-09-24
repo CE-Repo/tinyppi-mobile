@@ -100,7 +100,7 @@ internal fun LazyListScope.filmWall(
  * corner of one poster and says the same thing about the smaller group.
  */
 @Composable
-private fun FilmTile(
+internal fun FilmTile(
     film: LibraryFilm,
     poster: String?,
     starting: Boolean,

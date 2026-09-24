@@ -167,6 +167,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             item { ConnectionModeCard(settings.connectionMode, viewModel::setConnectionMode) }
             item { UpdatesCard(settings, viewModel) }
             item { AppearanceCard(settings, viewModel) }
+            item { CardsCard(settings, viewModel::resetCards) }
             item { AboutCard() }
         }
     }
@@ -648,6 +649,34 @@ private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) 
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
+    }
+}
+
+/**
+ * Where the cards on the other screens are put back.
+ *
+ * Moving and removing them happens on the screens themselves, where the cards
+ * are - a long press on a heading - so this says how, and holds the one thing
+ * that is easier from here than from five screens: putting all of it back.
+ */
+@Composable
+private fun CardsCard(settings: AppSettings, onReset: () -> Unit) {
+    SectionCard(title = stringResource(R.string.settings_cards), foldId = "settings.cards") {
+        Text(
+            text = stringResource(R.string.settings_cards_desc),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = stringResource(R.string.settings_cards_reset_desc),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        // Only where there is something to put back: a button that does
+        // nothing when pressed reads as one that is broken.
+        OutlinedButton(onClick = onReset, enabled = settings.cardsArranged) {
+            Text(stringResource(R.string.settings_cards_reset))
         }
     }
 }
