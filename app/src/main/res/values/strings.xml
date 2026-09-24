@@ -248,7 +248,6 @@
 
     <!-- Arranging the cards on a screen, and the row of what arrived last -->
     <string name="recent_title">Recently added</string>
-    <string name="cards_now_playing">Now playing</string>
     <string name="cards_edit">Arrange cards</string>
     <string name="cards_edit_hint">Move a card with the arrows, or take it off this screen with the eye. Long-press any card heading to come back here.</string>
     <string name="cards_done">Done</string>

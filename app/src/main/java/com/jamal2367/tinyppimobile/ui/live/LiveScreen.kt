@@ -147,7 +147,6 @@ private fun LiveContent(
 ) {
     val layout = LocalCardLayout.current
     val labels = LiveCardLabels(
-        nowPlaying = stringResource(R.string.cards_now_playing),
         controls = stringResource(R.string.live_transport),
         vs10 = stringResource(R.string.live_vs10),
     )
@@ -175,12 +174,26 @@ private fun LiveContent(
             return@LazyColumn
         }
 
-        // Every card the screen has now, in the order it draws them until the
-        // reader moves one: what is playing, what can be done to it, and the
-        // readings the overlay prints (see CardLayout).
+        // What is playing is always the first card, and is not one that can
+        // be moved or taken off: it is what this screen is opened for, and
+        // every other card on it is about it.
+        item(key = CARD_NOW_PLAYING) {
+            NowPlayingCard(
+                snapshot = snapshot,
+                connection = connection,
+                serverLabel = serverLabel,
+                poster = poster,
+                showArtwork = showArtwork,
+                canControl = canControl,
+                viewModel = viewModel,
+            )
+        }
+
+        // Every other card the screen has now, in the order it draws them
+        // until the reader moves one: what can be done to what is playing,
+        // and the readings the overlay prints (see CardLayout).
         val groups = snapshot.groups.associateBy { "$GROUP_PREFIX${it.id}" }
         val present = buildList {
-            add(CARD_NOW_PLAYING)
             if (canControl) add(FOLD_CONTROLS)
             if (snapshot.vs10.options.isNotEmpty()) add(FOLD_VS10)
             addAll(groups.keys)
@@ -193,7 +206,6 @@ private fun LiveContent(
                     ArrangeableCard(
                         id,
                         when (id) {
-                            CARD_NOW_PLAYING -> labels.nowPlaying
                             FOLD_CONTROLS -> labels.controls
                             FOLD_VS10 -> labels.vs10
                             else -> groups[id]?.title.orEmpty()
@@ -206,7 +218,9 @@ private fun LiveContent(
         }
 
         val shown = layout.visible(CardScreens.LIVE, present)
-        if (shown.isEmpty()) {
+        // Under the card of what is playing, which has no heading to be
+        // long-pressed: without this there would be no way back to the rest.
+        if (present.isNotEmpty() && shown.isEmpty()) {
             allCardsHidden(CardScreens.LIVE, layout)
             return@LazyColumn
         }
@@ -215,18 +229,6 @@ private fun LiveContent(
         // and its fold as the box adds and drops panels mid-film.
         for (id in shown) {
             when (id) {
-                CARD_NOW_PLAYING -> item(key = id) {
-                    NowPlayingCard(
-                        snapshot = snapshot,
-                        connection = connection,
-                        serverLabel = serverLabel,
-                        poster = poster,
-                        showArtwork = showArtwork,
-                        canControl = canControl,
-                        viewModel = viewModel,
-                    )
-                }
-
                 FOLD_CONTROLS -> item(key = id) {
                     ControlsCard(
                         snapshot = snapshot,
@@ -256,7 +258,7 @@ private fun LiveContent(
 }
 
 /** What the arranging list calls the cards that do not carry a heading of the box's. */
-private class LiveCardLabels(val nowPlaying: String, val controls: String, val vs10: String)
+private class LiveCardLabels(val controls: String, val vs10: String)
 
 /**
  * What each card on this screen is remembered by.
@@ -267,7 +269,7 @@ private class LiveCardLabels(val nowPlaying: String, val controls: String, val v
 internal const val FOLD_CONTROLS = "live.controls"
 internal const val FOLD_VS10 = "live.vs10"
 
-/** The card of what is playing, which has no fold to be named after. */
+/** The card of what is playing, which stays at the top and is never arranged. */
 internal const val CARD_NOW_PLAYING = "live.now"
 
 /** What a card of the box's readings is named by, before the group's own id. */

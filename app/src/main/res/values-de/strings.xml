@@ -243,7 +243,6 @@
 
     <!-- Arranging the cards on a screen, and the row of what arrived last -->
     <string name="recent_title">Zuletzt hinzugefügt</string>
-    <string name="cards_now_playing">Läuft gerade</string>
     <string name="cards_edit">Karten anordnen</string>
     <string name="cards_edit_hint">Mit den Pfeilen verschiebst du eine Karte, mit dem Auge nimmst du sie von dieser Seite. Ein langer Druck auf eine Kartenüberschrift bringt dich wieder hierher.</string>
     <string name="cards_done">Fertig</string>

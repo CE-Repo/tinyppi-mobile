@@ -248,7 +248,6 @@
 
     <!-- Arranging the cards on a screen, and the row of what arrived last -->
     <string name="recent_title">Nemrég hozzáadott</string>
-    <string name="cards_now_playing">Most megy</string>
     <string name="cards_edit">Kártyák elrendezése</string>
     <string name="cards_edit_hint">A nyilakkal mozgathatsz egy kártyát, a szemmel leveheted erről a képernyőről. Bármelyik kártya fejlécének hosszú megnyomásával ide jutsz vissza.</string>
     <string name="cards_done">Kész</string>
