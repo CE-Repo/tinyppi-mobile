@@ -258,7 +258,6 @@
     <string name="cards_show">Kártya megjelenítése</string>
     <string name="cards_hidden">Rejtett</string>
     <string name="cards_all_hidden">A képernyő összes kártyája el van rejtve.</string>
-    <string name="cards_rest_hidden">A képernyő többi kártyája el van rejtve.</string>
     <string name="settings_cards">Kártyák</string>
     <string name="settings_cards_desc">Egy kártya fejlécének hosszú megnyomásával átrendezheted, eltávolíthatod vagy visszahozhatod a képernyő kártyáit.</string>
     <string name="settings_cards_reset">Összes kártya visszaállítása</string>

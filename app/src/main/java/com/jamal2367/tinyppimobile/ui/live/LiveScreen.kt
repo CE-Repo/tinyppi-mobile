@@ -37,7 +37,6 @@ import com.jamal2367.tinyppimobile.ui.components.CardScreens
 import com.jamal2367.tinyppimobile.ui.components.EmptyState
 import com.jamal2367.tinyppimobile.ui.components.LocalCardLayout
 import com.jamal2367.tinyppimobile.ui.components.LocalCardScreen
-import com.jamal2367.tinyppimobile.ui.components.allCardsHidden
 import com.jamal2367.tinyppimobile.ui.components.cardArranger
 import com.jamal2367.tinyppimobile.ui.components.GroupCard
 import com.jamal2367.tinyppimobile.ui.components.StatusLine
@@ -217,13 +216,9 @@ private fun LiveContent(
             return@LazyColumn
         }
 
+        // With every other card taken off, the card of what is playing is
+        // the way back to them: a long press on it opens the arranging list.
         val shown = layout.visible(CardScreens.LIVE, present)
-        // Under the card of what is playing, which has no heading to be
-        // long-pressed: without this there would be no way back to the rest.
-        if (present.isNotEmpty() && shown.isEmpty()) {
-            allCardsHidden(CardScreens.LIVE, layout, R.string.cards_rest_hidden)
-            return@LazyColumn
-        }
 
         // Keyed by the card's own name, so a card keeps its place in the list
         // and its fold as the box adds and drops panels mid-film.

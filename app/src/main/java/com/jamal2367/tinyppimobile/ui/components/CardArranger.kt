@@ -1,7 +1,6 @@
 package com.jamal2367.tinyppimobile.ui.components
 
 import androidx.activity.compose.BackHandler
-import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -167,14 +166,10 @@ private fun ArrangeRow(
  * one of them off it: a line saying so, and the way back to them - there is
  * no heading left on the screen to be long-pressed.
  *
- * [message] is the line: Live keeps the card of what is playing whatever is
- * taken off it, and says the others are gone rather than all of them.
+ * Not on Live, whose card of what is playing stays whatever is taken off and
+ * answers a long press itself.
  */
-internal fun LazyListScope.allCardsHidden(
-    screen: String,
-    layout: CardLayout,
-    @StringRes message: Int = R.string.cards_all_hidden,
-) {
+internal fun LazyListScope.allCardsHidden(screen: String, layout: CardLayout) {
     item(key = "arrange-all-hidden") {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -184,7 +179,7 @@ internal fun LazyListScope.allCardsHidden(
                 .padding(vertical = 32.dp),
         ) {
             Text(
-                text = stringResource(message),
+                text = stringResource(R.string.cards_all_hidden),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

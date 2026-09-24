@@ -262,14 +262,16 @@ have gone.
 or History — opens that screen for arranging: every card on it as one row,
 with arrows to move it up or down and an eye to take it off the screen or put
 it back. The card of what is playing is not among them: it
-always stays at the top of Live. **Reset** puts that screen back the way the
+always stays at the top of Live, and a long press on the card itself opens
+Live for arranging. **Reset** puts that screen back the way the
 app draws it; **Done**, or
 the back gesture, returns to the cards. The order and the removed cards are
 remembered per screen, by the card's own name rather than its heading, so they
 survive a change of language. A card that only comes with some titles — the
 VS10 card, the HDR10 panel — keeps its place for when it comes back, and a card
 the app has never shown before arrives next to the one it follows by default.
-A screen whose cards have all been removed says so, with the way back to them.
+Any other screen whose cards have all been removed says so, with the way back
+to them.
 **Settings → Cards → Reset all cards** puts every screen back at once.
 
 ### Readings

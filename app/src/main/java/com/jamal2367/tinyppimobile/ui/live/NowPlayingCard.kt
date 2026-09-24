@@ -5,6 +5,15 @@
 
 package com.jamal2367.tinyppimobile.ui.live
 
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.onLongClick
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.jamal2367.tinyppimobile.ui.components.CardScreens
+import com.jamal2367.tinyppimobile.ui.components.LocalCardLayout
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -90,11 +99,32 @@ internal fun NowPlayingCard(
 ) {
     val accent = LocalArtworkAccent.current
     val container = MaterialTheme.colorScheme.surfaceContainerLow
+    // This card has no heading to be long-pressed, so the card itself opens
+    // Live for arranging - the way every other card's heading does. Only where
+    // nothing else on it has taken the press: the keys, the seek bar and the
+    // folds still answer as they always did.
+    val layout = LocalCardLayout.current
+    val haptics = LocalHapticFeedback.current
+    val arrange = rememberUpdatedState {
+        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        layout.edit(CardScreens.LIVE)
+    }
+    val arrangeLabel = stringResource(R.string.cards_edit)
 
     SectionCard(
         // No heading: the poster, the title of the film and the clock under it
         // say what this card is more plainly than a word over them could.
         title = null,
+        modifier = Modifier
+            .pointerInput(Unit) {
+                detectTapGestures(onLongPress = { arrange.value() })
+            }
+            .semantics {
+                onLongClick(label = arrangeLabel) {
+                    arrange.value()
+                    true
+                }
+            },
         containerBrush = accent?.let { artworkGradient(it, container) },
     ) {
         // The first row of the card rather than a pill above it. It was always
