@@ -225,7 +225,7 @@ private fun ValueRow(row: MetadataRow) {
             modifier = Modifier.weight(1f),
         )
         Text(
-            text = row.value.ifBlank { "–" },
+            text = row.value.ifBlank { stringResource(R.string.value_na) },
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.End,
             modifier = Modifier
@@ -290,7 +290,7 @@ private fun CellRow(row: MetadataRow, heading: Boolean) {
                         // converted in the head before it can be read down.
                         // Column names are left alone.
                         text = (if (heading) cell else Formatters.expandThousands(cell))
-                            .ifBlank { "–" },
+                            .ifBlank { stringResource(R.string.value_na) },
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (heading) {
                             MaterialTheme.colorScheme.onSurfaceVariant

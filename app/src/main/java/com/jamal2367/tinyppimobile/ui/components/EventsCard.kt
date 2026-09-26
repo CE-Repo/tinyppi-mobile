@@ -97,19 +97,20 @@ private fun EventRow(event: PlaybackEvent) {
 @Composable
 private fun PlaybackEvent.describe(): String {
     val off = stringResource(R.string.live_subtitles_off)
+    val na = stringResource(R.string.value_na)
 
     fun state(value: String?): String = when {
-        value == null -> "–"
+        value == null -> na
         value == PlaybackEventKind.SUBTITLES_OFF -> off
         else -> value
     }
 
     return when {
         isTransition -> state(to)
-        eventKind == PlaybackEventKind.TEMPERATURE -> Formatters.celsius(value) ?: "–"
-        eventKind == PlaybackEventKind.CPU -> Formatters.percent(value) ?: "–"
+        eventKind == PlaybackEventKind.TEMPERATURE -> Formatters.celsius(value) ?: na
+        eventKind == PlaybackEventKind.CPU -> Formatters.percent(value) ?: na
         value != null -> Formatters.trimmed(value, 1)
-        else -> "–"
+        else -> na
     }
 }
 

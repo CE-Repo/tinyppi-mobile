@@ -3,6 +3,8 @@
 
     <!-- The add-on's own name, which is the same word in every language. -->
     <string name="app_name" translatable="false">TinyPPI</string>
+    <!-- What a reading with no value shows, as the add-on's own rows do. -->
+    <string name="value_na" translatable="false">N/A</string>
 
     <!-- Navigation -->
     <string name="nav_live">Live</string>

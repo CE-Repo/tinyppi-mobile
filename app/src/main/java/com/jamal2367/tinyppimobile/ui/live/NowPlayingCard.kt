@@ -326,7 +326,7 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
             // them - so a row that only spaced its three readings out would
             // put the middle one wherever those two left it.
             Text(
-                text = target ?: snapshot.time.ifBlank { "–" },
+                text = target ?: snapshot.time.ifBlank { stringResource(R.string.value_na) },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = if (target != null) FontWeight.SemiBold else null,
@@ -363,7 +363,7 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
                 )
             }
             Text(
-                text = snapshot.duration.ifBlank { "–" },
+                text = snapshot.duration.ifBlank { stringResource(R.string.value_na) },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.End,
