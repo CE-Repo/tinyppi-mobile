@@ -45,7 +45,10 @@ object SourceLabel {
             ?: audio.rows.firstOrNull()
             ?: return emptyList()
 
-        val words = row.value.trim().split(' ').filter { it.isNotBlank() }
+        // A codec Kodi could not name is printed as the add-on's N/A label,
+        // and that is no badge.
+        val words = row.value.trim().takeUnless { it == NOT_AVAILABLE }.orEmpty()
+            .split(' ').filter { it.isNotBlank() }
         val layout = words.lastOrNull()?.takeIf { it.matches(CHANNEL_LAYOUT) }
         val codec = words.dropLast(if (layout != null) 1 else 0)
             .joinToString(" ")
@@ -225,6 +228,9 @@ private val CHANNEL_LAYOUT = Regex("""\d+\.\d+""")
  */
 private const val AUDIO_GROUP = "audio"
 private const val AUDIO_CODEC_ROW = "audio.32045"
+
+/** What the add-on prints for a reading it has no value for. */
+private const val NOT_AVAILABLE = "N/A"
 
 /**
  * The names worth a badge of their own where a card mentions them.
