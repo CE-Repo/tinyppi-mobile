@@ -120,6 +120,40 @@ class LiveSessionTest {
         assertEquals(listOf(local, remote), h.source.opened)
         assertEquals(Connection.Streaming, h.last.connection)
         assertEquals(remote, h.last.server)
+        assertTrue(
+            "a handover is not a box that has gone",
+            h.states.none { it.connection == Connection.Offline },
+        )
+    }
+
+    @Test
+    fun `a dropped stream handing over keeps the reading and never says offline`() = runTest {
+        val h = harness(both())
+        var drops = 1
+        h.source.answer = { server ->
+            when {
+                drops-- > 0 -> flow {
+                    emit(StreamEvent.Connected)
+                    emit(StreamEvent.State(film, server))
+                }
+                server == local -> unreachable
+                else -> live(film)(server)
+            }
+        }
+        runCurrent()
+        assertEquals(Connection.Connecting, h.last.connection)
+
+        advanceTimeBy(3_001)
+        runCurrent()
+
+        assertEquals(listOf(local, local, remote), h.source.opened)
+        assertEquals(Connection.Streaming, h.last.connection)
+        assertEquals(remote, h.last.server)
+        assertTrue(h.states.none { it.connection == Connection.Offline })
+        assertTrue(
+            "the screen keeps its reading through the handover",
+            h.states.dropWhile { it.snapshot == null }.all { it.snapshot != null },
+        )
     }
 
     @Test
