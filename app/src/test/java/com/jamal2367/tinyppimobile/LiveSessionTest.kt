@@ -24,6 +24,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
@@ -202,6 +203,34 @@ class LiveSessionTest {
     }
 
     @Test
+    fun `the box counts as there from its first answer until it is found gone`() = runTest {
+        assertFalse("nothing has been heard from yet", LiveState().isAnswering)
+
+        val h = harness(both())
+        var drops = 1
+        h.source.answer = { server ->
+            if (drops-- > 0) {
+                flow {
+                    emit(StreamEvent.Connected)
+                    emit(StreamEvent.State(film, server))
+                }
+            } else {
+                unreachable
+            }
+        }
+        runCurrent()
+
+        assertEquals(Connection.Connecting, h.last.connection)
+        assertTrue("a stream being reopened is a box that was just there", h.last.isAnswering)
+
+        advanceTimeBy(3_001)
+        runCurrent()
+
+        assertEquals(Connection.Offline, h.last.connection)
+        assertFalse(h.last.isAnswering)
+    }
+
+    @Test
     fun `every slot taken falls back to asking, and tries the stream again`() = runTest {
         val h = harness(both())
         h.source.answer = { flow { emit(StreamEvent.Busy) } }
@@ -304,6 +333,7 @@ class LiveSessionTest {
 
         assertEquals(Connection.Offline, h.last.connection)
         assertEquals("Alien", h.last.snapshot?.title)
+        assertFalse("the reading is kept, but nobody is answering", h.last.isAnswering)
     }
 
     @Test

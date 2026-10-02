@@ -40,6 +40,22 @@ data class LiveState(
     /** Whether there is anything at all to draw. */
     val hasSnapshot: Boolean get() = snapshot != null
 
+    /**
+     * Whether there is a box at the other end: it has answered in this
+     * session, and nothing has found it gone since.
+     *
+     * Not the same as [isLive]. A box that is asked rather than streamed
+     * answers too, and a stream that dropped a moment ago is being reopened
+     * against a box that was there - which [server] still names, where a
+     * session that has not heard from anything yet names none.
+     */
+    val isAnswering: Boolean
+        get() = when (connection) {
+            Connection.Streaming, Connection.Polling, Connection.Busy, Connection.Unauthorized -> true
+            Connection.Connecting -> server != null
+            Connection.Offline, Connection.NotConfigured -> false
+        }
+
     enum class Connection {
         /** Nothing is filled in to connect to. */
         NotConfigured,
