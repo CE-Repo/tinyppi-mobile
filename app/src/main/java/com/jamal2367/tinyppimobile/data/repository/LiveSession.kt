@@ -259,8 +259,15 @@ class LiveSession(
                     // there is not hammered.
                     attempt++
                     router.markUnreachable()
-                    publish(LiveState(connection = LiveState.Connection.Offline))
-                    if (attempt % config.servers.size == 0) delay(FAILED_RETRY.seconds)
+                    // Offline only once every address has had its turn. One
+                    // that does not open with another still to try is a
+                    // handover rather than a box that has gone - and the
+                    // shelves leave the bar with the box, so away from home
+                    // they would otherwise leave on every reconnect.
+                    if (attempt % config.servers.size == 0) {
+                        publish(LiveState(connection = LiveState.Connection.Offline))
+                        delay(FAILED_RETRY.seconds)
+                    }
                 }
             }
         }

@@ -41,6 +41,7 @@ import androidx.core.net.toUri
 import com.jamal2367.tinyppimobile.BuildConfig
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.remote.ReleaseId
+import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.di.AppContainer
 import com.jamal2367.tinyppimobile.ui.navigation.TopLevelDestination
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
@@ -80,8 +81,14 @@ fun TinyPpiApp(container: AppContainer, hiddenTabs: Set<String> = emptySet()) {
     // A shelf the box has said it will not offer is a tab that leads to a line
     // of apology. Both are on until it says so - which it can only say once
     // something has asked, and both stay on for a box nobody has asked yet.
-    val showFilms = library.offered
-    val showSeries = series.offered
+    //
+    // A box that has stopped answering takes both with it: what a shelf held
+    // is still in memory, but its posters are the box's pictures and every
+    // press on it is a command to the box, so all it would be is a wall of
+    // grey tiles that do nothing. They come back with the box.
+    val boxAnswering = liveState.live.connection != LiveState.Connection.Offline
+    val showFilms = library.offered && boxAnswering
+    val showSeries = series.offered && boxAnswering
 
     val destinations = remember(showMetadata, showHistory, showFilms, showSeries, hiddenTabs) {
         TopLevelDestination.entries.filter {
