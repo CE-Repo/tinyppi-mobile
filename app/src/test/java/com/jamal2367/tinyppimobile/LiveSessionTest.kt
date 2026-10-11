@@ -349,4 +349,39 @@ class LiveSessionTest {
         assertEquals(listOf(local, remote), h.source.opened)
         assertEquals(remote, h.last.server)
     }
+
+    @Test
+    fun `an ask names the box that last answered`() = runTest {
+        val h = harness(both().copy(liveUpdates = false, pollIntervalSeconds = 1))
+        h.router.markReachable(remote)
+        h.api.state = { buildJsonObject { put("playing", true) } }
+        runCurrent()
+        assertEquals(remote, h.last.server)
+    }
+
+    @Test
+    fun `an ask in flight is dropped with its session`() = runTest {
+        val h = harness(both().copy(liveUpdates = false, pollIntervalSeconds = 1))
+        h.api.state = { awaitCancellation() }
+        runCurrent()
+        h.router.update(both())
+        h.source.answer = live(film)
+        runCurrent()
+        assertEquals(Connection.Streaming, h.last.connection)
+    }
+
+    @Test
+    fun `the state says what it holds`() {
+        assertTrue(LiveState(connection = Connection.Streaming).isLive)
+        assertFalse(LiveState(connection = Connection.Polling).isLive)
+        assertTrue(LiveState(snapshot = film).hasSnapshot)
+        assertFalse(LiveState().hasSnapshot)
+        for (answering in listOf(Connection.Streaming, Connection.Polling, Connection.Busy, Connection.Unauthorized)) {
+            assertTrue(LiveState(connection = answering).isAnswering)
+        }
+        assertFalse(LiveState(connection = Connection.Connecting).isAnswering)
+        assertTrue(LiveState(connection = Connection.Connecting, server = local).isAnswering)
+        assertFalse(LiveState(connection = Connection.Offline).isAnswering)
+        assertFalse(LiveState(connection = Connection.NotConfigured).isAnswering)
+    }
 }

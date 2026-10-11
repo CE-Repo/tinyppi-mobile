@@ -39,9 +39,6 @@ sealed interface StreamEvent {
 
     /** The box wants a token, and did not get one it accepts. */
     data object Unauthorized : StreamEvent
-
-    /** The stream is gone; the client will try again shortly. */
-    data object Disconnected : StreamEvent
 }
 
 /**

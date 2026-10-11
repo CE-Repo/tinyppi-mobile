@@ -11,7 +11,7 @@ import okhttp3.Request
 
 /** What GitHub says about a release - only the four fields worth reading here. */
 @Serializable
-private data class GithubRelease(
+internal data class GithubRelease(
     @SerialName("tag_name") val tagName: String? = null,
     val name: String? = null,
     @SerialName("html_url") val htmlUrl: String? = null,
@@ -146,9 +146,9 @@ class UpdateChecker(
         if (!current.isBehind(latest)) return@withContext null
 
         AvailableUpdate(
-            name = release.name?.takeIf { it.isNotBlank() }
-                ?: release.tagName?.takeIf { it.isNotBlank() }
-                ?: return@withContext null,
+            // A release that is newer has a version or a build number in one
+            // of the two, so where the title is blank the tag is not.
+            name = listOfNotNull(release.name, release.tagName).first { it.isNotBlank() },
             url = release.htmlUrl?.takeIf { it.isNotBlank() } ?: fallbackUrl,
         )
     }

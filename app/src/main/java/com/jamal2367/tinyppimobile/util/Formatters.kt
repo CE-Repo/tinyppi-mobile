@@ -47,8 +47,8 @@ object Formatters {
      * units, brackets, words - comes back as it went in.
      */
     fun expandThousands(text: String): String = THOUSANDS.replace(text) { match ->
-        val figure = match.groupValues[1].toDoubleOrNull() ?: return@replace match.value
-        (figure * 1000).roundToInt().toString()
+        // The pattern only matches digits with an optional fraction.
+        (match.groupValues[1].toDouble() * 1000).roundToInt().toString()
     }
 
     /** A percentage, whole. */

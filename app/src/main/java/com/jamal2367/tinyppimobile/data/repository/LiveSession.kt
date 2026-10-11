@@ -117,7 +117,7 @@ class LiveSession(
          * asking to reconnect counts as a change like any other, and the same
          * restart the settings get is the one a reader gets.
          */
-        val restart: Int = 0,
+        val restart: Int,
     )
 
     /**
@@ -217,8 +217,6 @@ class LiveSession(
                         StreamEvent.Busy -> refused = LiveState.Connection.Busy
 
                         StreamEvent.Unauthorized -> refused = LiveState.Connection.Unauthorized
-
-                        StreamEvent.Disconnected -> Unit
                     }
                 }
             } catch (cancelled: CancellationException) {

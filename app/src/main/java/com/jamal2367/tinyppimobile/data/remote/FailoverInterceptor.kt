@@ -31,31 +31,26 @@ class FailoverInterceptor(private val router: ServerRouter) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val servers = router.candidates()
         if (servers.isEmpty()) throw NoServerConfiguredException()
+        return attempt(chain, servers, 0)
+    }
 
-        var lastFailure: IOException? = null
-        for ((index, server) in servers.withIndex()) {
-            val attempt = if (index == servers.lastIndex) {
-                chain
-            } else {
-                chain.withConnectTimeout(FIRST_ATTEMPT_CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-            }
-            try {
-                val response = attempt.proceed(chain.request().retargetTo(server))
-                router.markReachable(server)
-                return response
-            } catch (failure: IOException) {
-                if (chain.call().isCanceled()) throw failure
-                lastFailure = failure
-                if (index == servers.lastIndex) {
-                    router.markUnreachable()
-                    throw ServerUnreachableException(servers, failure)
-                }
-            }
+    /** Ask [servers] from [index] on, moving down the list on a transport failure. */
+    private fun attempt(chain: Interceptor.Chain, servers: List<ServerConfig>, index: Int): Response {
+        val server = servers[index]
+        val last = index == servers.lastIndex
+        val call = if (last) {
+            chain
+        } else {
+            chain.withConnectTimeout(FIRST_ATTEMPT_CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
         }
-
-        // Not reachable in practice: the loop above either returns or throws.
-        router.markUnreachable()
-        throw ServerUnreachableException(servers, lastFailure ?: IOException("No server answered"))
+        return try {
+            call.proceed(chain.request().retargetTo(server)).also { router.markReachable(server) }
+        } catch (failure: IOException) {
+            if (chain.call().isCanceled()) throw failure
+            if (!last) return attempt(chain, servers, index + 1)
+            router.markUnreachable()
+            throw ServerUnreachableException(servers, failure)
+        }
     }
 
     private fun Request.retargetTo(server: ServerConfig): Request {

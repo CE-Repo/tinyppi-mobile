@@ -7,7 +7,6 @@ import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import com.jamal2367.tinyppimobile.BuildConfig
 import com.jamal2367.tinyppimobile.data.prefs.SettingsRepository
 import com.jamal2367.tinyppimobile.data.prefs.StoredReachability
 import com.jamal2367.tinyppimobile.data.remote.BoxTokenInterceptor
@@ -29,7 +28,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import okio.Path.Companion.toOkioPath
 import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
@@ -78,21 +76,6 @@ class AppContainer(private val context: Context) {
             .writeTimeout(20, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .build()
-    }
-
-    /**
-     * The logger goes on after whatever rewrites the request, never before it:
-     * ahead of the failover interceptor every line would read
-     * `http://localhost/...` - the placeholder Retrofit was built against -
-     * instead of the address the attempt actually went to, which is the one
-     * thing a log of a failing connection is read for.
-     */
-    private fun OkHttpClient.Builder.withDebugLogging(): OkHttpClient.Builder = apply {
-        if (BuildConfig.DEBUG) {
-            addInterceptor(
-                HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
-            )
-        }
     }
 
     private val apiClient: OkHttpClient by lazy {
