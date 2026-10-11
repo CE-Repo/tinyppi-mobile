@@ -30,6 +30,9 @@ androidxTestCore = "1.7.0"
 # Held to the analyser that filters what the Compose and serialization compiler
 # plugins generate; older ones count branches nobody wrote.
 jacoco = "0.8.15"
+# Not a library: the line and branch coverage, in percent, below which the
+# build fails. Kept here so the README badge reads the same number the gate does.
+coverage = "100"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

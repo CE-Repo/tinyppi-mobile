@@ -214,6 +214,9 @@ val jacocoDebugUnitTestReport by tasks.registering(JacocoReport::class) {
     }
 }
 
+// Read from the version catalogue, which is also where the README badge reads it.
+val coverageMinimum = libs.versions.coverage.get().toBigDecimal().movePointLeft(2)
+
 val jacocoDebugUnitTestCoverageVerification by tasks.registering(JacocoCoverageVerification::class) {
     group = "verification"
     description = "Fails the build below full line and branch coverage."
@@ -225,11 +228,11 @@ val jacocoDebugUnitTestCoverageVerification by tasks.registering(JacocoCoverageV
         rule {
             limit {
                 counter = "LINE"
-                minimum = "1.0".toBigDecimal()
+                minimum = coverageMinimum
             }
             limit {
                 counter = "BRANCH"
-                minimum = "1.0".toBigDecimal()
+                minimum = coverageMinimum
             }
         }
     }

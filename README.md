@@ -1,5 +1,16 @@
 # 📱 TinyPPI — Mobile
 
+<p align="center">
+  <a href="https://github.com/CE-Repo/tinyppi-mobile/actions/workflows/android.yml"><img alt="Android" src="https://github.com/CE-Repo/tinyppi-mobile/actions/workflows/android.yml/badge.svg?branch=main" /></a>
+  <a href="#8-building-it"><img alt="Coverage" src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FCE-Repo%2Ftinyppi-mobile%2Fmain%2Fgradle%2Flibs.versions.toml&query=%24.versions.coverage&label=coverage&suffix=%25&color=brightgreen" /></a>
+  <a href="https://github.com/CE-Repo/tinyppi-mobile/releases"><img alt="Release" src="https://img.shields.io/github/v/release/CE-Repo/tinyppi-mobile?include_prereleases&label=release" /></a>
+  <a href="https://kotlinlang.org/"><img alt="Kotlin" src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FCE-Repo%2Ftinyppi-mobile%2Fmain%2Fgradle%2Flibs.versions.toml&query=%24.versions.kotlin&label=Kotlin&logo=kotlin&color=7F52FF" /></a>
+  <a href="https://developer.android.com/compose"><img alt="Jetpack Compose" src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white" /></a>
+  <a href="#2-requirements"><img alt="Android 8.0+" src="https://img.shields.io/badge/Android-8.0%2B%20(API%2026)-3DDC84?logo=android&logoColor=white" /></a>
+  <a href="https://developer.android.com/studio/write/lint"><img alt="Android Lint" src="https://img.shields.io/badge/lint-Android%20Lint-3DDC84?logo=android&logoColor=white" /></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/CE-Repo/tinyppi-mobile" /></a>
+</p>
+
 An Android app for [TinyPPI](https://github.com/CE-Repo/script.tinyppi): the
 playback information the add-on draws over a running video on the television,
 on the phone instead — every reading, the Dolby Vision metadata view, the
