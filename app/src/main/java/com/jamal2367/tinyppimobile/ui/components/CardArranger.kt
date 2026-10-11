@@ -105,7 +105,7 @@ private fun ArrangeRow(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onHidden: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),

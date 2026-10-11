@@ -8,6 +8,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelStoreOwner
+import com.jamal2367.tinyppimobile.ui.settings.SettingsViewModel
+import com.jamal2367.tinyppimobile.ui.history.HistoryViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.ui.history.HistoryScreen
 import com.jamal2367.tinyppimobile.ui.library.FilmsScreen
@@ -54,7 +58,7 @@ fun TinyPpiPager(
         modifier = modifier,
     ) { page ->
         CompositionLocalProvider(LocalIsCurrentPage provides (page == pagerState.currentPage)) {
-            Page(destinations.getOrNull(page), liveViewModel, onOpenSettings)
+            Page(destinations.getOrNull(page), liveViewModel, activity, onOpenSettings)
         }
     }
 }
@@ -79,6 +83,7 @@ internal fun pageKey(destinations: List<TopLevelDestination>, page: Int): Any =
 internal fun Page(
     destination: TopLevelDestination?,
     liveViewModel: LiveViewModel,
+    owner: ViewModelStoreOwner,
     onOpenSettings: () -> Unit,
 ) {
     when (destination) {
@@ -99,9 +104,20 @@ internal fun Page(
         TopLevelDestination.METADATA -> MetadataScreen(
             onOpenSettings = onOpenSettings,
             viewModel = liveViewModel,
+            historyViewModel = owner.model(HistoryViewModel::class.java),
         )
-        TopLevelDestination.HISTORY -> HistoryScreen(onOpenSettings = onOpenSettings)
-        TopLevelDestination.SETTINGS -> SettingsScreen()
+        TopLevelDestination.HISTORY -> HistoryScreen(
+            onOpenSettings = onOpenSettings,
+            viewModel = owner.model(HistoryViewModel::class.java),
+        )
         null -> Unit
+        // SETTINGS, the one left.
+        else -> SettingsScreen(owner.model(SettingsViewModel::class.java))
     }
 }
+
+/**
+ * The activity's own instance of a screen's view model - asked for only once
+ * that screen is drawn, so a tab nobody opens fetches nothing.
+ */
+private fun <T : ViewModel> ViewModelStoreOwner.model(type: Class<T>): T = ViewModelProvider(this)[type]

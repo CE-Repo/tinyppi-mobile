@@ -166,7 +166,10 @@ class ComponentsTest {
     @Test
     fun `a page for no tab is empty`() {
         val fake = FakeLive()
-        rule.setContent { Page(null, fake.viewModel) {} }
+        rule.setContent {
+            val owner = androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner.current!!
+            Page(null, fake.viewModel, owner) {}
+        }
         rule.waitForIdle()
     }
 

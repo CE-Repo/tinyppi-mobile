@@ -74,7 +74,7 @@ class HistoryScreensTest {
     @Test
     fun `nothing configured points at the settings`() {
         var opened = 0
-        rule.show { HistoryScreen(onOpenSettings = { opened++ }) }
+        rule.show { HistoryScreen(onOpenSettings = { opened++ }, viewModel = HistoryViewModel(app)) }
         rule.onNodeWithText(str(R.string.action_open_settings)).performClick()
         assertEquals(1, opened)
     }
@@ -112,6 +112,20 @@ class HistoryScreensTest {
         rule.onNodeWithText(str(R.string.cards_done)).performClick()
         cards.hidden = setOf("history/history.summary", "history/history.events")
         rule.until { rule.onAllNodesWithText(str(R.string.cards_all_hidden)).fetchSemanticsNodes().isNotEmpty() }
+    }
+
+    @Test
+    fun `a history outlives the reading it was fetched for`() {
+        box.stream = listOf(playing)
+        box.answers["/api/history"] = history
+        configure()
+        val vm = HistoryViewModel(app)
+        rule.show { HistoryScreen(onOpenSettings = {}, viewModel = vm) }
+        rule.until { rule.onAllNodesWithText(str(R.string.history_summary)).fetchSemanticsNodes().isNotEmpty() }
+        box.close()
+        app.container.reconnect()
+        rule.until(20_000) { vm.state.value.snapshot == null }
+        rule.waitForIdle()
     }
 
     @Test
@@ -173,7 +187,7 @@ class HistoryScreensTest {
         val fake = FakeLive()
         fake.playing(Snapshot(playing = true, title = "SDR film"))
         var opened = 0
-        rule.show { MetadataScreen(onOpenSettings = { opened++ }, viewModel = fake.viewModel) }
+        rule.show { MetadataScreen(onOpenSettings = { opened++ }, viewModel = fake.viewModel, historyViewModel = HistoryViewModel(app)) }
         rule.onNodeWithText(str(R.string.metadata_empty_title)).assertIsDisplayed()
         fake.settings.value = fake.settings.value.copy(primary = ServerConfig())
         rule.onNodeWithText(str(R.string.action_open_settings)).performClick()

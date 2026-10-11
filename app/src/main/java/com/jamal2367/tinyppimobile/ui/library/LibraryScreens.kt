@@ -76,6 +76,8 @@ import com.jamal2367.tinyppimobile.ui.live.shelfTop
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import com.jamal2367.tinyppimobile.ui.navigation.barAwarePadding
 import com.jamal2367.tinyppimobile.ui.navigation.aboveBottomBar
 import com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage
@@ -283,7 +285,8 @@ fun FilmsScreen(
                     above = true
                 }
 
-                FOLD_FILMS -> {
+                // The wall, the one card left.
+                else -> {
                     filmWall(
                         films = shown,
                         columns = columns,
@@ -387,7 +390,8 @@ fun SeriesScreen(
         configured = state.isConfigured,
         // A show that is open is a screen with something on it whatever the
         // shelf behind it holds.
-        empty = series.shows.isEmpty() && open == null,
+        // A show can only be open off a shelf that has it.
+        empty = series.shows.isEmpty(),
         icon = Icons.Outlined.Tv,
         refreshing = series.refreshing,
         // Inside a show this reads that show's episodes again as well as the
@@ -511,7 +515,8 @@ fun SeriesScreen(
                     above = true
                 }
 
-                FOLD_SERIES -> {
+                // The wall, the one card left.
+                else -> {
                     seriesWall(
                         shows = shown,
                         columns = columns,
@@ -546,23 +551,46 @@ private fun TitleAsker(
     onClearResume: (MarkTarget) -> Unit,
 ) {
     val asked = question ?: return
+    val answers = asked.answers(onDone, onMark, onClearResume)
     TitleDialog(
         question = asked,
         onDismiss = onDone,
-        onPlay = { fromStart ->
-            onDone()
-            asked.onPlay(fromStart)
-        },
-        onMark = { watched ->
-            onDone()
-            onMark(asked.target, watched)
-        },
-        onClearResume = {
-            onDone()
-            onClearResume(asked.target)
-        },
+        onPlay = answers.onPlay,
+        onMark = answers.onMark,
+        onClearResume = answers.onClearResume,
     )
 }
+
+/** What the dialog's options do: each closes the dialog, then does its own thing. */
+private class TitleAnswers(
+    val onPlay: (fromStart: Boolean) -> Unit,
+    val onMark: (watched: Boolean) -> Unit,
+    val onClearResume: () -> Unit,
+)
+
+/**
+ * The answers to this question. Made outside composition, so they are new
+ * with each question rather than remembered across them - there is nothing to
+ * keep: the dialog is up for one question at a time.
+ */
+private fun TitleQuestion.answers(
+    onDone: () -> Unit,
+    onMark: (MarkTarget, Boolean) -> Unit,
+    onClearResume: (MarkTarget) -> Unit,
+) = TitleAnswers(
+    onPlay = { fromStart ->
+        onDone()
+        onPlay(fromStart)
+    },
+    onMark = { watched ->
+        onDone()
+        onMark(target, watched)
+    },
+    onClearResume = {
+        onDone()
+        onClearResume(target)
+    },
+)
 
 /** Whether a show has an episode still to be seen. */
 private val LibraryShow.isWaiting: Boolean
@@ -619,9 +647,9 @@ private fun Shelf(
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
     LaunchedEffect(listState) {
-        listState.interactionSource.interactions.collect { interaction ->
-            if (interaction is DragInteraction.Start) dismissSearch(focus, keyboard)
-        }
+        listState.interactionSource.interactions
+            .onEach { interaction -> if (interaction is DragInteraction.Start) dismissSearch(focus, keyboard) }
+            .launchIn(this)
     }
 
     // The one line a pull that could not be answered leaves behind. Nowhere

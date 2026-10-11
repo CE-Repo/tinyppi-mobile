@@ -242,6 +242,8 @@ internal fun LazyListScope.episodeList(
         }
 
         val unfolded = number in openSeasons
+        // Read now: the item is drawn later, when the loop has long moved on.
+        val rule = ruled
         item(key = "season-$number") {
             SeasonHeading(
                 label = if (number == 0) {
@@ -252,7 +254,7 @@ internal fun LazyListScope.episodeList(
                 count = episodes.size,
                 seconds = episodes.sumOf { it.duration },
                 expanded = unfolded,
-                ruled = ruled,
+                ruled = rule,
                 onToggle = { onSeason(number) },
             )
         }

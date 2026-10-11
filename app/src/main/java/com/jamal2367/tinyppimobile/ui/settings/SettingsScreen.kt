@@ -61,7 +61,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.ui.components.centredBelowTitle
 import com.jamal2367.tinyppimobile.BuildConfig
 import com.jamal2367.tinyppimobile.R
@@ -92,7 +91,7 @@ import com.jamal2367.tinyppimobile.ui.navigation.barAwarePadding
  * tried first and the remote one takes over the moment it does not answer.
  */
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
+fun SettingsScreen(viewModel: SettingsViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val settings = state.settings
 
@@ -373,6 +372,7 @@ private fun TestResult(test: TestState) {
                 icon = Icons.Outlined.CheckCircle,
                 tint = MaterialTheme.colorScheme.accentText,
                 text = stringResource(R.string.settings_test_ok, test.version),
+                color = MaterialTheme.colorScheme.onSurface,
             )
             // Reachable and refusing every reading is the one outcome that
             // looks like success and is not, so it is said in as many words.
@@ -394,10 +394,11 @@ private fun TestResult(test: TestState) {
             }
         }
 
-        is TestState.Failed -> ResultLine(
+        // Failed, the one left.
+        else -> ResultLine(
             icon = Icons.Outlined.ErrorOutline,
             tint = MaterialTheme.colorScheme.error,
-            text = test.message,
+            text = (test as TestState.Failed).message,
             color = MaterialTheme.colorScheme.error,
         )
     }
@@ -408,7 +409,7 @@ private fun ResultLine(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     tint: androidx.compose.ui.graphics.Color,
     text: String,
-    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
+    color: androidx.compose.ui.graphics.Color,
 ) {
     Row(
         modifier = Modifier.padding(top = 2.dp),

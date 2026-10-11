@@ -8,6 +8,8 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
 import com.jamal2367.tinyppimobile.MainActivity
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.LastPlayed
@@ -145,5 +147,50 @@ class AppRailTest {
             rule.onAllNodesWithText(env.app.getString(label)).onFirst().performClick()
             rule.waitForIdle()
         }
+    }
+}
+
+/** The app when the box goes away, and the cards folded and hidden from the live screen. */
+@RunWith(RobolectricTestRunner::class)
+@Config(qualifiers = "w411dp-h2000dp")
+class AppOfflineTest {
+
+    private val env = AppBox()
+
+    @get:Rule val rule = createAndroidComposeRule<MainActivity>()
+
+    @After fun close() = env.close()
+
+    private fun str(id: Int) = env.app.getString(id)
+    private fun seen(text: String) = rule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+
+    @Test
+    fun `cards fold and hide through the app's store, and the shelves leave with the box`() {
+        rule.until { seen("Dune: Part Two") }
+        rule.until { rule.onAllNodesWithContentDescription(str(R.string.library_title)).fetchSemanticsNodes().isNotEmpty() }
+
+        // A fold, written to the store.
+        rule.onAllNodesWithText(str(R.string.live_vs10)).onFirst().performClick()
+        rule.until { "live.vs10" in env.app.container.router.settings.cardFolds }
+
+        // A card taken off from the arranging list.
+        rule.onAllNodesWithText(str(R.string.live_vs10)).onFirst().performTouchInput { longClick() }
+        rule.until { seen(str(R.string.cards_done)) }
+        rule.onAllNodesWithContentDescription(str(R.string.cards_hide)).onFirst().performClick()
+        rule.until { env.app.container.router.settings.cardHidden.isNotEmpty() }
+        rule.onAllNodesWithText(str(R.string.cards_done)).onFirst().performClick()
+
+        // The volume keys while nothing is playing are the phone's.
+        env.stream(com.jamal2367.tinyppimobile.data.model.Snapshot(playing = false, control = true))
+        env.app.container.reconnect()
+        rule.until(15_000) { seen(str(R.string.live_idle_title)) }
+        org.junit.Assert.assertFalse(
+            rule.activity.onKeyDown(android.view.KeyEvent.KEYCODE_VOLUME_UP, android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_VOLUME_UP)),
+        )
+
+        // The box goes away: the shelves go with it.
+        env.box.close()
+        env.app.container.reconnect()
+        rule.until(20_000) { rule.onAllNodesWithContentDescription(str(R.string.library_title)).fetchSemanticsNodes().isEmpty() }
     }
 }

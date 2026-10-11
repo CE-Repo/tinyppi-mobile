@@ -27,6 +27,10 @@ class AppBox(
     private val json = Json { encodeDefaults = true }
 
     init {
+        // A phone is used by touch, and in touch mode nothing takes focus on
+        // its own - left out of it, the first focusable thing anywhere in the
+        // pager does, and the pager keeps that page in view.
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().setInTouchMode(true)
         Robo.clearSettings(app)
         stream(snapshot)
         box.answers["/api/library"] = json.encodeToString(Library.serializer(), Library(movies = listOf(LibraryFilm(1, "Heat", 1995, added = "2026-01-01 10:00:00"))))
@@ -42,8 +46,8 @@ class AppBox(
         Robo.until { app.container.router.settings.primary == box.config }
     }
 
-    fun stream(snapshot: Snapshot) {
-        box.stream = listOf(json.encodeToString(Snapshot.serializer(), snapshot))
+    fun stream(vararg snapshots: Snapshot) {
+        box.stream = snapshots.map { json.encodeToString(Snapshot.serializer(), it) }
     }
 
     override fun close() = box.close()

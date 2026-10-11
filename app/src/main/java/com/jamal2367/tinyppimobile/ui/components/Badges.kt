@@ -47,7 +47,6 @@ import com.jamal2367.tinyppimobile.ui.theme.PillShape
 @Composable
 fun FormatBadge(
     text: String,
-    modifier: Modifier = Modifier,
     arrowSuffix: String? = null,
 ) {
     val content = MaterialTheme.colorScheme.onSurfaceVariant
@@ -65,7 +64,7 @@ fun FormatBadge(
     val spoken = arrowSuffix?.let { stringResource(R.string.a11y_conversion, text, it) }
 
     Row(
-        modifier = modifier
+        modifier = Modifier
             .then(
                 if (spoken != null) {
                     Modifier.clearAndSetSemantics { contentDescription = spoken }

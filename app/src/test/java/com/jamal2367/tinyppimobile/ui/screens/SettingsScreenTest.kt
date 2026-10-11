@@ -160,8 +160,8 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun `the screen finds its view model itself`() {
-        rule.show { SettingsScreen() }
+    fun `the about card is there`() {
+        rule.show { SettingsScreen(SettingsViewModel(app)) }
         rule.onNodeWithText(str(R.string.settings_about)).assertIsDisplayed()
     }
 }

@@ -149,13 +149,14 @@ fun ArtworkAccentTheme(
 fun artworkGradient(accent: Color, container: Color): Brush {
     val fade = with(LocalDensity.current) { WASH_HEIGHT.toPx() }
 
-    return remember(accent, container, fade) {
-        Brush.verticalGradient(
-            colors = listOf(artworkTint(accent, container), container),
-            startY = 0f,
-            endY = fade,
-        )
-    }
+    // Not remembered: a gradient is three numbers and two colours, and one
+    // made again equals the one before, so the card it is handed to does not
+    // redraw for it.
+    return Brush.verticalGradient(
+        colors = listOf(artworkTint(accent, container), container),
+        startY = 0f,
+        endY = fade,
+    )
 }
 
 /**

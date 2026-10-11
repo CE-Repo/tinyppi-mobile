@@ -79,7 +79,8 @@ private val DarkColors = darkColorScheme(
 fun isDarkTheme(themeMode: ThemeMode): Boolean = when (themeMode) {
     ThemeMode.SYSTEM -> isSystemInDarkTheme()
     ThemeMode.LIGHT -> false
-    ThemeMode.DARK -> true
+    // DARK, the one left.
+    else -> true
 }
 
 /**

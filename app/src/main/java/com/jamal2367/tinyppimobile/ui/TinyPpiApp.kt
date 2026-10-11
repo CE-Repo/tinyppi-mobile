@@ -64,19 +64,22 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import com.jamal2367.tinyppimobile.ui.navigation.TinyPpiPager
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 import androidx.compose.runtime.derivedStateOf
 import com.jamal2367.tinyppimobile.ui.navigation.aboveBottomBar
 
 @Composable
-fun TinyPpiApp(container: AppContainer, hiddenTabs: Set<String> = emptySet()) {
+fun TinyPpiApp(container: AppContainer, hiddenTabs: Set<String>) {
     val liveViewModel: LiveViewModel = viewModel(factory = LiveViewModel.Factory)
     val liveState by liveViewModel.state.collectAsStateWithLifecycle()
     val library by liveViewModel.library.collectAsStateWithLifecycle()
     val series by liveViewModel.series.collectAsStateWithLifecycle()
     val showMetadata = HdrGrade.of(liveState.snapshot?.sourceType.orEmpty()) == HdrGrade.DOLBY_VISION
-    val showHistory = liveState.snapshot?.let { it.playing || it.last.isPresent } == true
+    val snapshot = liveState.snapshot
+    val showHistory = snapshot != null && (snapshot.playing || snapshot.last.isPresent)
     // A shelf the box has said it will not offer is a tab that leads to a line
     // of apology. Both are on until it says so - which it can only say once
     // something has asked, and both stay on for a box nobody has asked yet.
@@ -129,11 +132,12 @@ fun TinyPpiApp(container: AppContainer, hiddenTabs: Set<String> = emptySet()) {
     val latestDestinations by rememberUpdatedState(destinations)
     val scope = rememberCoroutineScope()
 
-    // A swipe that has come to rest is a tab that has been opened.
+    // A swipe that has come to rest is a tab that has been opened. Followed
+    // in a child of the effect, which ends with it.
     LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.settledPage }.collect { page ->
-            current = settledOn(latestDestinations, page, current)
-        }
+        snapshotFlow { pagerState.settledPage }
+            .onEach { page -> current = settledOn(latestDestinations, page, current) }
+            .launchIn(this)
     }
 
     // The row changed: stay on the tab that was open, wherever it now is. A tab

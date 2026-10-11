@@ -55,8 +55,9 @@ fun LuminanceChart(
     val points = series.flatMap { it.points }
     if (points.isEmpty()) return
 
-    val newest = points.maxOf { it.first }
-    val oldest = windowSeconds?.let { max(0.0, newest - it) } ?: points.minOf { it.first }
+    val times = points.map { it.first }
+    val newest = times.max()
+    val oldest = if (windowSeconds != null) max(0.0, newest - windowSeconds) else times.min()
     // A chart of one moment has no width to draw across; a second of span is
     // what keeps the first sample of a title from dividing by zero.
     val span = max(1.0, newest - oldest)
@@ -65,7 +66,7 @@ fun LuminanceChart(
         line.copy(points = line.points.filter { it.first >= oldest })
     }
     // Never empty: the newest point is always inside the window.
-    val ceiling = visible.flatMap { it.points }.maxOf { it.second }
+    val ceiling = visible.flatMap { it.points }.map { it.second }.max()
     // Rounded up to something a reader can name rather than to the highest
     // sample: a top of 3847 nits makes every line touch the frame, and says
     // less than a top of 4000 with the line just under it.
@@ -79,7 +80,7 @@ fun LuminanceChart(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = Formatters.nits(top).orEmpty(),
+                text = Formatters.nits(top),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

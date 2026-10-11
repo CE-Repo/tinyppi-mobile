@@ -37,7 +37,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.ui.components.centredBelowTitle
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.History
@@ -99,7 +98,7 @@ private fun ChartHeartbeat(playing: Boolean, onBeat: () -> Unit) {
 @Composable
 fun HistoryScreen(
     onOpenSettings: () -> Unit,
-    viewModel: HistoryViewModel = viewModel(),
+    viewModel: HistoryViewModel,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -149,7 +148,8 @@ fun HistoryScreen(
                     for (id in shown) {
                         when (id) {
                             CARD_SUMMARY -> item(key = id) { SummaryCard(state, history) }
-                            CARD_EVENTS -> item(key = id) {
+                            // The events, the one card left.
+                            else -> item(key = id) {
                                 EventsCard(events = history.events, foldId = CARD_EVENTS)
                             }
                         }
