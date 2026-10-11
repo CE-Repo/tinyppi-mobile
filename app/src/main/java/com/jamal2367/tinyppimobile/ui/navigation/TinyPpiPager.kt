@@ -1,5 +1,6 @@
 package com.jamal2367.tinyppimobile.ui.navigation
 
+import android.app.Application
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -12,6 +13,7 @@ import com.jamal2367.tinyppimobile.ui.settings.SettingsViewModel
 import com.jamal2367.tinyppimobile.ui.history.HistoryViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.ui.history.HistoryScreen
 import com.jamal2367.tinyppimobile.ui.library.FilmsScreen
@@ -120,4 +122,20 @@ internal fun Page(
  * The activity's own instance of a screen's view model - asked for only once
  * that screen is drawn, so a tab nobody opens fetches nothing.
  */
-private fun <T : ViewModel> ViewModelStoreOwner.model(type: Class<T>): T = ViewModelProvider(this)[type]
+private fun <T : ViewModel> ViewModelStoreOwner.model(type: Class<T>): T =
+    ViewModelProvider(this, ScreenViewModels)[type]
+
+/**
+ * Builds a screen's view model on the application its activity belongs to.
+ *
+ * The default factory would do the same, but it keeps the first application
+ * it is handed in a static field: one per process, so on a phone the same
+ * thing. Under Robolectric every test brings an application of its own, and
+ * the static field kept handing the screens the first test's - with the
+ * first test's settings and the first test's box behind it.
+ */
+private object ScreenViewModels : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T =
+        modelClass.getConstructor(Application::class.java)
+            .newInstance(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY])
+}
