@@ -196,15 +196,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 val result = container.connectionTester.test(server.copy(enabled = true))
                 setTest(
                     slot,
-                    when (result) {
-                        is ConnectionTestResult.Reachable -> TestState.Ok(
+                    if (result is ConnectionTestResult.Reachable) {
+                        TestState.Ok(
                             version = result.hello.version.ifBlank { "?" },
                             control = result.hello.control,
                             tokenAccepted = result.tokenAccepted,
                         )
-
-                        is ConnectionTestResult.Refused ->
-                            TestState.Failed(result.failure.toUserMessage(context))
+                    } else {
+                        // The only other answer there is.
+                        TestState.Failed((result as ConnectionTestResult.Refused).failure.toUserMessage(context))
                     }
                 )
             } catch (cancelled: CancellationException) {
