@@ -108,6 +108,7 @@ class HistoryScreensTest {
 
         rule.onNodeWithText(str(R.string.history_summary)).performTouchInput { longClick() }
         assertEquals("history", cards.editing)
+        rule.until { rule.onAllNodesWithText(str(R.string.cards_done)).fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText(str(R.string.cards_done)).performClick()
         cards.hidden = setOf("history/history.summary", "history/history.events")
         rule.until { rule.onAllNodesWithText(str(R.string.cards_all_hidden)).fetchSemanticsNodes().isNotEmpty() }
@@ -160,6 +161,7 @@ class HistoryScreensTest {
         }
         rule.onNodeWithText(str(R.string.history_chart)).performTouchInput { longClick() }
         assertEquals("metadata", cards.editing)
+        rule.until { rule.onAllNodesWithText(str(R.string.cards_done)).fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText(str(R.string.cards_done)).performClick()
         cards.hidden = (listOf("history.chart", "metadata.section0", "metadata.Level 2", "metadata.Level 2#1", "metadata.section3") +
             listOf()).map { "metadata/$it" }.toSet()

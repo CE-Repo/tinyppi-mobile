@@ -90,26 +90,20 @@ private val NoBarSpace: State<Dp> = mutableStateOf(0.dp)
  * the whole of the app at once, in the middle of a swipe.
  */
 @Composable
-fun barAwarePadding(horizontal: Dp, top: Dp = 0.dp, bottom: Dp): PaddingValues =
-    BarAwarePadding(horizontal, top, bottom, LocalBottomBarSpace.current)
+fun barAwarePadding(horizontal: Dp, bottom: Dp): PaddingValues =
+    BarAwarePadding(horizontal, bottom, LocalBottomBarSpace.current)
 
 @Stable
-private class BarAwarePadding(
+private data class BarAwarePadding(
     private val horizontal: Dp,
-    private val top: Dp,
     private val bottom: Dp,
+    // Compared by identity, as states are: the same state is the same room.
     private val bar: State<Dp>,
 ) : PaddingValues {
     override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp = horizontal
     override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp = horizontal
-    override fun calculateTopPadding(): Dp = top
+    override fun calculateTopPadding(): Dp = 0.dp
     override fun calculateBottomPadding(): Dp = bottom + bar.value
-
-    override fun equals(other: Any?): Boolean = other is BarAwarePadding &&
-        other.horizontal == horizontal && other.top == top && other.bottom == bottom && other.bar === bar
-
-    override fun hashCode(): Int = ((horizontal.hashCode() * 31 + top.hashCode()) * 31 + bottom.hashCode()) * 31 +
-        System.identityHashCode(bar)
 }
 
 /**

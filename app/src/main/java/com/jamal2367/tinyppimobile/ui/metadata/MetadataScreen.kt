@@ -170,7 +170,7 @@ private fun MetadataList(
         for (id in shown) {
             if (id == CARD_CHART) {
                 // Only on the screen while there is a history to draw.
-                val history = checkNotNull(chartHistory)
+                val history = chartHistory!!
                 item(key = id) { ChartCard(history, chartRange, onChartRangeChange) }
                 continue
             }

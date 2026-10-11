@@ -132,22 +132,22 @@ fun TinyPpiApp(container: AppContainer, hiddenTabs: Set<String> = emptySet()) {
     // A swipe that has come to rest is a tab that has been opened.
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }.collect { page ->
-            latestDestinations.getOrNull(page)?.let { current = it }
+            current = settledOn(latestDestinations, page, current)
         }
     }
 
     // The row changed: stay on the tab that was open, wherever it now is. A tab
     // that has gone altogether hands over to the nearest one before it.
     LaunchedEffect(destinations) {
-        val target = destinations.indexOf(current).takeIf { it >= 0 }
-            ?: destinations.indexOfLast { it.ordinal < current.ordinal }.coerceAtLeast(0)
+        val target = pageAfterChange(destinations, current)
         if (target != pagerState.currentPage) pagerState.scrollToPage(target)
-        destinations.getOrNull(target)?.let { current = it }
+        current = destinations[target]
     }
 
+    // Only ever asked for a tab on the bar, or for the settings, which are
+    // always on it.
     fun open(destination: TopLevelDestination) {
         val page = destinations.indexOf(destination)
-        if (page < 0) return
         current = destination
         scope.launch { pagerState.animateScrollToPage(page) }
     }
@@ -336,7 +336,8 @@ private fun DoubleBackToExit(enabled: Boolean, snackbarHostState: SnackbarHostSt
     // later, so asked first - takes it before either.
     BackHandler(enabled = enabled) {
         if (armed) {
-            activity?.finish()
+            // Always composed inside the activity.
+            activity!!.finish()
             return@BackHandler
         }
 
@@ -390,3 +391,22 @@ private fun TinyPpiNavigationRail(
 
 /** How long the live screen gets to itself before the update check speaks up. */
 private const val UPDATE_CHECK_DELAY_MS = 5_000L
+
+/**
+ * The tab a swipe came to rest on, or [current] for a page the row no longer
+ * has - which the pager can still report for the frame in which a tab leaves.
+ */
+internal fun settledOn(
+    destinations: List<TopLevelDestination>,
+    page: Int,
+    current: TopLevelDestination,
+): TopLevelDestination = destinations.getOrNull(page) ?: current
+
+/**
+ * Where [current] is after the row changed: its own page if it is still on
+ * the bar, otherwise the nearest tab before it. The live tab is never taken
+ * off, so there always is one.
+ */
+internal fun pageAfterChange(destinations: List<TopLevelDestination>, current: TopLevelDestination): Int =
+    destinations.indexOf(current).takeIf { it >= 0 }
+        ?: destinations.indexOfLast { it.ordinal < current.ordinal }

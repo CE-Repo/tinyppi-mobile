@@ -50,8 +50,7 @@ fun LuminanceChart(
     series: List<ChartSeries>,
     modifier: Modifier = Modifier,
     /** The window the chart covers, in seconds, or null for everything it holds. */
-    windowSeconds: Int? = null,
-    height: Int = 160,
+    windowSeconds: Int?,
 ) {
     val points = series.flatMap { it.points }
     if (points.isEmpty()) return
@@ -89,10 +88,10 @@ fun LuminanceChart(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(height.dp)
+                .height(CHART_HEIGHT)
                 .padding(vertical = 4.dp),
         ) {
-            Canvas(modifier = Modifier.fillMaxWidth().height(height.dp)) {
+            Canvas(modifier = Modifier.fillMaxWidth().height(CHART_HEIGHT)) {
                 drawGrid(grid)
                 visible.forEach { line ->
                     drawSeries(line, oldest = oldest, span = span, top = top)
@@ -125,7 +124,7 @@ fun LuminanceChart(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    StatusDot(color = line.color, size = 8)
+                    StatusDot(color = line.color)
                     Text(
                         text = line.label,
                         style = MaterialTheme.typography.labelSmall,
@@ -189,3 +188,5 @@ private fun niceCeiling(highest: Double): Double {
     val steps = listOf(100.0, 200.0, 400.0, 600.0, 1000.0, 2000.0, 4000.0, 10000.0)
     return steps.firstOrNull { it >= highest } ?: highest
 }
+
+private val CHART_HEIGHT = 160.dp

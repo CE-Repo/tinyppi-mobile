@@ -106,10 +106,10 @@ fun FormatBadge(
 
 /** A coloured dot, for a status line or in front of an event. */
 @Composable
-fun StatusDot(color: Color, modifier: Modifier = Modifier, size: Int = 8) {
+fun StatusDot(color: Color, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .size(size.dp)
+            .size(8.dp)
             .clip(PillShape)
             .background(color),
     )

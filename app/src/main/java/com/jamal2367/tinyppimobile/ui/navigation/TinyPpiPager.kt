@@ -42,7 +42,8 @@ fun TinyPpiPager(
     // The live reading outlives its tab. Two of the screens are windows onto
     // the same snapshot, and a view model each would be several objects
     // collecting the same flow.
-    val activity = checkNotNull(LocalActivity.current) as ViewModelStoreOwner
+    // Always composed inside the activity.
+    val activity = LocalActivity.current!! as ViewModelStoreOwner
     val liveViewModel: LiveViewModel =
         viewModel(viewModelStoreOwner = activity, factory = LiveViewModel.Factory)
 

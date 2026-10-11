@@ -172,6 +172,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
 
+composeCompiler {
+    stabilityConfigurationFiles.add(layout.projectDirectory.file("compose-stability.conf"))
+}
+
 jacoco {
     toolVersion = libs.versions.jacoco.get()
 }
