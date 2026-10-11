@@ -4,6 +4,9 @@ package com.jamal2367.tinyppimobile.ui
 
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import android.app.Activity
+import android.content.Context
+import android.content.res.Resources
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -23,6 +26,7 @@ import androidx.compose.material3.WideNavigationRail
 import androidx.compose.material3.WideNavigationRailItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +45,7 @@ import androidx.core.net.toUri
 import com.jamal2367.tinyppimobile.BuildConfig
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.remote.ReleaseId
+import com.jamal2367.tinyppimobile.data.remote.UpdateEndpoints
 import com.jamal2367.tinyppimobile.di.AppContainer
 import com.jamal2367.tinyppimobile.ui.navigation.TopLevelDestination
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
@@ -63,6 +68,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import com.jamal2367.tinyppimobile.ui.navigation.TinyPpiPager
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -288,30 +294,45 @@ private fun UpdateCheck(container: AppContainer, snackbarHostState: SnackbarHost
 
     // Survives a rotation, so turning the phone over does not ask GitHub the
     // same question again - or answer it a second time.
-    var checked by rememberSaveable { mutableStateOf(false) }
+    val checked = rememberSaveable { mutableStateOf(false) }
 
     // Keyed on nothing, so noting that the check has run does not restart the
     // very effect that is running it.
-    LaunchedEffect(Unit) {
-        if (checked) return@LaunchedEffect
-        checked = true
-        delay(UPDATE_CHECK_DELAY_MS.milliseconds)
+    LaunchedEffect(
+        Unit,
+        block = updateCheck(container, endpoints, checked, snackbarHostState, context, resources, showLabel),
+    )
+}
 
-        val update = container.updateChecker.findNewerRelease(
-            apiUrl = endpoints.api,
-            current = ReleaseId.of(BuildConfig.VERSION_NAME, "build-${BuildConfig.BUILD_NUMBER}"),
-            fallbackUrl = endpoints.releases,
-        ) ?: return@LaunchedEffect
+// The check itself, built outside composition: the effect runs the block it is
+// first handed and nothing it is handed later, so there is nothing to remember.
+private fun updateCheck(
+    container: AppContainer,
+    endpoints: UpdateEndpoints,
+    checked: MutableState<Boolean>,
+    snackbarHostState: SnackbarHostState,
+    context: Context,
+    resources: Resources,
+    showLabel: String,
+): suspend CoroutineScope.() -> Unit = check@{
+    if (checked.value) return@check
+    checked.value = true
+    delay(UPDATE_CHECK_DELAY_MS.milliseconds)
 
-        val result = snackbarHostState.showSnackbar(
-            message = resources.getString(R.string.update_available, update.name),
-            actionLabel = showLabel,
-            duration = SnackbarDuration.Long,
-        )
-        if (result == SnackbarResult.ActionPerformed) {
-            runCatching {
-                context.startActivity(Intent(Intent.ACTION_VIEW, update.url.toUri()))
-            }
+    val update = container.updateChecker.findNewerRelease(
+        apiUrl = endpoints.api,
+        current = ReleaseId.of(BuildConfig.VERSION_NAME, "build-${BuildConfig.BUILD_NUMBER}"),
+        fallbackUrl = endpoints.releases,
+    ) ?: return@check
+
+    val result = snackbarHostState.showSnackbar(
+        message = resources.getString(R.string.update_available, update.name),
+        actionLabel = showLabel,
+        duration = SnackbarDuration.Long,
+    )
+    if (result == SnackbarResult.ActionPerformed) {
+        runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, update.url.toUri()))
         }
     }
 }
@@ -333,32 +354,42 @@ private fun DoubleBackToExit(enabled: Boolean, snackbarHostState: SnackbarHostSt
     // Deliberately not saved across a rotation: an app turned over between the
     // two presses is not being left, and half a gesture from before should not
     // be waiting to close it.
-    var armed by remember { mutableStateOf(false) }
+    val armed = remember { mutableStateOf(false) }
 
     // Only on the first tab: back anywhere else goes to it first (see the
     // handler in the shell), and a screen with a way back of its own - added
     // later, so asked first - takes it before either.
-    BackHandler(enabled = enabled) {
-        if (armed) {
-            // Always composed inside the activity.
-            activity!!.finish()
-            return@BackHandler
-        }
+    // Always composed inside the activity.
+    BackHandler(enabled = enabled, onBack = backTwice(activity!!, armed, scope, snackbarHostState, message))
+}
 
-        armed = true
-        scope.launch {
-            // Whatever is on screen goes first. The host shows one snackbar at
-            // a time and queues the rest, so an update notice still sitting
-            // there would hold this one back until it timed out - and the
-            // window would be open, with nothing on screen saying so.
-            snackbarHostState.currentSnackbarData?.dismiss()
-            try {
-                snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
-            } finally {
-                // The window is exactly as long as the message is up, however
-                // it ended - timed out, swiped away, or the composition gone.
-                armed = false
-            }
+// Built outside composition, like the update check's block: the handler
+// keeps whichever it was handed last, so there is nothing to remember.
+private fun backTwice(
+    activity: Activity,
+    armed: MutableState<Boolean>,
+    scope: CoroutineScope,
+    snackbarHostState: SnackbarHostState,
+    message: String,
+): () -> Unit = back@{
+    if (armed.value) {
+        activity.finish()
+        return@back
+    }
+
+    armed.value = true
+    scope.launch {
+        // Whatever is on screen goes first. The host shows one snackbar at
+        // a time and queues the rest, so an update notice still sitting
+        // there would hold this one back until it timed out - and the
+        // window would be open, with nothing on screen saying so.
+        snackbarHostState.currentSnackbarData?.dismiss()
+        try {
+            snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+        } finally {
+            // The window is exactly as long as the message is up, however
+            // it ended - timed out, swiped away, or the composition gone.
+            armed.value = false
         }
     }
 }
