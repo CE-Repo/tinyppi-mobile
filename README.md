@@ -398,8 +398,16 @@ The APK lands in `app/build/outputs/apk/debug/`.
 | Task | What it does |
 |---|---|
 | `./gradlew testDebugUnitTest` | The unit tests |
+| `./gradlew jacocoDebugUnitTestCoverageVerification` | The tests, then a failure below 100 % line and branch coverage |
 | `./gradlew lintRelease` | Lint on the configuration that ships |
 | `./gradlew assembleRelease` | The shrunk, obfuscated APK |
+
+**Tests and coverage.** Every line and every branch is reached by the unit
+tests, the same bar the add-on holds itself to. The screens run on the JVM
+under Robolectric and the Compose test rule, against a fake box served by
+MockWebServer, so no device or emulator is needed. The report lands in
+`app/build/reports/jacoco/jacocoDebugUnitTestReport/`; `./gradlew check` and
+the CI run both fail below 100 %.
 
 **Signing.** A release build looks for signing material in the environment
 first (`KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`), then
@@ -416,7 +424,7 @@ With neither, `assembleRelease` falls back to the debug key rather than
 failing — an unsigned APK is one nobody can do anything with.
 
 **Releases** are cut by hand from the Actions tab. Every run that gets through
-the tests and lint publishes its APK as a release tagged `build-N`, and the app
+the tests, the coverage gate and lint publishes its APK as a release tagged `build-N`, and the app
 checks that tag once per launch to tell you it is behind.
 
 ---

@@ -76,6 +76,12 @@ class AppVariantsTest {
         Robo.settings(env.app) { setTabHidden("series", false) }
         env.app.container.reconnect()
         rule.until(15_000) { tabShown(R.string.series_title) }
+
+        // The shelves read again and refused: both tabs leave the bar.
+        env.box.codes["/api/series"] = 403
+        env.stream(Snapshot(playing = false, control = true, libraryRevision = 2))
+        env.app.container.reconnect()
+        rule.until(15_000) { !tabShown(R.string.library_title) && !tabShown(R.string.series_title) }
     }
 
     @Test

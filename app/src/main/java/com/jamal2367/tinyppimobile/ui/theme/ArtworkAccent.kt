@@ -10,10 +10,9 @@ import androidx.compose.material3.MotionScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -29,6 +28,7 @@ import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import com.jamal2367.tinyppimobile.util.ArtworkPalette
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -55,18 +55,11 @@ import kotlinx.coroutines.withContext
 fun rememberArtworkAccent(url: String?): Color? {
     val context = LocalContext.current
     val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    var accent by remember { mutableStateOf<Color?>(null) }
+    val accent = remember { mutableStateOf<Color?>(null) }
 
-    LaunchedEffect(url, dark) {
-        // Nothing to read is nothing to show: the colour goes with the film.
-        val poster = url ?: run {
-            accent = null
-            return@LaunchedEffect
-        }
-        readAccent(context, poster, dark)?.let { accent = it }
-    }
+    LaunchedEffect(url, dark, block = accentReader(context, url, dark, accent))
 
-    return accent
+    return accent.value
 }
 
 /**
@@ -169,6 +162,19 @@ fun artworkGradient(accent: Color, container: Color): Brush {
  */
 fun artworkTint(accent: Color, container: Color): Color = lerp(container, accent, TOP_TINT)
 
+// Built outside composition: the effect is restarted by its keys, not by the
+// block it is handed, so there is nothing to remember.
+private fun accentReader(
+    context: Context,
+    url: String?,
+    dark: Boolean,
+    accent: MutableState<Color?>,
+): suspend CoroutineScope.() -> Unit = {
+    // Nothing to read is nothing to show: the colour goes with the film.
+    if (url == null) accent.value = null
+    else readAccent(context, url, dark)?.let { accent.value = it }
+}
+
 private suspend fun readAccent(context: Context, url: String, dark: Boolean): Color? {
     val request = ImageRequest.Builder(context)
         .data(url)
@@ -184,11 +190,15 @@ private suspend fun readAccent(context: Context, url: String, dark: Boolean): Co
     return withContext(Dispatchers.Default) {
         val pixels = IntArray(bitmap.width * bitmap.height)
         bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-        ArtworkPalette.accent(pixels)
-            ?.let { ArtworkPalette.forTheme(it, dark) }
-            ?.let(::Color)
+        accentOf(pixels, dark)
     }
 }
+
+/** The accent a poster's pixels carry, drawn for the theme; null for a grey one. */
+internal fun accentOf(pixels: IntArray, dark: Boolean): Color? =
+    ArtworkPalette.accent(pixels)
+        ?.let { ArtworkPalette.forTheme(it, dark) }
+        ?.let(::Color)
 
 /**
  * The scheme's accent roles, moved onto the poster's hue.

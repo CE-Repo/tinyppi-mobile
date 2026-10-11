@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -53,8 +54,19 @@ fun LuminanceChart(
     windowSeconds: Int?,
 ) {
     val points = series.flatMap { it.points }
-    if (points.isEmpty()) return
+    if (points.isNotEmpty()) Chart(series, points, modifier, windowSeconds)
+}
 
+// Not restartable on its own: it is only ever drawn by the chart above, which
+// is what recomposes, so a restart scope of its own would only be bookkeeping.
+@Composable
+@NonRestartableComposable
+private fun Chart(
+    series: List<ChartSeries>,
+    points: List<Pair<Double, Double>>,
+    modifier: Modifier,
+    windowSeconds: Int?,
+) {
     val times = points.map { it.first }
     val newest = times.max()
     val oldest = if (windowSeconds != null) max(0.0, newest - windowSeconds) else times.min()

@@ -54,6 +54,8 @@ class HistoryViewModelTest {
     fun `a box that does not answer is said, and a fetch is dropped with the screen`() {
         val port = ServerSocket(0).use { it.localPort }
         Robo.settings(app) { setPrimary(ServerConfig(enabled = true, host = "127.0.0.1", port = port)) }
+        // Waits for this box, not just any: a box left over from another test also counts as configured.
+        Robo.until { app.container.router.settings.primary.port == port }
         val vm = HistoryViewModel(app)
         Robo.until { vm.state.value.isConfigured }
         vm.refresh()

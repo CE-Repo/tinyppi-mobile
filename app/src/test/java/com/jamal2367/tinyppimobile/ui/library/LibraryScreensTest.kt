@@ -283,6 +283,14 @@ class LibraryScreensTest {
     }
 
     @Test
+    fun `a shelf with every show seen has no unseen row`() {
+        fake.api.series = { SeriesLibrary(shows = shows.filter { it.watched }, count = 1) }
+        showSeries()
+        rule.waitUntil { rule.onAllNodesWithText("Chernobyl").fetchSemanticsNodes().isNotEmpty() }
+        assertTrue(rule.onAllNodesWithText(str(R.string.series_unseen_all, 0)).fetchSemanticsNodes().isEmpty())
+    }
+
+    @Test
     fun `with posters off and nothing to control the shelves only list`() {
         fake.settings.value = fake.settings.value.copy(showArtwork = false)
         fake.live.value = LiveState(connection = LiveState.Connection.Streaming, snapshot = Snapshot(control = false), server = null)

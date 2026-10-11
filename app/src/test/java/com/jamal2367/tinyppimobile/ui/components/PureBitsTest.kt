@@ -3,11 +3,21 @@ package com.jamal2367.tinyppimobile.ui.components
 import com.jamal2367.tinyppimobile.data.model.ContinueItem
 import com.jamal2367.tinyppimobile.ui.live.finishDrag
 import com.jamal2367.tinyppimobile.ui.live.markTarget
+import com.jamal2367.tinyppimobile.ui.theme.accentOf
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 /** Small rules under the cards. */
 class PureBitsTest {
+
+    @Test
+    fun `a coloured poster gives an accent and a grey one none`() {
+        assertNotNull(accentOf(IntArray(64) { 0xFFC82828.toInt() }, dark = true))
+        assertNotNull(accentOf(IntArray(64) { 0xFFC82828.toInt() }, dark = false))
+        assertNull(accentOf(IntArray(64) { 0xFF808080.toInt() }, dark = true))
+    }
 
     @Test
     fun `an episode on the continue row is named by its show and code, where it has them`() {
