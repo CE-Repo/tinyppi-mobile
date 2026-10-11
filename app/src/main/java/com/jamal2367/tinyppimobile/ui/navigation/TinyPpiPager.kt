@@ -37,7 +37,7 @@ fun TinyPpiPager(
     destinations: List<TopLevelDestination>,
     pagerState: PagerState,
     onOpenSettings: () -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     // The live reading outlives its tab. Two of the screens are windows onto
     // the same snapshot, and a view model each would be several objects

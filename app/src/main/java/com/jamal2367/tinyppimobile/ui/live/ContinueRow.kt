@@ -80,7 +80,8 @@ internal fun LazyListScope.continueCard(
  * continue-watching row, and the row of what arrived last.
  *
  * The tiles are given the wall's own width, so a row reads as part of the
- * same shelf as the wall under it. Not drawn at all with nothing to put on it.
+ * same shelf as the wall under it. Only ever asked for with something to put
+ * on it: every caller checks its list first.
  */
 internal fun <T> LazyListScope.posterRowCard(
     key: String,
@@ -93,7 +94,6 @@ internal fun <T> LazyListScope.posterRowCard(
     onToggle: () -> Unit,
     tile: @Composable (T, Modifier) -> Unit,
 ) {
-    if (items.isEmpty()) return
 
     cardTop(
         key = key,

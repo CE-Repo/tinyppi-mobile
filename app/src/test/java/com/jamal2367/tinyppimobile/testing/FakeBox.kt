@@ -17,6 +17,8 @@ class FakeBox : AutoCloseable {
     val answers = ConcurrentHashMap<String, String>()
     val codes = ConcurrentHashMap<String, Int>()
     @Volatile var stream: List<String> = emptyList()
+    /** What `/api/art` answers with: a picture, or a 404 while null. */
+    @Volatile var art: ByteArray? = null
     val asked: MutableList<String> = java.util.Collections.synchronizedList(mutableListOf())
 
     init {
@@ -30,7 +32,10 @@ class FakeBox : AutoCloseable {
                         .body(stream.joinToString("") { "event: state\ndata: $it\n\n" })
                         .build()
                 }
-                if (path == "/api/art") return MockResponse.Builder().code(404).build()
+                if (path == "/api/art") {
+                    val picture = art ?: return MockResponse.Builder().code(404).build()
+                    return MockResponse.Builder().setHeader("Content-Type", "image/png").body(okio.Buffer().write(picture)).build()
+                }
                 val code = codes[path] ?: 200
                 val body = answers[path] ?: if (request.method == "POST") """{"ok":true}""" else "{}"
                 return MockResponse.Builder().code(code).body(body).build()

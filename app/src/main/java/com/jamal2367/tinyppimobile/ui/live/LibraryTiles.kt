@@ -54,7 +54,7 @@ import com.jamal2367.tinyppimobile.util.Formatters
 internal fun ArtFrame(
     url: String?,
     ratio: Float,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
     progress: Float? = null,
     watched: Boolean = false,
     busy: Boolean = false,

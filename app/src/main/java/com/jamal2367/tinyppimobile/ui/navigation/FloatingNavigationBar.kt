@@ -226,7 +226,7 @@ fun FloatingNavigationBar(
     onSelect: (TopLevelDestination) -> Unit,
     hazeState: HazeState,
     visible: Boolean,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     // Moved off the foot of the screen rather than taken out of it. A bar that
     // leaves the composition takes its glass with it half-way through being
