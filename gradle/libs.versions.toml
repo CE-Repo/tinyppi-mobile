@@ -23,6 +23,16 @@ junit = "4.13.2"
 # Only for the tests, which need its virtual clock. Held to the coroutines the
 # lifecycle libraries already bring, so tests run on the library the app ships.
 coroutines = "1.10.2"
+# The tests that need Android itself (views, Compose, DataStore) run on the JVM
+# under Robolectric rather than on a device, so coverage counts every screen.
+robolectric = "4.17"
+androidxTestCore = "1.7.0"
+# Held to the analyser that filters what the Compose and serialization compiler
+# plugins generate; older ones count branches nobody wrote.
+jacoco = "0.8.15"
+# Not a library: the line and branch coverage, in percent, below which the
+# build fails. Kept here so the README badge reads the same number the gate does.
+coverage = "100"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -51,6 +61,11 @@ haze = { group = "dev.chrisbanes.haze", name = "haze", version.ref = "haze" }
 haze-blur = { group = "dev.chrisbanes.haze", name = "haze-blur", version.ref = "haze" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+androidx-test-core = { group = "androidx.test", name = "core-ktx", version.ref = "androidxTestCore" }
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+okhttp-mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver3", version.ref = "okhttp" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

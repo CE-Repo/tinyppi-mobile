@@ -201,7 +201,7 @@ object SourceLabel {
 
     /** The first number in a reading: `Profile 7.6` and `7.6` both give `7.6`. */
     private fun numberIn(value: String): String? =
-        NUMBER.find(value)?.value?.takeIf { it.isNotBlank() }
+        NUMBER.find(value)?.value
 
     private val NUMBER = Regex("""\d+(\.\d+)?""")
 

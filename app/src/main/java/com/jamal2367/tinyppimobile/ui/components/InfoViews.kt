@@ -252,8 +252,7 @@ fun SectionHeading(
 @Composable
 fun FoldChevron(
     expanded: Boolean,
-    contentDescription: String? = null,
-    interactionSource: MutableInteractionSource? = null,
+    interactionSource: MutableInteractionSource,
     onClick: () -> Unit,
 ) {
     val rotation by animateFloatAsState(
@@ -261,11 +260,9 @@ fun FoldChevron(
         label = "chevron",
     )
 
-    val press = interactionSource ?: remember { MutableInteractionSource() }
-
     Icon(
         imageVector = Icons.Filled.ExpandMore,
-        contentDescription = contentDescription ?: stringResource(
+        contentDescription = stringResource(
             if (expanded) R.string.card_collapse else R.string.card_expand
         ),
         // Match the heading beside it, which is plain. The arrow is a handle
@@ -279,7 +276,7 @@ fun FoldChevron(
             .offset(x = 4.dp)
             .clip(CircleShape)
             .clickable(
-                interactionSource = press,
+                interactionSource = interactionSource,
                 indication = LocalIndication.current,
                 onClick = onClick,
             )
@@ -296,19 +293,9 @@ fun FoldChevron(
  * measurement that was never taken.
  */
 @Composable
-fun InfoRow(
-    label: String,
-    value: String?,
-    modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
-    valueColor: Color? = null,
-) {
-    if (value.isNullOrBlank()) return
-
+fun InfoRow(label: String, value: String) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.Top,
     ) {
@@ -321,7 +308,7 @@ fun InfoRow(
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            color = valueColor ?: MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.End,
             modifier = Modifier.weight(1.1f),
         )
@@ -333,13 +320,14 @@ fun InfoRow(
 fun StatTile(
     value: String,
     caption: String,
-    modifier: Modifier = Modifier,
-    container: Color = MaterialTheme.colorScheme.primaryContainer,
-    content: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+    modifier: Modifier,
 ) {
     Card(
         modifier = modifier.height(88.dp),
-        colors = CardDefaults.cardColors(containerColor = container, contentColor = content),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
     ) {
         Column(
             modifier = Modifier

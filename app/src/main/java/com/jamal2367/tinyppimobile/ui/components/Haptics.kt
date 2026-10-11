@@ -1,6 +1,7 @@
 package com.jamal2367.tinyppimobile.ui.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 
@@ -30,10 +31,11 @@ fun withKeyTick(onClick: () -> Unit): () -> Unit {
  * Kept apart from [withKeyTick] only because the callback carries a value.
  */
 @Composable
-fun <T> withKeyTick(onSelect: (T) -> Unit): (T) -> Unit {
-    val haptics = LocalHapticFeedback.current
-    return { value ->
-        haptics.performHapticFeedback(HapticFeedbackType.VirtualKey)
-        onSelect(value)
-    }
+fun <T> withKeyTick(onSelect: (T) -> Unit): (T) -> Unit = ticking(LocalHapticFeedback.current, onSelect)
+
+// Built outside composition: a lambda made there is cheap, and remembering it
+// would only trade one allocation for a comparison of both its inputs.
+private fun <T> ticking(haptics: HapticFeedback, onSelect: (T) -> Unit): (T) -> Unit = { value ->
+    haptics.performHapticFeedback(HapticFeedbackType.VirtualKey)
+    onSelect(value)
 }

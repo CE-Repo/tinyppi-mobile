@@ -3,7 +3,6 @@ package com.jamal2367.tinyppimobile.data.repository
 import com.jamal2367.tinyppimobile.data.model.ApiErrorBody
 import com.jamal2367.tinyppimobile.data.model.CommandBody
 import com.jamal2367.tinyppimobile.data.model.ContinueList
-import com.jamal2367.tinyppimobile.data.model.Hello
 import com.jamal2367.tinyppimobile.data.model.History
 import com.jamal2367.tinyppimobile.data.model.EpisodeList
 import com.jamal2367.tinyppimobile.data.model.Library
@@ -38,9 +37,6 @@ class PlayerRepository(
     private val api: TinyPpiApi,
     private val json: Json,
 ) {
-
-    /** What the box is - the cheapest call there is, and the only unauthenticated one. */
-    suspend fun hello(): Hello = call { api.hello() }
 
     /** The playing title's chart samples and its event list. */
     suspend fun history(): History = call { api.history() }.let { history ->

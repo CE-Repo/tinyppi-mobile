@@ -137,7 +137,7 @@ class SeriesTest {
     @Test
     fun `a series cover is addressed by the show and its own tag`() {
         assertEquals(
-            "http://192.168.1.10:8099/api/art?kind=fanart&tvshowid=4&v=5c1d9e2f&token=AB+CD",
+            "http://192.168.1.10:8099/api/art?kind=fanart&tvshowid=4&v=5c1d9e2f",
             MediaUrls.showFanart(box, 4, "5c1d9e2f"),
         )
         // A show the library scraped no fanart for is not addressed at all,
@@ -150,7 +150,7 @@ class SeriesTest {
         val show = LibraryShow(id = 4, title = "The Wire", poster = "723bceb2")
 
         assertEquals(
-            "http://192.168.1.10:8099/api/art?kind=poster&tvshowid=4&v=723bceb2&token=AB+CD",
+            "http://192.168.1.10:8099/api/art?kind=poster&tvshowid=4&v=723bceb2",
             MediaUrls.showPoster(box, show),
         )
     }
@@ -160,7 +160,7 @@ class SeriesTest {
         val episode = LibraryEpisode(id = 100, title = "Old Cases", thumb = "9a1b2c3d")
 
         assertEquals(
-            "http://192.168.1.10:8099/api/art?kind=thumb&episodeid=100&v=9a1b2c3d&token=AB+CD",
+            "http://192.168.1.10:8099/api/art?kind=thumb&episodeid=100&v=9a1b2c3d",
             MediaUrls.episodeStill(box, episode),
         )
     }

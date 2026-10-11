@@ -7,15 +7,17 @@ import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import com.jamal2367.tinyppimobile.BuildConfig
+import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.prefs.SettingsRepository
 import com.jamal2367.tinyppimobile.data.prefs.StoredReachability
+import com.jamal2367.tinyppimobile.data.remote.BoxTokenInterceptor
 import com.jamal2367.tinyppimobile.data.remote.ConnectionTester
 import com.jamal2367.tinyppimobile.data.remote.FailoverInterceptor
 import com.jamal2367.tinyppimobile.data.remote.ServerRouter
 import com.jamal2367.tinyppimobile.data.remote.SnapshotStream
 import com.jamal2367.tinyppimobile.data.remote.TinyPpiApi
 import com.jamal2367.tinyppimobile.data.remote.UpdateChecker
+import com.jamal2367.tinyppimobile.data.remote.UpdateEndpoints
 import com.jamal2367.tinyppimobile.data.repository.LiveSession
 import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.data.repository.PlayerRepository
@@ -28,7 +30,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import okio.Path.Companion.toOkioPath
 import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
@@ -79,21 +80,6 @@ class AppContainer(private val context: Context) {
             .build()
     }
 
-    /**
-     * The logger goes on after whatever rewrites the request, never before it:
-     * ahead of the failover interceptor every line would read
-     * `http://localhost/...` - the placeholder Retrofit was built against -
-     * instead of the address the attempt actually went to, which is the one
-     * thing a log of a failing connection is read for.
-     */
-    private fun OkHttpClient.Builder.withDebugLogging(): OkHttpClient.Builder = apply {
-        if (BuildConfig.DEBUG) {
-            addInterceptor(
-                HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
-            )
-        }
-    }
-
     private val apiClient: OkHttpClient by lazy {
         baseClient.newBuilder()
             .addInterceptor(FailoverInterceptor(router))
@@ -104,6 +90,18 @@ class AppContainer(private val context: Context) {
     /** For everything that addresses a box itself, without the failover. */
     private val directClient: OkHttpClient by lazy {
         baseClient.newBuilder().withDebugLogging().build()
+    }
+
+    /**
+     * The pictures' client: direct like the one above, with the token put on
+     * as a header for whichever box the address names - the add-on reads it
+     * from nowhere else.
+     */
+    private val artClient: OkHttpClient by lazy {
+        baseClient.newBuilder()
+            .addInterceptor(BoxTokenInterceptor(router))
+            .withDebugLogging()
+            .build()
     }
 
     /**
@@ -145,6 +143,16 @@ class AppContainer(private val context: Context) {
      */
     val updateChecker: UpdateChecker by lazy { UpdateChecker(directClient, json) }
 
+    /**
+     * Where the update check asks, and the page a reader is sent to when the
+     * answer has no page of its own. Held here rather than read at the call
+     * site so the tests can point the check at a box of their own.
+     */
+    internal var updateEndpoints = UpdateEndpoints(
+        api = context.getString(R.string.update_check_url),
+        releases = context.getString(R.string.update_releases_url),
+    )
+
     private val containerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val session: LiveSession by lazy {
@@ -173,9 +181,9 @@ class AppContainer(private val context: Context) {
 
     /**
      * Posters and format logos are addressed absolutely - the URL already names
-     * the box and carries the token as `?token=`, which is the one place this
-     * API documents that for - so they skip the failover interceptor and use
-     * the plain client.
+     * the box - so they skip the failover interceptor and use the art client,
+     * which adds that box's token as a header. The token is not part of the
+     * address, so the disk cache outlives a new token.
      *
      * Kept on disk because a cached picture never changes under its name: the
      * add-on hangs the artwork's own tag on the address, so the next film asks
@@ -184,7 +192,7 @@ class AppContainer(private val context: Context) {
     val imageLoader: ImageLoader by lazy {
         ImageLoader.Builder(context)
             .components {
-                add(OkHttpNetworkFetcherFactory(callFactory = { directClient }))
+                add(OkHttpNetworkFetcherFactory(callFactory = { artClient }))
             }
             .memoryCache {
                 MemoryCache.Builder().maxSizePercent(context, 0.20).build()

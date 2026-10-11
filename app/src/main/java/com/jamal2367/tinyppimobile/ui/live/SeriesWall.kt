@@ -60,15 +60,14 @@ internal fun LazyListScope.seriesWall(
     expanded: Boolean,
     onToggle: () -> Unit,
     onOpen: (LibraryShow) -> Unit,
-    key: String = "series-wall",
-    title: @Composable (Int) -> String = { stringResource(R.string.series_all, it) },
 ) {
+    val key = "series-wall"
     shelfCard(
         key = key,
         gapAbove = gapAbove,
         expanded = expanded,
         onToggle = onToggle,
-        title = { title(shows.size) },
+        title = { stringResource(R.string.series_all, shows.size) },
         noMatch = { stringResource(R.string.series_no_match) },
         tiles = shows,
         columns = columns,
@@ -103,7 +102,7 @@ internal fun ShowTile(
     opening: Boolean,
     enabled: Boolean,
     onOpen: () -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     Column(
         modifier = modifier.clickable(enabled = enabled, onClick = onOpen),
@@ -243,6 +242,8 @@ internal fun LazyListScope.episodeList(
         }
 
         val unfolded = number in openSeasons
+        // Read now: the item is drawn later, when the loop has long moved on.
+        val rule = ruled
         item(key = "season-$number") {
             SeasonHeading(
                 label = if (number == 0) {
@@ -253,7 +254,7 @@ internal fun LazyListScope.episodeList(
                 count = episodes.size,
                 seconds = episodes.sumOf { it.duration },
                 expanded = unfolded,
-                ruled = ruled,
+                ruled = rule,
                 onToggle = { onSeason(number) },
             )
         }

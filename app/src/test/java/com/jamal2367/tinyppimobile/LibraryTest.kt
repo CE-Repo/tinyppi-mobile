@@ -101,7 +101,7 @@ class LibraryTest {
         val film = LibraryFilm(id = 3, title = "Blade", poster = "9a1b2c3d")
 
         assertEquals(
-            "http://192.168.1.10:8099/api/art?kind=poster&movieid=3&v=9a1b2c3d&token=AB+CD",
+            "http://192.168.1.10:8099/api/art?kind=poster&movieid=3&v=9a1b2c3d",
             MediaUrls.filmPoster(box, film),
         )
     }
@@ -114,7 +114,7 @@ class LibraryTest {
     }
 
     @Test
-    fun `a box with no token leaves the address without one`() {
+    fun `the token never goes into the address, set or not`() {
         val film = LibraryFilm(id = 3, title = "Blade", poster = "9a1b2c3d")
 
         assertEquals(
@@ -152,11 +152,11 @@ class LibraryTest {
         assertTrue(pilot.key != heat.key)
 
         assertEquals(
-            "http://192.168.1.10:8099/api/art?kind=poster&episodeid=9&v=fe1145ba&token=AB+CD",
+            "http://192.168.1.10:8099/api/art?kind=poster&episodeid=9&v=fe1145ba",
             MediaUrls.continuePoster(box, pilot),
         )
         assertEquals(
-            "http://192.168.1.10:8099/api/art?kind=poster&movieid=9&v=cff95f27&token=AB+CD",
+            "http://192.168.1.10:8099/api/art?kind=poster&movieid=9&v=cff95f27",
             MediaUrls.continuePoster(box, heat),
         )
     }

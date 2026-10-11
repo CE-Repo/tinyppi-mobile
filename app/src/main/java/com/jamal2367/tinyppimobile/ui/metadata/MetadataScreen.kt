@@ -66,7 +66,7 @@ import com.jamal2367.tinyppimobile.ui.navigation.barAwarePadding
 fun MetadataScreen(
     onOpenSettings: () -> Unit,
     viewModel: LiveViewModel,
-    historyViewModel: HistoryViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    historyViewModel: HistoryViewModel,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val historyState by historyViewModel.state.collectAsStateWithLifecycle()
@@ -116,10 +116,10 @@ fun MetadataScreen(
 @Composable
 private fun MetadataList(
     rows: List<MetadataRow>,
-    chartHistory: History? = null,
-    chartRange: ChartRange = ChartRange.TEN_MINUTES,
-    onChartRangeChange: (ChartRange) -> Unit = {},
-    modifier: Modifier = Modifier,
+    chartHistory: History?,
+    chartRange: ChartRange,
+    onChartRangeChange: (ChartRange) -> Unit,
+    modifier: Modifier,
 ) {
     val sections = remember(rows) { rows.toSections() }
 
@@ -159,7 +159,7 @@ private fun MetadataList(
             cardArranger(
                 screen = CardScreens.METADATA,
                 cards = present.map { id ->
-                    ArrangeableCard(id, if (id == CARD_CHART) chartLabel else byId[id]?.title.orEmpty())
+                    ArrangeableCard(id, if (id == CARD_CHART) chartLabel else byId.getValue(id).title)
                 },
                 layout = layout,
             )
@@ -169,23 +169,21 @@ private fun MetadataList(
         if (shown.isEmpty()) allCardsHidden(CardScreens.METADATA, layout)
         for (id in shown) {
             if (id == CARD_CHART) {
-                chartHistory?.let { history ->
-                    item(key = id) { ChartCard(history, chartRange, onChartRangeChange) }
-                }
+                // Only on the screen while there is a history to draw.
+                val history = chartHistory!!
+                item(key = id) { ChartCard(history, chartRange, onChartRangeChange) }
                 continue
             }
-            val section = byId[id] ?: continue
+            val section = byId.getValue(id)
             item(key = id) {
-                // A blank row is the overlay's way of setting a heading apart
-                // in a list of fixed-height items, and a section row has
-                // already been read as the card's own title. Both are dropped
-                // here rather than inside the loop: a rule goes between one
-                // row and the next, and a row that draws nothing would leave
-                // its rule behind.
-                val drawn = section.rows.filter { MetadataKind.of(it.kind) !in SKIPPED }
-
+                // No blank or section rows reach a card: a blank row is the
+                // overlay's way of setting a heading apart in a list of
+                // fixed-height items, and a section row has already been read
+                // as the card's own title, so toSections drops both as it
+                // reads them. A row that drew nothing would leave its rule
+                // behind.
                 SectionCard(title = section.title, foldId = id) {
-                    drawn.forEachIndexed { position, row ->
+                    section.rows.forEachIndexed { position, row ->
                         // Ruled between the rows and not around them: what
                         // makes a list of name-and-value pairs read as a table
                         // is the line between one pair and the next, and a
@@ -198,8 +196,8 @@ private fun MetadataList(
                             MetadataKind.HEADINGS -> CellRow(row, heading = true)
                             MetadataKind.COLUMNS -> CellRow(row, heading = false)
                             MetadataKind.WIDE -> WideRow(row)
-                            MetadataKind.SPACE, MetadataKind.SECTION -> Unit
-                            MetadataKind.ROW -> ValueRow(row)
+                            // ROW, the one kind left.
+                            else -> ValueRow(row)
                         }
                     }
                 }
@@ -381,9 +379,6 @@ private fun List<MetadataRow>.toSections(): List<MetadataSection> {
     flush()
     return sections
 }
-
-/** The kinds of row that draw nothing, and so are not rows at all here. */
-private val SKIPPED = setOf(MetadataKind.SPACE, MetadataKind.SECTION)
 
 /**
  * How many figures of a trim table go on one line.

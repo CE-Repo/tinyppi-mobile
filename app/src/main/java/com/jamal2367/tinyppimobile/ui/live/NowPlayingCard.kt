@@ -280,7 +280,7 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
                 value = dragged ?: reported,
                 onValueChange = { dragged = it },
                 onValueChangeFinished = {
-                    dragged?.let(viewModel::seekTo)
+                    finishDrag(dragged, viewModel::seekTo)
                     // Handed back to the box: what it reports next is where the
                     // player actually landed, which is not always what was asked.
                     dragged = null
@@ -395,7 +395,7 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
 private fun PlaybackWave(
     progress: () -> Float,
     paused: Boolean,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     val amplitude by animateFloatAsState(
         targetValue = if (paused) 0f else 1f,
@@ -534,4 +534,12 @@ private fun vs10ConversionTarget(output: String): String? {
         normalized.contains("hlg") -> "HLG"
         else -> null
     }
+}
+
+/**
+ * Where a drag let go: the seek, or nothing for a release that moved nothing
+ * - the slider can report the end of a press it never reported a value for.
+ */
+internal fun finishDrag(dragged: Float?, seekTo: (Float) -> Unit) {
+    dragged?.let(seekTo)
 }

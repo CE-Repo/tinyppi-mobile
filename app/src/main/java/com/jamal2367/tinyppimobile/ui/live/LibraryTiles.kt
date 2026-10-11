@@ -54,7 +54,7 @@ import com.jamal2367.tinyppimobile.util.Formatters
 internal fun ArtFrame(
     url: String?,
     ratio: Float,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
     progress: Float? = null,
     watched: Boolean = false,
     busy: Boolean = false,
@@ -146,7 +146,7 @@ internal fun ArtFrame(
  */
 @Composable
 private fun CornerPill(
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {
     Row(
@@ -176,7 +176,7 @@ private fun CornerPill(
  * because 8.3 means different things at the two of them.
  */
 @Composable
-private fun RatingMark(rating: Double, from: String, modifier: Modifier = Modifier) {
+private fun RatingMark(rating: Double, from: String, modifier: Modifier) {
     val figure = Formatters.rating(rating)
     val said = listOfNotNull(RATING_NAMES[from], figure).joinToString(" ")
     CornerPill(modifier.semantics { contentDescription = said }) {
@@ -226,7 +226,7 @@ internal fun runtimeLabel(seconds: Int): String? {
  * between the two: one of them is a rating and this is a count.
  */
 @Composable
-private fun UnseenMark(count: Int, modifier: Modifier = Modifier) {
+private fun UnseenMark(count: Int, modifier: Modifier) {
     val label = pluralStringResource(R.plurals.series_unseen, count, count)
     CornerPill(modifier.semantics { contentDescription = label }) {
         Text(

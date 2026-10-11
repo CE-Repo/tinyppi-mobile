@@ -82,7 +82,7 @@ internal fun LazyListScope.cardArranger(
     }
 
     itemsIndexed(items = order, key = { _, id -> "arrange-$id" }) { index, id ->
-        val card = byId[id] ?: return@itemsIndexed
+        val card = byId.getValue(id)
         ArrangeRow(
             label = card.label,
             hidden = layout.isHidden(screen, id),
@@ -105,7 +105,7 @@ private fun ArrangeRow(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onHidden: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),

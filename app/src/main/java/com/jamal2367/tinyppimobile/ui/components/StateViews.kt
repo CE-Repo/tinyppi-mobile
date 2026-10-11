@@ -36,10 +36,9 @@ private fun ShapedIcon(
     icon: ImageVector,
     container: Color,
     content: Color,
-    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier
+        modifier = Modifier
             .size(104.dp)
             .clip(MaterialShapes.Cookie9Sided.toShape())
             .background(container),

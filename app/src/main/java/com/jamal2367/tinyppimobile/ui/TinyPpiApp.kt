@@ -4,6 +4,9 @@ package com.jamal2367.tinyppimobile.ui
 
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import android.app.Activity
+import android.content.Context
+import android.content.res.Resources
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -23,6 +26,7 @@ import androidx.compose.material3.WideNavigationRail
 import androidx.compose.material3.WideNavigationRailItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +45,7 @@ import androidx.core.net.toUri
 import com.jamal2367.tinyppimobile.BuildConfig
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.remote.ReleaseId
+import com.jamal2367.tinyppimobile.data.remote.UpdateEndpoints
 import com.jamal2367.tinyppimobile.di.AppContainer
 import com.jamal2367.tinyppimobile.ui.navigation.TopLevelDestination
 import com.jamal2367.tinyppimobile.ui.components.HdrGrade
@@ -63,20 +68,24 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import com.jamal2367.tinyppimobile.ui.navigation.TinyPpiPager
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 import androidx.compose.runtime.derivedStateOf
 import com.jamal2367.tinyppimobile.ui.navigation.aboveBottomBar
 
 @Composable
-fun TinyPpiApp(container: AppContainer, hiddenTabs: Set<String> = emptySet()) {
+fun TinyPpiApp(container: AppContainer, hiddenTabs: Set<String>) {
     val liveViewModel: LiveViewModel = viewModel(factory = LiveViewModel.Factory)
     val liveState by liveViewModel.state.collectAsStateWithLifecycle()
     val library by liveViewModel.library.collectAsStateWithLifecycle()
     val series by liveViewModel.series.collectAsStateWithLifecycle()
     val showMetadata = HdrGrade.of(liveState.snapshot?.sourceType.orEmpty()) == HdrGrade.DOLBY_VISION
-    val showHistory = liveState.snapshot?.let { it.playing || it.last.isPresent } == true
+    val snapshot = liveState.snapshot
+    val showHistory = snapshot != null && (snapshot.playing || snapshot.last.isPresent)
     // A shelf the box has said it will not offer is a tab that leads to a line
     // of apology. Both are on until it says so - which it can only say once
     // something has asked, and both stay on for a box nobody has asked yet.
@@ -129,25 +138,26 @@ fun TinyPpiApp(container: AppContainer, hiddenTabs: Set<String> = emptySet()) {
     val latestDestinations by rememberUpdatedState(destinations)
     val scope = rememberCoroutineScope()
 
-    // A swipe that has come to rest is a tab that has been opened.
+    // A swipe that has come to rest is a tab that has been opened. Followed
+    // in a child of the effect, which ends with it.
     LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.settledPage }.collect { page ->
-            latestDestinations.getOrNull(page)?.let { current = it }
-        }
+        snapshotFlow { pagerState.settledPage }
+            .onEach { page -> current = settledOn(latestDestinations, page, current) }
+            .launchIn(this)
     }
 
     // The row changed: stay on the tab that was open, wherever it now is. A tab
     // that has gone altogether hands over to the nearest one before it.
     LaunchedEffect(destinations) {
-        val target = destinations.indexOf(current).takeIf { it >= 0 }
-            ?: destinations.indexOfLast { it.ordinal < current.ordinal }.coerceAtLeast(0)
+        val target = pageAfterChange(destinations, current)
         if (target != pagerState.currentPage) pagerState.scrollToPage(target)
-        destinations.getOrNull(target)?.let { current = it }
+        current = destinations[target]
     }
 
+    // Only ever asked for a tab on the bar, or for the settings, which are
+    // always on it.
     fun open(destination: TopLevelDestination) {
         val page = destinations.indexOf(destination)
-        if (page < 0) return
         current = destination
         scope.launch { pagerState.animateScrollToPage(page) }
     }
@@ -279,36 +289,50 @@ private fun UpdateCheck(container: AppContainer, snackbarHostState: SnackbarHost
     // resources of the composition, which follow a configuration change, and
     // not through the context's, which do not.
     val resources = LocalResources.current
-    val apiUrl = stringResource(R.string.update_check_url)
-    val releasesUrl = stringResource(R.string.update_releases_url)
+    val endpoints = container.updateEndpoints
     val showLabel = stringResource(R.string.update_show)
 
     // Survives a rotation, so turning the phone over does not ask GitHub the
     // same question again - or answer it a second time.
-    var checked by rememberSaveable { mutableStateOf(false) }
+    val checked = rememberSaveable { mutableStateOf(false) }
 
     // Keyed on nothing, so noting that the check has run does not restart the
     // very effect that is running it.
-    LaunchedEffect(Unit) {
-        if (checked) return@LaunchedEffect
-        checked = true
-        delay(UPDATE_CHECK_DELAY_MS.milliseconds)
+    LaunchedEffect(
+        Unit,
+        block = updateCheck(container, endpoints, checked, snackbarHostState, context, resources, showLabel),
+    )
+}
 
-        val update = container.updateChecker.findNewerRelease(
-            apiUrl = apiUrl,
-            current = ReleaseId.of(BuildConfig.VERSION_NAME, "build-${BuildConfig.BUILD_NUMBER}"),
-            fallbackUrl = releasesUrl,
-        ) ?: return@LaunchedEffect
+// The check itself, built outside composition: the effect runs the block it is
+// first handed and nothing it is handed later, so there is nothing to remember.
+private fun updateCheck(
+    container: AppContainer,
+    endpoints: UpdateEndpoints,
+    checked: MutableState<Boolean>,
+    snackbarHostState: SnackbarHostState,
+    context: Context,
+    resources: Resources,
+    showLabel: String,
+): suspend CoroutineScope.() -> Unit = check@{
+    if (checked.value) return@check
+    checked.value = true
+    delay(UPDATE_CHECK_DELAY_MS.milliseconds)
 
-        val result = snackbarHostState.showSnackbar(
-            message = resources.getString(R.string.update_available, update.name),
-            actionLabel = showLabel,
-            duration = SnackbarDuration.Long,
-        )
-        if (result == SnackbarResult.ActionPerformed) {
-            runCatching {
-                context.startActivity(Intent(Intent.ACTION_VIEW, update.url.toUri()))
-            }
+    val update = container.updateChecker.findNewerRelease(
+        apiUrl = endpoints.api,
+        current = ReleaseId.of(BuildConfig.VERSION_NAME, "build-${BuildConfig.BUILD_NUMBER}"),
+        fallbackUrl = endpoints.releases,
+    ) ?: return@check
+
+    val result = snackbarHostState.showSnackbar(
+        message = resources.getString(R.string.update_available, update.name),
+        actionLabel = showLabel,
+        duration = SnackbarDuration.Long,
+    )
+    if (result == SnackbarResult.ActionPerformed) {
+        runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, update.url.toUri()))
         }
     }
 }
@@ -330,31 +354,42 @@ private fun DoubleBackToExit(enabled: Boolean, snackbarHostState: SnackbarHostSt
     // Deliberately not saved across a rotation: an app turned over between the
     // two presses is not being left, and half a gesture from before should not
     // be waiting to close it.
-    var armed by remember { mutableStateOf(false) }
+    val armed = remember { mutableStateOf(false) }
 
     // Only on the first tab: back anywhere else goes to it first (see the
     // handler in the shell), and a screen with a way back of its own - added
     // later, so asked first - takes it before either.
-    BackHandler(enabled = enabled) {
-        if (armed) {
-            activity?.finish()
-            return@BackHandler
-        }
+    // Always composed inside the activity.
+    BackHandler(enabled = enabled, onBack = backTwice(activity!!, armed, scope, snackbarHostState, message))
+}
 
-        armed = true
-        scope.launch {
-            // Whatever is on screen goes first. The host shows one snackbar at
-            // a time and queues the rest, so an update notice still sitting
-            // there would hold this one back until it timed out - and the
-            // window would be open, with nothing on screen saying so.
-            snackbarHostState.currentSnackbarData?.dismiss()
-            try {
-                snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
-            } finally {
-                // The window is exactly as long as the message is up, however
-                // it ended - timed out, swiped away, or the composition gone.
-                armed = false
-            }
+// Built outside composition, like the update check's block: the handler
+// keeps whichever it was handed last, so there is nothing to remember.
+private fun backTwice(
+    activity: Activity,
+    armed: MutableState<Boolean>,
+    scope: CoroutineScope,
+    snackbarHostState: SnackbarHostState,
+    message: String,
+): () -> Unit = back@{
+    if (armed.value) {
+        activity.finish()
+        return@back
+    }
+
+    armed.value = true
+    scope.launch {
+        // Whatever is on screen goes first. The host shows one snackbar at
+        // a time and queues the rest, so an update notice still sitting
+        // there would hold this one back until it timed out - and the
+        // window would be open, with nothing on screen saying so.
+        snackbarHostState.currentSnackbarData?.dismiss()
+        try {
+            snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+        } finally {
+            // The window is exactly as long as the message is up, however
+            // it ended - timed out, swiped away, or the composition gone.
+            armed.value = false
         }
     }
 }
@@ -391,3 +426,22 @@ private fun TinyPpiNavigationRail(
 
 /** How long the live screen gets to itself before the update check speaks up. */
 private const val UPDATE_CHECK_DELAY_MS = 5_000L
+
+/**
+ * The tab a swipe came to rest on, or [current] for a page the row no longer
+ * has - which the pager can still report for the frame in which a tab leaves.
+ */
+internal fun settledOn(
+    destinations: List<TopLevelDestination>,
+    page: Int,
+    current: TopLevelDestination,
+): TopLevelDestination = destinations.getOrNull(page) ?: current
+
+/**
+ * Where [current] is after the row changed: its own page if it is still on
+ * the bar, otherwise the nearest tab before it. The live tab is never taken
+ * off, so there always is one.
+ */
+internal fun pageAfterChange(destinations: List<TopLevelDestination>, current: TopLevelDestination): Int =
+    destinations.indexOf(current).takeIf { it >= 0 }
+        ?: destinations.indexOfLast { it.ordinal < current.ordinal }

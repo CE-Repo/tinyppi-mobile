@@ -275,7 +275,7 @@ private fun WallSearch(
     label: String,
     search: String,
     onSearch: (String) -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current

@@ -52,7 +52,8 @@ private data class CentredBelowHead(override val spacing: Dp, private val head: 
         if (sizes.size <= head) return
 
         // What is left under the head, and the cards set in the middle of it.
-        val used = if (sizes.isEmpty()) 0 else y - gap
+        // There is more than the head, so at least one gap was added.
+        val used = y - gap
         val free = totalSize - used
         if (free <= 0) return
         for (index in head until sizes.size) outPositions[index] += free / 2

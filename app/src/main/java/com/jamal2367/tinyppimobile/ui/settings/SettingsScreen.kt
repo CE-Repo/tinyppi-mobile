@@ -61,7 +61,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.ui.components.centredBelowTitle
 import com.jamal2367.tinyppimobile.BuildConfig
 import com.jamal2367.tinyppimobile.R
@@ -92,7 +91,7 @@ import com.jamal2367.tinyppimobile.ui.navigation.barAwarePadding
  * tried first and the remote one takes over the moment it does not answer.
  */
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
+fun SettingsScreen(viewModel: SettingsViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val settings = state.settings
 
@@ -362,17 +361,18 @@ private fun ServerCard(
 }
 
 @Composable
-private fun TestResult(test: TestState, modifier: Modifier = Modifier) {
+private fun TestResult(test: TestState) {
     when (test) {
         TestState.Idle -> Unit
 
-        TestState.Running -> LoadingIndicator(modifier = modifier.size(26.dp))
+        TestState.Running -> LoadingIndicator(modifier = Modifier.size(26.dp))
 
-        is TestState.Ok -> Column(modifier = modifier) {
+        is TestState.Ok -> Column {
             ResultLine(
                 icon = Icons.Outlined.CheckCircle,
                 tint = MaterialTheme.colorScheme.accentText,
                 text = stringResource(R.string.settings_test_ok, test.version),
+                color = MaterialTheme.colorScheme.onSurface,
             )
             // Reachable and refusing every reading is the one outcome that
             // looks like success and is not, so it is said in as many words.
@@ -394,12 +394,12 @@ private fun TestResult(test: TestState, modifier: Modifier = Modifier) {
             }
         }
 
-        is TestState.Failed -> ResultLine(
+        // Failed, the one left.
+        else -> ResultLine(
             icon = Icons.Outlined.ErrorOutline,
             tint = MaterialTheme.colorScheme.error,
-            text = test.message,
+            text = (test as TestState.Failed).message,
             color = MaterialTheme.colorScheme.error,
-            modifier = modifier,
         )
     }
 }
@@ -409,11 +409,10 @@ private fun ResultLine(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     tint: androidx.compose.ui.graphics.Color,
     text: String,
-    modifier: Modifier = Modifier,
-    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
+    color: androidx.compose.ui.graphics.Color,
 ) {
     Row(
-        modifier = modifier.padding(top = 2.dp),
+        modifier = Modifier.padding(top = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))

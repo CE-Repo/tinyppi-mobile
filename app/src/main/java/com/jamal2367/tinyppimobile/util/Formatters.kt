@@ -22,17 +22,19 @@ object Formatters {
      * they know - a thousand-nit master, a four-thousand-nit one - and `1.9 k`
      * is both harder to read at a glance and no shorter than `1900`.
      */
-    fun nits(value: Double?): String? {
-        val number = value ?: return null
-        val figure = if (number >= 10) {
-            number.roundToInt().toString()
+    fun nits(value: Double): String {
+        val figure = if (value >= 10) {
+            value.roundToInt().toString()
         } else {
             // Below ten a whole number is most of the reading: 0 and 4 are
             // very different pictures, and rounding them together hides that.
-            trimmed(number, 1)
+            trimmed(value, 1)
         }
         return "$figure nits"
     }
+
+    /** The same, or null for a reading there is none of. */
+    fun nits(value: Double?): String? = value?.let(::nits)
 
     /**
      * A figure the box abbreviated, written out: `1.9 k` becomes `1900`.
@@ -47,8 +49,8 @@ object Formatters {
      * units, brackets, words - comes back as it went in.
      */
     fun expandThousands(text: String): String = THOUSANDS.replace(text) { match ->
-        val figure = match.groupValues[1].toDoubleOrNull() ?: return@replace match.value
-        (figure * 1000).roundToInt().toString()
+        // The pattern only matches digits with an optional fraction.
+        (match.groupValues[1].toDouble() * 1000).roundToInt().toString()
     }
 
     /** A percentage, whole. */

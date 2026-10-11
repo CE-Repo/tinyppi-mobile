@@ -62,7 +62,7 @@ data class LiveUiState(
     val canControl: Boolean get() = snapshot?.control == true
 
     /** Whether there is a film to control, as opposed to a box that will allow it. */
-    val canControlPlayback: Boolean get() = canControl && snapshot?.playing == true
+    val canControlPlayback: Boolean get() = snapshot?.run { control && playing } == true
 }
 
 /**

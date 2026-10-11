@@ -1,5 +1,16 @@
 # 📱 TinyPPI — Mobile
 
+<p align="center">
+  <a href="https://github.com/CE-Repo/tinyppi-mobile/actions/workflows/android.yml"><img alt="Android" src="https://github.com/CE-Repo/tinyppi-mobile/actions/workflows/android.yml/badge.svg?branch=main" /></a>
+  <a href="#8-building-it"><img alt="Coverage" src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FCE-Repo%2Ftinyppi-mobile%2Fmain%2Fgradle%2Flibs.versions.toml&query=%24.versions.coverage&label=coverage&suffix=%25&color=brightgreen" /></a>
+  <a href="https://github.com/CE-Repo/tinyppi-mobile/releases"><img alt="Release" src="https://img.shields.io/github/v/release/CE-Repo/tinyppi-mobile?include_prereleases&label=release" /></a>
+  <a href="https://kotlinlang.org/"><img alt="Kotlin" src="https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FCE-Repo%2Ftinyppi-mobile%2Fmain%2Fgradle%2Flibs.versions.toml&query=%24.versions.kotlin&label=Kotlin&logo=kotlin&color=7F52FF" /></a>
+  <a href="https://developer.android.com/compose"><img alt="Jetpack Compose" src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white" /></a>
+  <a href="#2-requirements"><img alt="Android 8.0+" src="https://img.shields.io/badge/Android-8.0%2B%20(API%2026)-3DDC84?logo=android&logoColor=white" /></a>
+  <a href="https://developer.android.com/studio/write/lint"><img alt="Android Lint" src="https://img.shields.io/badge/lint-Android%20Lint-3DDC84?logo=android&logoColor=white" /></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/CE-Repo/tinyppi-mobile" /></a>
+</p>
+
 An Android app for [TinyPPI](https://github.com/CE-Repo/script.tinyppi): the
 playback information the add-on draws over a running video on the television,
 on the phone instead — every reading, the Dolby Vision metadata view, the
@@ -325,10 +336,11 @@ All of it.
 | `POST /api/watched` | Marking a film, a series or an episode as watched or unwatched. |
 | `POST /api/resume` | Clearing the resume point of a film or an episode. |
 
-The token travels as `X-TinyPPI-Token` on everything Retrofit sends, and as
-`?token=` on the event stream and the artwork — the two the add-on documents
-that form for, because a browser can put no header on an `EventSource` or on an
-`<img>`.
+The token travels as `X-TinyPPI-Token` on every request: on what Retrofit
+sends, on the event stream, and on the artwork, whose client adds the token of
+whichever box the address names. The add-on (2.15.1 and later) reads it from
+that header only and ignores a `?token=`, since an address ends up in logs and
+caches.
 
 **One stream per phone.** The add-on caps concurrent streams at six and fans the
 same snapshot out to each of them, so four screens opening four connections
@@ -397,8 +409,16 @@ The APK lands in `app/build/outputs/apk/debug/`.
 | Task | What it does |
 |---|---|
 | `./gradlew testDebugUnitTest` | The unit tests |
+| `./gradlew jacocoDebugUnitTestCoverageVerification` | The tests, then a failure below 100 % line and branch coverage |
 | `./gradlew lintRelease` | Lint on the configuration that ships |
 | `./gradlew assembleRelease` | The shrunk, obfuscated APK |
+
+**Tests and coverage.** Every line and every branch is reached by the unit
+tests, the same bar the add-on holds itself to. The screens run on the JVM
+under Robolectric and the Compose test rule, against a fake box served by
+MockWebServer, so no device or emulator is needed. The report lands in
+`app/build/reports/jacoco/jacocoDebugUnitTestReport/`; `./gradlew check` and
+the CI run both fail below 100 %.
 
 **Signing.** A release build looks for signing material in the environment
 first (`KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`), then
@@ -415,7 +435,7 @@ With neither, `assembleRelease` falls back to the debug key rather than
 failing — an unsigned APK is one nobody can do anything with.
 
 **Releases** are cut by hand from the Actions tab. Every run that gets through
-the tests and lint publishes its APK as a release tagged `build-N`, and the app
+the tests, the coverage gate and lint publishes its APK as a release tagged `build-N`, and the app
 checks that tag once per launch to tell you it is behind.
 
 ---

@@ -35,7 +35,7 @@ import coil3.request.crossfade
 fun PosterImage(
     url: String?,
     contentDescription: String?,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     var failed by remember(url) { mutableStateOf(false) }
 

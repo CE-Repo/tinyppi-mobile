@@ -7,7 +7,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SliderColors
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SliderState
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -46,34 +45,6 @@ fun neutralTonalIconButtonColors(): IconButtonColors =
     )
 
 /**
- * A slider that is a setting rather than a reading.
- *
- * The progress bar keeps the accent: where the film has got to is what the
- * card is about. The volume is a second full-strength bar sitting directly
- * under the first, saying the same colour about a smaller thing - drawn grey
- * it still reads at a glance, and stops repeating the point.
- *
- * The handle is the same grey as the buttons at either end of it, not the
- * dimmer one. The bar runs between the stop and the mute and is read across
- * all three, and a handle a shade under the icons it sits between looks like a
- * handle that has been switched off.
- *
- * The track behind it is that dimmer grey, and the two part company on
- * purpose. A volume sits at 100 most of its life, which means the length that
- * has been filled in is the whole width of the card: at the handle's own
- * strength that came out as a solid white bar, wider and brighter than
- * anything else in the group, the play button included. The handle is what a
- * finger aims at and stays bright; the length behind it is a reading, and a
- * reading does not need to be the loudest thing on the card to be read.
- */
-@Composable
-fun neutralSliderColors(): SliderColors = SliderDefaults.colors(
-    thumbColor = MaterialTheme.colorScheme.onSurface,
-    activeTrackColor = MaterialTheme.colorScheme.onSurfaceVariant,
-    inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-)
-
-/**
  * How thick a slider's rail is drawn.
  *
  * Half of Material's sixteen. That figure is drawn for a slider that is the
@@ -94,12 +65,11 @@ val SliderTrackHeight = 8.dp
 @Composable
 fun SlimSliderTrack(
     state: SliderState,
-    colors: SliderColors = SliderDefaults.colors(),
-    enabled: Boolean = true,
+    enabled: Boolean,
 ) {
     SliderDefaults.Track(
         sliderState = state,
-        colors = colors,
+        colors = SliderDefaults.colors(),
         enabled = enabled,
         modifier = Modifier.height(SliderTrackHeight),
     )
@@ -135,12 +105,11 @@ val SliderThumbHeight = 28.dp
 @Composable
 fun SlimSliderThumb(
     interactionSource: MutableInteractionSource,
-    colors: SliderColors = SliderDefaults.colors(),
     enabled: Boolean = true,
 ) {
     SliderDefaults.Thumb(
         interactionSource = interactionSource,
-        colors = colors,
+        colors = SliderDefaults.colors(),
         enabled = enabled,
         thumbSize = DpSize(SliderThumbWidth, SliderThumbHeight),
     )

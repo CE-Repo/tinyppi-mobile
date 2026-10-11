@@ -13,9 +13,9 @@ import java.net.URLEncoder
  *
  * Absolute rather than relative, because they are handed to the image loader
  * rather than to Retrofit: nothing retargets them at whichever box is
- * answering, so the box has to be named here. The token travels as `?token=`
- * for the same reason - an image request carries no headers of the loader's
- * own that the caller can set per URL.
+ * answering, so the box has to be named here. The token is not: the add-on
+ * reads it from the header only, which the image loader's client adds for the
+ * box the address names (see `BoxTokenInterceptor`).
  */
 object MediaUrls {
 
@@ -51,7 +51,6 @@ object MediaUrls {
             append(kind.id)
             append("&v=")
             append(tag.encoded())
-            box.tokenParameter()?.let(::append)
         }
     }
 
@@ -129,12 +128,8 @@ object MediaUrls {
             append(id)
             append("&v=")
             append(picture.encoded())
-            box.tokenParameter()?.let(::append)
         }
     }
-
-    private fun ServerConfig.tokenParameter(): String? =
-        token.trim().takeIf { it.isNotBlank() }?.let { "&token=${it.encoded()}" }
 
     private fun String.encoded(): String = URLEncoder.encode(this, Charsets.UTF_8.name())
 }

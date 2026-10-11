@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -50,14 +51,25 @@ fun LuminanceChart(
     series: List<ChartSeries>,
     modifier: Modifier = Modifier,
     /** The window the chart covers, in seconds, or null for everything it holds. */
-    windowSeconds: Int? = null,
-    height: Int = 160,
+    windowSeconds: Int?,
 ) {
     val points = series.flatMap { it.points }
-    if (points.isEmpty()) return
+    if (points.isNotEmpty()) Chart(series, points, modifier, windowSeconds)
+}
 
-    val newest = points.maxOf { it.first }
-    val oldest = windowSeconds?.let { max(0.0, newest - it) } ?: points.minOf { it.first }
+// Not restartable on its own: it is only ever drawn by the chart above, which
+// is what recomposes, so a restart scope of its own would only be bookkeeping.
+@Composable
+@NonRestartableComposable
+private fun Chart(
+    series: List<ChartSeries>,
+    points: List<Pair<Double, Double>>,
+    modifier: Modifier,
+    windowSeconds: Int?,
+) {
+    val times = points.map { it.first }
+    val newest = times.max()
+    val oldest = if (windowSeconds != null) max(0.0, newest - windowSeconds) else times.min()
     // A chart of one moment has no width to draw across; a second of span is
     // what keeps the first sample of a title from dividing by zero.
     val span = max(1.0, newest - oldest)
@@ -65,7 +77,8 @@ fun LuminanceChart(
     val visible = series.map { line ->
         line.copy(points = line.points.filter { it.first >= oldest })
     }
-    val ceiling = visible.flatMap { it.points }.maxOfOrNull { it.second } ?: return
+    // Never empty: the newest point is always inside the window.
+    val ceiling = visible.flatMap { it.points }.map { it.second }.max()
     // Rounded up to something a reader can name rather than to the highest
     // sample: a top of 3847 nits makes every line touch the frame, and says
     // less than a top of 4000 with the line just under it.
@@ -79,7 +92,7 @@ fun LuminanceChart(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = Formatters.nits(top).orEmpty(),
+                text = Formatters.nits(top),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -88,10 +101,10 @@ fun LuminanceChart(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(height.dp)
+                .height(CHART_HEIGHT)
                 .padding(vertical = 4.dp),
         ) {
-            Canvas(modifier = Modifier.fillMaxWidth().height(height.dp)) {
+            Canvas(modifier = Modifier.fillMaxWidth().height(CHART_HEIGHT)) {
                 drawGrid(grid)
                 visible.forEach { line ->
                     drawSeries(line, oldest = oldest, span = span, top = top)
@@ -124,7 +137,7 @@ fun LuminanceChart(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    StatusDot(color = line.color, size = 8)
+                    StatusDot(color = line.color)
                     Text(
                         text = line.label,
                         style = MaterialTheme.typography.labelSmall,
@@ -188,3 +201,5 @@ private fun niceCeiling(highest: Double): Double {
     val steps = listOf(100.0, 200.0, 400.0, 600.0, 1000.0, 2000.0, 4000.0, 10000.0)
     return steps.firstOrNull { it >= highest } ?: highest
 }
+
+private val CHART_HEIGHT = 160.dp

@@ -81,10 +81,44 @@ object DemoServer {
         }
     }
 
+    /**
+     * Back to how the box starts: the first film playing where it was left,
+     * nothing marked, every setting as it was. For the tests, which share the
+     * one box between them.
+     */
+    internal fun reset() = synchronized(lock) {
+        playingTitle = "Dune: Part Two"
+        playingTag = "movie-1"
+        playingYear = 2024
+        playingGenre = "Science Fiction"
+        playingShow = ""
+        playingSeason = ""
+        playingEpisode = ""
+        durationSeconds = 166 * 60
+        positionSeconds = 71.0 * 60
+        paused = false
+        volume = 72
+        muted = false
+        audioCurrent = 0
+        subtitleCurrent = 1
+        subtitleOn = true
+        vs10Output = ""
+        switches = 2
+        marked.clear()
+        cleared.clear()
+        libraryRevision++
+    }
+
     /* --- The pretend library --------------------------------------------- */
 
     private class Film(val id: Int, val title: String, val year: Int, val minutes: Int, val rating: Double, val genre: String, val watched: Boolean = false, val resumeMinutes: Int = 0)
-    private class Show(val id: Int, val title: String, val year: Int, val rating: Double, val seasons: Int, val perSeason: Int, val seenUpTo: Int)
+    private class Show(val id: Int, val title: String, val year: Int, val rating: Double, val seasons: Int, val perSeason: Int, val seenUpTo: Int) {
+        /** Every episode as season and number, in the order they are watched. */
+        val episodes: List<Pair<Int, Int>> = (1..seasons).flatMap { season -> (1..perSeason).map { season to it } }
+
+        /** Whether it has been started and not finished, for the continue row. */
+        val inProgress: Boolean get() = seenUpTo < episodes.size
+    }
 
     private val films = listOf(
         Film(1, "Dune: Part Two", 2024, 166, 8.5, "Science Fiction", resumeMinutes = 71),
@@ -175,15 +209,8 @@ object DemoServer {
     private fun episodeWatched(show: Show, season: Int, episode: Int, n: Int) =
         marked[episodeId(show, season, episode)] ?: (n <= show.seenUpTo)
 
-    private fun unseenOf(show: Show): Int {
-        var n = 0
-        var unseen = 0
-        for (season in 1..show.seasons) for (episode in 1..show.perSeason) {
-            n++
-            if (!episodeWatched(show, season, episode, n)) unseen++
-        }
-        return unseen
-    }
+    private fun unseenOf(show: Show): Int = show.episodes.withIndex()
+        .count { (index, episode) -> !episodeWatched(show, episode.first, episode.second, index + 1) }
     private var sessionStart = System.currentTimeMillis()
 
     private fun tick() {
@@ -447,9 +474,8 @@ object DemoServer {
             put("tvshowid", show.id)
             put("title", show.title)
             putJsonArray("episodes") {
-                var n = 0
-                for (season in 1..show.seasons) for (episode in 1..show.perSeason) {
-                    n++
+                show.episodes.forEachIndexed { index, (season, episode) ->
+                    val n = index + 1
                     add(buildJsonObject {
                         put("id", episodeId(show, season, episode))
                         put("title", episodeTitle(season, episode))
@@ -457,7 +483,7 @@ object DemoServer {
                         put("thumb", "thumb-${episodeId(show, season, episode)}")
                         put("duration", 52 * 60)
                         put("watched", episodeWatched(show, season, episode, n))
-                        put("resume", if (n == show.seenUpTo + 1 && show.seenUpTo > 0) 19 * 60 else 0)
+                        put("resume", if (n == show.seenUpTo + 1) 19 * 60 else 0)
                     })
                 }
             }
@@ -476,7 +502,7 @@ object DemoServer {
                     put("rating", f.rating); put("rating_from", "imdb")
                 })
             }
-            shows.filter { it.seenUpTo in 1 until it.seasons * it.perSeason }.take(6).forEach { s ->
+            shows.filter { it.inProgress }.take(6).forEach { s ->
                 val season = s.seenUpTo / s.perSeason + 1
                 val episode = s.seenUpTo % s.perSeason + 1
                 add(buildJsonObject {
@@ -492,7 +518,7 @@ object DemoServer {
         put(
             "count",
             films.count { it.resumesAt } +
-                shows.count { it.seenUpTo in 1 until it.seasons * it.perSeason }.coerceAtMost(6),
+                shows.count { it.inProgress }.coerceAtMost(6),
         )
         put("tag", "demo-$libraryRevision")
     }
@@ -526,9 +552,7 @@ object DemoServer {
                 payload["movieid"]?.jsonPrimitive?.int?.let { marked[it] = watched }
                 payload["episodeid"]?.jsonPrimitive?.int?.let { marked[it] = watched }
                 payload["tvshowid"]?.jsonPrimitive?.int?.let { id -> shows.firstOrNull { it.id == id } }?.let { show ->
-                    for (season in 1..show.seasons) for (episode in 1..show.perSeason) {
-                        marked[episodeId(show, season, episode)] = watched
-                    }
+                    show.episodes.forEach { (season, episode) -> marked[episodeId(show, season, episode)] = watched }
                 }
                 libraryRevision++
             }
@@ -624,10 +648,10 @@ object DemoServer {
         var current = ""
         text.split(' ').forEach { word ->
             val candidate = if (current.isEmpty()) word else "$current $word"
-            if (paint.measureText(candidate) <= width || current.isEmpty()) current = candidate
+            if (current.isEmpty() || paint.measureText(candidate) <= width) current = candidate
             else { lines += current; current = word }
         }
-        if (current.isNotEmpty()) lines += current
+        lines += current
         return lines
     }
 
@@ -646,7 +670,7 @@ object DemoServer {
                     if (colon > 0) headers[line.substring(0, colon).trim().lowercase(Locale.ROOT)] = line.substring(colon + 1).trim()
                 }
                 val parts = requestLine.split(' ')
-                val method = parts.getOrElse(0) { "GET" }
+                val method = parts[0]
                 val target = parts.getOrElse(1) { "/" }
                 val path = target.substringBefore('?')
                 val query = target.substringAfter('?', "").split('&').filter { '=' in it }.associate {
@@ -684,10 +708,14 @@ object DemoServer {
                 "Connection: close\r\n\r\n").toByteArray(),
         )
         out.flush()
-        while (true) {
-            out.write("event: state\ndata: ${json.encodeToString(JsonObject.serializer(), snapshot())}\n\n".toByteArray())
-            out.flush()
-            Thread.sleep(1000)
+        try {
+            while (true) {
+                out.write("event: state\ndata: ${json.encodeToString(JsonObject.serializer(), snapshot())}\n\n".toByteArray())
+                out.flush()
+                Thread.sleep(1000)
+            }
+        } catch (_: IOException) {
+            // The app closed the stream.
         }
     }
 

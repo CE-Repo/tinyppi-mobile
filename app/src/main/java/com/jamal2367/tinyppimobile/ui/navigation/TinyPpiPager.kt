@@ -8,6 +8,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelStoreOwner
+import com.jamal2367.tinyppimobile.ui.settings.SettingsViewModel
+import com.jamal2367.tinyppimobile.ui.history.HistoryViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.ui.history.HistoryScreen
 import com.jamal2367.tinyppimobile.ui.library.FilmsScreen
@@ -37,23 +41,24 @@ fun TinyPpiPager(
     destinations: List<TopLevelDestination>,
     pagerState: PagerState,
     onOpenSettings: () -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     // The live reading outlives its tab. Two of the screens are windows onto
     // the same snapshot, and a view model each would be several objects
     // collecting the same flow.
-    val activity = checkNotNull(LocalActivity.current) as ViewModelStoreOwner
+    // Always composed inside the activity.
+    val activity = LocalActivity.current!! as ViewModelStoreOwner
     val liveViewModel: LiveViewModel =
         viewModel(viewModelStoreOwner = activity, factory = LiveViewModel.Factory)
 
     HorizontalPager(
         state = pagerState,
-        key = { page -> destinations.getOrNull(page)?.route ?: page },
+        key = { page -> pageKey(destinations, page) },
         beyondViewportPageCount = 1,
         modifier = modifier,
     ) { page ->
         CompositionLocalProvider(LocalIsCurrentPage provides (page == pagerState.currentPage)) {
-            Page(destinations.getOrNull(page), liveViewModel, onOpenSettings)
+            Page(destinations.getOrNull(page), liveViewModel, activity, onOpenSettings)
         }
     }
 }
@@ -66,10 +71,19 @@ fun TinyPpiPager(
  */
 val LocalIsCurrentPage = compositionLocalOf { true }
 
+/**
+ * A page's key: its tab's route, or the bare index for a page the row no
+ * longer has - which the pager can still ask about for the frame in which a
+ * tab leaves the bar.
+ */
+internal fun pageKey(destinations: List<TopLevelDestination>, page: Int): Any =
+    destinations.getOrNull(page)?.route ?: page
+
 @Composable
-private fun Page(
+internal fun Page(
     destination: TopLevelDestination?,
     liveViewModel: LiveViewModel,
+    owner: ViewModelStoreOwner,
     onOpenSettings: () -> Unit,
 ) {
     when (destination) {
@@ -90,9 +104,20 @@ private fun Page(
         TopLevelDestination.METADATA -> MetadataScreen(
             onOpenSettings = onOpenSettings,
             viewModel = liveViewModel,
+            historyViewModel = owner.model(HistoryViewModel::class.java),
         )
-        TopLevelDestination.HISTORY -> HistoryScreen(onOpenSettings = onOpenSettings)
-        TopLevelDestination.SETTINGS -> SettingsScreen()
+        TopLevelDestination.HISTORY -> HistoryScreen(
+            onOpenSettings = onOpenSettings,
+            viewModel = owner.model(HistoryViewModel::class.java),
+        )
         null -> Unit
+        // SETTINGS, the one left.
+        else -> SettingsScreen(owner.model(SettingsViewModel::class.java))
     }
 }
+
+/**
+ * The activity's own instance of a screen's view model - asked for only once
+ * that screen is drawn, so a tab nobody opens fetches nothing.
+ */
+private fun <T : ViewModel> ViewModelStoreOwner.model(type: Class<T>): T = ViewModelProvider(this)[type]

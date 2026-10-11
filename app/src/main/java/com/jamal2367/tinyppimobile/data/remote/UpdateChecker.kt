@@ -11,12 +11,15 @@ import okhttp3.Request
 
 /** What GitHub says about a release - only the four fields worth reading here. */
 @Serializable
-private data class GithubRelease(
+internal data class GithubRelease(
     @SerialName("tag_name") val tagName: String? = null,
     val name: String? = null,
     @SerialName("html_url") val htmlUrl: String? = null,
     val draft: Boolean = false,
 )
+
+/** Where an update check asks, and the page of releases to fall back on. */
+data class UpdateEndpoints(val api: String, val releases: String)
 
 /** A published release that is ahead of the one running. */
 data class AvailableUpdate(
@@ -146,9 +149,9 @@ class UpdateChecker(
         if (!current.isBehind(latest)) return@withContext null
 
         AvailableUpdate(
-            name = release.name?.takeIf { it.isNotBlank() }
-                ?: release.tagName?.takeIf { it.isNotBlank() }
-                ?: return@withContext null,
+            // A release that is newer has a version or a build number in one
+            // of the two, so where the title is blank the tag is not.
+            name = listOfNotNull(release.name, release.tagName).first { it.isNotBlank() },
             url = release.htmlUrl?.takeIf { it.isNotBlank() } ?: fallbackUrl,
         )
     }
