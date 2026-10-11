@@ -37,11 +37,8 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.ui.components.ArrangeBackHandler
 import com.jamal2367.tinyppimobile.ui.components.ArrangeableCard
@@ -102,7 +99,7 @@ import com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage
 @Composable
 fun FilmsScreen(
     onOpenSettings: () -> Unit,
-    viewModel: LiveViewModel = sharedLiveViewModel(),
+    viewModel: LiveViewModel,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val library by viewModel.library.collectAsStateWithLifecycle()
@@ -315,7 +312,7 @@ fun FilmsScreen(
 @Composable
 fun SeriesScreen(
     onOpenSettings: () -> Unit,
-    viewModel: LiveViewModel = sharedLiveViewModel(),
+    viewModel: LiveViewModel,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val series by viewModel.series.collectAsStateWithLifecycle()
@@ -614,8 +611,8 @@ private fun Shelf(
     message: String?,
     onMessageShown: () -> Unit,
     onOpenSettings: () -> Unit,
-    gap: Dp = CardGap,
-    screen: String? = null,
+    gap: Dp,
+    screen: String,
     content: LazyListScope.() -> Unit,
 ) {
     val listState = rememberLazyListState()
@@ -715,20 +712,6 @@ private fun Shelf(
             }
         }
     }
-}
-
-/**
- * The one live view model, held by the activity.
- *
- * The same object the live screen reads, for the reason the nav host gives:
- * a per-destination model is another collector on the same flow, and with the
- * container's stop timeout under it that is a stream that drops and reopens
- * every time somebody changes tabs.
- */
-@Composable
-private fun sharedLiveViewModel(): LiveViewModel {
-    val activity = checkNotNull(LocalActivity.current) as ViewModelStoreOwner
-    return viewModel(viewModelStoreOwner = activity, factory = LiveViewModel.Factory)
 }
 
 /**

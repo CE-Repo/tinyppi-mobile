@@ -7,6 +7,7 @@ import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.prefs.SettingsRepository
 import com.jamal2367.tinyppimobile.data.prefs.StoredReachability
 import com.jamal2367.tinyppimobile.data.remote.BoxTokenInterceptor
@@ -16,6 +17,7 @@ import com.jamal2367.tinyppimobile.data.remote.ServerRouter
 import com.jamal2367.tinyppimobile.data.remote.SnapshotStream
 import com.jamal2367.tinyppimobile.data.remote.TinyPpiApi
 import com.jamal2367.tinyppimobile.data.remote.UpdateChecker
+import com.jamal2367.tinyppimobile.data.remote.UpdateEndpoints
 import com.jamal2367.tinyppimobile.data.repository.LiveSession
 import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.data.repository.PlayerRepository
@@ -140,6 +142,16 @@ class AppContainer(private val context: Context) {
      * answering, and github.com is neither of them.
      */
     val updateChecker: UpdateChecker by lazy { UpdateChecker(directClient, json) }
+
+    /**
+     * Where the update check asks, and the page a reader is sent to when the
+     * answer has no page of its own. Held here rather than read at the call
+     * site so the tests can point the check at a box of their own.
+     */
+    internal var updateEndpoints = UpdateEndpoints(
+        api = context.getString(R.string.update_check_url),
+        releases = context.getString(R.string.update_releases_url),
+    )
 
     private val containerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 

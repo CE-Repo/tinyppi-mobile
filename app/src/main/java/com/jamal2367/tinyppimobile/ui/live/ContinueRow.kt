@@ -164,7 +164,7 @@ private fun ContinueTile(
     starting: Boolean,
     enabled: Boolean,
     onPlay: () -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     Column(
         modifier = modifier.clickable(enabled = enabled, onClick = onPlay),

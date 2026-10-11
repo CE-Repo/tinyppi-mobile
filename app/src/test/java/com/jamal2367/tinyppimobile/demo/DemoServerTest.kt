@@ -174,6 +174,8 @@ class DemoServerTest {
         assertNull(snapshot["title"])
         assertEquals("Dune: Part Two", snapshot["last"]!!.jsonObject["title"]!!.jsonPrimitive.content)
         post("/api/play", """{"movieid":2}""")
+        DemoServer.reset()
+        assertEquals("Dune: Part Two", state()["title"]!!.jsonPrimitive.content)
 
         // The stream sends frames until the app hangs up.
         Socket("127.0.0.1", 8099).use { socket ->

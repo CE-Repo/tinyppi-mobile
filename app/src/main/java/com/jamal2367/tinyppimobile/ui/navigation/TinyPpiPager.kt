@@ -48,7 +48,7 @@ fun TinyPpiPager(
 
     HorizontalPager(
         state = pagerState,
-        key = { page -> destinations.getOrNull(page)?.route ?: page },
+        key = { page -> pageKey(destinations, page) },
         beyondViewportPageCount = 1,
         modifier = modifier,
     ) { page ->
@@ -66,8 +66,16 @@ fun TinyPpiPager(
  */
 val LocalIsCurrentPage = compositionLocalOf { true }
 
+/**
+ * A page's key: its tab's route, or the bare index for a page the row no
+ * longer has - which the pager can still ask about for the frame in which a
+ * tab leaves the bar.
+ */
+internal fun pageKey(destinations: List<TopLevelDestination>, page: Int): Any =
+    destinations.getOrNull(page)?.route ?: page
+
 @Composable
-private fun Page(
+internal fun Page(
     destination: TopLevelDestination?,
     liveViewModel: LiveViewModel,
     onOpenSettings: () -> Unit,

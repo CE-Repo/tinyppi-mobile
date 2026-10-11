@@ -18,6 +18,9 @@ internal data class GithubRelease(
     val draft: Boolean = false,
 )
 
+/** Where an update check asks, and the page of releases to fall back on. */
+data class UpdateEndpoints(val api: String, val releases: String)
+
 /** A published release that is ahead of the one running. */
 data class AvailableUpdate(
     /** What to call it on screen: the release's own title. */

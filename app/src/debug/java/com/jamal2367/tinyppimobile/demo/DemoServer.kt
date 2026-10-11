@@ -81,6 +81,34 @@ object DemoServer {
         }
     }
 
+    /**
+     * Back to how the box starts: the first film playing where it was left,
+     * nothing marked, every setting as it was. For the tests, which share the
+     * one box between them.
+     */
+    internal fun reset() = synchronized(lock) {
+        playingTitle = "Dune: Part Two"
+        playingTag = "movie-1"
+        playingYear = 2024
+        playingGenre = "Science Fiction"
+        playingShow = ""
+        playingSeason = ""
+        playingEpisode = ""
+        durationSeconds = 166 * 60
+        positionSeconds = 71.0 * 60
+        paused = false
+        volume = 72
+        muted = false
+        audioCurrent = 0
+        subtitleCurrent = 1
+        subtitleOn = true
+        vs10Output = ""
+        switches = 2
+        marked.clear()
+        cleared.clear()
+        libraryRevision++
+    }
+
     /* --- The pretend library --------------------------------------------- */
 
     private class Film(val id: Int, val title: String, val year: Int, val minutes: Int, val rating: Double, val genre: String, val watched: Boolean = false, val resumeMinutes: Int = 0)

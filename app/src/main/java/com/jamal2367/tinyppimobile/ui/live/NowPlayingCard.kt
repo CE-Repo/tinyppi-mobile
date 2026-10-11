@@ -395,7 +395,7 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
 private fun PlaybackWave(
     progress: () -> Float,
     paused: Boolean,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     val amplitude by animateFloatAsState(
         targetValue = if (paused) 0f else 1f,

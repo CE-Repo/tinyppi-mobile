@@ -65,7 +65,8 @@ fun LuminanceChart(
     val visible = series.map { line ->
         line.copy(points = line.points.filter { it.first >= oldest })
     }
-    val ceiling = visible.flatMap { it.points }.maxOfOrNull { it.second } ?: return
+    // Never empty: the newest point is always inside the window.
+    val ceiling = visible.flatMap { it.points }.maxOf { it.second }
     // Rounded up to something a reader can name rather than to the highest
     // sample: a top of 3847 nits makes every line touch the frame, and says
     // less than a top of 4000 with the line just under it.

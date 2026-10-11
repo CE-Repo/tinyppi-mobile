@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.repository.LiveState
@@ -56,7 +55,7 @@ import com.jamal2367.tinyppimobile.util.MediaUrls
 @Composable
 fun LiveScreen(
     onOpenSettings: () -> Unit,
-    viewModel: LiveViewModel = viewModel(factory = LiveViewModel.Factory),
+    viewModel: LiveViewModel,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
@@ -207,7 +206,7 @@ private fun LiveContent(
                         when (id) {
                             FOLD_CONTROLS -> labels.controls
                             FOLD_VS10 -> labels.vs10
-                            else -> groups[id]?.title.orEmpty()
+                            else -> groups.getValue(id).title
                         },
                     )
                 },
@@ -244,9 +243,8 @@ private fun LiveContent(
                 // card at the top raises - what this file actually is, what
                 // the box is doing with it - and an answer a tab away is an
                 // answer nobody goes and gets.
-                else -> groups[id]?.let { group ->
-                    item(key = id) { GroupCard(group) }
-                }
+                // Every other id on the screen is one of the groups.
+                else -> item(key = id) { GroupCard(groups.getValue(id)) }
             }
         }
     }

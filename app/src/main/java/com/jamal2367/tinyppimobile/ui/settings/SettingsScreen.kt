@@ -362,13 +362,13 @@ private fun ServerCard(
 }
 
 @Composable
-private fun TestResult(test: TestState, modifier: Modifier = Modifier) {
+private fun TestResult(test: TestState) {
     when (test) {
         TestState.Idle -> Unit
 
-        TestState.Running -> LoadingIndicator(modifier = modifier.size(26.dp))
+        TestState.Running -> LoadingIndicator(modifier = Modifier.size(26.dp))
 
-        is TestState.Ok -> Column(modifier = modifier) {
+        is TestState.Ok -> Column {
             ResultLine(
                 icon = Icons.Outlined.CheckCircle,
                 tint = MaterialTheme.colorScheme.accentText,
@@ -399,7 +399,6 @@ private fun TestResult(test: TestState, modifier: Modifier = Modifier) {
             tint = MaterialTheme.colorScheme.error,
             text = test.message,
             color = MaterialTheme.colorScheme.error,
-            modifier = modifier,
         )
     }
 }
@@ -409,11 +408,10 @@ private fun ResultLine(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     tint: androidx.compose.ui.graphics.Color,
     text: String,
-    modifier: Modifier = Modifier,
     color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
 ) {
     Row(
-        modifier = modifier.padding(top = 2.dp),
+        modifier = Modifier.padding(top = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))

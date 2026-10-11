@@ -279,8 +279,7 @@ private fun UpdateCheck(container: AppContainer, snackbarHostState: SnackbarHost
     // resources of the composition, which follow a configuration change, and
     // not through the context's, which do not.
     val resources = LocalResources.current
-    val apiUrl = stringResource(R.string.update_check_url)
-    val releasesUrl = stringResource(R.string.update_releases_url)
+    val endpoints = container.updateEndpoints
     val showLabel = stringResource(R.string.update_show)
 
     // Survives a rotation, so turning the phone over does not ask GitHub the
@@ -295,9 +294,9 @@ private fun UpdateCheck(container: AppContainer, snackbarHostState: SnackbarHost
         delay(UPDATE_CHECK_DELAY_MS.milliseconds)
 
         val update = container.updateChecker.findNewerRelease(
-            apiUrl = apiUrl,
+            apiUrl = endpoints.api,
             current = ReleaseId.of(BuildConfig.VERSION_NAME, "build-${BuildConfig.BUILD_NUMBER}"),
-            fallbackUrl = releasesUrl,
+            fallbackUrl = endpoints.releases,
         ) ?: return@LaunchedEffect
 
         val result = snackbarHostState.showSnackbar(

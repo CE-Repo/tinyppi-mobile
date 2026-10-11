@@ -170,7 +170,7 @@ private val ARROW = Regex("""\s*(?:->|=>|\u2192|\u27F6)\s*""")
 /** The labels the box sends, in the buttons they are drawn on. */
 @PreviewLightDark
 @Composable
-private fun Vs10LabelPreview() {
+internal fun Vs10LabelPreview() {
     TinyPpiTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
             Column(

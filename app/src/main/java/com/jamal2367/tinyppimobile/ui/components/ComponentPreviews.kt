@@ -47,7 +47,7 @@ private fun PreviewSurface(content: @Composable () -> Unit) {
 
 @PreviewLightDark
 @Composable
-private fun FormatBadgePreview() = PreviewSurface {
+internal fun FormatBadgePreview() = PreviewSurface {
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         FormatBadge(text = "4K")
         FormatBadge(text = "DV P7.6 FEL", arrowSuffix = "HDR10")
@@ -57,7 +57,7 @@ private fun FormatBadgePreview() = PreviewSurface {
 
 @PreviewLightDark
 @Composable
-private fun StatusPreview() = PreviewSurface {
+internal fun StatusPreview() = PreviewSurface {
     StatusLine(connection = LiveState.Connection.Streaming, serverLabel = "192.168.1.10:8099")
     StatusLine(connection = LiveState.Connection.Busy, serverLabel = "192.168.1.10:8099")
     StatusLine(connection = LiveState.Connection.Offline, serverLabel = null, onReconnect = {})
@@ -66,7 +66,7 @@ private fun StatusPreview() = PreviewSurface {
 
 @PreviewLightDark
 @Composable
-private fun GroupCardPreview() = PreviewSurface {
+internal fun GroupCardPreview() = PreviewSurface {
     GroupCard(
         InfoGroup(
             id = "video",
@@ -83,7 +83,7 @@ private fun GroupCardPreview() = PreviewSurface {
 
 @PreviewLightDark
 @Composable
-private fun EventsCardPreview() = PreviewSurface {
+internal fun EventsCardPreview() = PreviewSurface {
     EventsCard(
         events = listOf(
             PlaybackEvent(t = 12.0, pos = "0:00:12", kind = "vs10", from = "DV", to = "HDR10"),
@@ -97,7 +97,7 @@ private fun EventsCardPreview() = PreviewSurface {
 
 @PreviewLightDark
 @Composable
-private fun LuminanceChartPreview() = PreviewSurface {
+internal fun LuminanceChartPreview() = PreviewSurface {
     // A grade that sits around a hundred nits and flares twice past a
     // thousand - which is what the chart is there to show.
     val peaks = (0..120).map { second ->
@@ -116,7 +116,7 @@ private fun LuminanceChartPreview() = PreviewSurface {
 
 @Preview
 @Composable
-private fun EmptyStatePreview() = PreviewSurface {
+internal fun EmptyStatePreview() = PreviewSurface {
     EmptyState(
         icon = Icons.Outlined.PlayCircle,
         title = "Nothing is playing",

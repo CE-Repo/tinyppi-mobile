@@ -49,8 +49,6 @@ import com.jamal2367.tinyppimobile.util.MediaUrls
  */
 internal fun LazyListScope.filmWall(
     films: List<LibraryFilm>,
-    key: String = "film-wall",
-    title: @Composable (Int) -> String = { stringResource(R.string.library_all, it) },
     columns: Int,
     server: ServerConfig?,
     showArtwork: Boolean,
@@ -60,12 +58,13 @@ internal fun LazyListScope.filmWall(
     onToggle: () -> Unit,
     onPlay: (LibraryFilm) -> Unit,
 ) {
+    val key = "film-wall"
     shelfCard(
         key = key,
         gapAbove = gapAbove,
         expanded = expanded,
         onToggle = onToggle,
-        title = { title(films.size) },
+        title = { stringResource(R.string.library_all, films.size) },
         noMatch = { stringResource(R.string.library_no_match) },
         tiles = films,
         columns = columns,
@@ -106,7 +105,7 @@ internal fun FilmTile(
     starting: Boolean,
     enabled: Boolean,
     onPlay: () -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     Column(
         modifier = modifier.clickable(enabled = enabled, onClick = onPlay),
@@ -160,7 +159,7 @@ internal fun FilmTile(
  * to be light.
  */
 @Composable
-internal fun WatchedMark(modifier: Modifier = Modifier) {
+internal fun WatchedMark(modifier: Modifier) {
     Box(
         modifier = modifier
             .size(WATCHED_MARK)

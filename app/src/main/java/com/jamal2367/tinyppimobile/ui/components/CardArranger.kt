@@ -82,7 +82,7 @@ internal fun LazyListScope.cardArranger(
     }
 
     itemsIndexed(items = order, key = { _, id -> "arrange-$id" }) { index, id ->
-        val card = byId[id] ?: return@itemsIndexed
+        val card = byId.getValue(id)
         ArrangeRow(
             label = card.label,
             hidden = layout.isHidden(screen, id),

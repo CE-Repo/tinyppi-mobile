@@ -116,10 +116,10 @@ fun MetadataScreen(
 @Composable
 private fun MetadataList(
     rows: List<MetadataRow>,
-    chartHistory: History? = null,
-    chartRange: ChartRange = ChartRange.TEN_MINUTES,
-    onChartRangeChange: (ChartRange) -> Unit = {},
-    modifier: Modifier = Modifier,
+    chartHistory: History?,
+    chartRange: ChartRange,
+    onChartRangeChange: (ChartRange) -> Unit,
+    modifier: Modifier,
 ) {
     val sections = remember(rows) { rows.toSections() }
 
@@ -159,7 +159,7 @@ private fun MetadataList(
             cardArranger(
                 screen = CardScreens.METADATA,
                 cards = present.map { id ->
-                    ArrangeableCard(id, if (id == CARD_CHART) chartLabel else byId[id]?.title.orEmpty())
+                    ArrangeableCard(id, if (id == CARD_CHART) chartLabel else byId.getValue(id).title)
                 },
                 layout = layout,
             )
@@ -169,12 +169,12 @@ private fun MetadataList(
         if (shown.isEmpty()) allCardsHidden(CardScreens.METADATA, layout)
         for (id in shown) {
             if (id == CARD_CHART) {
-                chartHistory?.let { history ->
-                    item(key = id) { ChartCard(history, chartRange, onChartRangeChange) }
-                }
+                // Only on the screen while there is a history to draw.
+                val history = checkNotNull(chartHistory)
+                item(key = id) { ChartCard(history, chartRange, onChartRangeChange) }
                 continue
             }
-            val section = byId[id] ?: continue
+            val section = byId.getValue(id)
             item(key = id) {
                 // A blank row is the overlay's way of setting a heading apart
                 // in a list of fixed-height items, and a section row has

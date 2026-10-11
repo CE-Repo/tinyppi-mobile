@@ -198,7 +198,7 @@ private fun JumpButton(
     label: String,
     description: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     FilledTonalIconButton(
         onClick = withKeyTick(onClick),
@@ -472,7 +472,7 @@ private fun ChapterButton(
     forward: Boolean,
     enabled: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     FilledTonalIconButton(
         onClick = withKeyTick(onClick),
@@ -589,8 +589,8 @@ private fun TrackSection(controls: PlayerControls, viewModel: LiveViewModel) {
                 label = stringResource(R.string.live_audio_track),
                 tracks = controls.audio,
                 selected = controls.audioCurrent,
-                offLabel = null,
-                onSelect = { index -> index?.let(viewModel::selectAudio) },
+                off = null,
+                onSelect = viewModel::selectAudio,
                 modifier = if (hasSubtitles) Modifier.weight(1f) else Modifier.fillMaxWidth(),
             )
         }
@@ -601,7 +601,7 @@ private fun TrackSection(controls: PlayerControls, viewModel: LiveViewModel) {
                 // Kodi goes on naming the track that was switched off, so the
                 // picker only follows the current index while they are on.
                 selected = if (controls.subtitleOn) controls.subtitleCurrent else null,
-                offLabel = stringResource(R.string.live_subtitles_off),
+                off = TrackOff(stringResource(R.string.live_subtitles_off)) { viewModel.selectSubtitle(null) },
                 onSelect = viewModel::selectSubtitle,
                 modifier = if (hasAudio) Modifier.weight(1f) else Modifier.fillMaxWidth(),
             )
@@ -614,15 +614,14 @@ private fun TrackPicker(
     label: String,
     tracks: List<Track>,
     selected: Int?,
-    offLabel: String?,
-    onSelect: (Int?) -> Unit,
-    modifier: Modifier = Modifier,
-    labelTextAlign: TextAlign = TextAlign.Center,
+    off: TrackOff?,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier,
 ) {
     var open by remember { mutableStateOf(false) }
     val pick = withKeyTick(onSelect)
     val current = tracks.firstOrNull { it.index == selected }?.label
-        ?: offLabel
+        ?: off?.label
         ?: stringResource(R.string.live_track_unknown)
 
     // The name stands off its picker rather than sitting on it. Set tight
@@ -640,7 +639,7 @@ private fun TrackPicker(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Medium,
-            textAlign = labelTextAlign,
+            textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
                 .clearAndSetSemantics {},
@@ -671,12 +670,13 @@ private fun TrackPicker(
                 )
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                if (offLabel != null) {
+                if (off != null) {
+                    val pickOff = withKeyTick(off.onPick)
                     DropdownMenuItem(
-                        text = { Text(offLabel) },
+                        text = { Text(off.label) },
                         onClick = {
                             open = false
-                            pick(null)
+                            pickOff()
                         },
                     )
                 }
@@ -693,3 +693,6 @@ private fun TrackPicker(
         }
     }
 }
+
+/** The entry at the top of a track menu that turns the track off. */
+private class TrackOff(val label: String, val onPick: () -> Unit)
