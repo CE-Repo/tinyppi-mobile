@@ -91,11 +91,11 @@ class ServerConfigTest {
     }
 
     @Test
-    fun `an artwork address carries the picture's own tag and the token`() {
+    fun `an artwork address carries the picture's own tag and never the token`() {
         val url = MediaUrls.art(local, ArtTags(poster = "1a2b3c4d"), MediaUrls.ArtKind.POSTER)
 
         assertEquals(
-            "http://192.168.1.10:8099/api/art?kind=poster&v=1a2b3c4d&token=ABCD2345",
+            "http://192.168.1.10:8099/api/art?kind=poster&v=1a2b3c4d",
             url,
         )
     }

@@ -10,6 +10,7 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import com.jamal2367.tinyppimobile.BuildConfig
 import com.jamal2367.tinyppimobile.data.prefs.SettingsRepository
 import com.jamal2367.tinyppimobile.data.prefs.StoredReachability
+import com.jamal2367.tinyppimobile.data.remote.BoxTokenInterceptor
 import com.jamal2367.tinyppimobile.data.remote.ConnectionTester
 import com.jamal2367.tinyppimobile.data.remote.FailoverInterceptor
 import com.jamal2367.tinyppimobile.data.remote.ServerRouter
@@ -107,6 +108,18 @@ class AppContainer(private val context: Context) {
     }
 
     /**
+     * The pictures' client: direct like the one above, with the token put on
+     * as a header for whichever box the address names - the add-on reads it
+     * from nowhere else.
+     */
+    private val artClient: OkHttpClient by lazy {
+        baseClient.newBuilder()
+            .addInterceptor(BoxTokenInterceptor(router))
+            .withDebugLogging()
+            .build()
+    }
+
+    /**
      * The event stream gets its own client: it addresses a box directly rather
      * than through the failover interceptor, and it must never time out while
      * reading - an idle stream sends nothing but a comment every fifteen
@@ -173,9 +186,9 @@ class AppContainer(private val context: Context) {
 
     /**
      * Posters and format logos are addressed absolutely - the URL already names
-     * the box and carries the token as `?token=`, which is the one place this
-     * API documents that for - so they skip the failover interceptor and use
-     * the plain client.
+     * the box - so they skip the failover interceptor and use the art client,
+     * which adds that box's token as a header. The token is not part of the
+     * address, so the disk cache outlives a new token.
      *
      * Kept on disk because a cached picture never changes under its name: the
      * add-on hangs the artwork's own tag on the address, so the next film asks
@@ -184,7 +197,7 @@ class AppContainer(private val context: Context) {
     val imageLoader: ImageLoader by lazy {
         ImageLoader.Builder(context)
             .components {
-                add(OkHttpNetworkFetcherFactory(callFactory = { directClient }))
+                add(OkHttpNetworkFetcherFactory(callFactory = { artClient }))
             }
             .memoryCache {
                 MemoryCache.Builder().maxSizePercent(context, 0.20).build()

@@ -15,7 +15,6 @@ import okhttp3.Response
 import okhttp3.sse.EventSource
 import okhttp3.sse.EventSourceListener
 import okhttp3.sse.EventSources
-import java.net.URLEncoder
 
 /** One thing that happened on the connection to a box. */
 sealed interface StreamEvent {
@@ -66,9 +65,9 @@ fun interface SnapshotSource {
  * that belongs where those are known. [com.jamal2367.tinyppimobile.data.repository.LiveSession]
  * is where.
  *
- * The token travels as `?token=`: a browser cannot put a header on an
- * `EventSource`, which is why the add-on accepts both, and using the same form
- * here keeps this client on the path the add-on is actually exercised over.
+ * The token travels as the `X-TinyPPI-Token` header, the only place the add-on
+ * reads it from. (A browser trades it for a session cookie first, since it
+ * cannot put a header on an `EventSource`; this client has no such problem.)
  */
 class SnapshotStream(
     private val client: OkHttpClient,
@@ -174,14 +173,7 @@ class SnapshotStream(
         awaitClose { source.cancel() }
     }
 
-    private fun ServerConfig.streamUrl(): String = buildString {
-        append(baseUrl)
-        append("/api/stream")
-        if (token.isNotBlank()) {
-            append("?token=")
-            append(URLEncoder.encode(token.trim(), Charsets.UTF_8.name()))
-        }
-    }
+    private fun ServerConfig.streamUrl(): String = "$baseUrl/api/stream"
 
     private companion object {
         /** What to wait when a parting frame carries no interval of its own. */

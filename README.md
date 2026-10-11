@@ -325,10 +325,11 @@ All of it.
 | `POST /api/watched` | Marking a film, a series or an episode as watched or unwatched. |
 | `POST /api/resume` | Clearing the resume point of a film or an episode. |
 
-The token travels as `X-TinyPPI-Token` on everything Retrofit sends, and as
-`?token=` on the event stream and the artwork — the two the add-on documents
-that form for, because a browser can put no header on an `EventSource` or on an
-`<img>`.
+The token travels as `X-TinyPPI-Token` on every request: on what Retrofit
+sends, on the event stream, and on the artwork, whose client adds the token of
+whichever box the address names. The add-on (2.15.1 and later) reads it from
+that header only and ignores a `?token=`, since an address ends up in logs and
+caches.
 
 **One stream per phone.** The add-on caps concurrent streams at six and fans the
 same snapshot out to each of them, so four screens opening four connections
