@@ -1,12 +1,17 @@
 package com.jamal2367.tinyppimobile.ui.screens
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.TinyPpiApplication
@@ -112,6 +117,35 @@ class HistoryScreensTest {
         rule.onNodeWithText(str(R.string.cards_done)).performClick()
         cards.hidden = setOf("history/history.summary", "history/history.events")
         rule.until { rule.onAllNodesWithText(str(R.string.cards_all_hidden)).fetchSemanticsNodes().isNotEmpty() }
+    }
+
+    @Test
+    fun `the chart heartbeat asks while the screen is up, and stops with it`() {
+        box.stream = listOf(playing)
+        box.answers["/api/history"] = history
+        configure()
+        val screen = object : LifecycleOwner {
+            val registry = LifecycleRegistry.createUnsafe(this).apply { currentState = Lifecycle.State.RESUMED }
+            override val lifecycle: Lifecycle get() = registry
+        }
+        rule.show {
+            CompositionLocalProvider(LocalLifecycleOwner provides screen) {
+                HistoryScreen(onOpenSettings = {}, viewModel = HistoryViewModel(app))
+            }
+        }
+        rule.until { rule.onAllNodesWithText(str(R.string.history_summary)).fetchSemanticsNodes().isNotEmpty() }
+        fun fetches() = box.asked.count { it == "GET /api/history" }
+
+        val before = fetches()
+        rule.mainClock.advanceTimeBy(2_500)
+        rule.until { fetches() > before }
+
+        screen.registry.currentState = Lifecycle.State.DESTROYED
+        rule.waitForIdle()
+        val stopped = fetches()
+        rule.mainClock.advanceTimeBy(5_000)
+        rule.waitForIdle()
+        assertEquals(stopped, fetches())
     }
 
     @Test

@@ -3,7 +3,7 @@ package com.jamal2367.tinyppimobile.ui.app
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Build
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
@@ -125,10 +125,20 @@ class AppPermissionTest {
         rule.waitForIdle()
         val shadow = org.robolectric.Shadows.shadowOf(rule.activity)
         val request = shadow.lastRequestedPermission
-        rule.activity.onRequestPermissionsResult(
+        // Answered the way the activity hands an answer on: to the registry
+        // that asked, as the result of the permission request.
+        rule.activity.activityResultRegistry.dispatchResult(
             request.requestCode,
-            arrayOf(com.jamal2367.tinyppimobile.util.LocalNetworkAccess.PERMISSION),
-            intArrayOf(android.content.pm.PackageManager.PERMISSION_DENIED),
+            android.app.Activity.RESULT_OK,
+            android.content.Intent()
+                .putExtra(
+                    androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions.EXTRA_PERMISSIONS,
+                    arrayOf(com.jamal2367.tinyppimobile.util.LocalNetworkAccess.PERMISSION),
+                )
+                .putExtra(
+                    androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions.EXTRA_PERMISSION_GRANT_RESULTS,
+                    intArrayOf(android.content.pm.PackageManager.PERMISSION_DENIED),
+                ),
         )
         rule.until { rule.onAllNodesWithText(env.app.getString(R.string.error_local_network_denied)).fetchSemanticsNodes().isNotEmpty() || rule.onAllNodesWithText("Dune: Part Two").fetchSemanticsNodes().isNotEmpty() }
     }

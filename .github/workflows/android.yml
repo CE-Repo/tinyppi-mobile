@@ -20,20 +20,24 @@ jobs:
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # 21 rather than 17: 17 does build this project, but it is a version
       # behind what AGP 9 and Gradle 9 are developed against and behind the JDK
       # the app is built with locally, and a toolchain CI does not share is a
       # class of failure nobody can reproduce.
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
 
+      # The open-source cache provider, which is what v4 used. v6 defaults to
+      # a proprietary one that is free only for public repositories.
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
 
       # Named in full rather than left to the build to fetch on its own. The
       # runner image carries nothing as new as 37, so every run downloads it
@@ -42,7 +46,7 @@ jobs:
       # `platforms;android-37.0`, not as the `android-37` that `compileSdk =
       # 37` reads like.
       - name: Install the Android SDK the build compiles against
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
           packages: "platforms;android-37.0 build-tools;37.0.0"
 
@@ -76,7 +80,7 @@ jobs:
 
       - name: Upload the coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: app/build/reports/jacoco/jacocoDebugUnitTestReport/
@@ -111,7 +115,7 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Upload the release APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tinyppi-mobile-release
           path: ${{ steps.apk.outputs.name }}
@@ -120,7 +124,7 @@ jobs:
       # The APK is minified, so a stack trace off one of these builds is
       # unreadable without the mapping that produced it. Keep it with the run.
       - name: Upload the R8 mapping
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mapping
           path: app/build/outputs/mapping/release/
@@ -187,7 +191,7 @@ jobs:
 
       - name: Upload the reports of a failed run
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reports
           path: |

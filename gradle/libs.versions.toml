@@ -1,24 +1,29 @@
 [versions]
-agp = "9.3.2"
+# AGP 9.4 still calls a configuration API that Gradle 9.8 deprecates, so the
+# wrapper stays on 9.7.1 until it does not: a newer Gradle would only put a
+# deprecation warning back into every build.
+agp = "9.4.1"
+# Held at 2.4.10: 2.4.21 compiles suspend calls into instructions JaCoCo 0.8.15
+# cannot see run, which drops the coverage gate below full for no line of ours.
 kotlin = "2.4.10"
-coreKtx = "1.19.0"
+coreKtx = "1.19.1"
 lifecycle = "2.11.0"
 activityCompose = "1.13.0"
-composeBom = "2026.08.00"
+composeBom = "2026.09.00"
 # Material 3 is pinned past the BOM on purpose. The expressive style - the
 # expressive theme itself, its motion scheme, the button group, the toggle
 # button, the loading indicator and the shape library - is internal in the
 # stable release and public only here. It brings the Compose runtime it was
 # built against with it, which is why the rest of Compose resolves higher
 # than the BOM pins it.
-material3 = "1.5.0-alpha26"
+material3 = "1.5.0-beta01"
 datastore = "1.2.1"
 okhttp = "5.5.0"
 retrofit = "3.0.0"
 retrofitSerialization = "1.0.0"
 serialization = "1.11.0"
-coil = "3.5.0"
-haze = "2.0.0"
+coil = "3.6.3"
+haze = "2.0.1"
 junit = "4.13.2"
 # Only for the tests, which need its virtual clock. Held to the coroutines the
 # lifecycle libraries already bring, so tests run on the library the app ships.

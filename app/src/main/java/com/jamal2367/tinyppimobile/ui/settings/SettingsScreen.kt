@@ -45,8 +45,10 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -524,7 +526,7 @@ private fun UpdatesCard(settings: AppSettings, viewModel: SettingsViewModel) {
 @Composable
 private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) {
     var draftIntensity by rememberSaveable(settings.adaptiveColorIntensity) {
-        mutableStateOf(settings.adaptiveColorIntensity)
+        mutableFloatStateOf(settings.adaptiveColorIntensity)
     }
     val sliding = remember { MutableInteractionSource() }
 
@@ -617,17 +619,18 @@ private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) 
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                // The whole scale. It used to start at a half because the
+                // theme clamped there too, so the bottom of the slider and the
+                // bottom of the effect were two figures that had to be kept in
+                // step; the floor lives in one place now.
+                val intensity = rememberSliderState(trackRange = 0f..1f)
+                intensity.value = draftIntensity
                 Slider(
-                    value = draftIntensity,
+                    state = intensity,
                     onValueChange = { draftIntensity = it },
                     onValueChangeFinished = {
                         viewModel.setAdaptiveColorIntensity(draftIntensity)
                     },
-                    // The whole scale. It used to start at a half because
-                    // the theme clamped there too, so the bottom of the slider
-                    // and the bottom of the effect were two figures that had
-                    // to be kept in step; the floor lives in one place now.
-                    valueRange = 0f..1f,
                     enabled = settings.adaptiveColor,
                     interactionSource = sliding,
                     thumb = { SlimSliderThumb(sliding, enabled = settings.adaptiveColor) },
