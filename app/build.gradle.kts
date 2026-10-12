@@ -52,7 +52,7 @@ android {
         minSdk = 26
         targetSdk = 37
         versionCode = 155
-        versionName = "1.5.6"
+        versionName = "1.5.7"
 
         val buildNumber = providers.environmentVariable("BUILD_NUMBER").orNull
             ?.trim()
