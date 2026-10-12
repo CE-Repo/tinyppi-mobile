@@ -2,7 +2,7 @@ package com.jamal2367.tinyppimobile.ui.app
 
 import android.graphics.Bitmap
 import android.graphics.Color
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import com.jamal2367.tinyppimobile.MainActivity
 import com.jamal2367.tinyppimobile.data.prefs.ThemeMode

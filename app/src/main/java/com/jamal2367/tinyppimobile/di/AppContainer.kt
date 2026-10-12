@@ -24,6 +24,7 @@ import com.jamal2367.tinyppimobile.data.repository.PlayerRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -154,6 +155,9 @@ class AppContainer(private val context: Context) {
     )
 
     private val containerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /** Stop everything the container started: the shared live reading above all. */
+    fun close() = containerScope.cancel()
 
     private val session: LiveSession by lazy {
         LiveSession(api, snapshotStream, router, json)

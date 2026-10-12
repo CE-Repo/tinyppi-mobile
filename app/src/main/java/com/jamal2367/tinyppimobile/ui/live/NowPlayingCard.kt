@@ -33,6 +33,7 @@ import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -276,8 +277,12 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
 
     Column(modifier = Modifier.padding(top = 6.dp)) {
         if (canControl) {
+            // Put where it should be on every pass, as the slider that took a
+            // bare value used to do for itself.
+            val position = rememberSliderState(trackRange = 0f..100f)
+            position.value = dragged ?: reported
             Slider(
-                value = dragged ?: reported,
+                state = position,
                 onValueChange = { dragged = it },
                 onValueChangeFinished = {
                     finishDrag(dragged, viewModel::seekTo)
@@ -285,7 +290,6 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
                     // player actually landed, which is not always what was asked.
                     dragged = null
                 },
-                valueRange = 0f..100f,
                 // Held here rather than left to the slider, because the thumb
                 // is drawn by hand below and it has to light up for the same
                 // presses and drags the slider is hearing.

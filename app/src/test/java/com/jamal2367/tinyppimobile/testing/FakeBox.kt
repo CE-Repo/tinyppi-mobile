@@ -19,7 +19,8 @@ class FakeBox : AutoCloseable {
     @Volatile var stream: List<String> = emptyList()
     /** What `/api/art` answers with: a picture, or a 404 while null. */
     @Volatile var art: ByteArray? = null
-    val asked: MutableList<String> = java.util.Collections.synchronizedList(mutableListOf())
+    /** Safe to read while the server is still writing to it - a test polls it as requests arrive. */
+    val asked: MutableList<String> = java.util.concurrent.CopyOnWriteArrayList()
 
     init {
         server.dispatcher = object : Dispatcher() {

@@ -28,6 +28,7 @@ import java.io.IOException
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import com.jamal2367.tinyppimobile.data.model.LooseStringSerializer
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.AbstractDecoder
 import kotlinx.serialization.encoding.AbstractEncoder
@@ -47,6 +48,7 @@ import org.junit.Test
 class ModelsTest {
 
     private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
+    private val withDefaults = Json { encodeDefaults = true }
 
     @Test
     fun `a snapshot is converting only while playing into another format`() {
@@ -163,10 +165,12 @@ class ModelsTest {
             """{"from":"x"}""",
             Json.encodeToString(PlaybackEvent.serializer(), PlaybackEvent(from = "x")),
         )
-        val all = Json { encodeDefaults = true }.encodeToString(PlaybackEvent.serializer(), PlaybackEvent())
+        val all = withDefaults.encodeToString(PlaybackEvent.serializer(), PlaybackEvent())
         assertTrue(all.contains(""""from":null"""))
     }
 
+    // The abstract encoder and decoder are how a serializer is driven by hand.
+    @OptIn(ExperimentalSerializationApi::class)
     @Test
     fun `event ends outside json read as plain strings`() {
         val decoder = object : AbstractDecoder() {

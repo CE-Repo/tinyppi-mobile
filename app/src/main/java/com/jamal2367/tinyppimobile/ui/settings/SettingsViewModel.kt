@@ -13,6 +13,7 @@ import com.jamal2367.tinyppimobile.data.remote.ConnectionTestResult
 import com.jamal2367.tinyppimobile.ui.navigation.TopLevelDestination
 import com.jamal2367.tinyppimobile.util.toUserMessage
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -70,6 +71,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _state = MutableStateFlow(SettingsUiState())
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
 
+    /** The test still waiting for an answer, per address. */
+    private val tests = mutableMapOf<ServerSlot, Job>()
+
     init {
         repository.settings
             .onEach { settings ->
@@ -117,6 +121,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
      * address that was there a moment ago is worse than saying nothing.
      */
     fun clearTest(slot: ServerSlot) {
+        cancelTest(slot)
         if (currentTest(slot) != TestState.Idle) setTest(slot, TestState.Idle)
     }
 
@@ -179,6 +184,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
      */
     fun testConnection(slot: ServerSlot, server: ServerConfig) {
         val context = getApplication<Application>()
+        cancelTest(slot)
         if (server.host.isBlank()) {
             setTest(slot, TestState.Failed(context.getString(R.string.settings_invalid_host)))
             return
@@ -188,7 +194,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             return
         }
 
-        viewModelScope.launch {
+        tests[slot] = viewModelScope.launch {
             setTest(slot, TestState.Running)
             try {
                 // Tested as if it were switched on, so a reader can check an
@@ -213,6 +219,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 setTest(slot, TestState.Failed(failure.toUserMessage(context)))
             }
         }
+    }
+
+    /**
+     * Drop a test that has not answered yet.
+     *
+     * Its answer is about an address that is no longer the one on screen - or
+     * no longer the last one asked about - and landing late it would put
+     * "reachable" under an address it never saw, or over what was said since.
+     */
+    private fun cancelTest(slot: ServerSlot) {
+        tests.remove(slot)?.cancel()
     }
 
     private fun setTest(slot: ServerSlot, test: TestState) {

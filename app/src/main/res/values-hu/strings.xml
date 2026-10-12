@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- The add-on's own name, which is the same word in every language. -->
-    <string name="app_name" translatable="false">TinyPPI</string>
-
     <!-- Navigation -->
     <string name="nav_live">Live</string>
     <string name="nav_metadata">DV metaadatok</string>
@@ -241,8 +238,6 @@
     <!-- Updates -->
     <string name="update_available">%1$s elérhető</string>
     <string name="update_show">Megjelenítés</string>
-    <string name="update_releases_url" translatable="false">https://github.com/CE-Repo/tinyppi-mobile/releases/latest</string>
-    <string name="update_check_url" translatable="false">https://api.github.com/repos/CE-Repo/tinyppi-mobile/releases/latest</string>
 
     <string name="exit_confirm">Nyomd meg ismét a Vissza gombot a kilépéshez</string>
 

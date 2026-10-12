@@ -8,6 +8,7 @@ import com.jamal2367.tinyppimobile.di.AppContainer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -31,6 +32,18 @@ class TinyPpiApplication : Application(), SingletonImageLoader.Factory {
             .distinctUntilChanged()
             .onEach(container.router::update)
             .launchIn(applicationScope)
+    }
+
+    /**
+     * Never called on a device - the process is simply killed - but the
+     * Robolectric tests call it after every test. Without it every test's
+     * application would keep listening to the settings store they all share,
+     * and keep its live session reconnecting, for the rest of the run.
+     */
+    override fun onTerminate() {
+        applicationScope.cancel()
+        container.close()
+        super.onTerminate()
     }
 
     override fun newImageLoader(context: PlatformContext): ImageLoader = container.imageLoader

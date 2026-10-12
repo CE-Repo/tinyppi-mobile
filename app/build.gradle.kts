@@ -114,6 +114,14 @@ android {
                 test.maxHeapSize = "2g"
                 // Robolectric loads its native runtime through System.load.
                 test.jvmArgs("--enable-native-access=ALL-UNNAMED")
+                // The protobuf runtime inside DataStore reads memory through
+                // sun.misc.Unsafe, which a JDK from 24 on warns about on every
+                // run. Allowed outright for the tests, on the JDKs that know
+                // the switch (23 and later); the app itself runs on ART.
+                test.jvmArgumentProviders += CommandLineArgumentProvider {
+                    val jdk = test.javaLauncher.get().metadata.languageVersion.asInt()
+                    if (jdk >= 23) listOf("--sun-misc-unsafe-memory-access=allow") else emptyList()
+                }
                 // Robolectric loads the app's classes through a class loader
                 // of its own, which JaCoCo skips unless told otherwise.
                 test.extensions.configure<JacocoTaskExtension> {
@@ -201,7 +209,7 @@ val coverageData = layout.buildDirectory.file(
     "outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec"
 )
 
-val jacocoDebugUnitTestReport by tasks.registering(JacocoReport::class) {
+val jacocoDebugUnitTestReport = tasks.register<JacocoReport>("jacocoDebugUnitTestReport") {
     group = "verification"
     description = "Reports the coverage of the debug unit tests."
     dependsOn("testDebugUnitTest")
@@ -217,7 +225,7 @@ val jacocoDebugUnitTestReport by tasks.registering(JacocoReport::class) {
 // Read from the version catalogue, which is also where the README badge reads it.
 val coverageMinimum = libs.versions.coverage.get().toBigDecimal().movePointLeft(2)
 
-val jacocoDebugUnitTestCoverageVerification by tasks.registering(JacocoCoverageVerification::class) {
+val jacocoDebugUnitTestCoverageVerification = tasks.register<JacocoCoverageVerification>("jacocoDebugUnitTestCoverageVerification") {
     group = "verification"
     description = "Fails the build below full line and branch coverage."
     dependsOn(jacocoDebugUnitTestReport)
