@@ -86,6 +86,7 @@
     <string name="live_stop">Stop</string>
     <string name="live_chapter_previous">Previous chapter</string>
     <string name="live_chapter_next">Next chapter</string>
+    <string name="live_chapter_of">Chapter %1$d of %2$d</string>
     <plurals name="live_seek_back">
         <item quantity="one">%1$d second back</item>
         <item quantity="other">%1$d seconds back</item>
@@ -212,6 +213,8 @@
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_artwork">Show artwork</string>
     <string name="settings_artwork_desc">Fetch the poster of what is playing. Only a title with a library entry has one.</string>
+    <string name="settings_chapters">Chapter markers</string>
+    <string name="settings_chapters_desc">Dots on the progress bar where each chapter starts, with the chapter playing named over it. A drag snaps onto them.</string>
     <string name="settings_adaptive_color">Adaptive colours</string>
     <string name="settings_adaptive_color_desc">Colour the app after the poster of what is playing, the way the dashboard does.</string>
     <string name="settings_adaptive_color_intensity">Accent intensity</string>

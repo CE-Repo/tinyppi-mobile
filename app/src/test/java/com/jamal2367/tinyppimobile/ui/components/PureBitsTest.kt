@@ -1,7 +1,12 @@
 package com.jamal2367.tinyppimobile.ui.components
 
+import com.jamal2367.tinyppimobile.data.model.Chapter
 import com.jamal2367.tinyppimobile.data.model.ContinueItem
+import com.jamal2367.tinyppimobile.ui.live.chapterAt
+import com.jamal2367.tinyppimobile.ui.live.chapterDots
 import com.jamal2367.tinyppimobile.ui.live.finishDrag
+import com.jamal2367.tinyppimobile.ui.live.percentOf
+import com.jamal2367.tinyppimobile.ui.live.snapTarget
 import com.jamal2367.tinyppimobile.ui.live.markTarget
 import com.jamal2367.tinyppimobile.ui.theme.accentOf
 import org.junit.Assert.assertEquals
@@ -33,6 +38,56 @@ class PureBitsTest {
         finishDrag(null, seeks::add)
         finishDrag(40f, seeks::add)
         assertEquals(listOf(40f), seeks)
+    }
+
+    private val chapters = listOf(
+        Chapter(1, 0, 0.0, "00:00:00", "Opening"),
+        Chapter(2, 1800, 25.0, "00:30:00", "Arrival"),
+        Chapter(3, 3636, 50.5, "01:00:36"),
+        Chapter(4, 3650, 51.0, "01:00:50"),
+        Chapter(5, 6840, 95.0, "01:54:00", "Credits"),
+    )
+
+    @Test
+    fun `a drag that let go on a dot jumps to its chapter rather than the spot`() {
+        val seeks = mutableListOf<Float>()
+        val jumps = mutableListOf<Int>()
+        finishDrag(25f, seeks::add, chapters[1], jumps::add)
+        finishDrag(30f, seeks::add, null, jumps::add)
+        assertEquals(listOf(2), jumps)
+        assertEquals(listOf(30f), seeks)
+    }
+
+    @Test
+    fun `a dot for every chapter but the first, close ones drawn as one`() {
+        val wide = chapterDots(chapters, width = 2000f, minGap = 6f)
+        assertEquals(listOf(2, 3, 4, 5), wide.map { it.chapter.index })
+        // Half a percent of 400 pixels is two: chapter 4 is drawn by 3's dot.
+        val narrow = chapterDots(chapters, width = 400f, minGap = 6f)
+        assertEquals(listOf(2, 3, 5), narrow.map { it.chapter.index })
+        assertEquals(setOf(3, 4), narrow[1].stands)
+        // Not measured yet: nothing merged.
+        assertEquals(4, chapterDots(chapters, width = 0f, minGap = 6f).size)
+        assertEquals(emptyList<Any>(), chapterDots(emptyList(), 400f, 6f))
+    }
+
+    @Test
+    fun `a drag snaps to the nearest dot within reach, never to the start`() {
+        assertEquals(2, snapTarget(26f, chapters, reach = 2f)?.index)
+        assertEquals(4, snapTarget(50.9f, chapters, reach = 2f)?.index)
+        assertEquals(3, snapTarget(50.6f, chapters, reach = 2f)?.index)
+        assertNull(snapTarget(30f, chapters, reach = 2f))
+        assertNull(snapTarget(0.5f, chapters, reach = 2f))
+        assertNull(snapTarget(25f, emptyList(), reach = 2f))
+    }
+
+    @Test
+    fun `the chapter a position is in, and pixels as a share of the bar`() {
+        assertEquals(1, chapterAt(10f, chapters)?.index)
+        assertEquals(5, chapterAt(100f, chapters)?.index)
+        assertNull(chapterAt(10f, chapters.drop(1)))
+        assertEquals(2f, percentOf(8f, 400))
+        assertEquals(0f, percentOf(8f, 0))
     }
 
     @Test

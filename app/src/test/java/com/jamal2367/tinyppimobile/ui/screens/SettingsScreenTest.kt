@@ -147,6 +147,8 @@ class SettingsScreenTest {
         until { !settings().adaptiveColor }
         rule.onNodeWithText(str(R.string.settings_artwork)).performClick()
         until { !settings().showArtwork }
+        rule.onNodeWithText(str(R.string.settings_chapters)).performClick()
+        until { !settings().showChapters }
 
         rule.onNodeWithText(str(R.string.library_title)).performClick()
         until { "films" in settings().hiddenTabs }

@@ -564,6 +564,12 @@ private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) 
             checked = settings.showArtwork,
             onCheckedChange = viewModel::setShowArtwork,
         )
+        SwitchRow(
+            label = stringResource(R.string.settings_chapters),
+            description = stringResource(R.string.settings_chapters_desc),
+            checked = settings.showChapters,
+            onCheckedChange = viewModel::setShowChapters,
+        )
 
         // Greyed out rather than hidden where there are no posters to read a
         // colour off: a switch that vanishes leaves the reader wondering what

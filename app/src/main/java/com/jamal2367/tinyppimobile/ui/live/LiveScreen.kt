@@ -124,6 +124,7 @@ fun LiveScreen(
                     serverLabel = state.live.server?.label,
                     poster = poster,
                     showArtwork = state.settings.showArtwork,
+                    showChapters = state.settings.showChapters,
                     canControl = state.canControlPlayback,
                     viewModel = viewModel,
                     )
@@ -140,6 +141,7 @@ private fun LiveContent(
     serverLabel: String?,
     poster: String?,
     showArtwork: Boolean,
+    showChapters: Boolean,
     canControl: Boolean,
     viewModel: LiveViewModel,
 ) {
@@ -184,6 +186,7 @@ private fun LiveContent(
                 showArtwork = showArtwork,
                 canControl = canControl,
                 viewModel = viewModel,
+                showChapters = showChapters,
             )
         }
 

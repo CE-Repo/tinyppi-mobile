@@ -2,6 +2,7 @@ package com.jamal2367.tinyppimobile.data
 
 import com.jamal2367.tinyppimobile.data.model.ActiveArea
 import com.jamal2367.tinyppimobile.data.model.ApiErrorBody
+import com.jamal2367.tinyppimobile.data.model.Chapter
 import com.jamal2367.tinyppimobile.data.model.CommandAck
 import com.jamal2367.tinyppimobile.data.model.CommandBody
 import com.jamal2367.tinyppimobile.data.model.ContinueItem
@@ -57,6 +58,23 @@ class ModelsTest {
         assertFalse(Snapshot(playing = true, hdrType = "hdr10", outputType = "HDR10").isConverting)
         assertTrue(Snapshot(playing = true, hdrType = "dolbyvision", outputType = "hdr10").isConverting)
         assertEquals("sdr", Snapshot().sourceType)
+    }
+
+    @Test
+    fun `the chapters arrive placed, with the one playing named by its number`() {
+        val snapshot = json.decodeFromString<Snapshot>(
+            """{"playing": true, "chapter": 2, "chapters": [
+                {"index": 1, "start": 0, "at": 0.0, "time": "00:00:00", "name": "Opening"},
+                {"index": 2, "start": 1800, "at": 25.0, "time": "00:30:00"},
+                {"index": 4, "start": 3600, "at": 50.0, "time": "01:00:00", "name": "End"}]}""",
+        )
+        assertEquals(Chapter(2, 1800, 25.0, "00:30:00", ""), snapshot.currentChapter)
+        assertEquals(4, snapshot.chapterCount)
+        // Older add-ons send neither, and nothing is playing before the first.
+        assertEquals(emptyList<Chapter>(), Snapshot().chapters)
+        assertNull(Snapshot().currentChapter)
+        assertEquals(0, Snapshot().chapterCount)
+        assertNull(snapshot.copy(chapter = 0).currentChapter)
     }
 
     @Test

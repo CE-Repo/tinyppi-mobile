@@ -128,6 +128,9 @@ class PlayerRepository(
     /** Step to the chapter after this one. Refused on a file with no chapters. */
     suspend fun nextChapter() = command(PlayerAction.CHAPTER_NEXT)
 
+    /** Jump to the start of the chapter numbered [index]. */
+    suspend fun goToChapter(index: Int) = command(PlayerAction.CHAPTER_GOTO, index.toDouble())
+
     /** Jump [seconds] forwards, or back for a negative number. */
     suspend fun seekBy(seconds: Int) = command(
         PlayerAction.SEEK,

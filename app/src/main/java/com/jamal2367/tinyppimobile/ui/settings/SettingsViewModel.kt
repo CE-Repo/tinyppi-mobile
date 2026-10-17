@@ -168,6 +168,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { repository.setShowArtwork(enabled) }
     }
 
+    fun setShowChapters(enabled: Boolean) {
+        viewModelScope.launch { repository.setShowChapters(enabled) }
+    }
+
     fun setAdaptiveColor(enabled: Boolean) {
         viewModelScope.launch { repository.setAdaptiveColor(enabled) }
     }

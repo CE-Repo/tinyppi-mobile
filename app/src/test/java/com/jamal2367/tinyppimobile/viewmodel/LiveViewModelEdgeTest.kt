@@ -88,6 +88,7 @@ class LiveViewModelEdgeTest {
         val vm = viewModel()
         vm.previousChapter()
         vm.nextChapter()
+        vm.goToChapter(3)
         vm.seekBy(10)
         vm.seekTo(50f)
         vm.toggleMute()
@@ -98,7 +99,7 @@ class LiveViewModelEdgeTest {
         vm.setMode("hdr10")
         advanceUntilIdle()
         assertEquals(
-            listOf("chapter_previous", "chapter_next", "seek=10.0", "seek_percent=50.0", "mute", "volume_up",
+            listOf("chapter_previous", "chapter_next", "chapter_goto=3.0", "seek=10.0", "seek_percent=50.0", "mute", "volume_up",
                 "volume_down", "audio=1.0", "subtitle=-1.0"),
             sent,
         )

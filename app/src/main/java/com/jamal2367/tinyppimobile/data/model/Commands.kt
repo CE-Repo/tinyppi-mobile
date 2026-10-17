@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  *
  * A fixed set, checked on the far side before anything reaches Kodi: the
  * request names an action, never a JSON-RPC method, so a client can only ever
- * do these twelve things (see `_COMMANDS` in the add-on's `snapshot.py`).
+ * do these thirteen things (see `_COMMANDS` in the add-on's `snapshot.py`).
  */
 enum class PlayerAction(val id: String) {
     PLAY_PAUSE("playpause"),
@@ -24,6 +24,15 @@ enum class PlayerAction(val id: String) {
      */
     CHAPTER_PREVIOUS("chapter_previous"),
     CHAPTER_NEXT("chapter_next"),
+
+    /**
+     * Jump to the start of one chapter, named by its number.
+     *
+     * The number rather than a time: the box looks the start up in its own
+     * list and seeks there exactly, where a percentage worked out from where a
+     * finger let go would land seconds either side of it.
+     */
+    CHAPTER_GOTO("chapter_goto"),
 
     /** Jump by a number of seconds, forwards or back. */
     SEEK("seek"),

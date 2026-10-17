@@ -123,8 +123,25 @@ class DemoServerTest {
         command("seek", "\"x\"")
         command("seek_percent", 50)
         command("seek_percent")
+        // The chapters: twelve named ones for the film, stepped through and jumped to.
+        var chapters = state()["chapters"]!!.jsonArray
+        assertEquals(12, chapters.size)
+        assertEquals("Arrakis", chapters[1].jsonObject["name"]!!.jsonPrimitive.content)
+        command("chapter_goto", 12)
+        assertEquals(12, state()["chapter"]!!.jsonPrimitive.int)
         command("chapter_next")
+        assertEquals(12, state()["chapter"]!!.jsonPrimitive.int)
+        command("chapter_goto", 99)
+        command("chapter_goto", 1)
+        assertEquals(1, state()["chapter"]!!.jsonPrimitive.int)
         command("chapter_previous")
+        assertEquals(1, state()["chapter"]!!.jsonPrimitive.int)
+        command("chapter_next")
+        assertEquals(2, state()["chapter"]!!.jsonPrimitive.int)
+        command("chapter_previous")
+        command("chapter_goto")
+        command("seek_percent", 100)
+        assertEquals(12, state()["chapter"]!!.jsonPrimitive.int)
         repeat(7) { command("volume_up") }
         repeat(22) { command("volume_down") }
         command("mute")
@@ -164,6 +181,9 @@ class DemoServerTest {
         post("/api/play", """{"movieid":999}""")
         post("/api/play", """{"episodeid":102203}""")
         assertEquals("2", state()["media"]!!.jsonObject["season"]!!.jsonPrimitive.content)
+        chapters = state()["chapters"]!!.jsonArray
+        assertEquals(6, chapters.size)
+        assertEquals("", chapters[0].jsonObject["name"]!!.jsonPrimitive.content)
         post("/api/play", """{"episodeid":5}""")
         post("/api/play")
 

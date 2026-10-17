@@ -81,6 +81,7 @@
     <string name="live_stop">Stop</string>
     <string name="live_chapter_previous">Előző fejezet</string>
     <string name="live_chapter_next">Következő fejezet</string>
+    <string name="live_chapter_of">%1$d. fejezet (összesen %2$d)</string>
     <plurals name="live_seek_back">
         <item quantity="one">%1$d másodperccel vissza</item>
         <item quantity="other">%1$d másodperccel vissza</item>
@@ -207,6 +208,8 @@
     <string name="settings_theme_dark">Sötét</string>
     <string name="settings_artwork">Film poszter mutatása</string>
     <string name="settings_artwork_desc">A lejátszott film poszterének lekérése. Csak annak a címnek van posztere, amelyet a médiatár is tartalmaz.</string>
+    <string name="settings_chapters">Fejezetjelölők</string>
+    <string name="settings_chapters_desc">Pontok a folyamatjelző sávon, ahol az egyes fejezetek kezdődnek, fölötte az éppen futó fejezet. Húzáskor a csúszka rájuk ugrik.</string>
     <string name="settings_adaptive_color">Adaptív színek</string>
     <string name="settings_adaptive_color_desc">Az alkalmazás színezése a lejátszott film posztere alapján.</string>
     <string name="settings_adaptive_color_intensity">Hozzáadott szín intenzitása</string>

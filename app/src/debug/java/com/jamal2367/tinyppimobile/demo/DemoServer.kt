@@ -50,13 +50,19 @@ import kotlin.math.sin
  * settings and every screen has something on it.
  *
  * The commands do what they say, as far as a pretend box can: play and pause,
- * seek, stop, the volume, the tracks, VS10, and starting a film or an episode
- * off a shelf.
+ * seek, a chapter back, on or to one, stop, the volume, the tracks, VS10, and
+ * starting a film or an episode off a shelf.
  */
 object DemoServer {
     private const val TAG = "DemoServer"
     private const val PORT = 8099
     private val ADDED_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
+    /** What a film's chapters are called on the pretend box. */
+    private val FILM_CHAPTERS = listOf(
+        "Opening", "Arrakis", "The Fremen", "Sietch Tabr", "The Water of Life", "Sandworm",
+        "The South", "Prophecy", "The Gathering", "Arrakeen", "The Duel", "Credits",
+    )
 
     @Volatile private var started = false
     private val json = Json { encodeDefaults = true }
@@ -235,6 +241,36 @@ object DemoServer {
         return String.format(Locale.ROOT, "%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60)
     }
 
+    /* --- Chapters ---------------------------------------------------------- */
+
+    /**
+     * The playing title cut into equal chapters, the way the box sends them:
+     * a film gets twelve with names, an episode six without - most episodes
+     * name none.
+     */
+    private val chapterCount get() = if (playingShow.isBlank()) FILM_CHAPTERS.size else 6
+
+    private val chapterLength get() = durationSeconds / chapterCount
+
+    /** The chapter the position is in, one-based like Kodi's. */
+    private fun chapterNow(): Int = (positionSeconds / chapterLength).toInt().coerceAtMost(chapterCount - 1) + 1
+
+    private fun chapterStart(index: Int): Double = ((index - 1) * chapterLength).toDouble()
+
+    private fun chapters() = buildJsonArray {
+        repeat(chapterCount) { offset ->
+            val index = offset + 1
+            val start = chapterStart(index)
+            add(buildJsonObject {
+                put("index", index)
+                put("start", start.toInt())
+                put("at", start * 100 / durationSeconds)
+                put("time", clock(start))
+                put("name", if (playingShow.isBlank()) FILM_CHAPTERS[index - 1] else "")
+            })
+        }
+    }
+
     private fun snapshot(): JsonObject = synchronized(lock) {
         tick()
         seq++
@@ -359,8 +395,10 @@ object DemoServer {
                 put("subtitle_on", subtitleOn)
                 put("volume", volume)
                 put("muted", muted)
-                put("chapters", 24)
+                put("chapters", chapterCount)
             }
+            put("chapters", chapters())
+            put("chapter", chapterNow())
             putJsonObject("session") {
                 put("seq", 5)
                 put("switches", switches)
@@ -578,8 +616,9 @@ object DemoServer {
                     "stop" -> { playingTitle = null; libraryRevision++ }
                     "seek" -> positionSeconds = (positionSeconds + (value ?: 0.0)).coerceIn(0.0, durationSeconds.toDouble())
                     "seek_percent" -> positionSeconds = durationSeconds * (value ?: 0.0) / 100
-                    "chapter_next" -> positionSeconds = (positionSeconds + 420).coerceAtMost(durationSeconds.toDouble())
-                    "chapter_previous" -> positionSeconds = (positionSeconds - 420).coerceAtLeast(0.0)
+                    "chapter_next" -> positionSeconds = chapterStart((chapterNow() + 1).coerceAtMost(chapterCount))
+                    "chapter_previous" -> positionSeconds = chapterStart((chapterNow() - 1).coerceAtLeast(1))
+                    "chapter_goto" -> positionSeconds = chapterStart((value?.toInt() ?: 1).coerceIn(1, chapterCount))
                     "volume_up" -> volume = (volume + 5).coerceAtMost(100)
                     "volume_down" -> volume = (volume - 5).coerceAtLeast(0)
                     "mute" -> muted = !muted
