@@ -301,7 +301,8 @@ object DemoServer {
             put("playing", true)
             put("paused", paused)
             put("title", title)
-            put("filename", "/storage/media/${title.replace(Regex("[^A-Za-z0-9]+"), ".")}.2160p.UHD.BluRay.DV.HDR.TrueHD.Atmos.mkv")
+            // No file name: the add-on sends one only with its own setting for
+            // it switched on, and the card is meant to look as it does without.
             put("hdr_type", "dolbyvision")
             put("effective", "dolbyvision")
             put("output_type", output.ifBlank { "dolbyvision" })
