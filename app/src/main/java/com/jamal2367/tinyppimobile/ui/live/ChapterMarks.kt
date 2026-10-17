@@ -20,9 +20,11 @@ import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.Chapter
 
 /*
- * The chapters on the progress bar: a dot where each one still to come starts,
- * the one the position is in drawn larger, and its number and name over the
- * bar. A chapter that has ended gets no dot.
+ * The chapters on the progress bar: a dot where each chapter ahead of the
+ * position starts, and the number and name of the one playing over the bar.
+ * The bar behind the position is the part already seen and carries no dots -
+ * until a finger is on the bar: then every chapter is marked, those behind as
+ * well, so a drag back finds the ones already seen.
  *
  * The box places them (see `chapter_list` in the add-on's `web/player.py`):
  * [Chapter.at] is on the same 0 to 100 scale the bar is, so nothing here works
@@ -31,23 +33,7 @@ import com.jamal2367.tinyppimobile.data.model.Chapter
  */
 
 /**
- * The chapter playing, [current], and those still to come.
- *
- * A chapter that has ended is not marked: the bar behind the position is the
- * part already seen, and dots on it were only ever in the way of the wave.
- * Before the first chapter has begun every one is still to come.
- */
-internal fun upcomingChapters(chapters: List<Chapter>, current: Int): List<Chapter> {
-    val from = chapters.indexOfFirst { it.index == current }
-    return if (from < 0) chapters else chapters.drop(from)
-}
-
-/** One dot on the bar, and the numbers of every chapter it stands for. */
-@Immutable
-internal data class ChapterDot(val chapter: Chapter, val stands: Set<Int>)
-
-/**
- * The dots for [chapters] on a bar [width] pixels wide.
+ * The chapters of [chapters] that get a dot on a bar [width] pixels wide.
  *
  * The first chapter of nearly every film starts at the very beginning, where
  * there is no boundary to mark, so a chapter at 0 gets no dot. Two closer than
@@ -55,16 +41,13 @@ internal data class ChapterDot(val chapter: Chapter, val stands: Set<Int>)
  * minutes, and a phone is narrow - so the later one is left out and the dot
  * before it stands for both. A bar not measured yet merges nothing.
  */
-internal fun chapterDots(chapters: List<Chapter>, width: Float, minGap: Float): List<ChapterDot> {
-    val dots = mutableListOf<ChapterDot>()
+internal fun chapterDots(chapters: List<Chapter>, width: Float, minGap: Float): List<Chapter> {
+    val dots = mutableListOf<Chapter>()
     for (chapter in chapters) {
         if (chapter.at <= 0.0) continue
         val last = dots.lastOrNull()
-        if (last != null && width > 0f && (chapter.at - last.chapter.at) / 100.0 * width < minGap) {
-            dots[dots.lastIndex] = last.copy(stands = last.stands + chapter.index)
-            continue
-        }
-        dots += ChapterDot(chapter, setOf(chapter.index))
+        if (last != null && width > 0f && (chapter.at - last.at) / 100.0 * width < minGap) continue
+        dots += chapter
     }
     return dots
 }
@@ -105,57 +88,49 @@ internal fun finishDrag(
     }
 }
 
-/** The three colours a dot can be: ahead of the position, behind it, and the one playing. */
+/** The two colours a dot can be: ahead of the position, and behind it. */
 @Immutable
-internal data class ChapterDotColors(val ahead: Color, val behind: Color, val current: Color)
+internal data class ChapterDotColors(val ahead: Color, val behind: Color)
 
 @Composable
 internal fun chapterDotColors() = ChapterDotColors(
     // On the length still to play, in the colour of the part that has played.
     ahead = MaterialTheme.colorScheme.primary,
-    // On the part that has played - a dot a drag has carried the thumb past -
-    // cut into it in the colour of the card.
+    // On the part that has played - only while a finger is on the bar - cut
+    // into it in the colour of the card.
     behind = MaterialTheme.colorScheme.surface,
-    current = MaterialTheme.colorScheme.onSurface,
 )
 
 /**
  * The dots, drawn over whatever this modifier is put on - the playback wave.
  *
- * Laid out once per list and width rather than once per frame: the wave under
- * them is animated, and the dots only change when the film or the screen does.
- * Which ones the position has passed is read at draw time from [progress], so a
- * moving bar repaints them without composing anything.
+ * Those ahead of [progress], or every one while [all] - a finger on the bar.
+ * Laid out again only when the bar moves or the screen does rather than once
+ * per frame: the wave under them is animated, and the dots only change as the
+ * position passes one or a drag moves the thumb.
  */
 internal fun Modifier.chapterDots(
     chapters: List<Chapter>,
-    current: Int,
+    all: Boolean,
     progress: () -> Float,
     colors: ChapterDotColors,
 ): Modifier = if (chapters.isEmpty()) this else drawWithCache {
-    val dots = chapterDots(chapters, size.width, DOT_GAP.toPx())
+    val at = progress()
+    val shown = if (all) chapters else chapters.filter { it.at > at }
+    val dots = chapterDots(shown, size.width, DOT_GAP.toPx())
     val radius = DOT_RADIUS.toPx()
-    val large = CURRENT_RADIUS.toPx()
-    val ring = CURRENT_RING.toPx()
     onDrawWithContent {
         drawContent()
-        val at = progress()
         for (dot in dots) {
             // Held clear of the rounded ends, and never a range turned inside
             // out on a bar not yet wide enough to hold one dot.
-            val x = (dot.chapter.at / 100.0 * size.width).toFloat()
-                .coerceIn(large + ring, maxOf(large + ring, size.width - large - ring))
-            val centre = Offset(x, size.height / 2)
-            if (current in dot.stands) {
-                drawCircle(colors.behind, radius = large + ring, center = centre)
-                drawCircle(colors.current, radius = large, center = centre)
-            } else {
-                drawCircle(
-                    if (dot.chapter.at <= at) colors.behind else colors.ahead,
-                    radius = radius,
-                    center = centre,
-                )
-            }
+            val x = (dot.at / 100.0 * size.width).toFloat()
+                .coerceIn(radius, maxOf(radius, size.width - radius))
+            drawCircle(
+                if (dot.at <= at) colors.behind else colors.ahead,
+                radius = radius,
+                center = Offset(x, size.height / 2),
+            )
         }
     }
 }
@@ -199,7 +174,3 @@ private val DOT_GAP = 6.dp
 
 /** A dot, small enough to sit inside the five-point line it is drawn on. */
 private val DOT_RADIUS = 1.75.dp
-
-/** The dot of the chapter that is playing, and the ring that sets it off the wave. */
-private val CURRENT_RADIUS = 3.25.dp
-private val CURRENT_RING = 1.dp

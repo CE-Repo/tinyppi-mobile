@@ -7,7 +7,6 @@ import com.jamal2367.tinyppimobile.ui.live.chapterDots
 import com.jamal2367.tinyppimobile.ui.live.finishDrag
 import com.jamal2367.tinyppimobile.ui.live.percentOf
 import com.jamal2367.tinyppimobile.ui.live.snapTarget
-import com.jamal2367.tinyppimobile.ui.live.upcomingChapters
 import com.jamal2367.tinyppimobile.ui.live.markTarget
 import com.jamal2367.tinyppimobile.ui.theme.accentOf
 import org.junit.Assert.assertEquals
@@ -62,23 +61,13 @@ class PureBitsTest {
     @Test
     fun `a dot for every chapter but the first, close ones drawn as one`() {
         val wide = chapterDots(chapters, width = 2000f, minGap = 6f)
-        assertEquals(listOf(2, 3, 4, 5), wide.map { it.chapter.index })
+        assertEquals(listOf(2, 3, 4, 5), wide.map { it.index })
         // Half a percent of 400 pixels is two: chapter 4 is drawn by 3's dot.
         val narrow = chapterDots(chapters, width = 400f, minGap = 6f)
-        assertEquals(listOf(2, 3, 5), narrow.map { it.chapter.index })
-        assertEquals(setOf(3, 4), narrow[1].stands)
+        assertEquals(listOf(2, 3, 5), narrow.map { it.index })
         // Not measured yet: nothing merged.
         assertEquals(4, chapterDots(chapters, width = 0f, minGap = 6f).size)
         assertEquals(emptyList<Any>(), chapterDots(emptyList(), 400f, 6f))
-    }
-
-    @Test
-    fun `a chapter that has ended is not marked`() {
-        assertEquals(listOf(3, 4, 5), upcomingChapters(chapters, current = 3).map { it.index })
-        assertEquals(listOf(5), upcomingChapters(chapters, current = 5).map { it.index })
-        // Before the first one has begun, or a number the list does not hold.
-        assertEquals(chapters, upcomingChapters(chapters, current = 0))
-        assertEquals(chapters, upcomingChapters(chapters, current = 9))
     }
 
     @Test
