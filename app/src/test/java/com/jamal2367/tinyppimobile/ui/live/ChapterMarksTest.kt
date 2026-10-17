@@ -134,7 +134,7 @@ class ChapterMarksTest {
         drawn()
         bar.performTouchInput {
             down(Offset(width * 0.6f, centerY))
-            moveTo(Offset(width * 0.26f - viewConfiguration.touchSlop, centerY))
+            moveTo(Offset(width * 0.255f - viewConfiguration.touchSlop, centerY))
         }
         rule.until { seen("Chapter 2 of 4 · Arrakis") }
         drawn()

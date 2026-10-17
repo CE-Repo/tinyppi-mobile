@@ -140,12 +140,12 @@ it — the transport row, the track pickers and the VS10 conversions.
 A file with chapters carries a dot on the progress bar where each chapter
 ahead of the position starts, and the one playing is named over the bar —
 *Chapter 3 of 12 · Arrival*. The part of the bar already seen stays clear until
-a finger is on it: then every chapter is marked, the ones already seen as well.
-A drag that comes within a fingertip of a dot snaps onto it with a tick, the
-line over the bar naming the chapter under the finger; let go there, or simply
-tap the dot, and the box jumps to the start of that chapter. The dots are a
-reading and come with control switched off too; *Chapter markers* under
-*Appearance* in the settings takes them off the bar.
+a finger is on it: then every chapter is marked, the ones already seen as well,
+in a light tone of the accent. A drag that comes close to a dot snaps onto it
+with a tick, the line over the bar naming the chapter under the finger; let go
+there, or simply tap the dot, and the box jumps to the start of that chapter.
+The dots are a reading and come with control switched off too; *Chapter
+markers* under *Appearance* in the settings takes them off the bar.
 
 While something is playing on such a box, the phone's own volume buttons turn
 the box up and down instead of the phone; a switch under *Readings* in the

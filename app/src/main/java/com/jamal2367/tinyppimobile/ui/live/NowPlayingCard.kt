@@ -270,12 +270,12 @@ internal fun NowPlayingCard(
  * The chapters ahead of the position ride on the bar as dots (see
  * ChapterMarks.kt), with the one playing named over it. A finger on the bar
  * brings up the dots of the chapters already seen as well, so a drag back
- * finds them. A drag that comes within a fingertip of a dot snaps onto it with
- * a tick under the thumb, the label over the bar following the finger rather
- * than the player; let go there, and the jump goes to the start of that chapter
- * by its number rather than to a percentage - a tap on a dot is the shortest
- * such drag. With the dots switched off in the settings the
- * bar is the plain one again, snapping to nothing.
+ * finds them. A drag that comes close to a dot snaps onto it with a tick under
+ * the thumb, the label over the bar following the finger rather than the
+ * player; let go there, and the jump goes to the start of that chapter by its
+ * number rather than to a percentage - a tap on a dot is the shortest such
+ * drag. With the dots switched off in the settings the bar is the plain one
+ * again, snapping to nothing.
  */
 @Composable
 private fun ProgressRow(

@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -96,10 +97,14 @@ internal data class ChapterDotColors(val ahead: Color, val behind: Color)
 internal fun chapterDotColors() = ChapterDotColors(
     // On the length still to play, in the colour of the part that has played.
     ahead = MaterialTheme.colorScheme.primary,
-    // On the part that has played - only while a finger is on the bar - cut
-    // into it in the colour of the card.
-    behind = MaterialTheme.colorScheme.surface,
+    // On the part that has played - only while a finger is on the bar - in a
+    // very light tone of the same accent: one family with the wave it sits on,
+    // and still told apart from it.
+    behind = lerp(MaterialTheme.colorScheme.primary, Color.White, BEHIND_LIGHTEN),
 )
+
+/** How far towards white the dots behind the position are taken from the accent. */
+private const val BEHIND_LIGHTEN = 0.75f
 
 /**
  * The dots, drawn over whatever this modifier is put on - the playback wave.
@@ -163,11 +168,11 @@ internal fun ChapterLabel(chapter: Chapter?, count: Int, modifier: Modifier) {
 /**
  * How far a drag snaps to a dot from.
  *
- * About a fingertip's slack either side: near enough that a drag aimed at a
- * chapter finds it, far enough apart that the ten minutes between two dots are
- * still mostly free ground.
+ * Less than a fingertip either side: a drag has to be aimed at a chapter to be
+ * caught by it, so the ground between two dots stays free to seek on - eight
+ * points pulled the thumb onto a dot from minutes away.
  */
-internal val SNAP_REACH: Dp = 8.dp
+internal val SNAP_REACH: Dp = 5.dp
 
 /** How close two dots may come before they are drawn as one. */
 private val DOT_GAP = 6.dp
