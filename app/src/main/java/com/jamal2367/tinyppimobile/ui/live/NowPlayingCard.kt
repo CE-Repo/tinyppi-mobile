@@ -307,10 +307,16 @@ private fun ProgressRow(
     }
 
     Column(modifier = Modifier.padding(top = 6.dp)) {
+        // Halfway down between what is drawn above and the line of the bar,
+        // whichever two those are (see the figures below).
         ChapterLabel(
             chapter = named,
             count = snapshot.chapterCount,
-            modifier = Modifier.padding(bottom = if (canControl) 0.dp else 4.dp),
+            modifier = Modifier.padding(
+                top = (if (snapshot.filename.isBlank()) LABEL_UNDER_POSTER else 0.dp) +
+                    (if (canControl) LABEL_OVER_SLIDER else 0.dp),
+                bottom = if (canControl) 0.dp else LABEL_OVER_WAVE,
+            ),
         )
         if (canControl) {
             // Put where it should be on every pass, as the slider that took a
@@ -477,6 +483,22 @@ private fun PlaybackWave(
         modifier = modifier.height(WAVE_HEIGHT),
     )
 }
+
+/*
+ * Where the chapter label stands: halfway down between what is drawn above it
+ * and the line of the bar under it, measured between the drawn edges rather
+ * than the laid-out ones - which is where the two ends move.
+ *
+ * Above, the file name leaves the label room enough; without one the poster
+ * row is what is above, and it is drawn twelve points lower than it is laid
+ * out (see its offset), so the label is held down by what that takes from the
+ * gap. Below, the slider's line sits in the middle of the slider's touch
+ * height, some way under its top; the bare wave drawn without control is its
+ * own top, so the space under the label is given to it instead.
+ */
+private val LABEL_UNDER_POSTER = 14.dp
+private val LABEL_OVER_SLIDER = 4.dp
+private val LABEL_OVER_WAVE = 15.dp
 
 /**
  * How far the wave travels in a second.

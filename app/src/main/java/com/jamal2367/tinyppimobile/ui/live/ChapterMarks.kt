@@ -1,6 +1,5 @@
 package com.jamal2367.tinyppimobile.ui.live
 
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,7 +13,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
@@ -143,9 +141,10 @@ internal fun Modifier.chapterDots(
 }
 
 /**
- * "Chapter 3 of 12 · Arrival" over the bar, centred between it and the poster
- * above: the number in the accent, the name in the colour of the clocks under
- * it, one line however long the name.
+ * "Chapter 3 of 12 · Arrival" over the bar, at the left edge and halfway down
+ * between it and what stands above (see ProgressRow): the number in the
+ * accent, the name in the colour of the clocks under it, one line however long
+ * the name.
  *
  * Nothing at all before the first chapter has begun or for a file without
  * chapters, rather than a line that says so.
@@ -164,8 +163,7 @@ internal fun ChapterLabel(chapter: Chapter?, count: Int, modifier: Modifier) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
-        textAlign = TextAlign.Center,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier,
     )
 }
 
