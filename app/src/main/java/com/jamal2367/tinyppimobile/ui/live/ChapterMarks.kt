@@ -20,14 +20,27 @@ import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.Chapter
 
 /*
- * The chapters on the progress bar: a dot where each one starts, the one the
- * position is in drawn larger, and its number and name over the bar.
+ * The chapters on the progress bar: a dot where each one still to come starts,
+ * the one the position is in drawn larger, and its number and name over the
+ * bar. A chapter that has ended gets no dot.
  *
  * The box places them (see `chapter_list` in the add-on's `web/player.py`):
  * [Chapter.at] is on the same 0 to 100 scale the bar is, so nothing here works
  * a percentage out of a clock. The add-on's dashboard draws the same dots by
  * the same rules (`js/live-chapters.js`), so the two read alike.
  */
+
+/**
+ * The chapter playing, [current], and those still to come.
+ *
+ * A chapter that has ended is not marked: the bar behind the position is the
+ * part already seen, and dots on it were only ever in the way of the wave.
+ * Before the first chapter has begun every one is still to come.
+ */
+internal fun upcomingChapters(chapters: List<Chapter>, current: Int): List<Chapter> {
+    val from = chapters.indexOfFirst { it.index == current }
+    return if (from < 0) chapters else chapters.drop(from)
+}
 
 /** One dot on the bar, and the numbers of every chapter it stands for. */
 @Immutable
@@ -100,7 +113,8 @@ internal data class ChapterDotColors(val ahead: Color, val behind: Color, val cu
 internal fun chapterDotColors() = ChapterDotColors(
     // On the length still to play, in the colour of the part that has played.
     ahead = MaterialTheme.colorScheme.primary,
-    // On the part that has played, cut into it in the colour of the card.
+    // On the part that has played - a dot a drag has carried the thumb past -
+    // cut into it in the colour of the card.
     behind = MaterialTheme.colorScheme.surface,
     current = MaterialTheme.colorScheme.onSurface,
 )

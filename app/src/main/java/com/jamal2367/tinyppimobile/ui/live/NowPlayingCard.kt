@@ -267,12 +267,12 @@ internal fun NowPlayingCard(
  * On a box with control switched off the same bar is drawn as a plain reading,
  * which is all it can be there.
  *
- * The chapters ride on the bar as dots (see ChapterMarks.kt), with the one
- * playing named over it. A drag that comes within a fingertip of a dot snaps
- * onto it with a tick under the thumb, the label over the bar following the
- * finger rather than the player; let go there, and the jump goes to the start
- * of that chapter by its number rather than to a percentage - a tap on a dot
- * is the shortest such drag. With the dots switched off in the settings the
+ * The chapters still to come ride on the bar as dots (see ChapterMarks.kt),
+ * with the one playing named over it; one that has ended loses its dot. A drag
+ * that comes within a fingertip of a dot snaps onto it with a tick under the
+ * thumb, the label over the bar following the finger rather than the player;
+ * let go there, and the jump goes to the start of that chapter by its number
+ * rather than to a percentage - a tap on a dot is the shortest such drag. With the dots switched off in the settings the
  * bar is the plain one again, snapping to nothing.
  */
 @Composable
@@ -291,6 +291,9 @@ private fun ProgressRow(
     val reach = with(LocalDensity.current) { SNAP_REACH.toPx() }
 
     val chapters = if (showChapters) snapshot.chapters else emptyList()
+    // Only these are drawn and snapped to; the label still names any chapter
+    // a drag reaches, ended or not.
+    val marked = upcomingChapters(chapters, snapshot.chapter)
     val dotColors = chapterDotColors()
     // Under the finger while it is on the bar, the player's own otherwise.
     val named = when (val at = dragged) {
@@ -318,7 +321,7 @@ private fun ProgressRow(
             Slider(
                 state = position,
                 onValueChange = { value ->
-                    val onto = snapTarget(value, chapters, percentOf(reach, barWidth))
+                    val onto = snapTarget(value, marked, percentOf(reach, barWidth))
                     // One tick per dot reached, not one per frame spent on it.
                     if (onto != null && onto != snapped) {
                         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
@@ -348,7 +351,7 @@ private fun ProgressRow(
                         paused = snapshot.paused,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .chapterDots(chapters, snapshot.chapter, { state.value }, dotColors),
+                            .chapterDots(marked, snapshot.chapter, { state.value }, dotColors),
                     )
                 },
                 modifier = Modifier
@@ -361,7 +364,7 @@ private fun ProgressRow(
                 paused = snapshot.paused,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .chapterDots(chapters, snapshot.chapter, { reported }, dotColors),
+                    .chapterDots(marked, snapshot.chapter, { reported }, dotColors),
             )
         }
         Row(

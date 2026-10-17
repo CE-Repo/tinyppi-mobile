@@ -31,10 +31,10 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The chapters on the live card's bar: the dots, the chapter named over it,
- * a drag that snaps onto a dot and jumps to it, and the switch that takes them
- * away. Drawn as well as composed, so the dots are painted and not only laid
- * out.
+ * The chapters on the live card's bar: the dots of the chapters still to come,
+ * the chapter named over it, a drag that snaps onto a dot and jumps to it, and
+ * the switch that takes them away. Drawn as well as composed, so the dots are
+ * painted and not only laid out.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -121,6 +121,22 @@ class ChapterMarksTest {
             moveTo(Offset(width * 0.37f, centerY))
         }
         rule.until { seen("Chapter 2 of 4 · Arrakis") }
+        bar.performTouchInput { up() }
+        rule.until { sent.isNotEmpty() }
+        assertEquals("seek_percent", sent.single().action)
+    }
+
+    @Test
+    fun `an ended chapter has no dot to snap to, but is still named under the finger`() {
+        fake.playing(film.copy(chapter = 3, metrics = film.metrics.copy(progress = 55.0)))
+        showLive()
+        rule.onNodeWithText("Chapter 3 of 4").assertIsDisplayed()
+        bar.performTouchInput {
+            down(centerLeft + Offset(20f, 0f))
+            moveTo(Offset(width * 0.27f + viewConfiguration.touchSlop, centerY))
+        }
+        rule.until { seen("Chapter 2 of 4 · Arrakis") }
+        drawn()
         bar.performTouchInput { up() }
         rule.until { sent.isNotEmpty() }
         assertEquals("seek_percent", sent.single().action)

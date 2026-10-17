@@ -137,9 +137,9 @@ The title with its poster, the source and output badges, the video and audio
 formats named in badges of their own, the progress, and — on a box that allows
 it — the transport row, the track pickers and the VS10 conversions.
 
-A file with chapters carries a dot on the progress bar where each one starts,
-the one playing drawn larger and named over the bar — *Chapter 3 of 12 ·
-Arrival*. A drag that comes within a fingertip of a dot snaps onto it with a
+A file with chapters carries a dot on the progress bar where each one still to
+come starts, the one playing drawn larger and named over the bar — *Chapter 3
+of 12 · Arrival*; a chapter that has ended loses its dot. A drag that comes within a fingertip of a dot snaps onto it with a
 tick, the line over the bar naming the chapter under the finger; let go there,
 or simply tap the dot, and the box jumps to the start of that chapter. The dots
 are a reading and come with control switched off too; *Chapter markers* under

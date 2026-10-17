@@ -7,6 +7,7 @@ import com.jamal2367.tinyppimobile.ui.live.chapterDots
 import com.jamal2367.tinyppimobile.ui.live.finishDrag
 import com.jamal2367.tinyppimobile.ui.live.percentOf
 import com.jamal2367.tinyppimobile.ui.live.snapTarget
+import com.jamal2367.tinyppimobile.ui.live.upcomingChapters
 import com.jamal2367.tinyppimobile.ui.live.markTarget
 import com.jamal2367.tinyppimobile.ui.theme.accentOf
 import org.junit.Assert.assertEquals
@@ -69,6 +70,15 @@ class PureBitsTest {
         // Not measured yet: nothing merged.
         assertEquals(4, chapterDots(chapters, width = 0f, minGap = 6f).size)
         assertEquals(emptyList<Any>(), chapterDots(emptyList(), 400f, 6f))
+    }
+
+    @Test
+    fun `a chapter that has ended is not marked`() {
+        assertEquals(listOf(3, 4, 5), upcomingChapters(chapters, current = 3).map { it.index })
+        assertEquals(listOf(5), upcomingChapters(chapters, current = 5).map { it.index })
+        // Before the first one has begun, or a number the list does not hold.
+        assertEquals(chapters, upcomingChapters(chapters, current = 0))
+        assertEquals(chapters, upcomingChapters(chapters, current = 9))
     }
 
     @Test
