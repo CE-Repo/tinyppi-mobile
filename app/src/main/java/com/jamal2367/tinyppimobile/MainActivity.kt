@@ -20,6 +20,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
@@ -153,6 +155,16 @@ class MainActivity : ComponentActivity() {
         }
 
         val container = (application as TinyPpiApplication).container
+
+        // The box's stream is let go of the moment the app leaves the screen
+        // and opened again the moment it is back. The activity handles its
+        // own configuration changes, so a turned phone is neither.
+        lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) = container.setVisible(true)
+
+            override fun onStop(owner: LifecycleOwner) = container.setVisible(false)
+        })
+
         val settingsFlow = container.settingsRepository.settings
             .stateIn(lifecycleScope, SharingStarted.Eagerly, AppSettings())
 

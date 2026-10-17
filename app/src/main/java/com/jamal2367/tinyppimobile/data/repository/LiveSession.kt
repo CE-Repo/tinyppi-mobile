@@ -118,6 +118,8 @@ class LiveSession(
          * restart the settings get is the one a reader gets.
          */
         val restart: Int,
+        /** Whether the app is on screen at all (see [setVisible]). */
+        val visible: Boolean,
     )
 
     /**
@@ -137,13 +139,38 @@ class LiveSession(
         restarts.value += 1
     }
 
+    /**
+     * Whether the app is on screen.
+     *
+     * Off, the stream is let go of at once. Held on, it outlived the app by
+     * the few seconds the shared reading waits for a screen to come back -
+     * and Android takes the network from an app in the background well
+     * within those: the stream died there, every attempt to reopen it failed
+     * the same way, and by the time the app was opened again the session was
+     * sitting out its ten-second back-off over "offline". On again, it
+     * connects at once, over the reading it last had.
+     */
+    private val visible = MutableStateFlow(true)
+
+    fun setVisible(visible: Boolean) {
+        this.visible.value = visible
+    }
+
+    /**
+     * The addresses the last session was for, and the last state it published
+     * - what the next session against the same box starts out showing. One
+     * field, so the two are never read from different sessions.
+     */
+    @Volatile private var latest: Pair<List<ServerConfig>, LiveState>? = null
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun states(): Flow<LiveState> = combine(router.settingsFlow, restarts) { settings, restart ->
+    fun states(): Flow<LiveState> = combine(router.settingsFlow, restarts, visible) { settings, restart, visible ->
         SessionConfig(
             servers = settings.servers(),
             liveUpdates = settings.liveUpdates,
             pollSeconds = settings.pollIntervalSeconds,
             restart = restart,
+            visible = visible,
         )
     }
         .distinctUntilChanged()
@@ -155,11 +182,25 @@ class LiveSession(
         .flatMapLatest(::session)
 
     private fun session(config: SessionConfig): Flow<LiveState> = flow {
+        // Away from the screen, nothing is held open - and nothing is said
+        // either: what the screens last read stays as it was until they are
+        // back to read it.
+        if (!config.visible) return@flow
+
         var attempt = 0
-        var last = LiveState()
+        // A session against the box the last one was talking to picks up
+        // where that one left off: reconnecting - after the app was away, or
+        // because a reader asked - says so over the reading it had, rather
+        // than over "offline" or nothing at all.
+        val carried = latest
+            ?.takeIf { (servers, _) -> servers == config.servers }
+            ?.second
+            ?.copy(connection = LiveState.Connection.Connecting)
+        var last = carried ?: LiveState()
 
         suspend fun publish(state: LiveState) {
             last = state
+            latest = config.servers to state
             emit(state)
         }
 
@@ -167,6 +208,7 @@ class LiveSession(
             publish(LiveState(connection = LiveState.Connection.NotConfigured))
             return@flow
         }
+        carried?.let { publish(it) }
 
         while (true) {
             if (!config.liveUpdates) {
@@ -278,9 +320,22 @@ class LiveSession(
                     // handover rather than a box that has gone - and the
                     // shelves leave the bar with the box, so away from home
                     // they would otherwise leave on every reconnect.
-                    if (attempt % config.servers.size == 0) {
-                        publish(LiveState(connection = LiveState.Connection.Offline))
-                        delay(FAILED_RETRY.seconds)
+                    //
+                    // And not on the first round either. The first try after
+                    // a start or a drop is the one the network is likeliest
+                    // to be in the middle of coming back for - an app just
+                    // brought back to the front, a phone just back on its
+                    // Wi-Fi - and ten seconds over "offline" is a long time
+                    // to be wrong for. So it is tried again after a moment,
+                    // still connecting, and only a second round that finds
+                    // nobody is a box that is not there.
+                    when {
+                        attempt % config.servers.size != 0 -> Unit
+                        attempt == config.servers.size -> delay(FIRST_RETRY.seconds)
+                        else -> {
+                            publish(LiveState(connection = LiveState.Connection.Offline))
+                            delay(FAILED_RETRY.seconds)
+                        }
                     }
                 }
             }
@@ -314,6 +369,7 @@ class LiveSession(
     private companion object {
         /** What the add-on's own dashboard waits after a stream it had. */
         const val RECONNECT = 3L
+        const val FIRST_RETRY = 1L
         const val FAILED_RETRY = 10L
 
         /** A slot frees the moment a forgotten tab is closed, so this is short. */

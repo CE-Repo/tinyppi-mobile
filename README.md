@@ -355,8 +355,11 @@ caches.
 **One stream per phone.** The add-on caps concurrent streams at six and fans the
 same snapshot out to each of them, so four screens opening four connections
 would spend four of those six slots showing the same thing. The connection is
-shared across every screen and dropped a few seconds after the last one stops
-looking, so a backgrounded app holds none.
+shared across every screen and dropped the moment the app leaves the screen,
+so a backgrounded app holds none. Brought back, it connects again at once, with
+the last reading on screen and the status line saying *Connecting* until the
+stream is open — not *Offline*: a single try that finds nobody is tried again a
+second later, and only a second round that fails is a box that is not there.
 
 ---
 
