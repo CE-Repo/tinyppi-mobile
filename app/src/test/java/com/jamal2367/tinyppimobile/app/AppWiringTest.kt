@@ -41,6 +41,8 @@ class AppWiringTest {
         assertNotNull(container.updateChecker)
         assertNotNull(container.liveState)
         container.reconnect()
+        container.setVisible(false)
+        container.setVisible(true)
 
         runBlocking { container.settingsRepository.setPrimary(ServerConfig(enabled = true, host = "box", port = 8099)) }
         val deadline = System.currentTimeMillis() + 5_000

@@ -50,6 +50,7 @@ class PlayerRepositoryTest {
         repository.stop()
         repository.previousChapter()
         repository.nextChapter()
+        repository.goToChapter(7)
         repository.seekBy(-99_999)
         repository.seekBy(30)
         repository.seekTo(150f)
@@ -62,7 +63,8 @@ class PlayerRepositoryTest {
         assertEquals(
             listOf(
                 CommandBody("playpause"), CommandBody("stop"), CommandBody("chapter_previous"),
-                CommandBody("chapter_next"), CommandBody("seek", -3600.0), CommandBody("seek", 30.0),
+                CommandBody("chapter_next"), CommandBody("chapter_goto", 7.0),
+                CommandBody("seek", -3600.0), CommandBody("seek", 30.0),
                 CommandBody("seek_percent", 100.0), CommandBody("volume_up"), CommandBody("volume_down"),
                 CommandBody("mute"), CommandBody("audio", 2.0), CommandBody("subtitle", 1.0),
                 CommandBody("subtitle", -1.0),

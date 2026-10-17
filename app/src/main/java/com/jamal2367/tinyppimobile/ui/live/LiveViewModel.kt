@@ -271,6 +271,8 @@ class LiveViewModel(
 
     fun nextChapter() = command { repository.nextChapter() }
 
+    fun goToChapter(index: Int) = command { repository.goToChapter(index) }
+
     fun seekBy(seconds: Int) = command { repository.seekBy(seconds) }
 
     fun seekTo(percent: Float) = command { repository.seekTo(percent) }

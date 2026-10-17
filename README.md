@@ -137,6 +137,16 @@ The title with its poster, the source and output badges, the video and audio
 formats named in badges of their own, the progress, and — on a box that allows
 it — the transport row, the track pickers and the VS10 conversions.
 
+A file with chapters carries a dot on the progress bar where each chapter
+ahead of the position starts, and the one playing is named over the bar —
+*Chapter 3 of 12 · Arrival*. The part of the bar already seen stays clear until
+a finger is on it: then every chapter is marked, the ones already seen as well,
+in a light tone of the accent. A drag that comes close to a dot snaps onto it
+with a tick, the line over the bar naming the chapter under the finger; let go
+there, or simply tap the dot, and the box jumps to the start of that chapter.
+The dots are a reading and come with control switched off too; *Chapter
+markers* under *Appearance* in the settings takes them off the bar.
+
 While something is playing on such a box, the phone's own volume buttons turn
 the box up and down instead of the phone; a switch under *Readings* in the
 settings hands them back. Every key that acts on the box gives a short tick
@@ -331,7 +341,7 @@ All of it.
 | `GET /api/episodes` | The episodes of one series, read when it is opened. |
 | `GET /api/continue` | The films and episodes left half-watched, for the row at the top of both shelves. |
 | `POST /api/mode` | The VS10 buttons. |
-| `POST /api/command` | Play/pause, stop, previous/next chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track. |
+| `POST /api/command` | Play/pause, stop, previous/next chapter, jump to a chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track. |
 | `POST /api/play` | Starting one of the library's films, or one episode of a series — resumed, or from the beginning. |
 | `POST /api/watched` | Marking a film, a series or an episode as watched or unwatched. |
 | `POST /api/resume` | Clearing the resume point of a film or an episode. |
@@ -345,8 +355,11 @@ caches.
 **One stream per phone.** The add-on caps concurrent streams at six and fans the
 same snapshot out to each of them, so four screens opening four connections
 would spend four of those six slots showing the same thing. The connection is
-shared across every screen and dropped a few seconds after the last one stops
-looking, so a backgrounded app holds none.
+shared across every screen and dropped the moment the app leaves the screen,
+so a backgrounded app holds none. Brought back, it connects again at once, with
+the last reading on screen and the status line saying *Connecting* until the
+stream is open — not *Offline*: a single try that finds nobody is tried again a
+second later, and only a second round that fails is a box that is not there.
 
 ---
 

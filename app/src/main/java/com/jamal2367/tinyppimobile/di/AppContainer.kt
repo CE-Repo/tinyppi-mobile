@@ -169,11 +169,18 @@ class AppContainer(private val context: Context) {
      * Every screen collects this instead of connecting for itself: the add-on
      * caps concurrent streams at six and fans the same snapshot out to each of
      * them, so four screens from one phone would spend four of those six slots
-     * showing the same thing. The connection is dropped a few seconds after
-     * the last screen stops looking, so a backgrounded app holds none.
+     * showing the same thing. The connection is dropped the moment the app
+     * leaves the screen (see [setVisible]), and a few seconds after the last
+     * screen stops looking, so a backgrounded app holds none.
      */
     /** Drop the open connection and build a new one - what the refresh asks for. */
     fun reconnect() = session.restart()
+
+    /**
+     * Whether the app is on screen: let go of the box's stream the moment it
+     * is not, and open it again the moment it is (see [LiveSession.setVisible]).
+     */
+    fun setVisible(visible: Boolean) = session.setVisible(visible)
 
     val liveState: StateFlow<LiveState> by lazy {
         session.states().stateIn(

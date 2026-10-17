@@ -61,6 +61,23 @@ data class Snapshot(
     val media: MediaInfo = MediaInfo(),
     /** Empty unless the add-on is set to let a client switch anything. */
     val controls: PlayerControls = PlayerControls(),
+    /**
+     * The playing file's chapters, already placed on the bar.
+     *
+     * A reading rather than a control, so it comes whether or not the box
+     * lets a client switch anything. Empty for a file with fewer than two -
+     * one chapter is the whole film under another name - and empty as well
+     * against an add-on older than the reading.
+     */
+    val chapters: List<Chapter> = emptyList(),
+    /**
+     * Which of [chapters] the position is in, by its [Chapter.index]; 0 before
+     * the first one has begun and for a file without any.
+     *
+     * Worked out by the box from the same list, so the highlighted dot and
+     * the dots themselves can never disagree.
+     */
+    val chapter: Int = 0,
     val session: SessionSummary = SessionSummary(),
     /** What the title that just ended came to; empty while one is playing. */
     val last: LastPlayed = LastPlayed(),
@@ -98,7 +115,38 @@ data class Snapshot(
     val isConverting: Boolean
         get() = playing && outputType.isNotBlank() &&
             !outputType.equals(sourceType, ignoreCase = true)
+
+    /** The chapter the position is in, or null before the first and without any. */
+    val currentChapter: Chapter?
+        get() = chapters.firstOrNull { it.index == chapter }
+
+    /**
+     * How many chapters the file has, as the last one is numbered - which is
+     * what Kodi's own count says, even where the box left a malformed one out.
+     */
+    val chapterCount: Int
+        get() = chapters.lastOrNull()?.index ?: 0
 }
+
+/**
+ * One chapter of the playing file (see `chapter_list` in the add-on's
+ * `web/player.py`).
+ *
+ * Placed and written by the box: [at] is where it starts as a percentage of
+ * the length, the same scale `metrics.progress` is on, and [time] is that start
+ * as a clock shaped like the position reading beside it.
+ */
+@Serializable
+data class Chapter(
+    /** Kodi's one-based number, which is what a jump to it names. */
+    val index: Int = 0,
+    /** Where it starts, in whole seconds. */
+    val start: Long = 0,
+    val at: Double = 0.0,
+    val time: String = "",
+    /** The file's name for it; empty when the file names none. */
+    val name: String = "",
+)
 
 /** The numeric side of a snapshot: what is charted rather than printed. */
 @Serializable

@@ -36,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -51,6 +53,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
+import com.jamal2367.tinyppimobile.data.model.Chapter
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
@@ -97,6 +100,7 @@ internal fun NowPlayingCard(
     showArtwork: Boolean,
     canControl: Boolean,
     viewModel: LiveViewModel,
+    showChapters: Boolean,
 ) {
     val accent = LocalArtworkAccent.current
     val container = MaterialTheme.colorScheme.surfaceContainerLow
@@ -243,7 +247,7 @@ internal fun NowPlayingCard(
             )
         }
 
-        ProgressRow(snapshot, canControl, viewModel)
+        ProgressRow(snapshot, canControl, showChapters, viewModel)
     }
 }
 
@@ -262,12 +266,39 @@ internal fun NowPlayingCard(
  *
  * On a box with control switched off the same bar is drawn as a plain reading,
  * which is all it can be there.
+ *
+ * The chapters ahead of the position ride on the bar as dots (see
+ * ChapterMarks.kt), with the one playing named over it. A finger on the bar
+ * brings up the dots of the chapters already seen as well, so a drag back
+ * finds them. A drag that comes close to a dot snaps onto it with a tick under
+ * the thumb, the label over the bar following the finger rather than the
+ * player; let go there, and the jump goes to the start of that chapter by its
+ * number rather than to a percentage - a tap on a dot is the shortest such
+ * drag. With the dots switched off in the settings the bar is the plain one
+ * again, snapping to nothing.
  */
 @Composable
-private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: LiveViewModel) {
+private fun ProgressRow(
+    snapshot: Snapshot,
+    canControl: Boolean,
+    showChapters: Boolean,
+    viewModel: LiveViewModel,
+) {
     val reported = (snapshot.metrics.progress ?: 0.0).toFloat().coerceIn(0f, 100f)
     var dragged by remember { mutableStateOf<Float?>(null) }
+    var snapped by remember { mutableStateOf<Chapter?>(null) }
+    var barWidth by remember { mutableIntStateOf(0) }
     val seeking = remember { MutableInteractionSource() }
+    val haptics = LocalHapticFeedback.current
+    val reach = with(LocalDensity.current) { SNAP_REACH.toPx() }
+
+    val chapters = if (showChapters) snapshot.chapters else emptyList()
+    val dotColors = chapterDotColors()
+    // Under the finger while it is on the bar, the player's own otherwise.
+    val named = when (val at = dragged) {
+        null -> snapshot.currentChapter.takeIf { showChapters }
+        else -> chapterAt(at, chapters)
+    }
 
     val target = dragged?.let { percent ->
         Formatters.clockSeconds(snapshot.duration)?.let { total ->
@@ -276,6 +307,17 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
     }
 
     Column(modifier = Modifier.padding(top = 6.dp)) {
+        // Halfway down between what is drawn above and the line of the bar,
+        // whichever two those are (see the figures below).
+        ChapterLabel(
+            chapter = named,
+            count = snapshot.chapterCount,
+            modifier = Modifier.padding(
+                top = (if (snapshot.filename.isBlank()) LABEL_UNDER_POSTER else 0.dp) +
+                    (if (canControl) LABEL_OVER_SLIDER else 0.dp),
+                bottom = if (canControl) 0.dp else LABEL_OVER_WAVE,
+            ),
+        )
         if (canControl) {
             // Put where it should be on every pass, as the slider that took a
             // bare value used to do for itself.
@@ -283,12 +325,21 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
             position.value = dragged ?: reported
             Slider(
                 state = position,
-                onValueChange = { dragged = it },
+                onValueChange = { value ->
+                    val onto = snapTarget(value, chapters, percentOf(reach, barWidth))
+                    // One tick per dot reached, not one per frame spent on it.
+                    if (onto != null && onto != snapped) {
+                        haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    }
+                    snapped = onto
+                    dragged = onto?.at?.toFloat() ?: value
+                },
                 onValueChangeFinished = {
-                    finishDrag(dragged, viewModel::seekTo)
+                    finishDrag(dragged, viewModel::seekTo, snapped, viewModel::goToChapter)
                     // Handed back to the box: what it reports next is where the
                     // player actually landed, which is not always what was asked.
                     dragged = null
+                    snapped = null
                 },
                 // Held here rather than left to the slider, because the thumb
                 // is drawn by hand below and it has to light up for the same
@@ -303,16 +354,22 @@ private fun ProgressRow(snapshot: Snapshot, canControl: Boolean, viewModel: Live
                     PlaybackWave(
                         progress = { state.coercedValueAsFraction },
                         paused = snapshot.paused,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .chapterDots(chapters, dragged != null, { state.value }, dotColors),
                     )
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onSizeChanged { barWidth = it.width },
             )
         } else {
             PlaybackWave(
                 progress = { reported / 100f },
                 paused = snapshot.paused,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .chapterDots(chapters, all = false, progress = { reported }, colors = dotColors),
             )
         }
         Row(
@@ -427,6 +484,22 @@ private fun PlaybackWave(
     )
 }
 
+/*
+ * Where the chapter label stands: halfway down between what is drawn above it
+ * and the line of the bar under it, measured between the drawn edges rather
+ * than the laid-out ones - which is where the two ends move.
+ *
+ * Above, the file name leaves the label room enough; without one the poster
+ * row is what is above, and it is drawn twelve points lower than it is laid
+ * out (see its offset), so the label is held down by what that takes from the
+ * gap. Below, the slider's line sits in the middle of the slider's touch
+ * height, some way under its top; the bare wave drawn without control is its
+ * own top, so the space under the label is given to it instead.
+ */
+private val LABEL_UNDER_POSTER = 14.dp
+private val LABEL_OVER_SLIDER = 4.dp
+private val LABEL_OVER_WAVE = 15.dp
+
 /**
  * How far the wave travels in a second.
  *
@@ -538,12 +611,4 @@ private fun vs10ConversionTarget(output: String): String? {
         normalized.contains("hlg") -> "HLG"
         else -> null
     }
-}
-
-/**
- * Where a drag let go: the seek, or nothing for a release that moved nothing
- * - the slider can report the end of a press it never reported a value for.
- */
-internal fun finishDrag(dragged: Float?, seekTo: (Float) -> Unit) {
-    dragged?.let(seekTo)
 }

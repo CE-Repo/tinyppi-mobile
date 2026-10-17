@@ -81,6 +81,7 @@
     <string name="live_stop">Stopp</string>
     <string name="live_chapter_previous">Vorheriges Kapitel</string>
     <string name="live_chapter_next">Nächstes Kapitel</string>
+    <string name="live_chapter_of">Kapitel %1$d von %2$d</string>
     <plurals name="live_seek_back">
         <item quantity="one">%1$d Sekunde zurück</item>
         <item quantity="other">%1$d Sekunden zurück</item>
@@ -207,6 +208,8 @@
     <string name="settings_theme_dark">Dunkel</string>
     <string name="settings_artwork">Cover anzeigen</string>
     <string name="settings_artwork_desc">Das Poster des laufenden Titels laden. Nur ein Titel mit Bibliothekseintrag hat eines.</string>
+    <string name="settings_chapters">Kapitelmarken</string>
+    <string name="settings_chapters_desc">Punkte auf dem Fortschrittsbalken, wo jedes Kapitel beginnt, darüber das laufende Kapitel. Beim Ziehen rastet der Regler an ihnen ein.</string>
     <string name="settings_adaptive_color">Adaptive Farben</string>
     <string name="settings_adaptive_color_desc">Die App in der Farbe des laufenden Covers einfärben, wie im Dashboard.</string>
     <string name="settings_adaptive_color_intensity">Akzentintensität</string>

@@ -158,21 +158,69 @@ class LiveSessionTest {
     }
 
     @Test
-    fun `with neither answering it backs off before trying the pair again`() = runTest {
+    fun `with neither answering it tries the pair once more, then backs off over offline`() = runTest {
         val h = harness(both())
         h.source.answer = { unreachable }
         runCurrent()
 
         assertEquals(listOf(local, remote), h.source.opened)
-        assertEquals(Connection.Offline, h.last.connection)
+        assertTrue("one round is not yet a box that has gone", h.states.none { it.connection == Connection.Offline })
 
-        advanceTimeBy(9_999)
+        advanceTimeBy(999)
         runCurrent()
-        assertEquals("not before the back-off is up", 2, h.source.opened.size)
+        assertEquals(2, h.source.opened.size)
 
         advanceTimeBy(2)
         runCurrent()
         assertEquals(listOf(local, remote, local, remote), h.source.opened)
+        assertEquals(Connection.Offline, h.last.connection)
+
+        advanceTimeBy(9_998)
+        runCurrent()
+        assertEquals("not before the back-off is up", 4, h.source.opened.size)
+
+        advanceTimeBy(2)
+        runCurrent()
+        assertEquals(6, h.source.opened.size)
+    }
+
+    @Test
+    fun `leaving the screen lets go of the stream at once, and coming back opens it over the last reading`() = runTest {
+        val h = harness(both())
+        var closed = 0
+        h.source.answer = { server ->
+            flow {
+                try {
+                    emit(StreamEvent.Connected)
+                    emit(StreamEvent.State(film, server))
+                    awaitCancellation()
+                } finally {
+                    closed++
+                }
+            }
+        }
+        runCurrent()
+        assertEquals(Connection.Streaming, h.last.connection)
+        val seen = h.states.size
+
+        h.session.setVisible(false)
+        runCurrent()
+        assertEquals("closed at once", 1, closed)
+        assertEquals("and nothing said meanwhile", seen, h.states.size)
+
+        advanceTimeBy(60_000)
+        runCurrent()
+        assertEquals("nor anything tried while away", 1, h.source.opened.size)
+
+        h.session.setVisible(true)
+        runCurrent()
+        assertEquals(2, h.source.opened.size)
+        val back = h.states.drop(seen)
+        assertEquals(Connection.Connecting, back.first().connection)
+        assertEquals("over the reading it had", "Blade Runner", back.first().snapshot?.title)
+        assertEquals(local, back.first().server)
+        assertTrue("never offline on the way back", back.none { it.connection == Connection.Offline })
+        assertEquals(Connection.Streaming, h.last.connection)
     }
 
     @Test
@@ -224,6 +272,10 @@ class LiveSessionTest {
         assertTrue("a stream being reopened is a box that was just there", h.last.isAnswering)
 
         advanceTimeBy(3_001)
+        runCurrent()
+        assertTrue("one round finding nobody is not yet gone", h.last.isAnswering)
+
+        advanceTimeBy(1_001)
         runCurrent()
 
         assertEquals(Connection.Offline, h.last.connection)

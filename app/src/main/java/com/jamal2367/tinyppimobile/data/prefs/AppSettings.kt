@@ -121,6 +121,14 @@ data class AppSettings(
     /** Whether the poster of what is playing is fetched at all. */
     val showArtwork: Boolean = true,
     /**
+     * Whether the progress bar marks where each chapter starts, and names the
+     * one that is playing over it.
+     *
+     * On by default: a film's chapters are the places in it worth jumping to,
+     * and the dots are what a drag finds them by.
+     */
+    val showChapters: Boolean = true,
+    /**
      * Whether the app paints itself in the colour of what is playing.
      *
      * On by default, and read off the poster - so it follows [showArtwork]:

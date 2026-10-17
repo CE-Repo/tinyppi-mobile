@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
+import androidx.lifecycle.Lifecycle
 import com.jamal2367.tinyppimobile.MainActivity
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.prefs.ThemeMode
@@ -80,6 +81,19 @@ class AppShellTest {
         rule.until { seen(str(R.string.exit_confirm)) || rule.activity.isFinishing }
         rule.activity.onBackPressedDispatcher.onBackPressed()
         rule.until { rule.activity.isFinishing }
+    }
+
+    @Test
+    fun `leaving the app lets go of the box's stream, and coming back opens it again`() {
+        rule.until { seen("Dune: Part Two") }
+        val streams = { env.box.asked.count { it == "GET /api/stream" } }
+
+        rule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+        val away = streams()
+        rule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+
+        rule.until { streams() > away }
+        rule.until { seen("Dune: Part Two") }
     }
 
     @Test
