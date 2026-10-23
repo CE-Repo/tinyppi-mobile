@@ -125,7 +125,8 @@ internal fun PlotCard(media: MediaInfo, colourfulRatings: Boolean) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // The slogan right over the plot, so the two read as one
-                // text: upright, set like a credit's heading.
+                // text: upright, set like a credit's heading, and as far
+                // over it as a credit's heading is over its names.
                 if (media.tagline.isNotBlank()) {
                     Text(
                         text = media.tagline.trim(),
@@ -133,6 +134,7 @@ internal fun PlotCard(media: MediaInfo, colourfulRatings: Boolean) {
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = SLOGAN_GAP),
                     )
                 }
                 Text(
@@ -501,6 +503,9 @@ private fun HeartMark(tint: Color) {
 private fun greys(colourful: Boolean): ColorFilter? =
     if (colourful) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
 
+/** The air between the slogan and the plot under it. */
+private val SLOGAN_GAP = 4.dp
+
 /** The corners of the ripple a tap on the plot draws. */
 private val FOLD_SHAPE = RoundedCornerShape(8.dp)
 
@@ -508,7 +513,7 @@ private val FOLD_SHAPE = RoundedCornerShape(8.dp)
 private const val PLOT_LINES = 3
 
 /** How tall a mark stands on its plate, and the corners of a shield. */
-private val MARK = 17.dp
+private val MARK = 18.dp
 private val SHIELD = RoundedCornerShape(6.dp)
 
 /**
@@ -520,7 +525,7 @@ private val SHIELD = RoundedCornerShape(6.dp)
 @Composable
 private fun badgeHeight(): Dp = BADGE * LocalDensity.current.fontScale.coerceAtLeast(1f)
 
-private val BADGE = 22.dp
+private val BADGE = 24.dp
 
 /** A film's slogan, plot, ratings and cast, as the card draws them. */
 @PreviewLightDark
