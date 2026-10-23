@@ -223,6 +223,8 @@
     <string name="settings_artwork_desc">Fetch the poster of what is playing. Only a title with a library entry has one.</string>
     <string name="settings_chapters">Chapter markers</string>
     <string name="settings_chapters_desc">Dots on the progress bar where each chapter starts, with the chapter playing named over it. A drag snaps onto them.</string>
+    <string name="settings_rating_colours">Coloured rating badges</string>
+    <string name="settings_rating_colours_desc">Each rating badge in its service\'s colours. Off, all of them in the app\'s own greys.</string>
     <string name="settings_adaptive_color">Adaptive colours</string>
     <string name="settings_adaptive_color_desc">Colour the app after the poster of what is playing, the way the dashboard does.</string>
     <string name="settings_adaptive_color_intensity">Accent intensity</string>

@@ -43,6 +43,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -90,7 +92,7 @@ import java.util.Locale
  * own: short facts about the film, taken in at a glance.
  */
 @Composable
-internal fun PlotCard(media: MediaInfo) {
+internal fun PlotCard(media: MediaInfo, colourfulRatings: Boolean) {
     SectionCard(title = stringResource(R.string.live_plot), foldId = FOLD_PLOT) {
         if (media.hasPlot) {
             // A long plot is cut to a few lines, and a tap on it lets the
@@ -156,7 +158,7 @@ internal fun PlotCard(media: MediaInfo) {
             if (media.hasPlot || media.hasCredits) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
             }
-            RatingRow(media)
+            RatingRow(media, colourfulRatings)
         }
     }
 }
@@ -214,12 +216,16 @@ private fun creditLine(label: String, names: String, colors: ColorScheme): Annot
  * colour rather than its name - the same drawings the add-on's dashboard
  * serves (`tools/gen_rating_marks.py` in script.tinyppi writes both) - and
  * says in words what it shows, since a screen reader can say nothing of a
- * drawing.
+ * drawing. Not [colourful] - the reader's choice in the settings - every one
+ * of them is drawn in greys instead: its mark without colour, on the plain
+ * ground a source without a drawing has.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun RatingRow(media: MediaInfo) {
+private fun RatingRow(media: MediaInfo, colourful: Boolean) {
     val tall = badgeHeight()
+    val plain = MaterialTheme.colorScheme.surfaceContainerHigh
+    fun ground(colour: Color) = if (colourful) colour else plain
     FlowRow(
         // Every line of them centred, the last one too.
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
@@ -241,7 +247,7 @@ private fun RatingRow(media: MediaInfo) {
             val drawing = AGE_MARKS[media.age]
             if (drawing != null) {
                 RatingShield(spoken = said, value = media.ageLevel.trim(), tall = tall, inset = 0.dp) {
-                    BoardPlate(drawing)
+                    BoardPlate(drawing, colourful)
                 }
             } else {
                 RatingShield(spoken = said, value = said, tall = tall)
@@ -255,9 +261,9 @@ private fun RatingRow(media: MediaInfo) {
                 spoken = "$name $value".trim(),
                 value = value,
                 tall = tall,
-                ground = mark?.ground ?: MaterialTheme.colorScheme.surfaceContainerHigh,
+                ground = mark?.ground?.let(::ground) ?: plain,
             ) {
-                if (mark != null) DrawnMark(mark.drawing) else LetterMark(name.take(1))
+                if (mark != null) DrawnMark(mark.drawing, colourful) else LetterMark(name.take(1))
             }
         }
         if (media.userRating > 0) {
@@ -268,16 +274,18 @@ private fun RatingRow(media: MediaInfo) {
                 spoken = "${stringResource(R.string.live_rating_mine)} $value",
                 value = value,
                 tall = tall,
-                ground = MaterialTheme.colorScheme.primary,
-            ) { HeartMark() }
+                ground = ground(MaterialTheme.colorScheme.primary),
+            ) {
+                HeartMark(if (colourful) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         if (media.top250 > 0) {
             RatingShield(
                 spoken = stringResource(R.string.live_rating_top250, media.top250),
                 value = "#${media.top250}",
                 tall = tall,
-                ground = TOP250.ground,
-            ) { DrawnMark(TOP250.drawing) }
+                ground = ground(TOP250.ground),
+            ) { DrawnMark(TOP250.drawing, colourful) }
         }
     }
 }
@@ -292,10 +300,10 @@ private val RATING_MARKS = mapOf(
     "trakt" to HouseMark(R.drawable.rating_trakt, Color(0xFFED1C24)),
     "tvdb" to HouseMark(R.drawable.rating_tvdb, Color(0xFF1E2A33)),
     "letterboxd" to HouseMark(R.drawable.rating_letterboxd, Color(0xFF14181C)),
-    "metacritic" to HouseMark(R.drawable.rating_metacritic, Color.Black),
-    "metacriticuser" to HouseMark(R.drawable.rating_metacriticuser, Color.Black),
-    "rottentomatoes" to HouseMark(R.drawable.rating_rottentomatoes, Color.White),
-    "popcorn" to HouseMark(R.drawable.rating_popcorn, Color.White),
+    "metacritic" to HouseMark(R.drawable.rating_metacritic, Color(0xFF66CC33)),
+    "metacriticuser" to HouseMark(R.drawable.rating_metacriticuser, Color(0xFF66CC33)),
+    "rottentomatoes" to HouseMark(R.drawable.rating_rottentomatoes, Color(0xFFF9D320)),
+    "popcorn" to HouseMark(R.drawable.rating_popcorn, Color(0xFF1E88E5)),
     "rogerebert" to HouseMark(R.drawable.rating_rogerebert, Color(0xFFC8102E)),
     "myanimelist" to HouseMark(R.drawable.rating_myanimelist, Color(0xFF2E51A2)),
 )
@@ -430,11 +438,12 @@ private fun Modifier.heardAs(spoken: String): Modifier = clearAndSetSemantics { 
 
 /** A house's drawing, as tall as a line of the shield and as wide as it is drawn. */
 @Composable
-private fun DrawnMark(drawing: Int) {
+private fun DrawnMark(drawing: Int, colourful: Boolean) {
     val painter = painterResource(drawing)
     Image(
         painter = painter,
         contentDescription = null,
+        colorFilter = greys(colourful),
         modifier = Modifier
             .height(MARK)
             .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),
@@ -447,11 +456,12 @@ private fun DrawnMark(drawing: Int) {
  * shield's edges as a house's ground does.
  */
 @Composable
-private fun BoardPlate(drawing: Int) {
+private fun BoardPlate(drawing: Int, colourful: Boolean) {
     val painter = painterResource(drawing)
     Image(
         painter = painter,
         contentDescription = null,
+        colorFilter = greys(colourful),
         contentScale = ContentScale.FillBounds,
         modifier = Modifier
             .fillMaxHeight()
@@ -474,18 +484,22 @@ private fun LetterMark(letter: String) {
     )
 }
 
-/** The heart the reader's own rating wears, on the accent it is drawn on. */
+/** The heart the reader's own rating wears, in [tint] on the ground it is drawn on. */
 @Composable
-private fun HeartMark() {
+private fun HeartMark(tint: Color) {
     Icon(
         imageVector = Icons.Rounded.Favorite,
         contentDescription = null,
-        tint = MaterialTheme.colorScheme.onPrimary,
+        tint = tint,
         modifier = Modifier
             .padding(horizontal = 4.dp)
             .size(11.dp),
     )
 }
+
+/** A mark drawn in greys, where the reader asked for no colours; null keeps its own. */
+private fun greys(colourful: Boolean): ColorFilter? =
+    if (colourful) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
 
 /** The corners of the ripple a tap on the plot draws. */
 private val FOLD_SHAPE = RoundedCornerShape(8.dp)
@@ -529,6 +543,7 @@ internal fun PlotCardPreview() {
                         cast = listOf("Timothée Chalamet", "Zendaya", "Rebecca Ferguson", "Javier Bardem", "Josh Brolin"),
                         castMore = true,
                     ),
+                    colourfulRatings = true,
                 )
             }
         }

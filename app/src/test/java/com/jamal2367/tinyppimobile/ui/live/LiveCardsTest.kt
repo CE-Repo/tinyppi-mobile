@@ -3,12 +3,14 @@ package com.jamal2367.tinyppimobile.ui.live
 import android.content.Context
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -148,6 +150,42 @@ class LiveCardsTest {
         // An output the source already is draws no arrow.
         badgesFor(Screens.film.copy(hdrType = "hdr10", outputType = "", vs10 = Vs10State(output = "HDR10")))
         badgesFor(Screens.film.copy(outputType = "dolbyvision", playing = true))
+    }
+
+    // Drawn for real: the colours are read off the pixels.
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `the rating badges wear their houses' colours, or greys where the reader asked`() {
+        fun colourful(said: String): Boolean {
+            val image = rule.onNodeWithContentDescription(said).captureToImage().toPixelMap()
+            return (0 until image.width).any { x ->
+                (0 until image.height).any { y ->
+                    val pixel = image[x, y]
+                    maxOf(pixel.red, pixel.green, pixel.blue) - minOf(pixel.red, pixel.green, pixel.blue) > 0.25f
+                }
+            }
+        }
+        val badges = listOf("FSK 12", "IMDb 8.5", "Metacritic 7.4", "${str(R.string.live_rating_mine)} 9",
+            str(R.string.live_rating_top250, 17))
+        fake.playing(
+            told.copy(
+                media = told.media.copy(
+                    ratings = listOf(SourceRating("imdb", 8.5, 0), SourceRating("metacritic", 7.4, 0)),
+                    userRating = 9,
+                    top250 = 17,
+                    mpaa = "FSK 12",
+                    age = "fsk12",
+                    ageLevel = "12",
+                ),
+            ),
+        )
+        showLive()
+        badges.forEach { assertEquals(it, true, colourful(it)) }
+
+        // Monochrome: every one of them in greys, marks and grounds alike.
+        fake.settings.value = fake.settings.value.copy(colourfulRatings = false)
+        rule.waitForIdle()
+        badges.forEach { assertEquals(it, false, colourful(it)) }
     }
 
     @Test

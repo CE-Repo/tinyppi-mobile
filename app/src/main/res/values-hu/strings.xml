@@ -218,6 +218,8 @@
     <string name="settings_artwork_desc">A lejátszott film poszterének lekérése. Csak annak a címnek van posztere, amelyet a médiatár is tartalmaz.</string>
     <string name="settings_chapters">Fejezetjelölők</string>
     <string name="settings_chapters_desc">Pontok a folyamatjelző sávon, ahol az egyes fejezetek kezdődnek, fölötte az éppen futó fejezet. Húzáskor a csúszka rájuk ugrik.</string>
+    <string name="settings_rating_colours">Színes értékelési jelvények</string>
+    <string name="settings_rating_colours_desc">Minden értékelési jelvény a szolgáltatás színeiben. Kikapcsolva mind az alkalmazás szürke árnyalataiban.</string>
     <string name="settings_adaptive_color">Adaptív színek</string>
     <string name="settings_adaptive_color_desc">Az alkalmazás színezése a lejátszott film posztere alapján.</string>
     <string name="settings_adaptive_color_intensity">Hozzáadott szín intenzitása</string>

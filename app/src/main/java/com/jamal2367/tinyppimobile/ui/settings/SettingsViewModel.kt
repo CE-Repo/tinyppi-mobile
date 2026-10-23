@@ -172,6 +172,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { repository.setShowChapters(enabled) }
     }
 
+    fun setColourfulRatings(enabled: Boolean) {
+        viewModelScope.launch { repository.setColourfulRatings(enabled) }
+    }
+
     fun setAdaptiveColor(enabled: Boolean) {
         viewModelScope.launch { repository.setAdaptiveColor(enabled) }
     }

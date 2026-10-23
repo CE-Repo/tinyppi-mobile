@@ -125,6 +125,7 @@ fun LiveScreen(
                     poster = poster,
                     showArtwork = state.settings.showArtwork,
                     showChapters = state.settings.showChapters,
+                    colourfulRatings = state.settings.colourfulRatings,
                     canControl = state.canControlPlayback,
                     viewModel = viewModel,
                     )
@@ -142,6 +143,7 @@ private fun LiveContent(
     poster: String?,
     showArtwork: Boolean,
     showChapters: Boolean,
+    colourfulRatings: Boolean,
     canControl: Boolean,
     viewModel: LiveViewModel,
 ) {
@@ -230,7 +232,7 @@ private fun LiveContent(
         // and its fold as the box adds and drops panels mid-film.
         for (id in shown) {
             when (id) {
-                FOLD_PLOT -> item(key = id) { PlotCard(snapshot.media) }
+                FOLD_PLOT -> item(key = id) { PlotCard(snapshot.media, colourfulRatings) }
 
                 FOLD_CONTROLS -> item(key = id) {
                     ControlsCard(
