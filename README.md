@@ -48,8 +48,8 @@ command endpoints.
   graded and what is actually leaving the box. A conversion gets a badge of its
   own, because that is the one thing on the screen that is a decision rather
   than a reading.
-- **What it is about**: the slogan and the plot the library has for the title,
-  in a card of their own under it.
+- **What it is about**: the plot the library has for the title, with its
+  slogan, in a card of their own under it.
 - **The Dolby Vision metadata view**: the same list the overlay's second window
   is built from, trim tables and all.
 - **The luminance chart and the event log** the box keeps for the running
@@ -139,11 +139,11 @@ The title with its poster, the source and output badges, the video and audio
 formats named in badges of their own, the progress, and — on a box that allows
 it — the transport row, the track pickers and the VS10 conversions.
 
-Under the card of what is playing, the **Plot** card: the title's slogan, set
-in italics, and its plot, as Kodi's library has them. Either half is left out
-where the library has none — most episodes carry a plot and no slogan — and
-the whole card where it has neither, as for a file that is not in the library.
-It folds, moves and comes off the screen like every other card on it (see
+Under the card of what is playing, the **Plot** card: the title's plot, as
+Kodi's library has it, with its slogan in italics above it where there is one —
+most episodes carry a plot and no slogan. Without a plot the card is left out,
+slogan or not, as it is for a file that is not in the library. It folds, moves
+and comes off the screen like every other card on it (see
 [Arranging the cards](#arranging-the-cards)).
 
 A file with chapters carries a dot on the progress bar where each chapter

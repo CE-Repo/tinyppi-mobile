@@ -279,9 +279,12 @@ data class MediaInfo(
     /** What the title is about, with the library's own line breaks. */
     val plot: String = "",
 ) {
-    /** Whether there is anything for the plot card to say. */
+    /**
+     * Whether the plot card is drawn: only with a plot. A slogan on its own
+     * says too little to be worth a card.
+     */
     val hasPlot: Boolean
-        get() = tagline.isNotBlank() || plot.isNotBlank()
+        get() = plot.isNotBlank()
 
     /** `S02E07`, when this is an episode of something. */
     val episodeLabel: String?

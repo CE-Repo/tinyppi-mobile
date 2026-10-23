@@ -22,9 +22,10 @@ import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
  *
  * Under the card of what is playing until the reader moves it, and like every
  * other card there it folds, comes off the screen and goes back on (see
- * CardLayout). Left out altogether where the library has neither - a file it
- * does not know - and each half on its own where it has only that one, which
- * for most episodes is a plot without a slogan.
+ * CardLayout). Drawn only for a title with a plot (see [MediaInfo.hasPlot]):
+ * without one it is left out, slogan or not - as for a file the library does
+ * not know. The slogan above the plot is left out where there is none, which
+ * is most episodes.
  *
  * The slogan in italics and in the text's full colour, as the line a poster
  * carries; the plot under it in the quieter colour the year and genre are set
@@ -42,13 +43,11 @@ internal fun PlotCard(media: MediaInfo) {
                 color = MaterialTheme.colorScheme.onSurface,
             )
         }
-        if (media.plot.isNotBlank()) {
-            Text(
-                text = media.plot.trim(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        Text(
+            text = media.plot.trim(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

@@ -186,7 +186,7 @@ class LiveCardsTest {
     )
 
     @Test
-    fun `the plot card says the slogan and the plot, each only where there is one`() {
+    fun `the plot card says the plot, with its slogan where there is one`() {
         fake.playing(told)
         showLive()
         rule.onNodeWithText(str(R.string.live_plot)).assertIsDisplayed()
@@ -198,10 +198,14 @@ class LiveCardsTest {
         rule.until { seen("An episode.") }
         assertEquals(false, seen("Long live the fighters."))
 
-        // A slogan without a plot.
+        // A slogan without a plot: too little for a card.
         fake.playing(told.copy(media = MediaInfo(tagline = "Only this.")))
-        rule.until { seen("Only this.") }
-        assertEquals(false, seen("An episode."))
+        rule.until { !seen(str(R.string.live_plot)) }
+        assertEquals(false, seen("Only this."))
+
+        // A plot again, and the card is back.
+        fake.playing(told)
+        rule.until { seen("Paul joins the Fremen.") }
 
         // A file the library does not know: no card at all.
         fake.playing(told.copy(media = MediaInfo()))

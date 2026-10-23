@@ -123,11 +123,12 @@ class ModelsTest {
     }
 
     @Test
-    fun `the plot card has something to say with a slogan, a plot or both`() {
+    fun `the plot card is drawn for a plot, and not for a slogan on its own`() {
         assertFalse(MediaInfo().hasPlot)
         assertFalse(MediaInfo(tagline = " ", plot = "\n").hasPlot)
-        assertTrue(MediaInfo(tagline = "Long live the fighters.").hasPlot)
+        assertFalse(MediaInfo(tagline = "Long live the fighters.").hasPlot)
         assertTrue(MediaInfo(plot = "Paul joins the Fremen.").hasPlot)
+        assertTrue(MediaInfo(tagline = "Long live the fighters.", plot = "Paul joins the Fremen.").hasPlot)
     }
 
     @Test
