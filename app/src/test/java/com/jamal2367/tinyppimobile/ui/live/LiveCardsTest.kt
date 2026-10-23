@@ -247,6 +247,14 @@ class LiveCardsTest {
         )) {
             rule.onNodeWithContentDescription(said).assertIsDisplayed()
         }
+        // Every badge one height: the shields, the heart's, the place's and the
+        // age rating's mark on its own.
+        val heights = listOf(
+            "FSK 12", "IMDb 8.5, ${votes(612_345, "612,345")}", "Letterboxd 8.9, ${votes(3, "3")}",
+            "${str(R.string.live_rating_mine)} 9", str(R.string.live_rating_top250, 27),
+        ).map { rule.onNodeWithContentDescription(it).fetchSemanticsNode().boundsInRoot.height }
+        assertEquals(heights.map { heights.first() }, heights)
+        assertEquals(26f * context.resources.displayMetrics.density, heights.first(), 0.5f)
         assertEquals(false, seen("8.5"))
         // The ratings stand under the plot, the age rating first: on the
         // first line, before the first score.

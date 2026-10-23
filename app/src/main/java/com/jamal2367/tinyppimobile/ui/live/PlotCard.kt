@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -30,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -38,7 +38,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
@@ -117,6 +119,7 @@ internal fun PlotCard(media: MediaInfo) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RatingRow(media: MediaInfo) {
+    val tall = badgeHeight()
     FlowRow(
         // Every line of them centred, the last one too.
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
@@ -142,11 +145,11 @@ private fun RatingRow(media: MediaInfo) {
                     contentDescription = null,
                     modifier = Modifier
                         .heardAs(said)
-                        .height(AGE_HEIGHT)
+                        .height(tall)
                         .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),
                 )
             } else {
-                RatingShield(spoken = said, value = said)
+                RatingShield(spoken = said, value = said, tall = tall)
             }
         }
         media.ratings.forEach { entry ->
@@ -161,6 +164,7 @@ private fun RatingRow(media: MediaInfo) {
             RatingShield(
                 spoken = spoken,
                 value = value,
+                tall = tall,
                 note = votes,
                 ground = mark?.ground ?: MaterialTheme.colorScheme.surfaceContainerHigh,
             ) {
@@ -174,6 +178,7 @@ private fun RatingRow(media: MediaInfo) {
             RatingShield(
                 spoken = "${stringResource(R.string.live_rating_mine)} $value",
                 value = value,
+                tall = tall,
                 ground = MaterialTheme.colorScheme.primary,
             ) { HeartMark() }
         }
@@ -181,6 +186,7 @@ private fun RatingRow(media: MediaInfo) {
             RatingShield(
                 spoken = stringResource(R.string.live_rating_top250, media.top250),
                 value = "#${media.top250}",
+                tall = tall,
                 ground = TOP250.ground,
             ) { DrawnMark(TOP250.drawing) }
         }
@@ -254,6 +260,7 @@ private fun sourceName(entry: SourceRating): String =
 private fun RatingShield(
     spoken: String,
     value: String,
+    tall: Dp,
     note: String? = null,
     ground: Color = Color.Transparent,
     side: (@Composable () -> Unit)? = null,
@@ -261,7 +268,7 @@ private fun RatingShield(
     Row(
         modifier = Modifier
             .heardAs(spoken)
-            .height(IntrinsicSize.Min)
+            .height(tall)
             .clip(SHIELD)
             .border(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh, SHIELD)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest),
@@ -276,8 +283,10 @@ private fun RatingShield(
                 contentAlignment = Alignment.Center,
             ) { side() }
         }
+        // On one line, centred in the height the shield is given: a long age
+        // rating written out is cut at the edge rather than growing a second.
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
@@ -286,12 +295,15 @@ private fun RatingShield(
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             if (note != null) {
                 Text(
                     text = note,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
                 )
             }
         }
@@ -350,8 +362,16 @@ private fun HeartMark() {
 private val MARK = 20.dp
 private val SHIELD = RoundedCornerShape(7.dp)
 
-/** An age rating's mark, standing alone as tall as a shield. */
-private val AGE_HEIGHT = 26.dp
+/**
+ * How tall every badge stands - a shield, a heart, an age rating's mark on
+ * its own - so a row of them is one height whatever it holds. It grows with
+ * the reader's font size, and all of them with it: a shield's figures are set
+ * in text and must not be cut, and a mark beside it must not then stand short.
+ */
+@Composable
+private fun badgeHeight(): Dp = BADGE * LocalDensity.current.fontScale.coerceAtLeast(1f)
+
+private val BADGE = 26.dp
 
 /** A film's ratings, slogan and plot, as the card draws them. */
 @PreviewLightDark
