@@ -118,11 +118,11 @@ internal fun PlotCard(media: MediaInfo) {
 
 /**
  * Who made the title, a centred line each in the order a film's credits are
- * asked about: who directed it, who is in it and who made it - what kind of
- * film it is stands in the card above. The first names of each, as the
- * add-on cuts them, with an ellipsis after them where there are more. Each is
- * what it is in bold and the text's full colour, named for one or for more
- * than one ("Studio", "Studios"), and then the names in the plot's quieter
+ * asked about: who directed it and who is in it - what kind of film it is and
+ * the studio stand in the card above. The first names of each, as the add-on
+ * cuts them, with an ellipsis after them where there are more. Each is what
+ * it is in bold and the text's full colour, named for one or for more than
+ * one ("Director", "Directors"), and then the names in the plot's quieter
  * one; a list Kodi has none of is left out.
  */
 @Composable
@@ -134,11 +134,6 @@ private fun Credits(media: MediaInfo) {
             media.directorsMore,
         ),
         Credit(stringResource(R.string.live_credit_cast), media.cast, media.castMore),
-        Credit(
-            pluralStringResource(R.plurals.live_credit_studios, counted(media.studios, media.studiosMore)),
-            media.studios,
-            media.studiosMore,
-        ),
     )
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -154,7 +149,7 @@ private fun Credits(media: MediaInfo) {
                 text = buildAnnotatedString {
                     withStyle(named) { append(credit.label) }
                     append(" ")
-                    withStyle(names) { append(credit.names.joinToString(", ") + if (credit.more) ", …" else "") }
+                    withStyle(names) { append(Formatters.names(credit.names, credit.more)) }
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
@@ -477,7 +472,6 @@ internal fun PlotCardPreview() {
                         directors = listOf("Denis Villeneuve"),
                         cast = listOf("Timothée Chalamet", "Zendaya", "Rebecca Ferguson", "Javier Bardem", "Josh Brolin"),
                         castMore = true,
-                        studios = listOf("Legendary Pictures"),
                     ),
                 )
             }

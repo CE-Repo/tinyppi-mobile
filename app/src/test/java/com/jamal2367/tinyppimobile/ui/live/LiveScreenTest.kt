@@ -156,6 +156,20 @@ class LiveScreenTest {
     }
 
     @Test
+    fun `the studio stands on a line of its own under the year and the genre`() {
+        fake.playing(
+            Screens.film.copy(
+                media = Screens.film.media.copy(studios = listOf("Syncopy", "Atlas Entertainment"), studiosMore = true),
+            ),
+        )
+        showLive()
+        val genre = rule.onNodeWithText("2024 · Science Fiction").fetchSemanticsNode().boundsInRoot
+        val studio = rule.onNodeWithText("Syncopy, Atlas Entertainment, …").fetchSemanticsNode().boundsInRoot
+        assertEquals(true, studio.top >= genre.bottom)
+        assertEquals(genre.left, studio.left, 0.5f)
+    }
+
+    @Test
     fun `without control the readings are shown and nothing can be pressed`() {
         fake.playing(Screens.film.copy(control = false, controls = PlayerControls()))
         showLive()

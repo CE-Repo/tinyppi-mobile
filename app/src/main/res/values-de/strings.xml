@@ -127,10 +127,6 @@
         <item quantity="other">Regie</item>
     </plurals>
     <string name="live_credit_cast">Darsteller</string>
-    <plurals name="live_credit_studios">
-        <item quantity="one">Studio</item>
-        <item quantity="other">Studios</item>
-    </plurals>
 
     <string name="live_vs10">VS10</string>
     <string name="live_control_disabled">Diese Box lässt keine Steuerung von außen zu. Schalte sie in den Addon-Einstellungen frei.</string>

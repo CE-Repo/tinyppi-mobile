@@ -308,9 +308,10 @@ data class MediaInfo(
     /**
      * Who made it, as the add-on splits Kodi's readings into names and cuts
      * them: the first directors, the cast's leads in billing order and the
-     * first studios, each with whether there are more. An episode's studios
-     * are its show's, and its cast its own guests and then the show's. Its
-     * genre is [genre], for the card above.
+     * first studios, each with whether there are more. The directors and the
+     * cast are the plot card's credits; the studios stand under [genre] in
+     * the card of what is playing. An episode's studios are its show's, and
+     * its cast its own guests and then the show's.
      */
     val directors: List<String> = emptyList(),
     @SerialName("directors_more") val directorsMore: Boolean = false,
@@ -330,9 +331,9 @@ data class MediaInfo(
     val hasRatings: Boolean
         get() = ratings.isNotEmpty() || userRating > 0 || top250 > 0 || mpaa.isNotBlank()
 
-    /** Whether Kodi says who made the title in any of the ways it can. */
+    /** Whether Kodi says who directed the title or who is in it. */
     val hasCredits: Boolean
-        get() = directors.isNotEmpty() || cast.isNotEmpty() || studios.isNotEmpty()
+        get() = directors.isNotEmpty() || cast.isNotEmpty()
 
     /** Whether the plot card is drawn: for a plot, for ratings, for credits. */
     val showsPlotCard: Boolean

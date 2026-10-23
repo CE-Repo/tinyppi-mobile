@@ -136,9 +136,11 @@ with the same wrong token would turn a clear error into a confusing one.
 
 ### Live
 
-The title with its poster, the source and output badges, the video and audio
-formats named in badges of their own, the progress, and — on a box that allows
-it — the transport row, the track pickers and the VS10 conversions.
+The title with its poster, its year and genre and under them its studio (up
+to four, ending in "…" where there are more; an episode's is its show's), the
+source and output badges, the video and audio formats named in badges of
+their own, the progress, and — on a box that allows it — the transport row,
+the track pickers and the VS10 conversions.
 
 Under the card of what is playing, the **Overview** card, all of it centred:
 the plot, with the slogan in italics above it where there is one — most
@@ -156,10 +158,10 @@ place in the IMDb Top 250. A screen reader hears each shield as one sentence ("I
 8.5, 612,345 votes"). An episode is rated on its own and carries its show's
 age rating. Under the ratings, past another rule, the credits: a centred
 line each with its name in bold and then the names — the director (up to
-three), the cast (its first five, in billing order) and the studio (up to
-four), each ending in "…" where there are more — named for one or for more
-than one ("Studio", "Studios") and left out where Kodi has none; the genre
-stands in the card above. An episode's studio is its show's. The slogan only
+three) and the cast (its first five, in billing order), each ending in "…"
+where there are more — named for one or for more than one ("Director",
+"Directors") and left out where Kodi has none; the genre and the studio
+stand in the card above. The slogan only
 ever stands above a plot: without a plot the card shows the ratings and the
 credits alone, and with none of them it is left out, as it is for a file that
 is not in the library. It folds, moves and comes off the screen like

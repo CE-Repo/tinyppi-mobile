@@ -186,6 +186,12 @@ object Formatters {
         java.text.NumberFormat.getIntegerInstance(locale).format(value)
 
     /**
+     * Names as a line, as the dashboard writes them: a comma between two, and
+     * an ellipsis after the last where the add-on cut the list.
+     */
+    fun names(names: List<String>, more: Boolean): String = names.joinToString(", ") + if (more) ", …" else ""
+
+    /**
      * A number followed by a `k`, and nothing else that looks like one.
      *
      * The `k` has to end the word, so the one in `4kbps` is left where it is.

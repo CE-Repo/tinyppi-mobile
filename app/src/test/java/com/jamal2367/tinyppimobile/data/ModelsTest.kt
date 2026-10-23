@@ -141,11 +141,12 @@ class ModelsTest {
         assertEquals("", MediaInfo().age)
         assertEquals("", MediaInfo().ageLevel)
         assertFalse(MediaInfo().hasCredits)
+        // A studio is the playing card's, and no credit.
+        assertFalse(MediaInfo(studios = listOf("A24")).showsPlotCard)
         // Any one list of names is credits, and draws the card on its own.
         for (credited in listOf(
             MediaInfo(directors = listOf("Denis Villeneuve")),
             MediaInfo(cast = listOf("Zendaya")),
-            MediaInfo(studios = listOf("A24")),
         )) {
             assertTrue(credited.hasCredits)
             assertTrue(credited.showsPlotCard)

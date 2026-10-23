@@ -187,6 +187,17 @@ internal fun NowPlayingCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+                // Who made it, on a line of its own under what kind of film
+                // it is, and in the same voice.
+                snapshot.media.studios.takeIf { it.isNotEmpty() }?.let { studios ->
+                    Text(
+                        text = Formatters.names(studios, snapshot.media.studiosMore),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
 
                 // All of the slack above the badges rather than half of it
                 // either side, which lands the block on the bottom edge of the
