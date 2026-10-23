@@ -540,7 +540,6 @@ object DemoServer {
         put("kind", kind); put("name", name); put("cells", JsonArray(cells.map(::JsonPrimitive)))
     }
 
-    /** A list of names as the add-on sends it: its first [limit], and whether it has more. */
     private fun track(index: Int, label: String) = buildJsonObject { put("index", index); put("label", label) }
 
     private fun history(): JsonObject = synchronized(lock) {
