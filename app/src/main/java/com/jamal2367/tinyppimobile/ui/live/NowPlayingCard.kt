@@ -208,10 +208,10 @@ internal fun NowPlayingCard(
                 Spacer(Modifier.weight(1f))
                 // Who directed it, in the middle of that slack: a weighted
                 // spacer either side of it shares the slack out evenly. The
-                // name alone, in the voice of the lines above it.
-                snapshot.media.directors.takeIf { it.isNotEmpty() }?.let { directors ->
+                // first name alone, in the voice of the lines above it.
+                snapshot.media.directors.firstOrNull()?.let { director ->
                     Text(
-                        text = Formatters.names(directors, snapshot.media.directorsMore),
+                        text = director,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,

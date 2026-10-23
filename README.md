@@ -138,8 +138,8 @@ with the same wrong token would turn a clear error into a confusing one.
 
 The title with its poster, its year and genre (its first two) and under them
 its studio (up to four, ending in "…" where there are more; an episode's is
-its show's), the director's name alone (the first, the same way) in the
-middle of the room left between those lines and the format badges, the
+its show's), the director's name alone (only the first, with no "…") in
+the middle of the room left between those lines and the format badges, the
 source and output badges, the video and audio formats named in badges of
 their own, the progress, and — on a box that allows it — the transport row,
 the track pickers and the VS10 conversions.

@@ -185,7 +185,7 @@ class DemoServerTest {
         assertEquals("12", rated["age_level"]!!.jsonPrimitive.content)
         // And who made it, cut as the add-on cuts it.
         assertEquals("Denis Villeneuve", rated["directors"]!!.jsonArray.single().jsonPrimitive.content)
-        assertEquals(false, rated["directors_more"]!!.jsonPrimitive.boolean)
+        assertEquals(null, rated["directors_more"])
         assertEquals(8, rated["cast"]!!.jsonArray.size)
         assertEquals(true, rated["cast_more"]!!.jsonPrimitive.boolean)
         assertEquals("Legendary Pictures", rated["studios"]!!.jsonArray.single().jsonPrimitive.content)

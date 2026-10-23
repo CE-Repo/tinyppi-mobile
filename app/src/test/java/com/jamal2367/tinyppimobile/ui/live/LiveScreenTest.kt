@@ -204,13 +204,12 @@ class LiveScreenTest {
         assertEquals(true, under.top >= studio.bottom)
         assertEquals(studio.left, under.left, 0.5f)
 
-        // The name alone, and an ellipsis after it where the add-on cut the list.
+        // The first of more than one alone, with nothing to say there are more.
         fake.playing(
-            Screens.film.copy(
-                media = Screens.film.media.copy(directors = listOf("Joel Coen"), directorsMore = true),
-            ),
+            Screens.film.copy(media = Screens.film.media.copy(directors = listOf("Joel Coen", "Ethan Coen"))),
         )
-        rule.waitUntil(5_000) { rule.onAllNodesWithText("Joel Coen, …").fetchSemanticsNodes().isNotEmpty() }
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("Joel Coen").fetchSemanticsNodes().isNotEmpty() }
+        assertEquals(true, rule.onAllNodesWithText("Ethan Coen", substring = true).fetchSemanticsNodes().isEmpty())
     }
 
     @Test

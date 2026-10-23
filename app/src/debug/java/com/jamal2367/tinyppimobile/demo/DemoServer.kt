@@ -478,8 +478,9 @@ object DemoServer {
                 put("age_level", playingAgeLevel)
                 put("userrating", playingMine)
                 put("top250", playingTop250)
-                // Who made it, cut as the add-on cuts it.
-                putNames("directors", playingCredits.directors, 1)
+                // Who made it, cut as the add-on cuts it: the director the
+                // first alone.
+                putJsonArray("directors") { playingCredits.directors.take(1).forEach { add(it) } }
                 putNames("cast", playingCredits.cast, 8)
                 putNames("studios", playingCredits.studios, 4)
             }
