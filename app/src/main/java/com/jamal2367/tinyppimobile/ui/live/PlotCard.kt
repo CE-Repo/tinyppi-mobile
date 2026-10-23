@@ -25,7 +25,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -92,13 +98,29 @@ internal fun PlotCard(media: MediaInfo) {
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                 )
             }
+            // A long plot is cut to a few lines, and the button under it lets
+            // the rest out and takes it back. It is there only where there is
+            // more to show, and a new plot starts cut again.
+            var open by rememberSaveable(media.plot) { mutableStateOf(false) }
+            var cut by remember(media.plot) { mutableStateOf(false) }
             Text(
                 text = media.plot.trim(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
+                maxLines = if (open) Int.MAX_VALUE else PLOT_LINES,
+                overflow = TextOverflow.Ellipsis,
+                onTextLayout = { cut = it.hasVisualOverflow },
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
+            if (open || cut) {
+                TextButton(
+                    onClick = { open = !open },
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                ) {
+                    Text(stringResource(if (open) R.string.live_plot_less else R.string.live_plot_more))
+                }
+            }
         }
         if (media.hasCredits) {
             // A thin rule between the plot and them, where there is a plot:
@@ -414,6 +436,9 @@ private fun HeartMark() {
             .size(13.dp),
     )
 }
+
+/** How many lines of a plot are shown until the reader asks for the rest. */
+private const val PLOT_LINES = 4
 
 /** How tall a mark stands on its plate, and the corners of a shield. */
 private val MARK = 20.dp

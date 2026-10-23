@@ -42,6 +42,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /** The cards of the live screen against every shape of reading they handle. */
 @RunWith(RobolectricTestRunner::class)
@@ -364,6 +365,39 @@ class LiveCardsTest {
         rule.until { seen("${str(R.string.live_credit_cast)}\nSomebody") }
         assertEquals(true, seen(str(R.string.live_plot)))
         assertEquals(false, seen("Paul joins the Fremen."))
+    }
+
+    // Drawn for real: how many lines a plot takes is measured.
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `a long plot is cut to four lines, and a button lets the rest out`() {
+        val long = List(40) { "Paul joins the Fremen and walks the desert." }.joinToString(" ")
+        fake.playing(told.copy(media = told.media.copy(plot = long)))
+        showLive()
+        fun plot() = rule.onNodeWithText(long).fetchSemanticsNode().boundsInRoot
+        val cut = plot()
+        rule.onNodeWithText(str(R.string.live_plot_more)).assertIsDisplayed()
+
+        // Let out: all of it, and the button takes it back.
+        rule.onNodeWithText(str(R.string.live_plot_more)).performClick()
+        rule.until { seen(str(R.string.live_plot_less)) }
+        assertEquals(true, plot().height > cut.height * 2)
+        rule.onNodeWithText(str(R.string.live_plot_less)).performClick()
+        rule.until { seen(str(R.string.live_plot_more)) }
+        assertEquals(cut.height, plot().height, 0.5f)
+
+        // A new plot starts cut, even after the last was let out.
+        rule.onNodeWithText(str(R.string.live_plot_more)).performClick()
+        rule.until { seen(str(R.string.live_plot_less)) }
+        val other = "$long Again."
+        fake.playing(told.copy(media = told.media.copy(plot = other)))
+        rule.until { seen(other) && seen(str(R.string.live_plot_more)) }
+
+        // A short one has no button.
+        fake.playing(told)
+        rule.until { seen("Paul joins the Fremen.") }
+        assertEquals(false, seen(str(R.string.live_plot_more)))
+        assertEquals(false, seen(str(R.string.live_plot_less)))
     }
 
     @Test

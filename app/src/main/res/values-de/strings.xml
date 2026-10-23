@@ -116,6 +116,8 @@
     <string name="live_track_unknown">Unbekannt</string>
 
     <string name="live_plot">Überblick</string>
+    <string name="live_plot_more">Mehr anzeigen</string>
+    <string name="live_plot_less">Weniger anzeigen</string>
     <plurals name="live_rating_votes">
         <item quantity="one">%1$s Stimme</item>
         <item quantity="other">%1$s Stimmen</item>
