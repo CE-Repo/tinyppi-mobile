@@ -254,6 +254,12 @@ class LiveCardsTest {
         val imdb = rule.onNodeWithContentDescription("IMDb 8.5, ${votes(612_345, "612,345")}").fetchSemanticsNode().boundsInRoot
         val age = rule.onNodeWithContentDescription("FSK 12").fetchSemanticsNode().boundsInRoot
         assertEquals(true, age.top >= plot.bottom)
+        // The slogan and the plot centred: a line alone stands in the middle
+        // of the card, which is the middle of the screen.
+        val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
+        val slogan = rule.onNodeWithText("Long live the fighters.").fetchSemanticsNode().boundsInRoot
+        assertEquals(screen.center.x, slogan.center.x, 1f)
+        assertEquals(screen.center.x, plot.center.x, 1f)
         assertEquals(age.center.y, imdb.center.y, 1f)
         assertEquals(true, age.right <= imdb.left)
 
@@ -274,7 +280,6 @@ class LiveCardsTest {
         // Centred: a mark alone stands in the middle of the card, which is
         // the middle of the screen.
         val alone = rule.onNodeWithContentDescription("FSK 16").fetchSemanticsNode().boundsInRoot
-        val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
         assertEquals(screen.center.x, alone.center.x, 1f)
         assertEquals(false, seen("Only this."))
     }

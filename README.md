@@ -140,10 +140,10 @@ The title with its poster, the source and output badges, the video and audio
 formats named in badges of their own, the progress, and — on a box that allows
 it — the transport row, the track pickers and the VS10 conversions.
 
-Under the card of what is playing, the **Overview** card: the plot, with the
-slogan in italics above it where there is one — most episodes carry a plot and
-no slogan — and under them, centred, every rating Kodi's library holds for the
-title, as a row of small shields. Each has its source's mark on the left, on a
+Under the card of what is playing, the **Overview** card, all of it centred:
+the plot, with the slogan in italics above it where there is one — most
+episodes carry a plot and no slogan — and under them every rating Kodi's
+library holds for the title, as a row of small shields. Each has its source's mark on the left, on a
 ground of the source's colour, instead of its name, and what it gave on the
 right — the same marks and shields the add-on's dashboard draws: first the
 age rating, a German one as the coloured FSK mark and any other written out,

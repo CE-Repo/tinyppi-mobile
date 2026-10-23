@@ -59,28 +59,35 @@ import java.util.Locale
  * too little, and above a plot it is left out where there is none, which is
  * most episodes.
  *
- * The slogan first, in italics and in the text's full colour, as the line a
- * poster carries, and the plot in the quieter colour the year and genre are
- * set in, since it is the one paragraph on the screen and the readings below
- * it should not have to shout over it. Under them, centred as a row of their
- * own, the ratings: short facts about the film, taken in at a glance.
+ * Everything in it centred. The slogan first, in italics and in the text's
+ * full colour, as the line a poster carries, and the plot in the quieter
+ * colour the year and genre are set in, since it is the one paragraph on the
+ * screen and the readings below it should not have to shout over it. Under
+ * them, as a row of their own, the ratings: short facts about the film, taken
+ * in at a glance.
  */
 @Composable
 internal fun PlotCard(media: MediaInfo) {
     SectionCard(title = stringResource(R.string.live_plot), foldId = FOLD_PLOT) {
         if (media.hasPlot) {
+            // Centred as a block and line by line, over the row of ratings
+            // under them, so the card reads down its middle.
             if (media.tagline.isNotBlank()) {
                 Text(
                     text = media.tagline.trim(),
                     style = MaterialTheme.typography.titleSmall,
                     fontStyle = FontStyle.Italic,
                     color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
                 )
             }
             Text(
                 text = media.plot.trim(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
             )
         }
         if (media.hasRatings) {
