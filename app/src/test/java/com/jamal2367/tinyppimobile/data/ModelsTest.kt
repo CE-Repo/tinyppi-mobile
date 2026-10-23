@@ -138,7 +138,7 @@ class ModelsTest {
     fun `any one way of rating a title is a rating, and draws the card without a plot`() {
         assertFalse(MediaInfo(mpaa = " ").hasRatings)
         assertEquals(SourceRating("", 0.0, 0), SourceRating())
-        assertEquals("", MediaInfo().fsk)
+        assertEquals("", MediaInfo().age)
         for (rated in listOf(
             MediaInfo(ratings = listOf(SourceRating("imdb", 8.5, 10))),
             MediaInfo(userRating = 9),

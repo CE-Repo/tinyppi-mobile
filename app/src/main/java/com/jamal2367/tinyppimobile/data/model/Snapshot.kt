@@ -289,10 +289,11 @@ data class MediaInfo(
      */
     val mpaa: String = "",
     /**
-     * The FSK level [mpaa] names - `0`, `6`, `12`, `16` or `18` - which is
-     * drawn as the FSK's coloured mark; empty for any other age rating.
+     * The mark the add-on read [mpaa] as - `fsk12`, `mpa_pg13`, `tv_ma`,
+     * `bbfc_15` - which is drawn as that board's coloured mark; empty for an
+     * age rating it could not place, which is written out instead.
      */
-    val fsk: String = "",
+    val age: String = "",
     /** The reader's own rating, 1 to 10; 0 for none. */
     @SerialName("userrating") val userRating: Int = 0,
     /** The place in the IMDb Top 250; 0 for none. */

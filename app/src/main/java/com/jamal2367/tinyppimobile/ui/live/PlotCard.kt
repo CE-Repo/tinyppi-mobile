@@ -123,18 +123,21 @@ private fun RatingRow(media: MediaInfo) {
             .padding(top = 2.dp),
     ) {
         if (media.mpaa.isNotBlank()) {
-            // A German age rating is the FSK's coloured mark and nothing else,
-            // as tall as the shields beside it; any other is written as the
-            // scraper wrote it.
+            // One the add-on could place - FSK, MPA, TV Parental Guidelines,
+            // BBFC - is that board's coloured mark and nothing else, as tall
+            // as the shields beside it and as wide as it is drawn; any other
+            // is written as the scraper wrote it.
             val said = media.mpaa.trim()
-            val fsk = FSK_MARKS[media.fsk]
-            if (fsk != null) {
+            val drawing = AGE_MARKS[media.age]
+            if (drawing != null) {
+                val painter = painterResource(drawing)
                 Image(
-                    painter = painterResource(fsk),
+                    painter = painter,
                     contentDescription = null,
                     modifier = Modifier
                         .heardAs(said)
-                        .size(FSK_SIZE),
+                        .height(AGE_HEIGHT)
+                        .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),
                 )
             } else {
                 RatingShield(spoken = said, value = said)
@@ -193,13 +196,35 @@ private val RATING_MARKS = mapOf(
 
 private val TOP250 = HouseMark(R.drawable.rating_top250, Color(0xFFF5C518))
 
-/** The FSK's five levels, by the level the add-on reads out of an age rating. */
-private val FSK_MARKS = mapOf(
-    "0" to R.drawable.rating_fsk0,
-    "6" to R.drawable.rating_fsk6,
-    "12" to R.drawable.rating_fsk12,
-    "16" to R.drawable.rating_fsk16,
-    "18" to R.drawable.rating_fsk18,
+/**
+ * The age ratings there is a drawing of, by the name the add-on gives the
+ * mark (see `age_mark` in its `web/ratings.py`): the FSK's, the MPA's and the
+ * TV Parental Guidelines' - both in the FSK's colours - and the BBFC's.
+ */
+private val AGE_MARKS = mapOf(
+    "fsk0" to R.drawable.rating_fsk0,
+    "fsk6" to R.drawable.rating_fsk6,
+    "fsk12" to R.drawable.rating_fsk12,
+    "fsk16" to R.drawable.rating_fsk16,
+    "fsk18" to R.drawable.rating_fsk18,
+    "mpa_g" to R.drawable.rating_mpa_g,
+    "mpa_pg" to R.drawable.rating_mpa_pg,
+    "mpa_pg13" to R.drawable.rating_mpa_pg13,
+    "mpa_r" to R.drawable.rating_mpa_r,
+    "mpa_nc17" to R.drawable.rating_mpa_nc17,
+    "tv_y" to R.drawable.rating_tv_y,
+    "tv_y7" to R.drawable.rating_tv_y7,
+    "tv_g" to R.drawable.rating_tv_g,
+    "tv_pg" to R.drawable.rating_tv_pg,
+    "tv_14" to R.drawable.rating_tv_14,
+    "tv_ma" to R.drawable.rating_tv_ma,
+    "bbfc_u" to R.drawable.rating_bbfc_u,
+    "bbfc_pg" to R.drawable.rating_bbfc_pg,
+    "bbfc_12a" to R.drawable.rating_bbfc_12a,
+    "bbfc_12" to R.drawable.rating_bbfc_12,
+    "bbfc_15" to R.drawable.rating_bbfc_15,
+    "bbfc_18" to R.drawable.rating_bbfc_18,
+    "bbfc_r18" to R.drawable.rating_bbfc_r18,
 )
 
 /**
@@ -319,8 +344,8 @@ private fun HeartMark() {
 private val MARK = 20.dp
 private val SHIELD = RoundedCornerShape(7.dp)
 
-/** An FSK mark, standing alone as tall as a shield. */
-private val FSK_SIZE = 26.dp
+/** An age rating's mark, standing alone as tall as a shield. */
+private val AGE_HEIGHT = 26.dp
 
 /** A film's ratings, slogan and plot, as the card draws them. */
 @PreviewLightDark
@@ -335,7 +360,7 @@ internal fun PlotCardPreview() {
                         plot = "Paul joins the Fremen and walks the desert as one of them.",
                         ratings = listOf(SourceRating("imdb", 8.5, 612_345), SourceRating("tmdb", 8.2, 6_120)),
                         mpaa = "FSK 12",
-                        fsk = "12",
+                        age = "fsk12",
                         userRating = 9,
                         top250 = 27,
                     ),

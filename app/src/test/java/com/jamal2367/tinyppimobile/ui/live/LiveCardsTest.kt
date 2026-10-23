@@ -228,7 +228,7 @@ class LiveCardsTest {
                     userRating = 9,
                     top250 = 27,
                     mpaa = "FSK 12",
-                    fsk = "12",
+                    age = "fsk12",
                 ),
             ),
         )
@@ -274,7 +274,7 @@ class LiveCardsTest {
         rule.until { rule.onAllNodesWithContentDescription("Rated PG-13").fetchSemanticsNodes().isNotEmpty() }
 
         // Ratings without a plot: the card for them alone, and no slogan.
-        fake.playing(told.copy(media = MediaInfo(tagline = "Only this.", mpaa = "FSK 16", fsk = "16")))
+        fake.playing(told.copy(media = MediaInfo(tagline = "Only this.", mpaa = "FSK 16", age = "fsk16")))
         rule.until { rule.onAllNodesWithContentDescription("FSK 16").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(true, seen(str(R.string.live_plot)))
         // Centred: a mark alone stands in the middle of the card, which is
@@ -282,6 +282,12 @@ class LiveCardsTest {
         val alone = rule.onNodeWithContentDescription("FSK 16").fetchSemanticsNode().boundsInRoot
         assertEquals(screen.center.x, alone.center.x, 1f)
         assertEquals(false, seen("Only this."))
+
+        // An American one wears its board's plate, twice as wide as it is tall.
+        fake.playing(told.copy(media = MediaInfo(plot = "Plot.", mpaa = "Rated PG-13", age = "mpa_pg13")))
+        rule.until { rule.onAllNodesWithContentDescription("Rated PG-13").fetchSemanticsNodes().isNotEmpty() }
+        val plate = rule.onNodeWithContentDescription("Rated PG-13").fetchSemanticsNode().boundsInRoot
+        assertEquals(2f, plate.width / plate.height, 0.05f)
     }
 
     @Test
