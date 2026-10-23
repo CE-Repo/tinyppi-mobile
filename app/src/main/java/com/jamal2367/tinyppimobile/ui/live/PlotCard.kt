@@ -90,7 +90,7 @@ import java.util.Locale
  * own: short facts about the film, taken in at a glance.
  */
 @Composable
-internal fun PlotCard(media: MediaInfo) {
+internal fun PlotCard(media: MediaInfo, title: String) {
     SectionCard(title = stringResource(R.string.live_plot), foldId = FOLD_PLOT) {
         if (media.hasPlot) {
             // The card starts folded: the plot cut to a few lines, and the
@@ -101,8 +101,10 @@ internal fun PlotCard(media: MediaInfo) {
             // plot starts folded again. To a screen reader it is a button
             // that says what a tap does; a tap on a rating's shield is the
             // shield's.
-            var open by rememberSaveable(media.plot) { mutableStateOf(false) }
-            var cut by remember(media.plot) { mutableStateOf(false) }
+            // Folded again for every new title, [title] saying which this is,
+            // and for a new plot.
+            var open by rememberSaveable(title, media.plot) { mutableStateOf(false) }
+            var cut by remember(title, media.plot) { mutableStateOf(false) }
             val folds = cut || media.hasCredits || media.hasRatings
             Column(
                 modifier = Modifier
@@ -578,6 +580,7 @@ internal fun PlotCardPreview() {
                         cast = listOf("Timothée Chalamet", "Zendaya", "Rebecca Ferguson", "Javier Bardem", "Josh Brolin"),
                         castMore = true,
                     ),
+                    title = "Dune: Part Two",
                 )
             }
         }

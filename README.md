@@ -148,10 +148,11 @@ like a credit's heading so the two read as one text — most
 episodes carry a plot and no slogan — and
 hanging on the plot's end the director, then the cast, each its heading in
 bold on a line of its own centred over the names (every director, and the
-whole cast in billing order), left out where Kodi has none. The genre and
+cast's first twenty in billing order, ending in "…" where there are more),
+left out where Kodi has none. The genre and
 the studio stand in the card above. Last, under the heading Ratings, every
 rating Kodi's library holds for the title, as a row of small shields. The
-card starts folded: the plot cut to five lines, and the credits and the
+card starts folded, and folds again for every new title: the plot cut to five lines, and the credits and the
 ratings hidden under it. A tap on the plot lets all of it out, and another
 folds it again; only a plot that fits with nothing under it has nothing to
 fold. Each has its source's mark on the left, on a

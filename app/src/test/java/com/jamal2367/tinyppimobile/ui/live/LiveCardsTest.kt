@@ -512,6 +512,12 @@ class LiveCardsTest {
         val other = "$long Again."
         fake.playing(told.copy(media = told.media.copy(plot = other)))
         rule.until { seen(other) && foldable(R.string.live_plot_more) }
+        // And a new title, even with the same plot - the next episode, the
+        // same film under another name.
+        rule.onNode(folds(R.string.live_plot_more)).performClick()
+        rule.until { foldable(R.string.live_plot_less) }
+        fake.playing(told.copy(title = "Another title", media = told.media.copy(plot = other)))
+        rule.until { seen("Another title") && foldable(R.string.live_plot_more) }
 
         // A short one with nothing under it is nothing to tap.
         fake.playing(told.copy(media = MediaInfo(plot = "Paul joins the Fremen.")))
