@@ -235,14 +235,14 @@ class LiveCardsTest {
             ),
         )
         showLive()
-        fun votes(count: Int, written: String) = context.resources.getQuantityString(R.plurals.live_rating_votes, count, written)
         rule.onNodeWithText(str(R.string.live_plot)).assertIsDisplayed()
         // Each pill is heard as one sentence; the drawing and the figures are not heard apart.
         for (said in listOf(
-            "IMDb 8.5, ${votes(612_345, "612,345")}",
-            "TMDb 8.2, ${votes(1, "1")}",
+            // How many voted is neither shown nor heard.
+            "IMDb 8.5",
+            "TMDb 8.2",
             "Rotten Tomatoes 9.2",
-            "Filmaffinity 8.9, ${votes(3, "3")}",
+            "Filmaffinity 8.9",
             "${str(R.string.live_rating_mine)} 9",
             str(R.string.live_rating_top250, 27),
             "FSK 12",
@@ -252,7 +252,7 @@ class LiveCardsTest {
         // Every badge one height: the scores' shields, the heart's, the
         // place's and the age rating's.
         val heights = listOf(
-            "FSK 12", "IMDb 8.5, ${votes(612_345, "612,345")}", "Filmaffinity 8.9, ${votes(3, "3")}",
+            "FSK 12", "IMDb 8.5", "Filmaffinity 8.9",
             "${str(R.string.live_rating_mine)} 9", str(R.string.live_rating_top250, 27),
         ).map { rule.onNodeWithContentDescription(it).fetchSemanticsNode().boundsInRoot.height }
         assertEquals(heights.map { heights.first() }, heights)
@@ -261,7 +261,7 @@ class LiveCardsTest {
         // The ratings stand under the plot, the age rating first: on the
         // first line, before the first score.
         val plot = rule.onNodeWithText("Paul joins the Fremen.").fetchSemanticsNode().boundsInRoot
-        val imdb = rule.onNodeWithContentDescription("IMDb 8.5, ${votes(612_345, "612,345")}").fetchSemanticsNode().boundsInRoot
+        val imdb = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot
         val age = rule.onNodeWithContentDescription("FSK 12").fetchSemanticsNode().boundsInRoot
         assertEquals(true, age.top >= plot.bottom)
         // The slogan and the plot centred: a line alone stands in the middle

@@ -39,7 +39,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -170,9 +169,9 @@ private fun creditLine(label: String, names: String, colors: ColorScheme): Annot
 
 /**
  * Every rating the library holds: the age rating first - who the film is for
- * is asked before how good it is - then a score for each source with how many
- * voted for it, in the order the add-on sends them, the reader's own and the
- * place in the IMDb Top 250.
+ * is asked before how good it is - then a score for each source, in the
+ * order the add-on sends them, the reader's own and the place in the IMDb
+ * Top 250.
  *
  * Each is a small shield wearing its house's mark on a ground of its house's
  * colour rather than its name - the same drawings the add-on's dashboard
@@ -214,17 +213,11 @@ private fun RatingRow(media: MediaInfo) {
         media.ratings.forEach { entry ->
             val name = sourceName(entry)
             val value = Formatters.rating(entry.rating)
-            val votes = entry.votes.takeIf { it > 0 }?.let(Formatters::count)
-            val spoken = listOfNotNull(
-                "$name $value".trim(),
-                votes?.let { pluralStringResource(R.plurals.live_rating_votes, entry.votes, it) },
-            ).joinToString(", ")
             val mark = RATING_MARKS[entry.source]
             RatingShield(
-                spoken = spoken,
+                spoken = "$name $value".trim(),
                 value = value,
                 tall = tall,
-                note = votes,
                 ground = mark?.ground ?: MaterialTheme.colorScheme.surfaceContainerHigh,
             ) {
                 if (mark != null) DrawnMark(mark.drawing) else LetterMark(name.take(1))
@@ -315,20 +308,19 @@ private fun sourceName(entry: SourceRating): String =
 /**
  * One rating as a shield: [side] on the left, on [ground] - a house's own
  * colour, so its mark runs into it and the left reads as one plate - [inset]
- * from its edges, and on the right the figure in bold with how many voted.
+ * from its edges, and on the right the figure in bold.
  * Square-cornered like a plaque rather than round like a button. Without a
  * figure - an age rating from an add-on too old to send its level - the
  * side stands alone.
  *
- * Heard as [spoken] and nothing else - "IMDb 8.5, 612,345 votes" rather than
- * "8.5 612,345" with nothing to say what either is.
+ * Heard as [spoken] and nothing else - "IMDb 8.5" rather than a bare "8.5"
+ * with nothing to say what it is.
  */
 @Composable
 private fun RatingShield(
     spoken: String,
     value: String,
     tall: Dp,
-    note: String? = null,
     ground: Color = Color.Transparent,
     inset: Dp = 2.dp,
     side: (@Composable () -> Unit)? = null,
@@ -354,28 +346,15 @@ private fun RatingShield(
         // On one line, centred in the height the shield is given: a long age
         // rating written out is cut at the edge rather than growing a second.
         if (value.isNotEmpty()) {
-            Row(
+            Text(
+                text = value,
                 modifier = Modifier.padding(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
-            ) {
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (note != null) {
-                    Text(
-                        text = note,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                    )
-                }
-            }
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

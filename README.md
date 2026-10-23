@@ -163,9 +163,9 @@ Trakt, TVDB, Metacritic, Rotten Tomatoes; any other gets its first letter on a
 plain plate — or, where the add-on was given an MDBList API key, every one
 MDBList gathers for a film (Letterboxd, Rotten Tomatoes' Popcornmeter,
 Metacritic's users, Roger Ebert and MyAnimeList among them, each with a mark
-of its own), with how many voted, your own rating behind a heart and the
-place in the IMDb Top 250. A screen reader hears each shield as one sentence ("IMDb
-8.5, 612,345 votes"). An episode is rated on its own and carries its show's
+of its own), your own rating behind a heart and the place in the IMDb Top
+250, which the add-on reads off IMDb's current chart. A screen reader hears
+each shield as one sentence ("IMDb 8.5"). An episode is rated on its own and carries its show's
 age rating. The slogan only ever stands
 above a plot: without a plot the card shows the ratings and the cast alone,
 and with none of them it is left out, as it is for a file that is not in the
