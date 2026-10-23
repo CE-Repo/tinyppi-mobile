@@ -123,6 +123,14 @@ class ModelsTest {
     }
 
     @Test
+    fun `the plot card has something to say with a slogan, a plot or both`() {
+        assertFalse(MediaInfo().hasPlot)
+        assertFalse(MediaInfo(tagline = " ", plot = "\n").hasPlot)
+        assertTrue(MediaInfo(tagline = "Long live the fighters.").hasPlot)
+        assertTrue(MediaInfo(plot = "Paul joins the Fremen.").hasPlot)
+    }
+
+    @Test
     fun `controls are empty without tracks and volume`() {
         assertTrue(PlayerControls().isEmpty)
         assertFalse(PlayerControls(audio = listOf(Track())).isEmpty)

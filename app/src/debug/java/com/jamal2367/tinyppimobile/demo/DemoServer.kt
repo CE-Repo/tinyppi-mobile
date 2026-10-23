@@ -58,6 +58,13 @@ object DemoServer {
     private const val PORT = 8099
     private val ADDED_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
+    /** What the film the box starts on says about itself. */
+    private const val DUNE_TAGLINE = "Long live the fighters."
+    private const val DUNE_PLOT = "Paul Atreides lives among the Fremen now, learning the desert at Chani's side " +
+        "while the Harkonnens tighten their grip on Arrakis. As the prophecy the Fremen believe in closes " +
+        "around him, he has to decide how much of himself to give up to bring down the men who destroyed " +
+        "his family."
+
     /** What a film's chapters are called on the pretend box. */
     private val FILM_CHAPTERS = listOf(
         "Opening", "Arrakis", "The Fremen", "Sietch Tabr", "The Water of Life", "Sandworm",
@@ -97,6 +104,8 @@ object DemoServer {
         playingTag = "movie-1"
         playingYear = 2024
         playingGenre = "Science Fiction"
+        playingTagline = DUNE_TAGLINE
+        playingPlot = DUNE_PLOT
         playingShow = ""
         playingSeason = ""
         playingEpisode = ""
@@ -117,7 +126,10 @@ object DemoServer {
 
     /* --- The pretend library --------------------------------------------- */
 
-    private class Film(val id: Int, val title: String, val year: Int, val minutes: Int, val rating: Double, val genre: String, val watched: Boolean = false, val resumeMinutes: Int = 0)
+    private class Film(
+        val id: Int, val title: String, val year: Int, val minutes: Int, val rating: Double, val genre: String,
+        val watched: Boolean = false, val resumeMinutes: Int = 0, val tagline: String = "", val plot: String = "",
+    )
     private class Show(val id: Int, val title: String, val year: Int, val rating: Double, val seasons: Int, val perSeason: Int, val seenUpTo: Int) {
         /** Every episode as season and number, in the order they are watched. */
         val episodes: List<Pair<Int, Int>> = (1..seasons).flatMap { season -> (1..perSeason).map { season to it } }
@@ -127,8 +139,16 @@ object DemoServer {
     }
 
     private val films = listOf(
-        Film(1, "Dune: Part Two", 2024, 166, 8.5, "Science Fiction", resumeMinutes = 71),
-        Film(2, "Oppenheimer", 2023, 180, 8.3, "Drama", resumeMinutes = 40),
+        Film(1, "Dune: Part Two", 2024, 166, 8.5, "Science Fiction", resumeMinutes = 71, tagline = DUNE_TAGLINE, plot = DUNE_PLOT),
+        // A slogan and a plot for the first two only: the rest play without
+        // them, the way a file the library knows little about does.
+        Film(
+            2, "Oppenheimer", 2023, 180, 8.3, "Drama", resumeMinutes = 40,
+            tagline = "The world forever changes.",
+            plot = "J. Robert Oppenheimer is asked to lead the race for the atomic bomb from a laboratory " +
+                "built in the New Mexico desert. Years after Los Alamos, a closed security hearing turns " +
+                "his own past against him.",
+        ),
         Film(3, "Blade Runner 2049", 2017, 164, 8.0, "Science Fiction", resumeMinutes = 132),
         Film(4, "Mad Max: Fury Road", 2015, 120, 8.1, "Action", watched = true),
         Film(5, "Interstellar", 2014, 169, 8.7, "Science Fiction", watched = true),
@@ -179,6 +199,8 @@ object DemoServer {
     private var playingTag = "movie-1"
     private var playingYear = 2024
     private var playingGenre = "Science Fiction"
+    private var playingTagline = DUNE_TAGLINE
+    private var playingPlot = DUNE_PLOT
     private var playingShow = ""
     private var playingSeason = ""
     private var playingEpisode = ""
@@ -379,6 +401,8 @@ object DemoServer {
                 put("show", playingShow)
                 put("season", playingSeason)
                 put("episode", playingEpisode)
+                put("tagline", playingTagline)
+                put("plot", playingPlot)
             }
             putJsonObject("controls") {
                 putJsonArray("audio") {
@@ -572,6 +596,7 @@ object DemoServer {
             "/api/play" -> {
                 payload["movieid"]?.jsonPrimitive?.int?.let { id -> films.firstOrNull { it.id == id } }?.let { f ->
                     playingTitle = f.title; playingTag = "movie-${f.id}"; playingYear = f.year; playingGenre = f.genre
+                    playingTagline = f.tagline; playingPlot = f.plot
                     playingShow = ""; playingSeason = ""; playingEpisode = ""
                     durationSeconds = f.minutes * 60
                     positionSeconds = if (fromStart || filmWatched(f)) 0.0 else f.resumeMinutes * 60.0
@@ -582,6 +607,9 @@ object DemoServer {
                     val episode = id % 100
                     playingTitle = episodeTitle(season, episode); playingTag = "show-${show.id}"; playingYear = show.year
                     playingGenre = "Drama"; playingShow = show.title; playingSeason = "$season"; playingEpisode = "$episode"
+                    // An episode has a plot and, as most do, no slogan.
+                    playingTagline = ""
+                    playingPlot = "Season $season, episode $episode of ${show.title}, made up for the demo box like every episode on it."
                     durationSeconds = 52 * 60; positionSeconds = 0.0
                 }
                 paused = false

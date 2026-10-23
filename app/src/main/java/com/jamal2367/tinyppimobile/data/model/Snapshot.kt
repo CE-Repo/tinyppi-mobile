@@ -271,7 +271,18 @@ data class MediaInfo(
     val show: String = "",
     val season: String = "",
     val episode: String = "",
+    /**
+     * The slogan, as the library has it - empty for a file it does not know
+     * and for most episodes, and against an add-on older than the field.
+     */
+    val tagline: String = "",
+    /** What the title is about, with the library's own line breaks. */
+    val plot: String = "",
 ) {
+    /** Whether there is anything for the plot card to say. */
+    val hasPlot: Boolean
+        get() = tagline.isNotBlank() || plot.isNotBlank()
+
     /** `S02E07`, when this is an episode of something. */
     val episodeLabel: String?
         get() {

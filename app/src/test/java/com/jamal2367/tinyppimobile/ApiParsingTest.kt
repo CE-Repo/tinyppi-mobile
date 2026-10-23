@@ -175,6 +175,19 @@ class ApiParsingTest {
             """{"playing":true,"media":{"year":"2021"}}""",
         )
         assertNull(snapshot.media.episodeLabel)
+        // An add-on older than the plot card sends neither of its fields.
+        assertEquals("", snapshot.media.tagline)
+        assertEquals("", snapshot.media.plot)
+    }
+
+    @Test
+    fun `the slogan and the plot arrive as the library has them`() {
+        val snapshot = json.decodeFromString(
+            Snapshot.serializer(),
+            """{"playing":true,"media":{"tagline":"Long live the fighters.","plot":"Paul joins the Fremen.\nChani watches."}}""",
+        )
+        assertEquals("Long live the fighters.", snapshot.media.tagline)
+        assertEquals("Paul joins the Fremen.\nChani watches.", snapshot.media.plot)
     }
 
     @Test

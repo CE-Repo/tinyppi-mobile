@@ -29,6 +29,7 @@ import com.jamal2367.tinyppimobile.testing.CardState
 import com.jamal2367.tinyppimobile.ui.history.ChartCard
 import com.jamal2367.tinyppimobile.ui.live.CardPart
 import com.jamal2367.tinyppimobile.ui.live.CardSegment
+import com.jamal2367.tinyppimobile.ui.live.PlotCardPreview
 import com.jamal2367.tinyppimobile.ui.live.Vs10LabelPreview
 import com.jamal2367.tinyppimobile.ui.navigation.LocalBottomBarSpace
 import com.jamal2367.tinyppimobile.ui.navigation.Page
@@ -71,10 +72,11 @@ class ComponentsTest {
                 3 -> EventsCardPreview()
                 4 -> LuminanceChartPreview()
                 5 -> EmptyStatePreview()
+                6 -> PlotCardPreview()
                 else -> Vs10LabelPreview()
             }
         }
-        for (i in 0..6) {
+        for (i in 0..7) {
             which = i
             draw()
         }

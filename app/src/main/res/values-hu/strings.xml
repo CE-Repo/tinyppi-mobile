@@ -115,6 +115,8 @@
     <string name="live_subtitles_off">Ki</string>
     <string name="live_track_unknown">Ismeretlen</string>
 
+    <string name="live_plot">Cselekmény</string>
+
     <string name="live_vs10">VS10</string>
     <string name="live_control_disabled">A lejátszó nem teszi lehetővé a kliens számára, hogy bármit is váltson. Kapcsold be a vezérlést aa kiegészítő beállításaiban.</string>
 

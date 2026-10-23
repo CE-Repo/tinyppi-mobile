@@ -176,11 +176,17 @@ class DemoServerTest {
 
         // Starting things off the shelves.
         post("/api/play", """{"movieid":1}""")
+        assertEquals("Long live the fighters.", state()["media"]!!.jsonObject["tagline"]!!.jsonPrimitive.content)
         post("/api/play", """{"movieid":3,"resume":false}""")
+        // A film the pretend library says nothing about.
+        assertEquals("", state()["media"]!!.jsonObject["plot"]!!.jsonPrimitive.content)
         post("/api/play", """{"movieid":6}""")
         post("/api/play", """{"movieid":999}""")
         post("/api/play", """{"episodeid":102203}""")
         assertEquals("2", state()["media"]!!.jsonObject["season"]!!.jsonPrimitive.content)
+        // An episode: a plot and no slogan.
+        assertEquals("", state()["media"]!!.jsonObject["tagline"]!!.jsonPrimitive.content)
+        assertTrue(state()["media"]!!.jsonObject["plot"]!!.jsonPrimitive.content.startsWith("Season 2, episode 3"))
         chapters = state()["chapters"]!!.jsonArray
         assertEquals(6, chapters.size)
         assertEquals("", chapters[0].jsonObject["name"]!!.jsonPrimitive.content)

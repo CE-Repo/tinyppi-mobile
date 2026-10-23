@@ -120,6 +120,8 @@
     <string name="live_subtitles_off">Off</string>
     <string name="live_track_unknown">Unknown</string>
 
+    <string name="live_plot">Plot</string>
+
     <string name="live_vs10">VS10</string>
     <string name="live_control_disabled">This box does not allow a client to switch anything. Turn control on in the add-on\'s settings.</string>
 

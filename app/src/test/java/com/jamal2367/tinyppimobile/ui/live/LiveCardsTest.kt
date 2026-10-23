@@ -7,7 +7,9 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -29,6 +31,8 @@ import com.jamal2367.tinyppimobile.testing.FakeLive
 import com.jamal2367.tinyppimobile.testing.Screens
 import com.jamal2367.tinyppimobile.testing.Screens.show
 import com.jamal2367.tinyppimobile.testing.Screens.until
+import com.jamal2367.tinyppimobile.ui.components.CardLayout
+import com.jamal2367.tinyppimobile.ui.components.CardScreens
 import com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -174,6 +178,59 @@ class LiveCardsTest {
         rule.until { seen("no") }
         rule.mainClock.advanceTimeBy(10_000)
         rule.until { fake.viewModel.message.value == null }
+    }
+
+    /** The film with what its library says about it. */
+    private val told = Screens.film.copy(
+        media = Screens.film.media.copy(tagline = "Long live the fighters.", plot = "Paul joins the Fremen."),
+    )
+
+    @Test
+    fun `the plot card says the slogan and the plot, each only where there is one`() {
+        fake.playing(told)
+        showLive()
+        rule.onNodeWithText(str(R.string.live_plot)).assertIsDisplayed()
+        rule.onNodeWithText("Long live the fighters.").assertIsDisplayed()
+        rule.onNodeWithText("Paul joins the Fremen.").assertIsDisplayed()
+
+        // An episode: a plot without a slogan.
+        fake.playing(told.copy(media = MediaInfo(plot = "An episode.")))
+        rule.until { seen("An episode.") }
+        assertEquals(false, seen("Long live the fighters."))
+
+        // A slogan without a plot.
+        fake.playing(told.copy(media = MediaInfo(tagline = "Only this.")))
+        rule.until { seen("Only this.") }
+        assertEquals(false, seen("An episode."))
+
+        // A file the library does not know: no card at all.
+        fake.playing(told.copy(media = MediaInfo()))
+        rule.until { !seen(str(R.string.live_plot)) }
+    }
+
+    @Test
+    fun `the plot card folds, moves and comes off the screen like the others`() {
+        val cards = CardState().apply { folds = setOf(FOLD_CONTROLS) }
+        fake.playing(told)
+        rule.show(cards) { LiveScreen(onOpenSettings = {}, viewModel = fake.viewModel) }
+
+        // Folded from its heading, and open again from it.
+        rule.onNodeWithText(str(R.string.live_plot)).performClick()
+        rule.until { FOLD_PLOT in cards.folds && !seen("Paul joins the Fremen.") }
+        rule.onNodeWithText(str(R.string.live_plot)).performClick()
+        rule.until { FOLD_PLOT !in cards.folds && seen("Paul joins the Fremen.") }
+
+        // First among the cards that can be arranged, under the playing one.
+        cards.editing = CardScreens.LIVE
+        rule.onNodeWithText(str(R.string.live_plot)).assertIsDisplayed()
+        rule.onAllNodesWithContentDescription(str(R.string.cards_move_down)).onFirst().performClick()
+        rule.until { cards.orders[CardScreens.LIVE]?.take(2) == listOf(FOLD_CONTROLS, FOLD_PLOT) }
+
+        // Taken off the screen, it is gone from it once the arranging is done.
+        rule.onAllNodesWithContentDescription(str(R.string.cards_hide))[1].performClick()
+        rule.until { CardLayout.hiddenKey(CardScreens.LIVE, FOLD_PLOT) in cards.hidden }
+        rule.onNodeWithText(str(R.string.cards_done)).performClick()
+        rule.until { cards.editing == null && !seen("Paul joins the Fremen.") }
     }
 
     @Test
