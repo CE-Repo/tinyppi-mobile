@@ -131,14 +131,14 @@ internal fun PlotCard(media: MediaInfo) {
 }
 
 /**
- * A credit as a line: what it is in bold and the text's full colour, then the
- * names in the quieter one the plot is set in. Heard as it reads, "Cast
- * Timothée Chalamet, Zendaya". Built outside the composition, like
- * [heardAs]: a line of text has nothing to remember.
+ * A credit: what it is in bold and the text's full colour, on a line of its
+ * own over the names in the quieter one the plot is set in. Heard as it
+ * reads, "Cast, Timothée Chalamet, Zendaya". Built outside the composition,
+ * like [heardAs]: a few lines of text have nothing to remember.
  */
 private fun creditLine(label: String, names: String, colors: ColorScheme): AnnotatedString = buildAnnotatedString {
     withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = colors.onSurface)) { append(label) }
-    append(" ")
+    append("\n")
     withStyle(SpanStyle(color = colors.onSurfaceVariant)) { append(names) }
 }
 

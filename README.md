@@ -147,7 +147,7 @@ the track pickers and the VS10 conversions.
 Under the card of what is playing, the **Overview** card, all of it centred:
 the plot, with the slogan in italics above it where there is one — most
 episodes carry a plot and no slogan — under them, past a thin rule, the cast:
-a centred line with its name in bold and then its first eight names, in
+its name in bold on a line of its own, centred over its first eight names in
 billing order, ending in "…" where there are more, and left out where Kodi
 has none; the genre, the studio and the director stand in the card above.
 Last, past another rule, every rating Kodi's library holds for the title, as

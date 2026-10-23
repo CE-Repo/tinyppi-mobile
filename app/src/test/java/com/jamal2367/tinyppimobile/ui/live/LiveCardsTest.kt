@@ -332,7 +332,7 @@ class LiveCardsTest {
         // centred: it stands in the middle of the card, which is the middle
         // of the screen.
         val cast = rule.onNodeWithText(
-            "${str(R.string.live_credit_cast)} Timothée Chalamet, Zendaya, Rebecca Ferguson, Javier Bardem, Josh Brolin, …",
+            "${str(R.string.live_credit_cast)}\nTimothée Chalamet, Zendaya, Rebecca Ferguson, Javier Bardem, Josh Brolin, …",
         ).fetchSemanticsNode().boundsInRoot
         val plot = rule.onNodeWithText("Paul joins the Fremen.").fetchSemanticsNode().boundsInRoot
         val imdb = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot
@@ -347,11 +347,11 @@ class LiveCardsTest {
 
         // A cast the add-on did not cut ends without one.
         fake.playing(told.copy(media = told.media.copy(cast = listOf("Somebody", "Somebody Else"))))
-        rule.until { seen("${str(R.string.live_credit_cast)} Somebody, Somebody Else") }
+        rule.until { seen("${str(R.string.live_credit_cast)}\nSomebody, Somebody Else") }
 
         // Ratings and a cast with no plot: the rule between them still.
         fake.playing(told.copy(media = MediaInfo(mpaa = "FSK 16", age = "fsk16", ageLevel = "16", cast = listOf("Somebody"))))
-        rule.until { seen("${str(R.string.live_credit_cast)} Somebody") }
+        rule.until { seen("${str(R.string.live_credit_cast)}\nSomebody") }
         assertEquals(true, rule.onAllNodesWithContentDescription("FSK 16").fetchSemanticsNodes().isNotEmpty())
 
         // A studio or a director alone is no credit, and draws no card.
@@ -361,7 +361,7 @@ class LiveCardsTest {
 
         // A cast alone is still an overview.
         fake.playing(told.copy(media = MediaInfo(cast = listOf("Somebody"))))
-        rule.until { seen("${str(R.string.live_credit_cast)} Somebody") }
+        rule.until { seen("${str(R.string.live_credit_cast)}\nSomebody") }
         assertEquals(true, seen(str(R.string.live_plot)))
         assertEquals(false, seen("Paul joins the Fremen."))
     }
