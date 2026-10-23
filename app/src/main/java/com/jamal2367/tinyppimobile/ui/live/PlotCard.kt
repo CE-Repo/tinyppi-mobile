@@ -611,7 +611,7 @@ private val FOLD_SHAPE = RoundedCornerShape(8.dp)
 private const val PLOT_LINES = 5
 
 /** How tall a mark stands on its plate, and the corners of a shield. */
-private val MARK = 18.dp
+private val MARK = 20.dp
 private val SHIELD = RoundedCornerShape(6.dp)
 
 /**
@@ -623,7 +623,7 @@ private val SHIELD = RoundedCornerShape(6.dp)
 @Composable
 private fun badgeHeight(): Dp = BADGE * LocalDensity.current.fontScale.coerceAtLeast(1f)
 
-private val BADGE = 24.dp
+private val BADGE = 26.dp
 
 /** A film's slogan, plot, ratings and cast, as the card draws them. */
 @PreviewLightDark
