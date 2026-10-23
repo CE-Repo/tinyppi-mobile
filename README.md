@@ -48,8 +48,9 @@ command endpoints.
   graded and what is actually leaving the box. A conversion gets a badge of its
   own, because that is the one thing on the screen that is a decision rather
   than a reading.
-- **What it is about and how it is rated**: every rating the library holds
-  for the title, its slogan and its plot, in a card of their own under it.
+- **An overview of the title**: every rating the library holds for it, as
+  the rating services' coloured marks, its slogan and its plot, in a card of
+  their own under it.
 - **The Dolby Vision metadata view**: the same list the overlay's second window
   is built from, trim tables and all.
 - **The luminance chart and the event log** the box keeps for the running
@@ -139,11 +140,15 @@ The title with its poster, the source and output badges, the video and audio
 formats named in badges of their own, the progress, and — on a box that allows
 it — the transport row, the track pickers and the VS10 conversions.
 
-Under the card of what is playing, the **Plot & ratings** card. Along its top,
-every rating Kodi's library holds for the title, as a row of pills: a score
-for each source the scraper or the NFO wrote — IMDb, TMDb, Trakt, TVDB,
-Metacritic, or whatever else it names — with how many voted, your own rating,
-the place in the IMDb Top 250 and the age rating. An episode is rated on its
+Under the card of what is playing, the **Overview** card. Along its top,
+every rating Kodi's library holds for the title, as a row of pills, each
+wearing its source's mark in the source's colours instead of its name — the
+same marks the add-on's dashboard draws: a score for each source the scraper
+or the NFO wrote — IMDb, TMDB, Trakt, TVDB, Metacritic, Rotten Tomatoes; any
+other gets a circle with its first letter — with how many voted, your own
+rating behind a heart, the place in the IMDb Top 250, and the age rating: a
+German one as the coloured FSK mark, any other written out. A screen reader
+hears each pill as one sentence ("IMDb 8.5, 612,345 votes"). An episode is rated on its
 own and carries its show's age rating. Under them the plot, with the slogan in
 italics above it where there is one — most episodes carry a plot and no
 slogan. The slogan only ever stands above a plot: without a plot the card

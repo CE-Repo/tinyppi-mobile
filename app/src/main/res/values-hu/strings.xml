@@ -115,7 +115,7 @@
     <string name="live_subtitles_off">Ki</string>
     <string name="live_track_unknown">Ismeretlen</string>
 
-    <string name="live_plot">Cselekmény és értékelések</string>
+    <string name="live_plot">Áttekintés</string>
     <plurals name="live_rating_votes">
         <item quantity="one">%1$s szavazat</item>
         <item quantity="other">%1$s szavazat</item>

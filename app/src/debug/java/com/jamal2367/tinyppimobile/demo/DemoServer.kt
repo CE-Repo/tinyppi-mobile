@@ -435,6 +435,8 @@ object DemoServer {
                     }
                 }
                 put("mpaa", playingMpaa)
+                // The level the add-on reads out of a German age rating.
+                put("fsk", playingMpaa.removePrefix("FSK ").takeIf { playingMpaa.startsWith("FSK ") } ?: "")
                 put("userrating", playingMine)
                 put("top250", playingTop250)
             }

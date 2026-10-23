@@ -181,11 +181,13 @@ class DemoServerTest {
         assertEquals("imdb", rated["ratings"]!!.jsonArray[0].jsonObject["source"]!!.jsonPrimitive.content)
         assertEquals(612_000, rated["ratings"]!!.jsonArray[0].jsonObject["votes"]!!.jsonPrimitive.int)
         assertEquals("FSK 12", rated["mpaa"]!!.jsonPrimitive.content)
+        assertEquals("12", rated["fsk"]!!.jsonPrimitive.content)
         assertEquals(9, rated["userrating"]!!.jsonPrimitive.int)
         assertEquals(27, rated["top250"]!!.jsonPrimitive.int)
         post("/api/play", """{"movieid":3,"resume":false}""")
-        // A film the pretend library says nothing about.
+        // A film the pretend library says nothing about, nor rates for its age.
         assertEquals("", state()["media"]!!.jsonObject["plot"]!!.jsonPrimitive.content)
+        assertEquals("", state()["media"]!!.jsonObject["fsk"]!!.jsonPrimitive.content)
         post("/api/play", """{"movieid":6}""")
         post("/api/play", """{"movieid":999}""")
         post("/api/play", """{"episodeid":102203}""")

@@ -214,46 +214,57 @@ class LiveCardsTest {
     }
 
     @Test
-    fun `the plot card carries every rating the library holds, before the slogan and the plot`() {
+    fun `the overview card draws every rating as its mark and says it in words`() {
         fake.playing(
             told.copy(
                 media = told.media.copy(
                     ratings = listOf(
                         SourceRating("imdb", 8.5, 612_345),
                         SourceRating("tmdb", 8.2, 1),
-                        SourceRating("rotten tomatoes", 9.2, 0),
+                        SourceRating("rottentomatoes", 9.2, 0),
+                        SourceRating("letterboxd", 8.9, 3),
                     ),
                     userRating = 9,
                     top250 = 27,
                     mpaa = "FSK 12",
+                    fsk = "12",
                 ),
             ),
         )
         showLive()
+        fun votes(count: Int, written: String) = context.resources.getQuantityString(R.plurals.live_rating_votes, count, written)
         rule.onNodeWithText(str(R.string.live_plot)).assertIsDisplayed()
-        rule.onNodeWithText("IMDb").assertIsDisplayed()
-        rule.onNodeWithText("8.5").assertIsDisplayed()
-        rule.onNodeWithText(context.resources.getQuantityString(R.plurals.live_rating_votes, 612_345, "612,345")).assertIsDisplayed()
-        rule.onNodeWithText(context.resources.getQuantityString(R.plurals.live_rating_votes, 1, "1")).assertIsDisplayed()
-        rule.onNodeWithText("Rotten tomatoes").assertIsDisplayed()
-        rule.onNodeWithText(str(R.string.live_rating_mine)).assertIsDisplayed()
-        rule.onNodeWithText(str(R.string.live_rating_top250, 27)).assertIsDisplayed()
-        rule.onNodeWithText("FSK 12").assertIsDisplayed()
+        // Each pill is heard as one sentence; the drawing and the figures are not heard apart.
+        for (said in listOf(
+            "IMDb 8.5, ${votes(612_345, "612,345")}",
+            "TMDb 8.2, ${votes(1, "1")}",
+            "Rotten Tomatoes 9.2",
+            "Letterboxd 8.9, ${votes(3, "3")}",
+            "${str(R.string.live_rating_mine)} 9",
+            str(R.string.live_rating_top250, 27),
+            "FSK 12",
+        )) {
+            rule.onNodeWithContentDescription(said).assertIsDisplayed()
+        }
+        assertEquals(false, seen("8.5"))
         // The ratings stand above the slogan.
-        val badges = rule.onNodeWithText("IMDb").fetchSemanticsNode().boundsInRoot
+        val badges = rule.onNodeWithContentDescription("FSK 12").fetchSemanticsNode().boundsInRoot
         val slogan = rule.onNodeWithText("Long live the fighters.").fetchSemanticsNode().boundsInRoot
         assertEquals(true, badges.bottom <= slogan.top)
 
         // A score alone - no age rating, no own rating, no place - from a
-        // source the library names nothing: its figure and its star.
+        // source the library names nothing: a plain circle and its figure.
         fake.playing(told.copy(media = told.media.copy(ratings = listOf(SourceRating("", 5.0)))))
-        rule.until { seen("5.0") }
-        assertEquals(false, seen("FSK 12"))
-        assertEquals(false, seen(str(R.string.live_rating_mine)))
+        rule.until { rule.onAllNodesWithContentDescription("5.0").fetchSemanticsNodes().isNotEmpty() }
+        assertEquals(true, rule.onAllNodesWithContentDescription("FSK 12").fetchSemanticsNodes().isEmpty())
+
+        // An age rating that names no FSK level is written out.
+        fake.playing(told.copy(media = told.media.copy(mpaa = "Rated PG-13")))
+        rule.until { rule.onAllNodesWithContentDescription("Rated PG-13").fetchSemanticsNodes().isNotEmpty() }
 
         // Ratings without a plot: the card for them alone, and no slogan.
-        fake.playing(told.copy(media = MediaInfo(tagline = "Only this.", mpaa = "FSK 16")))
-        rule.until { seen("FSK 16") }
+        fake.playing(told.copy(media = MediaInfo(tagline = "Only this.", mpaa = "FSK 16", fsk = "16")))
+        rule.until { rule.onAllNodesWithContentDescription("FSK 16").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(true, seen(str(R.string.live_plot)))
         assertEquals(false, seen("Only this."))
     }

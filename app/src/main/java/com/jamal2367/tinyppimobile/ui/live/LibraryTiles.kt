@@ -239,12 +239,13 @@ private fun UnseenMark(count: Int, modifier: Modifier) {
 }
 
 /** The star on a rating pill, and how big it is drawn. */
-internal val RATING_STAR = Color(0xFFF4C04F)
-internal val RATING_STAR_SIZE = 13.dp
+private val RATING_STAR = Color(0xFFF4C04F)
+private val RATING_STAR_SIZE = 13.dp
 
 /** What a badge calls the house whose rating it draws. Brand names, untranslated. */
 internal val RATING_NAMES = mapOf(
     "imdb" to "IMDb", "tmdb" to "TMDb", "trakt" to "Trakt", "tvdb" to "TVDB", "metacritic" to "Metacritic",
+    "rottentomatoes" to "Rotten Tomatoes",
 )
 
 /** What stands between a year and a length, or a number and a length. */

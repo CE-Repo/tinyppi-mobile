@@ -115,7 +115,7 @@
     <string name="live_subtitles_off">Aus</string>
     <string name="live_track_unknown">Unbekannt</string>
 
-    <string name="live_plot">Handlung &amp; Bewertungen</string>
+    <string name="live_plot">Überblick</string>
     <plurals name="live_rating_votes">
         <item quantity="one">%1$s Stimme</item>
         <item quantity="other">%1$s Stimmen</item>
