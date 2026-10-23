@@ -36,10 +36,13 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -52,23 +55,24 @@ import com.jamal2367.tinyppimobile.util.Formatters
 import java.util.Locale
 
 /**
- * What the title is about and what it has been given: its slogan, its plot
- * and its ratings, as the box's library has them.
+ * What the title is about, what it has been given and who made it: its
+ * slogan, its plot, its ratings and its credits, as the box knows them.
  *
  * Under the card of what is playing until the reader moves it, and like every
  * other card there it folds, comes off the screen and goes back on (see
- * CardLayout). Drawn for a title with a plot, ratings or both (see
- * [MediaInfo.showsPlotCard]), and left out for one with neither - a file the
- * library does not know. The slogan goes only with a plot: on its own it says
- * too little, and above a plot it is left out where there is none, which is
- * most episodes.
+ * CardLayout). Drawn for a title with a plot, ratings or credits (see
+ * [MediaInfo.showsPlotCard]), and left out for one with none of them - a
+ * file the library does not know. The slogan goes only with a plot: on its
+ * own it says too little, and above a plot it is left out where there is
+ * none, which is most episodes.
  *
  * Everything in it centred. The slogan first, in italics and in the text's
  * full colour, as the line a poster carries, and the plot in the quieter
  * colour the year and genre are set in, since it is the one paragraph on the
  * screen and the readings below it should not have to shout over it. Under
  * them, past a thin rule, the ratings as a row of their own: short facts
- * about the film, taken in at a glance.
+ * about the film, taken in at a glance. And past another, the credits as
+ * plain lines.
  */
 @Composable
 internal fun PlotCard(media: MediaInfo) {
@@ -101,6 +105,52 @@ internal fun PlotCard(media: MediaInfo) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
             }
             RatingRow(media)
+        }
+        if (media.hasCredits) {
+            // The same rule over them, from the ratings or from the plot.
+            if (media.hasPlot || media.hasRatings) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
+            }
+            Credits(media)
+        }
+    }
+}
+
+/**
+ * Who made the title, a centred line each in the order a film's credits are
+ * asked about: what kind of film it is, who directed it, who is in it - the
+ * leads, as the add-on cuts them - and who made it. Each is what it is in
+ * bold and the text's full colour, named for one or for more than one
+ * ("Studio", "Studios"), and then the names in the plot's quieter one; a
+ * list Kodi has none of is left out.
+ */
+@Composable
+private fun Credits(media: MediaInfo) {
+    val credits = listOf(
+        pluralStringResource(R.plurals.live_credit_genres, media.genres.size) to media.genres,
+        pluralStringResource(R.plurals.live_credit_directors, media.directors.size) to media.directors,
+        stringResource(R.string.live_credit_cast) to media.cast,
+        pluralStringResource(R.plurals.live_credit_studios, media.studios.size) to media.studios,
+    )
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        // More air between two of them than between the lines of one: a
+        // long cast runs on over several.
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        val named = SpanStyle(fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+        val names = SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)
+        credits.filter { (_, list) -> list.isNotEmpty() }.forEach { (label, list) ->
+            Text(
+                text = buildAnnotatedString {
+                    withStyle(named) { append(label) }
+                    append(" ")
+                    withStyle(names) { append(list.joinToString(", ")) }
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
@@ -393,7 +443,7 @@ private fun badgeHeight(): Dp = BADGE * LocalDensity.current.fontScale.coerceAtL
 
 private val BADGE = 26.dp
 
-/** A film's ratings, slogan and plot, as the card draws them. */
+/** A film's slogan, plot, ratings and credits, as the card draws them. */
 @PreviewLightDark
 @Composable
 internal fun PlotCardPreview() {
@@ -410,6 +460,10 @@ internal fun PlotCardPreview() {
                         ageLevel = "12",
                         userRating = 9,
                         top250 = 27,
+                        genres = listOf("Science Fiction", "Adventure"),
+                        directors = listOf("Denis Villeneuve"),
+                        cast = listOf("Timothée Chalamet", "Zendaya", "Rebecca Ferguson"),
+                        studios = listOf("Legendary Pictures"),
                     ),
                 )
             }

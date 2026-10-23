@@ -305,6 +305,16 @@ data class MediaInfo(
     @SerialName("userrating") val userRating: Int = 0,
     /** The place in the IMDb Top 250; 0 for none. */
     val top250: Int = 0,
+    /**
+     * Who made it, as the add-on splits Kodi's readings into names: the
+     * genres, the directors, the cast's leads in billing order and the
+     * studios. An episode's genres and studios are its show's, and its cast
+     * its own guests and then the show's.
+     */
+    val genres: List<String> = emptyList(),
+    val directors: List<String> = emptyList(),
+    val cast: List<String> = emptyList(),
+    val studios: List<String> = emptyList(),
 ) {
     /**
      * Whether there is a plot to print. A slogan goes only with one: on its
@@ -317,9 +327,13 @@ data class MediaInfo(
     val hasRatings: Boolean
         get() = ratings.isNotEmpty() || userRating > 0 || top250 > 0 || mpaa.isNotBlank()
 
-    /** Whether the plot card is drawn: for a plot, for ratings, or both. */
+    /** Whether Kodi says who made the title in any of the ways it can. */
+    val hasCredits: Boolean
+        get() = genres.isNotEmpty() || directors.isNotEmpty() || cast.isNotEmpty() || studios.isNotEmpty()
+
+    /** Whether the plot card is drawn: for a plot, for ratings, for credits. */
     val showsPlotCard: Boolean
-        get() = hasPlot || hasRatings
+        get() = hasPlot || hasRatings || hasCredits
 
     /** `S02E07`, when this is an episode of something. */
     val episodeLabel: String?

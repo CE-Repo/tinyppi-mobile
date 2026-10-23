@@ -314,6 +314,65 @@ class LiveCardsTest {
     }
 
     @Test
+    fun `the overview card ends with the credits, a centred line each`() {
+        fun named(id: Int, count: Int) = context.resources.getQuantityString(id, count)
+        fake.playing(
+            told.copy(
+                media = told.media.copy(
+                    ratings = listOf(SourceRating("imdb", 8.5, 0)),
+                    genres = listOf("Science Fiction", "Adventure"),
+                    directors = listOf("Denis Villeneuve"),
+                    cast = listOf("Timothée Chalamet", "Zendaya"),
+                    studios = listOf("Legendary Pictures"),
+                ),
+            ),
+        )
+        showLive()
+        // In the order they are asked about, each named for one or for more
+        // than one, and under the ratings.
+        val lines = listOf(
+            "${named(R.plurals.live_credit_genres, 2)} Science Fiction, Adventure",
+            "${named(R.plurals.live_credit_directors, 1)} Denis Villeneuve",
+            "${str(R.string.live_credit_cast)} Timothée Chalamet, Zendaya",
+            "${named(R.plurals.live_credit_studios, 1)} Legendary Pictures",
+        )
+        val boxes = lines.map { rule.onNodeWithText(it).fetchSemanticsNode().boundsInRoot }
+        val imdb = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot
+        assertEquals(true, boxes.first().top >= imdb.bottom)
+        boxes.zipWithNext { above, below -> assertEquals(true, below.top >= above.bottom) }
+        // Centred: each line stands in the middle of the card, which is the
+        // middle of the screen.
+        val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
+        boxes.forEach { assertEquals(screen.center.x, it.center.x, 1f) }
+
+        // One genre, two directors and studios, no cast: that line left out.
+        fake.playing(
+            told.copy(
+                media = told.media.copy(
+                    genres = listOf("Drama"),
+                    directors = listOf("Joel Coen", "Ethan Coen"),
+                    studios = listOf("A24", "Working Title"),
+                ),
+            ),
+        )
+        rule.until { seen("${named(R.plurals.live_credit_genres, 1)} Drama") }
+        assertEquals(true, seen("${named(R.plurals.live_credit_directors, 2)} Joel Coen, Ethan Coen"))
+        assertEquals(true, seen("${named(R.plurals.live_credit_studios, 2)} A24, Working Title"))
+        assertEquals(false, seen(str(R.string.live_credit_cast)))
+
+        // Ratings and credits with no plot: the rule between them still.
+        fake.playing(told.copy(media = MediaInfo(mpaa = "FSK 16", age = "fsk16", ageLevel = "16", studios = listOf("A24"))))
+        rule.until { seen("${named(R.plurals.live_credit_studios, 1)} A24") }
+        assertEquals(true, rule.onAllNodesWithContentDescription("FSK 16").fetchSemanticsNodes().isNotEmpty())
+
+        // Credits alone are still an overview.
+        fake.playing(told.copy(media = MediaInfo(cast = listOf("Somebody"))))
+        rule.until { seen("${str(R.string.live_credit_cast)} Somebody") }
+        assertEquals(true, seen(str(R.string.live_plot)))
+        assertEquals(false, seen("Paul joins the Fremen."))
+    }
+
+    @Test
     fun `the plot card folds, moves and comes off the screen like the others`() {
         val cards = CardState().apply { folds = setOf(FOLD_CONTROLS) }
         fake.playing(told)

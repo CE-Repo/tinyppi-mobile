@@ -122,6 +122,19 @@
     </plurals>
     <string name="live_rating_mine">Saját értékelés</string>
     <string name="live_rating_top250">Top 250 · %1$d. hely</string>
+    <plurals name="live_credit_genres">
+        <item quantity="one">Műfaj</item>
+        <item quantity="other">Műfajok</item>
+    </plurals>
+    <plurals name="live_credit_directors">
+        <item quantity="one">Rendező</item>
+        <item quantity="other">Rendezők</item>
+    </plurals>
+    <string name="live_credit_cast">Szereplők</string>
+    <plurals name="live_credit_studios">
+        <item quantity="one">Stúdió</item>
+        <item quantity="other">Stúdiók</item>
+    </plurals>
 
     <string name="live_vs10">VS10</string>
     <string name="live_control_disabled">A lejátszó nem teszi lehetővé a kliens számára, hogy bármit is váltson. Kapcsold be a vezérlést aa kiegészítő beállításaiban.</string>

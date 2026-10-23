@@ -127,6 +127,19 @@
     </plurals>
     <string name="live_rating_mine">My rating</string>
     <string name="live_rating_top250">Top 250 · #%1$d</string>
+    <plurals name="live_credit_genres">
+        <item quantity="one">Genre</item>
+        <item quantity="other">Genres</item>
+    </plurals>
+    <plurals name="live_credit_directors">
+        <item quantity="one">Director</item>
+        <item quantity="other">Directors</item>
+    </plurals>
+    <string name="live_credit_cast">Cast</string>
+    <plurals name="live_credit_studios">
+        <item quantity="one">Studio</item>
+        <item quantity="other">Studios</item>
+    </plurals>
 
     <string name="live_vs10">VS10</string>
     <string name="live_control_disabled">This box does not allow a client to switch anything. Turn control on in the add-on\'s settings.</string>

@@ -154,9 +154,14 @@ Trakt, TVDB, Metacritic, Rotten Tomatoes; any other gets its first letter on a
 plain plate — with how many voted, your own rating behind a heart and the
 place in the IMDb Top 250. A screen reader hears each shield as one sentence ("IMDb
 8.5, 612,345 votes"). An episode is rated on its own and carries its show's
-age rating. The slogan only ever stands above a plot: without a plot the card
-shows the ratings alone, and with neither it is left out, as it is for a file
-that is not in the library. It folds, moves and comes off the screen like
+age rating. Under the ratings, past another rule, the credits: a centred
+line each with its name in bold and then the names — the genres, the
+director, the cast (its first eight, in billing order) and the studio — each
+named for one or for more than one ("Studio", "Studios") and left out where
+Kodi has none. An episode's genres and studio are its show's. The slogan only
+ever stands above a plot: without a plot the card shows the ratings and the
+credits alone, and with none of them it is left out, as it is for a file that
+is not in the library. It folds, moves and comes off the screen like
 every other card on it (see [Arranging the cards](#arranging-the-cards)).
 
 A file with chapters carries a dot on the progress bar where each chapter

@@ -183,11 +183,17 @@ class DemoServerTest {
         assertEquals("FSK 12", rated["mpaa"]!!.jsonPrimitive.content)
         assertEquals("fsk12", rated["age"]!!.jsonPrimitive.content)
         assertEquals("12", rated["age_level"]!!.jsonPrimitive.content)
+        // And who made it, as lists of names.
+        assertEquals("Denis Villeneuve", rated["directors"]!!.jsonArray.single().jsonPrimitive.content)
+        assertEquals(8, rated["cast"]!!.jsonArray.size)
+        assertEquals("Legendary Pictures", rated["studios"]!!.jsonArray.single().jsonPrimitive.content)
+        assertEquals(2, rated["genres"]!!.jsonArray.size)
         assertEquals(9, rated["userrating"]!!.jsonPrimitive.int)
         assertEquals(27, rated["top250"]!!.jsonPrimitive.int)
         post("/api/play", """{"movieid":3,"resume":false}""")
         // A film the pretend library says nothing about, nor rates for its age.
         assertEquals("", state()["media"]!!.jsonObject["plot"]!!.jsonPrimitive.content)
+        assertEquals(0, state()["media"]!!.jsonObject["cast"]!!.jsonArray.size)
         assertEquals("", state()["media"]!!.jsonObject["age"]!!.jsonPrimitive.content)
         post("/api/play", """{"movieid":6}""")
         post("/api/play", """{"movieid":999}""")
@@ -199,6 +205,7 @@ class DemoServerTest {
         assertEquals("TV-MA", state()["media"]!!.jsonObject["mpaa"]!!.jsonPrimitive.content)
         assertEquals("tv_ma", state()["media"]!!.jsonObject["age"]!!.jsonPrimitive.content)
         assertEquals("MA", state()["media"]!!.jsonObject["age_level"]!!.jsonPrimitive.content)
+        assertEquals("Sam Guest", state()["media"]!!.jsonObject["cast"]!!.jsonArray.first().jsonPrimitive.content)
         assertTrue(state()["media"]!!.jsonObject["plot"]!!.jsonPrimitive.content.startsWith("Season 2, episode 3"))
         chapters = state()["chapters"]!!.jsonArray
         assertEquals(6, chapters.size)

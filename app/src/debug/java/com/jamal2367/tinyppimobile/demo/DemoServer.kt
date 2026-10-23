@@ -15,6 +15,7 @@ import androidx.core.graphics.createBitmap
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.double
@@ -72,6 +73,17 @@ object DemoServer {
     private const val DUNE_TOP250 = 27
     private const val DUNE_MINE = 9
 
+    /** Who made it, as the add-on sends it: the cast cut to its leads. */
+    private val DUNE_CREDITS = Credits(
+        genres = listOf("Science Fiction", "Adventure"),
+        directors = listOf("Denis Villeneuve"),
+        cast = listOf(
+            "Timothée Chalamet", "Zendaya", "Rebecca Ferguson", "Javier Bardem", "Josh Brolin", "Austin Butler",
+            "Florence Pugh", "Dave Bautista",
+        ),
+        studios = listOf("Legendary Pictures"),
+    )
+
     /** What a film's chapters are called on the pretend box. */
     private val FILM_CHAPTERS = listOf(
         "Opening", "Arrakis", "The Fremen", "Sietch Tabr", "The Water of Life", "Sandworm",
@@ -119,6 +131,7 @@ object DemoServer {
         playingAgeLevel = DUNE_AGE_LEVEL
         playingTop250 = DUNE_TOP250
         playingMine = DUNE_MINE
+        playingCredits = DUNE_CREDITS
         playingShow = ""
         playingSeason = ""
         playingEpisode = ""
@@ -143,7 +156,15 @@ object DemoServer {
         val id: Int, val title: String, val year: Int, val minutes: Int, val rating: Double, val genre: String,
         val watched: Boolean = false, val resumeMinutes: Int = 0, val tagline: String = "", val plot: String = "",
         val mpaa: String = "", val age: String = "", val ageLevel: String = "", val top250: Int = 0,
-        val mine: Int = 0,
+        val mine: Int = 0, val credits: Credits = Credits(),
+    )
+
+    /** Who made a title: its genres, directors, cast and studios. */
+    private class Credits(
+        val genres: List<String> = emptyList(),
+        val directors: List<String> = emptyList(),
+        val cast: List<String> = emptyList(),
+        val studios: List<String> = emptyList(),
     )
     private class Show(val id: Int, val title: String, val year: Int, val rating: Double, val seasons: Int, val perSeason: Int, val seenUpTo: Int) {
         /** Every episode as season and number, in the order they are watched. */
@@ -157,7 +178,7 @@ object DemoServer {
         Film(
             1, "Dune: Part Two", 2024, 166, 8.5, "Science Fiction", resumeMinutes = 71, tagline = DUNE_TAGLINE,
             plot = DUNE_PLOT, mpaa = DUNE_MPAA, age = DUNE_AGE, ageLevel = DUNE_AGE_LEVEL, top250 = DUNE_TOP250,
-            mine = DUNE_MINE,
+            mine = DUNE_MINE, credits = DUNE_CREDITS,
         ),
         // A slogan and a plot for the first two only: the rest play without
         // them, the way a file the library knows little about does.
@@ -168,6 +189,12 @@ object DemoServer {
             plot = "J. Robert Oppenheimer is asked to lead the race for the atomic bomb from a laboratory " +
                 "built in the New Mexico desert. Years after Los Alamos, a closed security hearing turns " +
                 "his own past against him.",
+            credits = Credits(
+                genres = listOf("Drama", "History"),
+                directors = listOf("Christopher Nolan"),
+                cast = listOf("Cillian Murphy", "Emily Blunt", "Matt Damon", "Robert Downey Jr.", "Florence Pugh"),
+                studios = listOf("Syncopy", "Atlas Entertainment"),
+            ),
         ),
         Film(3, "Blade Runner 2049", 2017, 164, 8.0, "Science Fiction", resumeMinutes = 132),
         Film(4, "Mad Max: Fury Road", 2015, 120, 8.1, "Action", watched = true),
@@ -236,6 +263,7 @@ object DemoServer {
     private var playingAgeLevel = DUNE_AGE_LEVEL
     private var playingTop250 = DUNE_TOP250
     private var playingMine = DUNE_MINE
+    private var playingCredits = DUNE_CREDITS
     private var playingShow = ""
     private var playingSeason = ""
     private var playingEpisode = ""
@@ -449,6 +477,11 @@ object DemoServer {
                 put("age_level", playingAgeLevel)
                 put("userrating", playingMine)
                 put("top250", playingTop250)
+                // Who made it, as lists of names.
+                putJsonArray("genres") { playingCredits.genres.forEach { add(it) } }
+                putJsonArray("directors") { playingCredits.directors.forEach { add(it) } }
+                putJsonArray("cast") { playingCredits.cast.forEach { add(it) } }
+                putJsonArray("studios") { playingCredits.studios.forEach { add(it) } }
             }
             putJsonObject("controls") {
                 putJsonArray("audio") {
@@ -644,7 +677,7 @@ object DemoServer {
                     playingTitle = f.title; playingTag = "movie-${f.id}"; playingYear = f.year; playingGenre = f.genre
                     playingTagline = f.tagline; playingPlot = f.plot
                     playingRatings = filmRatings(f); playingMpaa = f.mpaa; playingAge = f.age; playingAgeLevel = f.ageLevel
-                    playingTop250 = f.top250; playingMine = f.mine
+                    playingTop250 = f.top250; playingMine = f.mine; playingCredits = f.credits
                     playingShow = ""; playingSeason = ""; playingEpisode = ""
                     durationSeconds = f.minutes * 60
                     positionSeconds = if (fromStart || filmWatched(f)) 0.0 else f.resumeMinutes * 60.0
@@ -661,6 +694,12 @@ object DemoServer {
                     // Rated on its own, with no count, and its show's age rating.
                     playingRatings = listOf(Triple("tvdb", show.rating, 0))
                     playingMpaa = "TV-MA"; playingAge = "tv_ma"; playingAgeLevel = "MA"; playingTop250 = 0; playingMine = 0
+                    // Its show's genre and studio, its own director, and its
+                    // guests before the show's cast.
+                    playingCredits = Credits(
+                        genres = listOf("Drama"), directors = listOf("Alex Example"),
+                        cast = listOf("Sam Guest", "Robin Lead", "Kim Second"), studios = listOf("Demo Studios"),
+                    )
                     durationSeconds = 52 * 60; positionSeconds = 0.0
                 }
                 paused = false

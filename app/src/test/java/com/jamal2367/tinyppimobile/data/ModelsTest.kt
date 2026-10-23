@@ -140,6 +140,18 @@ class ModelsTest {
         assertEquals(SourceRating("", 0.0, 0), SourceRating())
         assertEquals("", MediaInfo().age)
         assertEquals("", MediaInfo().ageLevel)
+        assertFalse(MediaInfo().hasCredits)
+        // Any one list of names is credits, and draws the card on its own.
+        for (credited in listOf(
+            MediaInfo(genres = listOf("Drama")),
+            MediaInfo(directors = listOf("Denis Villeneuve")),
+            MediaInfo(cast = listOf("Zendaya")),
+            MediaInfo(studios = listOf("A24")),
+        )) {
+            assertTrue(credited.hasCredits)
+            assertTrue(credited.showsPlotCard)
+            assertFalse(credited.hasRatings)
+        }
         for (rated in listOf(
             MediaInfo(ratings = listOf(SourceRating("imdb", 8.5, 10))),
             MediaInfo(userRating = 9),
