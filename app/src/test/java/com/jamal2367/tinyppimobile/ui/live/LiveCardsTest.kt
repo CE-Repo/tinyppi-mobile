@@ -314,8 +314,7 @@ class LiveCardsTest {
     }
 
     @Test
-    fun `the overview card ends with the credits, a centred line each`() {
-        fun named(id: Int, count: Int) = context.resources.getQuantityString(id, count)
+    fun `the overview card ends with the cast, a centred line`() {
         fake.playing(
             told.copy(
                 media = told.media.copy(
@@ -329,51 +328,35 @@ class LiveCardsTest {
             ),
         )
         showLive()
-        // In the order they are asked about, each named for one or for more
-        // than one, and under the ratings; a list the add-on cut ends in an
-        // ellipsis. The genre and the studio are the card above's alone.
-        val lines = listOf(
-            "${named(R.plurals.live_credit_directors, 1)} Denis Villeneuve",
+        // Under the ratings, cut with an ellipsis, and centred: it stands in
+        // the middle of the card, which is the middle of the screen.
+        val cast = rule.onNodeWithText(
             "${str(R.string.live_credit_cast)} Timothée Chalamet, Zendaya, Rebecca Ferguson, Javier Bardem, Josh Brolin, …",
-        )
-        val boxes = lines.map { rule.onNodeWithText(it).fetchSemanticsNode().boundsInRoot }
+        ).fetchSemanticsNode().boundsInRoot
         val imdb = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot
-        assertEquals(true, boxes.first().top >= imdb.bottom)
-        boxes.zipWithNext { above, below -> assertEquals(true, below.top >= above.bottom) }
-        // Centred: each line stands in the middle of the card, which is the
-        // middle of the screen.
+        assertEquals(true, cast.top >= imdb.bottom)
         val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
-        boxes.forEach { assertEquals(screen.center.x, it.center.x, 1f) }
-        for (above in listOf("Science Fiction", "Legendary Pictures")) {
+        assertEquals(screen.center.x, cast.center.x, 1f)
+        // The genre, the studio and the director are the card above's alone.
+        for (above in listOf("Science Fiction", "Legendary Pictures", "Denis Villeneuve")) {
             assertEquals(1, rule.onAllNodesWithText(above, substring = true).fetchSemanticsNodes().size)
         }
 
-        // Three directors and more, no cast: that line left out. One director
-        // with more behind them is named for more.
-        fake.playing(
-            told.copy(
-                media = told.media.copy(directors = listOf("Joel Coen", "Ethan Coen", "Somebody"), directorsMore = true),
-            ),
-        )
-        rule.until { seen("${named(R.plurals.live_credit_directors, 4)} Joel Coen, Ethan Coen, Somebody, …") }
-        assertEquals(
-            true,
-            rule.onAllNodesWithText("${str(R.string.live_credit_cast)} ", substring = true).fetchSemanticsNodes().isEmpty(),
-        )
-        fake.playing(told.copy(media = told.media.copy(directors = listOf("Somebody"), directorsMore = true)))
-        rule.until { seen("${named(R.plurals.live_credit_directors, 2)} Somebody, …") }
+        // A cast the add-on did not cut ends without one.
+        fake.playing(told.copy(media = told.media.copy(cast = listOf("Somebody", "Somebody Else"))))
+        rule.until { seen("${str(R.string.live_credit_cast)} Somebody, Somebody Else") }
 
-        // Ratings and credits with no plot: the rule between them still.
+        // Ratings and a cast with no plot: the rule between them still.
         fake.playing(told.copy(media = MediaInfo(mpaa = "FSK 16", age = "fsk16", ageLevel = "16", cast = listOf("Somebody"))))
         rule.until { seen("${str(R.string.live_credit_cast)} Somebody") }
         assertEquals(true, rule.onAllNodesWithContentDescription("FSK 16").fetchSemanticsNodes().isNotEmpty())
 
-        // A studio alone is no credit, and draws no card.
-        fake.playing(told.copy(media = MediaInfo(studios = listOf("A24"))))
+        // A studio or a director alone is no credit, and draws no card.
+        fake.playing(told.copy(media = MediaInfo(studios = listOf("A24"), directors = listOf("Somebody"))))
         rule.until { !seen(str(R.string.live_plot)) }
         assertEquals(true, seen("A24"))
 
-        // Credits alone are still an overview.
+        // A cast alone is still an overview.
         fake.playing(told.copy(media = MediaInfo(cast = listOf("Somebody"))))
         rule.until { seen("${str(R.string.live_credit_cast)} Somebody") }
         assertEquals(true, seen(str(R.string.live_plot)))

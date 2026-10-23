@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -206,6 +207,23 @@ internal fun NowPlayingCard(
                 // picture finish on the same line. Centred, they floated in
                 // the middle of the card against nothing.
                 Spacer(Modifier.weight(1f))
+                // Who directed it, in the middle of that slack: a weighted
+                // spacer either side of it shares the slack out evenly.
+                snapshot.media.directors.takeIf { it.isNotEmpty() }?.let { directors ->
+                    val more = snapshot.media.directorsMore
+                    Text(
+                        text = creditLine(
+                            // A cut list is more than it shows.
+                            pluralStringResource(R.plurals.live_credit_directors, directors.size + if (more) 1 else 0),
+                            Formatters.names(directors, more),
+                            MaterialTheme.colorScheme,
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.weight(1f))
+                }
 
                 // The two rows travel together, a badge's own gap apart. They
                 // used to have one of those weighted spacers between them,

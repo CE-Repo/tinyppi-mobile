@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +37,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -55,12 +57,12 @@ import com.jamal2367.tinyppimobile.util.Formatters
 import java.util.Locale
 
 /**
- * What the title is about, what it has been given and who made it: its
- * slogan, its plot, its ratings and its credits, as the box knows them.
+ * What the title is about, what it has been given and who is in it: its
+ * slogan, its plot, its ratings and its cast, as the box knows them.
  *
  * Under the card of what is playing until the reader moves it, and like every
  * other card there it folds, comes off the screen and goes back on (see
- * CardLayout). Drawn for a title with a plot, ratings or credits (see
+ * CardLayout). Drawn for a title with a plot, ratings or a cast (see
  * [MediaInfo.showsPlotCard]), and left out for one with none of them - a
  * file the library does not know. The slogan goes only with a plot: on its
  * own it says too little, and above a plot it is left out where there is
@@ -71,8 +73,8 @@ import java.util.Locale
  * colour the year and genre are set in, since it is the one paragraph on the
  * screen and the readings below it should not have to shout over it. Under
  * them, past a thin rule, the ratings as a row of their own: short facts
- * about the film, taken in at a glance. And past another, the credits as
- * plain lines.
+ * about the film, taken in at a glance. And past another, the cast as a
+ * plain line.
  */
 @Composable
 internal fun PlotCard(media: MediaInfo) {
@@ -111,58 +113,34 @@ internal fun PlotCard(media: MediaInfo) {
             if (media.hasPlot || media.hasRatings) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
             }
-            Credits(media)
-        }
-    }
-}
-
-/**
- * Who made the title, a centred line each in the order a film's credits are
- * asked about: who directed it and who is in it - what kind of film it is and
- * the studio stand in the card above. The first names of each, as the add-on
- * cuts them, with an ellipsis after them where there are more. Each is what
- * it is in bold and the text's full colour, named for one or for more than
- * one ("Director", "Directors"), and then the names in the plot's quieter
- * one; a list Kodi has none of is left out.
- */
-@Composable
-private fun Credits(media: MediaInfo) {
-    val credits = listOf(
-        Credit(
-            pluralStringResource(R.plurals.live_credit_directors, counted(media.directors, media.directorsMore)),
-            media.directors,
-            media.directorsMore,
-        ),
-        Credit(stringResource(R.string.live_credit_cast), media.cast, media.castMore),
-    )
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        // More air between two of them than between the lines of one: a
-        // long cast runs on over several.
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        val named = SpanStyle(fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-        val names = SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)
-        credits.filter { it.names.isNotEmpty() }.forEach { credit ->
+            // Who is in it, the leads as the add-on cuts them, centred like
+            // everything over it. What kind of film it is, who made it and
+            // who directed it stand in the card above.
             Text(
-                text = buildAnnotatedString {
-                    withStyle(named) { append(credit.label) }
-                    append(" ")
-                    withStyle(names) { append(Formatters.names(credit.names, credit.more)) }
-                },
+                text = creditLine(
+                    stringResource(R.string.live_credit_cast),
+                    Formatters.names(media.cast, media.castMore),
+                    MaterialTheme.colorScheme,
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
             )
         }
     }
 }
 
-/** One line of the credits: what it is called, its names and whether the add-on cut it. */
-private class Credit(val label: String, val names: List<String>, val more: Boolean)
-
-/** How many a list holds, for what it is called: a cut one is more than it shows. */
-private fun counted(names: List<String>, more: Boolean): Int = names.size + if (more) 1 else 0
+/**
+ * A credit as a line: what it is in bold and the text's full colour, then the
+ * names in the quieter one the plot and the year and genre are set in. Heard
+ * as it reads, "Director Denis Villeneuve". Built outside the composition,
+ * like [heardAs]: a line of text has nothing to remember.
+ */
+internal fun creditLine(label: String, names: String, colors: ColorScheme): AnnotatedString = buildAnnotatedString {
+    withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = colors.onSurface)) { append(label) }
+    append(" ")
+    withStyle(SpanStyle(color = colors.onSurfaceVariant)) { append(names) }
+}
 
 /**
  * Every rating the library holds: the age rating first - who the film is for
@@ -452,7 +430,7 @@ private fun badgeHeight(): Dp = BADGE * LocalDensity.current.fontScale.coerceAtL
 
 private val BADGE = 26.dp
 
-/** A film's slogan, plot, ratings and credits, as the card draws them. */
+/** A film's slogan, plot, ratings and cast, as the card draws them. */
 @PreviewLightDark
 @Composable
 internal fun PlotCardPreview() {
