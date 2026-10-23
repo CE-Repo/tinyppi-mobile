@@ -14,7 +14,6 @@ import android.util.Log
 import androidx.core.graphics.createBitmap
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
@@ -74,7 +73,7 @@ object DemoServer {
     private const val DUNE_TOP250 = 27
     private const val DUNE_MINE = 9
 
-    /** Who made it, more of the cast than the add-on sends (see putNames). */
+    /** Who made it. */
     private val DUNE_CREDITS = Credits(
         directors = listOf("Denis Villeneuve"),
         cast = listOf(
@@ -488,10 +487,11 @@ object DemoServer {
                 put("age_level", playingAgeLevel)
                 put("userrating", playingMine)
                 put("top250", playingTop250)
-                // Who made it, cut as the add-on cuts it: the director and the
-                // studio the first alone.
-                putJsonArray("directors") { playingCredits.directors.take(1).forEach { add(it) } }
-                putNames("cast", playingCredits.cast, 8)
+                // Who made it, as the add-on sends it: every director and the
+                // whole cast, the studio the first alone.
+                putJsonArray("directors") { playingCredits.directors.forEach { add(it) } }
+                putJsonArray("cast") { playingCredits.cast.forEach { add(it) } }
+                put("cast_more", false)
                 putJsonArray("studios") { playingCredits.studios.take(1).forEach { add(it) } }
             }
             putJsonObject("controls") {
@@ -541,11 +541,6 @@ object DemoServer {
     }
 
     /** A list of names as the add-on sends it: its first [limit], and whether it has more. */
-    private fun JsonObjectBuilder.putNames(key: String, names: List<String>, limit: Int) {
-        putJsonArray(key) { names.take(limit).forEach { add(it) } }
-        put("${key}_more", names.size > limit)
-    }
-
     private fun track(index: Int, label: String) = buildJsonObject { put("index", index); put("label", label) }
 
     private fun history(): JsonObject = synchronized(lock) {

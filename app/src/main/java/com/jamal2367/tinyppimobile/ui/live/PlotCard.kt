@@ -144,8 +144,8 @@ internal fun PlotCard(media: MediaInfo) {
 }
 
 /**
- * Who directed it and who is in it - the director over the cast, the leads as
- * the add-on cuts them - centred like everything over them. What kind of film
+ * Who directed it and who is in it - the directors over the cast, every name
+ * the add-on sends - centred like everything over them. What kind of film
  * it is and who made it stand in the card above.
  */
 @Composable
@@ -153,7 +153,8 @@ private fun Credits(media: MediaInfo, modifier: Modifier) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        // A clear gap between the two credits, so each reads as its own.
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         if (media.directors.isNotEmpty()) {
             CreditText(stringResource(R.string.live_credit_director), Formatters.names(media.directors, false))

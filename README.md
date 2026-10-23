@@ -147,9 +147,8 @@ the plot, with the slogan in italics above it where there is one — most
 episodes carry a plot and no slogan; a long plot is cut to four lines, and
 *Show more* under it lets the rest out (*Show less* takes it back) — and
 hanging on the plot's end the director, then the cast, each its heading in
-bold on a line of its own centred over the names (the cast's first eight in
-billing order, ending in "…" where there are more), left out where Kodi has
-none. Under a cut plot they stay hidden and come out with the rest of it;
+bold on a line of its own centred over the names (every director, and the
+whole cast in billing order), left out where Kodi has none. Under a cut plot they stay hidden and come out with the rest of it;
 under one that fits they stand as they are. The genre and the studio stand in
 the card above. Last, past a thin rule, every rating Kodi's library holds for the title, as
 a row of small shields. Each has its source's mark on the left, on a

@@ -306,9 +306,9 @@ data class MediaInfo(
     /** The place in the IMDb Top 250; 0 for none. */
     val top250: Int = 0,
     /**
-     * Who made it, as the add-on splits Kodi's readings into names and cuts
-     * them: the first director and the first studio alone, and the cast's
-     * leads in billing order with whether there are more. The studio stands in
+     * Who made it, as the add-on splits Kodi's readings into names: every
+     * director, the first studio alone, and the whole cast in billing order
+     * (with whether there are more, which an add-on that still cut it sends). The studio stands in
      * the card of what is playing, the director and the cast in the plot
      * card. An episode's studio is its show's, and its cast its own guests
      * and then the show's.

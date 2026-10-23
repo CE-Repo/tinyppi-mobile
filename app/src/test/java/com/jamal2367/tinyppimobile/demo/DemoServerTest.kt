@@ -188,11 +188,11 @@ class DemoServerTest {
         assertEquals("FSK 12", rated["mpaa"]!!.jsonPrimitive.content)
         assertEquals("fsk12", rated["age"]!!.jsonPrimitive.content)
         assertEquals("12", rated["age_level"]!!.jsonPrimitive.content)
-        // And who made it, cut as the add-on cuts it.
+        // And who made it, as the add-on sends it: nothing cut.
         assertEquals("Denis Villeneuve", rated["directors"]!!.jsonArray.single().jsonPrimitive.content)
         assertEquals(null, rated["directors_more"])
-        assertEquals(8, rated["cast"]!!.jsonArray.size)
-        assertEquals(true, rated["cast_more"]!!.jsonPrimitive.boolean)
+        assertEquals(10, rated["cast"]!!.jsonArray.size)
+        assertEquals(false, rated["cast_more"]!!.jsonPrimitive.boolean)
         assertEquals("Legendary Pictures", rated["studios"]!!.jsonArray.single().jsonPrimitive.content)
         assertEquals(null, rated["studios_more"])
         assertEquals(null, rated["genres"])
