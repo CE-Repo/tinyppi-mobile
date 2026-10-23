@@ -118,6 +118,7 @@
     <string name="live_plot">Áttekintés</string>
     <string name="live_plot_more">Több megjelenítése</string>
     <string name="live_plot_less">Kevesebb megjelenítése</string>
+    <string name="live_ratings">Értékelések</string>
     <string name="live_rating_mine">Saját értékelés</string>
     <string name="live_rating_top250">Top 250 · %1$d. hely</string>
     <string name="live_credit_director">Rendező</string>
@@ -219,7 +220,7 @@
     <string name="settings_chapters">Fejezetjelölők</string>
     <string name="settings_chapters_desc">Pontok a folyamatjelző sávon, ahol az egyes fejezetek kezdődnek, fölötte az éppen futó fejezet. Húzáskor a csúszka rájuk ugrik.</string>
     <string name="settings_rating_colours">Színes értékelési jelvények</string>
-    <string name="settings_rating_colours_desc">Minden értékelési jelvény a szolgáltatás színeiben. Kikapcsolva mind az alkalmazás kiemelőszínében.</string>
+    <string name="settings_rating_colours_desc">Minden értékelési jelvény a szolgáltatás színeiben. Kikapcsolva mind az alkalmazás kiemelőszínében, a logók sötét témában fehérek, világosban feketék.</string>
     <string name="settings_adaptive_color">Adaptív színek</string>
     <string name="settings_adaptive_color_desc">Az alkalmazás színezése a lejátszott film posztere alapján.</string>
     <string name="settings_adaptive_color_intensity">Hozzáadott szín intenzitása</string>

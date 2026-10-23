@@ -123,6 +123,7 @@
     <string name="live_plot">Overview</string>
     <string name="live_plot_more">Show more</string>
     <string name="live_plot_less">Show less</string>
+    <string name="live_ratings">Ratings</string>
     <string name="live_rating_mine">My rating</string>
     <string name="live_rating_top250">Top 250 · #%1$d</string>
     <string name="live_credit_director">Director</string>
@@ -224,7 +225,7 @@
     <string name="settings_chapters">Chapter markers</string>
     <string name="settings_chapters_desc">Dots on the progress bar where each chapter starts, with the chapter playing named over it. A drag snaps onto them.</string>
     <string name="settings_rating_colours">Coloured rating badges</string>
-    <string name="settings_rating_colours_desc">Each rating badge in its service\'s colours. Off, all of them on the app\'s accent.</string>
+    <string name="settings_rating_colours_desc">Each rating badge in its service\'s colours. Off, all of them on the app\'s accent, their marks in white on the dark theme and in black on the light one.</string>
     <string name="settings_adaptive_color">Adaptive colours</string>
     <string name="settings_adaptive_color_desc">Colour the app after the poster of what is playing, the way the dashboard does.</string>
     <string name="settings_adaptive_color_intensity">Accent intensity</string>

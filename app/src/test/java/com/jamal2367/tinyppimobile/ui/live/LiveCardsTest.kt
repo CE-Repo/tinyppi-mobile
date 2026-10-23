@@ -208,6 +208,24 @@ class LiveCardsTest {
         assertEquals(true, holds(mine, accent))
         // A source with no drawing: its letter on the accent too.
         assertEquals(true, holds("Filmaffinity 7.0", accent))
+        // The marks in black on the light theme.
+        assertEquals(true, holds("IMDb 8.5", Color.Black))
+        assertEquals(false, holds("IMDb 8.5", Color.White))
+    }
+
+    // Drawn for real, on the dark theme.
+    @Test
+    @Config(qualifiers = "+night")
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `on the dark theme the marks on the accent are white`() {
+        fake.settings.value = fake.settings.value.copy(colourfulRatings = false)
+        fake.playing(told.copy(media = told.media.copy(ratings = listOf(SourceRating("imdb", 8.5, 0)))))
+        showLive()
+        val pixels = rule.onNodeWithContentDescription("IMDb 8.5").captureToImage().toPixelMap().let { map ->
+            (0 until map.width).flatMap { x -> (0 until map.height).map { y -> map[x, y] } }
+        }
+        assertEquals(true, pixels.any { it.red > 0.97f && it.green > 0.97f && it.blue > 0.97f })
+        assertEquals(false, pixels.any { it.red < 0.03f && it.green < 0.03f && it.blue < 0.03f })
     }
 
     @Test
@@ -429,8 +447,12 @@ class LiveCardsTest {
             .fetchSemanticsNode().boundsInRoot
         assertEquals(true, director.top >= plot.bottom)
         assertEquals(true, cast.top >= director.bottom)
-        assertEquals(true, imdb.top >= cast.bottom)
+        // Then the ratings, under a heading of their own, centred like the rest.
+        val heading = rule.onNodeWithText(str(R.string.live_ratings)).fetchSemanticsNode().boundsInRoot
+        assertEquals(true, heading.top >= cast.bottom)
+        assertEquals(true, imdb.top >= heading.bottom)
         val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
+        assertEquals(screen.center.x, heading.center.x, 1f)
         assertEquals(screen.center.x, cast.center.x, 1f)
         assertEquals(screen.center.x, director.center.x, 1f)
         // The genre, the studio and the director are said once: the first
@@ -480,7 +502,7 @@ class LiveCardsTest {
     // Drawn for real: how many lines a plot takes is measured.
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    fun `a long plot is cut to three lines, and a tap on it lets the rest out`() {
+    fun `a long plot is cut to five lines, and a tap on it lets the rest out`() {
         val long = List(40) { "Paul joins the Fremen and walks the desert." }.joinToString(" ")
         fake.playing(told.copy(media = told.media.copy(plot = long)))
         showLive()

@@ -22,7 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
@@ -45,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -88,7 +88,7 @@ import java.util.Locale
  * colour the year and genre are set in, since it is the one paragraph on the
  * screen and the readings below it should not have to shout over it. Under
  * the plot, the director and the cast as plain lines - hidden with the rest
- * of a cut plot and let out with it - and last, past a thin rule, the ratings as a row of their
+ * of a cut plot and let out with it - and last, under a heading of their own, the ratings as a row of their
  * own: short facts about the film, taken in at a glance.
  */
 @Composable
@@ -155,12 +155,24 @@ internal fun PlotCard(media: MediaInfo, colourfulRatings: Boolean) {
             Credits(media, Modifier.align(Alignment.CenterHorizontally))
         }
         if (media.hasRatings) {
-            // Last, past a thin rule, from the plot or the cast: the same
-            // hairline the rows of a reading card are ruled with.
-            if (media.hasPlot || media.hasCredits) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
+            // Last, under a heading of their own like a credit's, as far
+            // under the cast as the cast is under the director.
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = RATINGS_GAP),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.live_ratings),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                )
+                RatingRow(media, colourfulRatings)
             }
-            RatingRow(media, colourfulRatings)
         }
     }
 }
@@ -227,7 +239,9 @@ private fun creditLine(label: String, names: String, colors: ColorScheme): Annot
 private fun RatingRow(media: MediaInfo, colourful: Boolean) {
     val tall = badgeHeight()
     val colours = MaterialTheme.colorScheme
-    fun ink(name: String) = if (colourful) null else inked(colours.onPrimary, inkingOf(name))
+    // On the accent, marks in white on a dark theme and in black on a light one.
+    val mono = if (colours.background.luminance() < 0.5f) Color.White else Color.Black
+    fun ink(name: String) = if (colourful) null else inked(mono, inkingOf(name))
     fun ground(colour: Color) = if (colourful) colour else colours.primary
     FlowRow(
         // Every line of them centred, the last one too.
@@ -273,7 +287,7 @@ private fun RatingRow(media: MediaInfo, colourful: Boolean) {
                 if (mark != null) {
                     DrawnMark(mark.drawing, ink(entry.source))
                 } else {
-                    LetterMark(name.take(1), if (colourful) colours.onSurfaceVariant else colours.onPrimary)
+                    LetterMark(name.take(1), if (colourful) colours.onSurfaceVariant else mono)
                 }
             }
         }
@@ -286,7 +300,7 @@ private fun RatingRow(media: MediaInfo, colourful: Boolean) {
                 value = value,
                 tall = tall,
                 ground = colours.primary,
-            ) { HeartMark() }
+            ) { HeartMark(if (colourful) colours.onPrimary else mono) }
         }
         if (media.top250 > 0) {
             RatingShield(
@@ -493,13 +507,13 @@ private fun LetterMark(letter: String, colour: Color) {
     )
 }
 
-/** The heart the reader's own rating wears, on the accent it is drawn on. */
+/** The heart the reader's own rating wears, in [tint] on the accent it is drawn on. */
 @Composable
-private fun HeartMark() {
+private fun HeartMark(tint: Color) {
     Icon(
         imageVector = Icons.Rounded.Favorite,
         contentDescription = null,
-        tint = MaterialTheme.colorScheme.onPrimary,
+        tint = tint,
         modifier = Modifier
             .padding(horizontal = 4.dp)
             .size(11.dp),
@@ -553,6 +567,9 @@ private val LIGHT_INKED = setOf(
     "bbfc_u", "bbfc_12a", "bbfc_12", "bbfc_15", "bbfc_18", "bbfc_r18",
 )
 
+/** The air over the ratings' heading, besides the card's own between its rows. */
+private val RATINGS_GAP = 6.dp
+
 /** The air between the slogan and the plot under it. */
 private val SLOGAN_GAP = 4.dp
 
@@ -560,7 +577,7 @@ private val SLOGAN_GAP = 4.dp
 private val FOLD_SHAPE = RoundedCornerShape(8.dp)
 
 /** How many lines of a plot are shown until the reader asks for the rest. */
-private const val PLOT_LINES = 3
+private const val PLOT_LINES = 5
 
 /** How tall a mark stands on its plate, and the corners of a shield. */
 private val MARK = 18.dp
