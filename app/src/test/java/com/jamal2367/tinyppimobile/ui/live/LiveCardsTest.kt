@@ -248,10 +248,14 @@ class LiveCardsTest {
             rule.onNodeWithContentDescription(said).assertIsDisplayed()
         }
         assertEquals(false, seen("8.5"))
-        // The ratings stand under the plot.
+        // The ratings stand under the plot, the age rating first: on the
+        // first line, before the first score.
         val plot = rule.onNodeWithText("Paul joins the Fremen.").fetchSemanticsNode().boundsInRoot
-        val first = rule.onNodeWithContentDescription("IMDb 8.5, ${votes(612_345, "612,345")}").fetchSemanticsNode().boundsInRoot
-        assertEquals(true, first.top >= plot.bottom)
+        val imdb = rule.onNodeWithContentDescription("IMDb 8.5, ${votes(612_345, "612,345")}").fetchSemanticsNode().boundsInRoot
+        val age = rule.onNodeWithContentDescription("FSK 12").fetchSemanticsNode().boundsInRoot
+        assertEquals(true, age.top >= plot.bottom)
+        assertEquals(age.center.y, imdb.center.y, 1f)
+        assertEquals(true, age.right <= imdb.left)
 
         // A score alone - no age rating, no own rating, no place - from a
         // source the library names nothing: a plain circle and its figure.

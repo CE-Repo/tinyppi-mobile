@@ -90,9 +90,10 @@ internal fun PlotCard(media: MediaInfo) {
 }
 
 /**
- * Every rating the library holds, in the order the add-on sends them: a score
- * for each source with how many voted for it, the reader's own, the place in
- * the IMDb Top 250 and the age rating.
+ * Every rating the library holds: the age rating first - who the film is for
+ * is asked before how good it is - then a score for each source with how many
+ * voted for it, in the order the add-on sends them, the reader's own and the
+ * place in the IMDb Top 250.
  *
  * Each is a small shield wearing its house's mark on a ground of its house's
  * colour rather than its name - the same drawings the add-on's dashboard
@@ -114,6 +115,24 @@ private fun RatingRow(media: MediaInfo) {
             .fillMaxWidth()
             .padding(top = 2.dp),
     ) {
+        if (media.mpaa.isNotBlank()) {
+            // A German age rating is the FSK's coloured mark and nothing else,
+            // as tall as the shields beside it; any other is written as the
+            // scraper wrote it.
+            val said = media.mpaa.trim()
+            val fsk = FSK_MARKS[media.fsk]
+            if (fsk != null) {
+                Image(
+                    painter = painterResource(fsk),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .heardAs(said)
+                        .size(FSK_SIZE),
+                )
+            } else {
+                RatingShield(spoken = said, value = said)
+            }
+        }
         media.ratings.forEach { entry ->
             val name = sourceName(entry)
             val value = Formatters.rating(entry.rating)
@@ -148,24 +167,6 @@ private fun RatingRow(media: MediaInfo) {
                 value = "#${media.top250}",
                 ground = TOP250.ground,
             ) { DrawnMark(TOP250.drawing) }
-        }
-        if (media.mpaa.isNotBlank()) {
-            // A German age rating is the FSK's coloured mark and nothing else,
-            // as tall as the shields beside it; any other is written as the
-            // scraper wrote it.
-            val said = media.mpaa.trim()
-            val fsk = FSK_MARKS[media.fsk]
-            if (fsk != null) {
-                Image(
-                    painter = painterResource(fsk),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .heardAs(said)
-                        .size(FSK_SIZE),
-                )
-            } else {
-                RatingShield(spoken = said, value = said)
-            }
         }
     }
 }
