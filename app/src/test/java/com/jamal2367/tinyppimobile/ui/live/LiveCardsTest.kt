@@ -170,6 +170,8 @@ class LiveCardsTest {
             "Metacritic 7.4" to Color(0xFF66CC33),
             // White lines on its red: only the white is inked.
             "Trakt 8.8" to Color(0xFFED1C24),
+            // Inked as it is red: the tomato, not its leaf.
+            "Rotten Tomatoes 9.1" to Color(0xFFF9D320),
             str(R.string.live_rating_top250, 17) to Color(0xFFF5C518),
         )
         fake.playing(
@@ -179,6 +181,7 @@ class LiveCardsTest {
                         SourceRating("imdb", 8.5, 0),
                         SourceRating("metacritic", 7.4, 0),
                         SourceRating("trakt", 8.8, 0),
+                        SourceRating("rottentomatoes", 9.1, 0),
                         SourceRating("filmaffinity", 7.0, 0),
                     ),
                     userRating = 9,

@@ -227,7 +227,7 @@ private fun creditLine(label: String, names: String, colors: ColorScheme): Annot
 private fun RatingRow(media: MediaInfo, colourful: Boolean) {
     val tall = badgeHeight()
     val colours = MaterialTheme.colorScheme
-    fun ink(name: String) = if (colourful) null else inked(colours.onPrimary, name in LIGHT_INKED)
+    fun ink(name: String) = if (colourful) null else inked(colours.onPrimary, inkingOf(name))
     fun ground(colour: Color) = if (colourful) colour else colours.primary
     FlowRow(
         // Every line of them centred, the last one too.
@@ -510,23 +510,35 @@ private fun HeartMark() {
  * A mark in one colour, [ink], for a shield on the accent. What is dark in a
  * mark - the letters on IMDb's plate, the "m" on Metacritic's circle, TMDb's
  * plate - is left out for the accent to show through, and the rest drawn in
- * the ink. A mark whose letters or lines are white on a colour ([light]: see
- * [LIGHT_INKED]) has only its white drawn, or plate and letters would be one.
+ * the ink, by how its [inking] reads a pixel.
  */
-private fun inked(ink: Color, light: Boolean): ColorFilter {
-    // How steeply a pixel's lightness turns into the ink, and from where.
-    val (gain, from) = if (light) 10f to 0.7f else 20f to 0.2f
-    return ColorFilter.colorMatrix(
-        ColorMatrix(
-            floatArrayOf(
-                0f, 0f, 0f, 0f, ink.red * 255f,
-                0f, 0f, 0f, 0f, ink.green * 255f,
-                0f, 0f, 0f, 0f, ink.blue * 255f,
-                0.2126f * gain, 0.7152f * gain, 0.0722f * gain, 0f, -from * gain * 255f,
-            ),
-        ),
-    )
+private fun inked(ink: Color, inking: FloatArray): ColorFilter = ColorFilter.colorMatrix(
+    ColorMatrix(
+        floatArrayOf(
+            0f, 0f, 0f, 0f, ink.red * 255f,
+            0f, 0f, 0f, 0f, ink.green * 255f,
+            0f, 0f, 0f, 0f, ink.blue * 255f,
+        ) + inking,
+    ),
+)
+
+/**
+ * How opaque the ink is for a pixel of a mark, as a row of a colour matrix
+ * over its red, green, blue and alpha: as it is light past a fifth of the way
+ * for most marks; past seven tenths for one drawn white on a colour (see
+ * [LIGHT_INKED]), or plate and letters would be one; and for Rotten
+ * Tomatoes as it is red, so its leaf stays apart from the tomato. The same
+ * three the dashboard inks with (#inkDark, #inkLight and #inkRed in its
+ * index.html).
+ */
+private fun inkingOf(name: String): FloatArray = when {
+    name == "rottentomatoes" -> floatArrayOf(10f, 0f, 0f, 0f, -5f * 255f)
+    name in LIGHT_INKED -> lightness(gain = 10f, from = 0.7f)
+    else -> lightness(gain = 20f, from = 0.2f)
 }
+
+private fun lightness(gain: Float, from: Float) =
+    floatArrayOf(0.2126f * gain, 0.7152f * gain, 0.0722f * gain, 0f, -from * gain * 255f)
 
 /**
  * The marks drawn in white on a colour: Trakt's ring on its red, Roger
