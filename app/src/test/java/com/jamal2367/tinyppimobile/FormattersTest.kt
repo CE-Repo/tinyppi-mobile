@@ -92,6 +92,13 @@ class FormattersTest {
     }
 
     @Test
+    fun `a count is grouped the way the reader writes numbers`() {
+        assertEquals("612.345", Formatters.count(612_345, java.util.Locale.GERMANY))
+        assertEquals("612,345", Formatters.count(612_345, java.util.Locale.US))
+        assertEquals("7", Formatters.count(7))
+    }
+
+    @Test
     fun `a clock the box sent reads back as the seconds it stands for`() {
         assertEquals(389.0, Formatters.clockSeconds("00:06:29"))
         assertEquals(7214.0, Formatters.clockSeconds("02:00:14"))

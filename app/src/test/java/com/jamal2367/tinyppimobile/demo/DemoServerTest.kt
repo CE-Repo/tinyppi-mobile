@@ -177,6 +177,12 @@ class DemoServerTest {
         // Starting things off the shelves.
         post("/api/play", """{"movieid":1}""")
         assertEquals("Long live the fighters.", state()["media"]!!.jsonObject["tagline"]!!.jsonPrimitive.content)
+        val rated = state()["media"]!!.jsonObject
+        assertEquals("imdb", rated["ratings"]!!.jsonArray[0].jsonObject["source"]!!.jsonPrimitive.content)
+        assertEquals(612_000, rated["ratings"]!!.jsonArray[0].jsonObject["votes"]!!.jsonPrimitive.int)
+        assertEquals("FSK 12", rated["mpaa"]!!.jsonPrimitive.content)
+        assertEquals(9, rated["userrating"]!!.jsonPrimitive.int)
+        assertEquals(27, rated["top250"]!!.jsonPrimitive.int)
         post("/api/play", """{"movieid":3,"resume":false}""")
         // A film the pretend library says nothing about.
         assertEquals("", state()["media"]!!.jsonObject["plot"]!!.jsonPrimitive.content)
@@ -184,8 +190,10 @@ class DemoServerTest {
         post("/api/play", """{"movieid":999}""")
         post("/api/play", """{"episodeid":102203}""")
         assertEquals("2", state()["media"]!!.jsonObject["season"]!!.jsonPrimitive.content)
-        // An episode: a plot and no slogan.
+        // An episode: a plot and no slogan, its own score and its show's age rating.
         assertEquals("", state()["media"]!!.jsonObject["tagline"]!!.jsonPrimitive.content)
+        assertEquals("tvdb", state()["media"]!!.jsonObject["ratings"]!!.jsonArray.single().jsonObject["source"]!!.jsonPrimitive.content)
+        assertEquals("FSK 16", state()["media"]!!.jsonObject["mpaa"]!!.jsonPrimitive.content)
         assertTrue(state()["media"]!!.jsonObject["plot"]!!.jsonPrimitive.content.startsWith("Season 2, episode 3"))
         chapters = state()["chapters"]!!.jsonArray
         assertEquals(6, chapters.size)

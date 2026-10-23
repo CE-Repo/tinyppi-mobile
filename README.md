@@ -48,8 +48,8 @@ command endpoints.
   graded and what is actually leaving the box. A conversion gets a badge of its
   own, because that is the one thing on the screen that is a decision rather
   than a reading.
-- **What it is about**: the plot the library has for the title, with its
-  slogan, in a card of their own under it.
+- **What it is about and how it is rated**: every rating the library holds
+  for the title, its slogan and its plot, in a card of their own under it.
 - **The Dolby Vision metadata view**: the same list the overlay's second window
   is built from, trim tables and all.
 - **The luminance chart and the event log** the box keeps for the running
@@ -139,12 +139,17 @@ The title with its poster, the source and output badges, the video and audio
 formats named in badges of their own, the progress, and — on a box that allows
 it — the transport row, the track pickers and the VS10 conversions.
 
-Under the card of what is playing, the **Plot** card: the title's plot, as
-Kodi's library has it, with its slogan in italics above it where there is one —
-most episodes carry a plot and no slogan. Without a plot the card is left out,
-slogan or not, as it is for a file that is not in the library. It folds, moves
-and comes off the screen like every other card on it (see
-[Arranging the cards](#arranging-the-cards)).
+Under the card of what is playing, the **Plot & ratings** card. Along its top,
+every rating Kodi's library holds for the title, as a row of pills: a score
+for each source the scraper or the NFO wrote — IMDb, TMDb, Trakt, TVDB,
+Metacritic, or whatever else it names — with how many voted, your own rating,
+the place in the IMDb Top 250 and the age rating. An episode is rated on its
+own and carries its show's age rating. Under them the plot, with the slogan in
+italics above it where there is one — most episodes carry a plot and no
+slogan. The slogan only ever stands above a plot: without a plot the card
+shows the ratings alone, and with neither it is left out, as it is for a file
+that is not in the library. It folds, moves and comes off the screen like
+every other card on it (see [Arranging the cards](#arranging-the-cards)).
 
 A file with chapters carries a dot on the progress bar where each chapter
 ahead of the position starts, and the one playing is named over the bar —

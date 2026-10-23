@@ -13,6 +13,7 @@ import com.jamal2367.tinyppimobile.data.model.L1Nits
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
+import com.jamal2367.tinyppimobile.data.model.SourceRating
 import com.jamal2367.tinyppimobile.data.model.MetadataRow
 import com.jamal2367.tinyppimobile.data.model.Metrics
 import com.jamal2367.tinyppimobile.data.model.ModeBody
@@ -127,8 +128,26 @@ class ModelsTest {
         assertFalse(MediaInfo().hasPlot)
         assertFalse(MediaInfo(tagline = " ", plot = "\n").hasPlot)
         assertFalse(MediaInfo(tagline = "Long live the fighters.").hasPlot)
+        assertFalse(MediaInfo(tagline = "Long live the fighters.").showsPlotCard)
         assertTrue(MediaInfo(plot = "Paul joins the Fremen.").hasPlot)
         assertTrue(MediaInfo(tagline = "Long live the fighters.", plot = "Paul joins the Fremen.").hasPlot)
+        assertTrue(MediaInfo(plot = "Paul joins the Fremen.").showsPlotCard)
+    }
+
+    @Test
+    fun `any one way of rating a title is a rating, and draws the card without a plot`() {
+        assertFalse(MediaInfo(mpaa = " ").hasRatings)
+        assertEquals(SourceRating("", 0.0, 0), SourceRating())
+        for (rated in listOf(
+            MediaInfo(ratings = listOf(SourceRating("imdb", 8.5, 10))),
+            MediaInfo(userRating = 9),
+            MediaInfo(top250 = 27),
+            MediaInfo(mpaa = "FSK 12"),
+        )) {
+            assertTrue(rated.hasRatings)
+            assertTrue(rated.showsPlotCard)
+            assertFalse(rated.hasPlot)
+        }
     }
 
     @Test

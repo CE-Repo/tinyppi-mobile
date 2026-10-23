@@ -278,13 +278,35 @@ data class MediaInfo(
     val tagline: String = "",
     /** What the title is about, with the library's own line breaks. */
     val plot: String = "",
+    /**
+     * Every source's rating the library holds, the known ones first (see
+     * `web/ratings.py` in the add-on). An episode's are its own.
+     */
+    val ratings: List<SourceRating> = emptyList(),
+    /**
+     * The age rating as the scraper wrote it - `FSK 12`, `Rated PG-13` - and
+     * for an episode its show's.
+     */
+    val mpaa: String = "",
+    /** The reader's own rating, 1 to 10; 0 for none. */
+    @SerialName("userrating") val userRating: Int = 0,
+    /** The place in the IMDb Top 250; 0 for none. */
+    val top250: Int = 0,
 ) {
     /**
-     * Whether the plot card is drawn: only with a plot. A slogan on its own
-     * says too little to be worth a card.
+     * Whether there is a plot to print. A slogan goes only with one: on its
+     * own it says too little.
      */
     val hasPlot: Boolean
         get() = plot.isNotBlank()
+
+    /** Whether the library rated the title in any of the ways it can. */
+    val hasRatings: Boolean
+        get() = ratings.isNotEmpty() || userRating > 0 || top250 > 0 || mpaa.isNotBlank()
+
+    /** Whether the plot card is drawn: for a plot, for ratings, or both. */
+    val showsPlotCard: Boolean
+        get() = hasPlot || hasRatings
 
     /** `S02E07`, when this is an episode of something. */
     val episodeLabel: String?
@@ -294,6 +316,18 @@ data class MediaInfo(
             return String.format(Locale.ROOT, "S%02dE%02d", s, e)
         }
 }
+
+/**
+ * One source's rating of the playing title, out of ten: `imdb`, `tmdb`,
+ * `trakt`, `tvdb`, `metacritic`, or whatever else an NFO named.
+ */
+@Serializable
+data class SourceRating(
+    val source: String = "",
+    val rating: Double = 0.0,
+    /** How many voted; 0 where the library does not say. */
+    val votes: Int = 0,
+)
 
 /** The switchable side of the player. Empty unless the server allows control. */
 @Serializable

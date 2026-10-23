@@ -115,7 +115,13 @@
     <string name="live_subtitles_off">Aus</string>
     <string name="live_track_unknown">Unbekannt</string>
 
-    <string name="live_plot">Handlung</string>
+    <string name="live_plot">Handlung &amp; Bewertungen</string>
+    <plurals name="live_rating_votes">
+        <item quantity="one">%1$s Stimme</item>
+        <item quantity="other">%1$s Stimmen</item>
+    </plurals>
+    <string name="live_rating_mine">Eigene Bewertung</string>
+    <string name="live_rating_top250">Top 250 · Platz %1$d</string>
 
     <string name="live_vs10">VS10</string>
     <string name="live_control_disabled">Diese Box lässt keine Steuerung von außen zu. Schalte sie in den Addon-Einstellungen frei.</string>

@@ -192,11 +192,12 @@ private fun LiveContent(
         }
 
         // Every other card the screen has now, in the order it draws them
-        // until the reader moves one: what the title is about, what can be
-        // done to it, and the readings the overlay prints (see CardLayout).
+        // until the reader moves one: what the title is about and how it is
+        // rated, what can be done to it, and the readings the overlay prints
+        // (see CardLayout).
         val groups = snapshot.groups.associateBy { "$GROUP_PREFIX${it.id}" }
         val present = buildList {
-            if (snapshot.media.hasPlot) add(FOLD_PLOT)
+            if (snapshot.media.showsPlotCard) add(FOLD_PLOT)
             if (canControl) add(FOLD_CONTROLS)
             if (snapshot.vs10.options.isNotEmpty()) add(FOLD_VS10)
             addAll(groups.keys)

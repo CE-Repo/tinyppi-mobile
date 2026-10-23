@@ -178,6 +178,14 @@ object Formatters {
     fun rating(value: Double): String = String.format(Locale.ROOT, "%.1f", value)
 
     /**
+     * A count as the reader writes one: `612.345` in German, `612,345` in
+     * English. Unlike [rating] it is the phone's locale: a count is read as
+     * a number, not compared with a badge the dashboard draws.
+     */
+    fun count(value: Int, locale: Locale = Locale.getDefault()): String =
+        java.text.NumberFormat.getIntegerInstance(locale).format(value)
+
+    /**
      * A number followed by a `k`, and nothing else that looks like one.
      *
      * The `k` has to end the word, so the one in `4kbps` is left where it is.

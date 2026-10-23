@@ -65,6 +65,11 @@ object DemoServer {
         "around him, he has to decide how much of himself to give up to bring down the men who destroyed " +
         "his family."
 
+    /** How the film the box starts on is rated, every way the library can. */
+    private const val DUNE_MPAA = "FSK 12"
+    private const val DUNE_TOP250 = 27
+    private const val DUNE_MINE = 9
+
     /** What a film's chapters are called on the pretend box. */
     private val FILM_CHAPTERS = listOf(
         "Opening", "Arrakis", "The Fremen", "Sietch Tabr", "The Water of Life", "Sandworm",
@@ -106,6 +111,10 @@ object DemoServer {
         playingGenre = "Science Fiction"
         playingTagline = DUNE_TAGLINE
         playingPlot = DUNE_PLOT
+        playingRatings = filmRatings(films.first())
+        playingMpaa = DUNE_MPAA
+        playingTop250 = DUNE_TOP250
+        playingMine = DUNE_MINE
         playingShow = ""
         playingSeason = ""
         playingEpisode = ""
@@ -129,6 +138,7 @@ object DemoServer {
     private class Film(
         val id: Int, val title: String, val year: Int, val minutes: Int, val rating: Double, val genre: String,
         val watched: Boolean = false, val resumeMinutes: Int = 0, val tagline: String = "", val plot: String = "",
+        val mpaa: String = "", val top250: Int = 0, val mine: Int = 0,
     )
     private class Show(val id: Int, val title: String, val year: Int, val rating: Double, val seasons: Int, val perSeason: Int, val seenUpTo: Int) {
         /** Every episode as season and number, in the order they are watched. */
@@ -139,12 +149,15 @@ object DemoServer {
     }
 
     private val films = listOf(
-        Film(1, "Dune: Part Two", 2024, 166, 8.5, "Science Fiction", resumeMinutes = 71, tagline = DUNE_TAGLINE, plot = DUNE_PLOT),
+        Film(
+            1, "Dune: Part Two", 2024, 166, 8.5, "Science Fiction", resumeMinutes = 71, tagline = DUNE_TAGLINE,
+            plot = DUNE_PLOT, mpaa = DUNE_MPAA, top250 = DUNE_TOP250, mine = DUNE_MINE,
+        ),
         // A slogan and a plot for the first two only: the rest play without
         // them, the way a file the library knows little about does.
         Film(
             2, "Oppenheimer", 2023, 180, 8.3, "Drama", resumeMinutes = 40,
-            tagline = "The world forever changes.",
+            tagline = "The world forever changes.", mpaa = "FSK 12",
             plot = "J. Robert Oppenheimer is asked to lead the race for the atomic bomb from a laboratory " +
                 "built in the New Mexico desert. Years after Los Alamos, a closed security hearing turns " +
                 "his own past against him.",
@@ -185,6 +198,15 @@ object DemoServer {
         Show(109, "Chernobyl", 2019, 9.3, 1, 5, 5),
     )
 
+    /**
+     * A film's scores, made up from its rating: IMDb's with a count of votes
+     * in proportion, and TMDb's a little under it with far fewer.
+     */
+    private fun filmRatings(film: Film): List<Triple<String, Double, Int>> {
+        val votes = (film.rating * 72_000).toInt()
+        return listOf(Triple("imdb", film.rating, votes), Triple("tmdb", film.rating - 0.3, votes / 90))
+    }
+
     private fun episodeId(show: Show, season: Int, episode: Int) = show.id * 1000 + season * 100 + episode
     private fun showOfEpisode(id: Int) = shows.firstOrNull { it.id == id / 1000 }
     private fun episodeTitle(season: Int, episode: Int) = listOf(
@@ -201,6 +223,10 @@ object DemoServer {
     private var playingGenre = "Science Fiction"
     private var playingTagline = DUNE_TAGLINE
     private var playingPlot = DUNE_PLOT
+    private var playingRatings = filmRatings(films.first())
+    private var playingMpaa = DUNE_MPAA
+    private var playingTop250 = DUNE_TOP250
+    private var playingMine = DUNE_MINE
     private var playingShow = ""
     private var playingSeason = ""
     private var playingEpisode = ""
@@ -403,6 +429,14 @@ object DemoServer {
                 put("episode", playingEpisode)
                 put("tagline", playingTagline)
                 put("plot", playingPlot)
+                putJsonArray("ratings") {
+                    playingRatings.forEach { (source, rating, votes) ->
+                        add(buildJsonObject { put("source", source); put("rating", rating); put("votes", votes) })
+                    }
+                }
+                put("mpaa", playingMpaa)
+                put("userrating", playingMine)
+                put("top250", playingTop250)
             }
             putJsonObject("controls") {
                 putJsonArray("audio") {
@@ -597,6 +631,7 @@ object DemoServer {
                 payload["movieid"]?.jsonPrimitive?.int?.let { id -> films.firstOrNull { it.id == id } }?.let { f ->
                     playingTitle = f.title; playingTag = "movie-${f.id}"; playingYear = f.year; playingGenre = f.genre
                     playingTagline = f.tagline; playingPlot = f.plot
+                    playingRatings = filmRatings(f); playingMpaa = f.mpaa; playingTop250 = f.top250; playingMine = f.mine
                     playingShow = ""; playingSeason = ""; playingEpisode = ""
                     durationSeconds = f.minutes * 60
                     positionSeconds = if (fromStart || filmWatched(f)) 0.0 else f.resumeMinutes * 60.0
@@ -610,6 +645,9 @@ object DemoServer {
                     // An episode has a plot and, as most do, no slogan.
                     playingTagline = ""
                     playingPlot = "Season $season, episode $episode of ${show.title}, made up for the demo box like every episode on it."
+                    // Rated on its own, with no count, and its show's age rating.
+                    playingRatings = listOf(Triple("tvdb", show.rating, 0))
+                    playingMpaa = "FSK 16"; playingTop250 = 0; playingMine = 0
                     durationSeconds = 52 * 60; positionSeconds = 0.0
                 }
                 paused = false

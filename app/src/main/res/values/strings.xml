@@ -120,7 +120,13 @@
     <string name="live_subtitles_off">Off</string>
     <string name="live_track_unknown">Unknown</string>
 
-    <string name="live_plot">Plot</string>
+    <string name="live_plot">Plot &amp; ratings</string>
+    <plurals name="live_rating_votes">
+        <item quantity="one">%1$s vote</item>
+        <item quantity="other">%1$s votes</item>
+    </plurals>
+    <string name="live_rating_mine">My rating</string>
+    <string name="live_rating_top250">Top 250 · #%1$d</string>
 
     <string name="live_vs10">VS10</string>
     <string name="live_control_disabled">This box does not allow a client to switch anything. Turn control on in the add-on\'s settings.</string>

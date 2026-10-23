@@ -22,6 +22,7 @@ import com.jamal2367.tinyppimobile.data.model.MediaInfo
 import com.jamal2367.tinyppimobile.data.model.Metrics
 import com.jamal2367.tinyppimobile.data.model.PlayerControls
 import com.jamal2367.tinyppimobile.data.model.Snapshot
+import com.jamal2367.tinyppimobile.data.model.SourceRating
 import com.jamal2367.tinyppimobile.data.model.Track
 import com.jamal2367.tinyppimobile.data.model.Vs10State
 import com.jamal2367.tinyppimobile.data.repository.LiveState
@@ -210,6 +211,51 @@ class LiveCardsTest {
         // A file the library does not know: no card at all.
         fake.playing(told.copy(media = MediaInfo()))
         rule.until { !seen(str(R.string.live_plot)) }
+    }
+
+    @Test
+    fun `the plot card carries every rating the library holds, before the slogan and the plot`() {
+        fake.playing(
+            told.copy(
+                media = told.media.copy(
+                    ratings = listOf(
+                        SourceRating("imdb", 8.5, 612_345),
+                        SourceRating("tmdb", 8.2, 1),
+                        SourceRating("rotten tomatoes", 9.2, 0),
+                    ),
+                    userRating = 9,
+                    top250 = 27,
+                    mpaa = "FSK 12",
+                ),
+            ),
+        )
+        showLive()
+        rule.onNodeWithText(str(R.string.live_plot)).assertIsDisplayed()
+        rule.onNodeWithText("IMDb").assertIsDisplayed()
+        rule.onNodeWithText("8.5").assertIsDisplayed()
+        rule.onNodeWithText(context.resources.getQuantityString(R.plurals.live_rating_votes, 612_345, "612,345")).assertIsDisplayed()
+        rule.onNodeWithText(context.resources.getQuantityString(R.plurals.live_rating_votes, 1, "1")).assertIsDisplayed()
+        rule.onNodeWithText("Rotten tomatoes").assertIsDisplayed()
+        rule.onNodeWithText(str(R.string.live_rating_mine)).assertIsDisplayed()
+        rule.onNodeWithText(str(R.string.live_rating_top250, 27)).assertIsDisplayed()
+        rule.onNodeWithText("FSK 12").assertIsDisplayed()
+        // The ratings stand above the slogan.
+        val badges = rule.onNodeWithText("IMDb").fetchSemanticsNode().boundsInRoot
+        val slogan = rule.onNodeWithText("Long live the fighters.").fetchSemanticsNode().boundsInRoot
+        assertEquals(true, badges.bottom <= slogan.top)
+
+        // A score alone - no age rating, no own rating, no place - from a
+        // source the library names nothing: its figure and its star.
+        fake.playing(told.copy(media = told.media.copy(ratings = listOf(SourceRating("", 5.0)))))
+        rule.until { seen("5.0") }
+        assertEquals(false, seen("FSK 12"))
+        assertEquals(false, seen(str(R.string.live_rating_mine)))
+
+        // Ratings without a plot: the card for them alone, and no slogan.
+        fake.playing(told.copy(media = MediaInfo(tagline = "Only this.", mpaa = "FSK 16")))
+        rule.until { seen("FSK 16") }
+        assertEquals(true, seen(str(R.string.live_plot)))
+        assertEquals(false, seen("Only this."))
     }
 
     @Test

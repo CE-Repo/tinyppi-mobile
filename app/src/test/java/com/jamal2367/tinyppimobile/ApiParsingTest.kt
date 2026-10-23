@@ -175,9 +175,25 @@ class ApiParsingTest {
             """{"playing":true,"media":{"year":"2021"}}""",
         )
         assertNull(snapshot.media.episodeLabel)
-        // An add-on older than the plot card sends neither of its fields.
+        // An add-on older than the plot card sends none of its fields.
         assertEquals("", snapshot.media.tagline)
         assertEquals("", snapshot.media.plot)
+        assertFalse(snapshot.media.hasRatings)
+    }
+
+    @Test
+    fun `the ratings arrive as the add-on sorted them`() {
+        val snapshot = json.decodeFromString(
+            Snapshot.serializer(),
+            """{"playing":true,"media":{"ratings":[{"source":"imdb","rating":8.5,"votes":612345},
+               {"source":"tmdb","rating":8.2,"votes":0}],"mpaa":"FSK 12","userrating":9,"top250":27}}""",
+        )
+        assertEquals(listOf("imdb", "tmdb"), snapshot.media.ratings.map { it.source })
+        assertEquals(8.5, snapshot.media.ratings[0].rating, 0.0)
+        assertEquals(612_345, snapshot.media.ratings[0].votes)
+        assertEquals("FSK 12", snapshot.media.mpaa)
+        assertEquals(9, snapshot.media.userRating)
+        assertEquals(27, snapshot.media.top250)
     }
 
     @Test
