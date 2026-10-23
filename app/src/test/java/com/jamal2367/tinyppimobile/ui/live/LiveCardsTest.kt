@@ -330,7 +330,7 @@ class LiveCardsTest {
     }
 
     @Test
-    fun `the overview card has the cast over the ratings, a centred line`() {
+    fun `the overview card has the director and the cast over the ratings, centred lines`() {
         fake.playing(
             told.copy(
                 media = told.media.copy(
@@ -352,11 +352,17 @@ class LiveCardsTest {
         ).fetchSemanticsNode().boundsInRoot
         val plot = rule.onNodeWithText("Paul joins the Fremen.").fetchSemanticsNode().boundsInRoot
         val imdb = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot
-        assertEquals(true, cast.top >= plot.bottom)
+        // The director first, under its heading, then the cast.
+        val director = rule.onNodeWithText("${str(R.string.live_credit_director)}\nDenis Villeneuve")
+            .fetchSemanticsNode().boundsInRoot
+        assertEquals(true, director.top >= plot.bottom)
+        assertEquals(true, cast.top >= director.bottom)
         assertEquals(true, imdb.top >= cast.bottom)
         val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
         assertEquals(screen.center.x, cast.center.x, 1f)
-        // The genre, the studio and the director are the card above's alone.
+        assertEquals(screen.center.x, director.center.x, 1f)
+        // The genre, the studio and the director are said once: the first
+        // two in the card above, the director here.
         for (above in listOf("Science Fiction", "Legendary Pictures", "Denis Villeneuve")) {
             assertEquals(1, rule.onAllNodesWithText(above, substring = true).fetchSemanticsNodes().size)
         }
@@ -370,10 +376,15 @@ class LiveCardsTest {
         rule.until { seen("${str(R.string.live_credit_cast)}\nSomebody") }
         assertEquals(true, rule.onAllNodesWithContentDescription("FSK 16").fetchSemanticsNodes().isNotEmpty())
 
-        // A studio or a director alone is no credit, and draws no card.
-        fake.playing(told.copy(media = MediaInfo(studios = listOf("A24"), directors = listOf("Somebody"))))
+        // A studio alone is no credit, and draws no card.
+        fake.playing(told.copy(media = MediaInfo(studios = listOf("A24"))))
         rule.until { !seen(str(R.string.live_plot)) }
         assertEquals(true, seen("A24"))
+
+        // A director alone is an overview, and both of two are named.
+        fake.playing(told.copy(media = MediaInfo(directors = listOf("Joel Coen", "Ethan Coen"))))
+        rule.until { seen("${str(R.string.live_credit_director)}\nJoel Coen, Ethan Coen") }
+        assertEquals(true, rule.onAllNodesWithText(str(R.string.live_credit_cast), substring = true).fetchSemanticsNodes().isEmpty())
 
         // A cast alone is still an overview.
         fake.playing(told.copy(media = MediaInfo(cast = listOf("Somebody"))))
@@ -413,6 +424,44 @@ class LiveCardsTest {
         rule.until { seen("Paul joins the Fremen.") }
         assertEquals(false, seen(str(R.string.live_plot_more)))
         assertEquals(false, seen(str(R.string.live_plot_less)))
+    }
+
+    // Drawn for real: whether the plot is cut is measured.
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `the credits hang on the plot, and come out with the rest of a cut one`() {
+        val long = List(40) { "Paul joins the Fremen and walks the desert." }.joinToString(" ")
+        val credit = "${str(R.string.live_credit_cast)}\nTimothée Chalamet, Zendaya"
+        val director = "${str(R.string.live_credit_director)}\nDenis Villeneuve"
+        fake.playing(
+            told.copy(
+                media = told.media.copy(
+                    plot = long,
+                    directors = listOf("Denis Villeneuve"),
+                    cast = listOf("Timothée Chalamet", "Zendaya"),
+                ),
+            ),
+        )
+        showLive()
+        rule.onNodeWithText(str(R.string.live_plot_more)).assertIsDisplayed()
+        assertEquals(false, seen(credit))
+        assertEquals(false, seen(director))
+
+        // Let out: under the whole plot, over the button that takes it back.
+        rule.onNodeWithText(str(R.string.live_plot_more)).performClick()
+        rule.until { seen(credit) && seen(director) }
+        val plot = rule.onNodeWithText(long).fetchSemanticsNode().boundsInRoot
+        val cast = rule.onNodeWithText(credit).fetchSemanticsNode().boundsInRoot
+        val less = rule.onNodeWithText(str(R.string.live_plot_less)).fetchSemanticsNode().boundsInRoot
+        assertEquals(true, cast.top >= plot.bottom)
+        assertEquals(true, less.top >= cast.bottom)
+        rule.onNodeWithText(str(R.string.live_plot_less)).performClick()
+        rule.until { !seen(credit) }
+
+        // Under a plot that fits, it stands as it is.
+        fake.playing(told.copy(media = told.media.copy(cast = listOf("Timothée Chalamet", "Zendaya"))))
+        rule.until { seen(credit) }
+        assertEquals(false, seen(str(R.string.live_plot_more)))
     }
 
     @Test

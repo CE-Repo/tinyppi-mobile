@@ -120,6 +120,7 @@
     <string name="live_plot_less">Kevesebb megjelenítése</string>
     <string name="live_rating_mine">Saját értékelés</string>
     <string name="live_rating_top250">Top 250 · %1$d. hely</string>
+    <string name="live_credit_director">Rendező</string>
     <string name="live_credit_cast">Szereplők</string>
 
     <string name="live_vs10">VS10</string>

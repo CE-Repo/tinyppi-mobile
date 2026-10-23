@@ -77,9 +77,9 @@ import java.util.Locale
  * full colour, as the line a poster carries, and the plot in the quieter
  * colour the year and genre are set in, since it is the one paragraph on the
  * screen and the readings below it should not have to shout over it. Under
- * them, past a thin rule, the cast as a plain line, and last, past another,
- * the ratings as a row of their own: short facts about the film, taken in at
- * a glance.
+ * the plot, the director and the cast as plain lines - hidden with the rest
+ * of a cut plot and let out with it - and last, past a thin rule, the ratings as a row of their
+ * own: short facts about the film, taken in at a glance.
  */
 @Composable
 internal fun PlotCard(media: MediaInfo) {
@@ -102,7 +102,8 @@ internal fun PlotCard(media: MediaInfo) {
             // more to show, and a new plot starts cut again.
             // The two together, without the card's gap between them: the
             // button belongs to the paragraph rather than standing as a row
-            // of its own.
+            // of its own. The credits hang on the plot's end: they come out
+            // with the rest of a cut plot, and stand under one that fits.
             var open by rememberSaveable(media.plot) { mutableStateOf(false) }
             var cut by remember(media.plot) { mutableStateOf(false) }
             Column(
@@ -118,41 +119,58 @@ internal fun PlotCard(media: MediaInfo) {
                     overflow = TextOverflow.Ellipsis,
                     onTextLayout = { cut = it.hasVisualOverflow },
                 )
+                if (media.hasCredits && (open || !cut)) {
+                    Credits(media, Modifier.padding(top = 12.dp))
+                }
                 if (open || cut) {
                     TextButton(onClick = { open = !open }) {
                         Text(stringResource(if (open) R.string.live_plot_less else R.string.live_plot_more))
                     }
                 }
             }
-        }
-        if (media.hasCredits) {
-            // A thin rule between the plot and them, where there is a plot:
-            // the same hairline the rows of a reading card are ruled with.
-            if (media.hasPlot) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
-            }
-            // Who is in it, the leads as the add-on cuts them, centred like
-            // everything over it. What kind of film it is, who made it and
-            // who directed it stand in the card above.
-            Text(
-                text = creditLine(
-                    stringResource(R.string.live_credit_cast),
-                    Formatters.names(media.cast, media.castMore),
-                    MaterialTheme.colorScheme,
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            )
+        } else if (media.hasCredits) {
+            // Without a plot, the credits on their own.
+            Credits(media, Modifier.align(Alignment.CenterHorizontally))
         }
         if (media.hasRatings) {
-            // Last, past the same rule, from the cast or from the plot.
+            // Last, past a thin rule, from the plot or the cast: the same
+            // hairline the rows of a reading card are ruled with.
             if (media.hasPlot || media.hasCredits) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
             }
             RatingRow(media)
         }
     }
+}
+
+/**
+ * Who directed it and who is in it - the director over the cast, the leads as
+ * the add-on cuts them - centred like everything over them. What kind of film
+ * it is and who made it stand in the card above.
+ */
+@Composable
+private fun Credits(media: MediaInfo, modifier: Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (media.directors.isNotEmpty()) {
+            CreditText(stringResource(R.string.live_credit_director), Formatters.names(media.directors, false))
+        }
+        if (media.cast.isNotEmpty()) {
+            CreditText(stringResource(R.string.live_credit_cast), Formatters.names(media.cast, media.castMore))
+        }
+    }
+}
+
+@Composable
+private fun CreditText(label: String, names: String) {
+    Text(
+        text = creditLine(label, names, MaterialTheme.colorScheme),
+        style = MaterialTheme.typography.bodyMedium,
+        textAlign = TextAlign.Center,
+    )
 }
 
 /**

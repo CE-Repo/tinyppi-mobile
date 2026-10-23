@@ -138,8 +138,6 @@ with the same wrong token would turn a clear error into a confusing one.
 
 The title with its poster, its year and genre (its first two) and under them
 its studio (only the first, with no "…"; an episode's is its show's), the
-director's name alone (only the first as well) in
-the middle of the room left between those lines and the format badges, the
 source and output badges, the video and audio formats named in badges of
 their own, the progress, and — on a box that allows it — the transport row,
 the track pickers and the VS10 conversions.
@@ -147,11 +145,13 @@ the track pickers and the VS10 conversions.
 Under the card of what is playing, the **Overview** card, all of it centred:
 the plot, with the slogan in italics above it where there is one — most
 episodes carry a plot and no slogan; a long plot is cut to four lines, and
-*Show more* under it lets the rest out (*Show less* takes it back) — under them, past a thin rule, the cast:
-its name in bold on a line of its own, centred over its first eight names in
-billing order, ending in "…" where there are more, and left out where Kodi
-has none; the genre, the studio and the director stand in the card above.
-Last, past another rule, every rating Kodi's library holds for the title, as
+*Show more* under it lets the rest out (*Show less* takes it back) — and
+hanging on the plot's end the director, then the cast, each its heading in
+bold on a line of its own centred over the names (the cast's first eight in
+billing order, ending in "…" where there are more), left out where Kodi has
+none. Under a cut plot they stay hidden and come out with the rest of it;
+under one that fits they stand as they are. The genre and the studio stand in
+the card above. Last, past a thin rule, every rating Kodi's library holds for the title, as
 a row of small shields. Each has its source's mark on the left, on a
 ground of the source's colour, instead of its name, and what it gave on the
 right — the same marks and shields the add-on's dashboard draws: first the
