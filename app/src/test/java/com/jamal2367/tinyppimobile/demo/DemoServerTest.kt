@@ -182,6 +182,7 @@ class DemoServerTest {
         assertEquals(612_000, rated["ratings"]!!.jsonArray[0].jsonObject["votes"]!!.jsonPrimitive.int)
         assertEquals("FSK 12", rated["mpaa"]!!.jsonPrimitive.content)
         assertEquals("fsk12", rated["age"]!!.jsonPrimitive.content)
+        assertEquals("12", rated["age_level"]!!.jsonPrimitive.content)
         assertEquals(9, rated["userrating"]!!.jsonPrimitive.int)
         assertEquals(27, rated["top250"]!!.jsonPrimitive.int)
         post("/api/play", """{"movieid":3,"resume":false}""")
@@ -197,6 +198,7 @@ class DemoServerTest {
         assertEquals("tvdb", state()["media"]!!.jsonObject["ratings"]!!.jsonArray.single().jsonObject["source"]!!.jsonPrimitive.content)
         assertEquals("TV-MA", state()["media"]!!.jsonObject["mpaa"]!!.jsonPrimitive.content)
         assertEquals("tv_ma", state()["media"]!!.jsonObject["age"]!!.jsonPrimitive.content)
+        assertEquals("MA", state()["media"]!!.jsonObject["age_level"]!!.jsonPrimitive.content)
         assertTrue(state()["media"]!!.jsonObject["plot"]!!.jsonPrimitive.content.startsWith("Season 2, episode 3"))
         chapters = state()["chapters"]!!.jsonArray
         assertEquals(6, chapters.size)

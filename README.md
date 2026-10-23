@@ -146,10 +146,10 @@ episodes carry a plot and no slogan — and under them, past a thin rule, every
 rating Kodi's library holds for the title, as a row of small shields. Each has its source's mark on the left, on a
 ground of the source's colour, instead of its name, and what it gave on the
 right — the same marks and shields the add-on's dashboard draws: first the
-age rating, as its board's coloured mark where the add-on could place it —
-the FSK's ("FSK 12"), the MPA's for films and the TV Parental Guidelines' for series
-(both in the FSK's colours), the BBFC's — and written out where it could
-not, then a score for each source the scraper or the NFO wrote — IMDb, TMDB,
+age rating, where the add-on could place it, as a shield like the others:
+its board's name on the colour of the level and the level beside it — "FSK" |
+"12", "MPA" | "PG-13" for films and "TV" | "MA" for series (both in the FSK's
+colours), "BBFC" | "15" — and written out where it could not, then a score for each source the scraper or the NFO wrote — IMDb, TMDB,
 Trakt, TVDB, Metacritic, Rotten Tomatoes; any other gets its first letter on a
 plain plate — with how many voted, your own rating behind a heart and the
 place in the IMDb Top 250. A screen reader hears each shield as one sentence ("IMDb

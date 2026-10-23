@@ -68,6 +68,7 @@ object DemoServer {
     /** How the film the box starts on is rated, every way the library can. */
     private const val DUNE_MPAA = "FSK 12"
     private const val DUNE_AGE = "fsk12"
+    private const val DUNE_AGE_LEVEL = "12"
     private const val DUNE_TOP250 = 27
     private const val DUNE_MINE = 9
 
@@ -115,6 +116,7 @@ object DemoServer {
         playingRatings = filmRatings(films.first())
         playingMpaa = DUNE_MPAA
         playingAge = DUNE_AGE
+        playingAgeLevel = DUNE_AGE_LEVEL
         playingTop250 = DUNE_TOP250
         playingMine = DUNE_MINE
         playingShow = ""
@@ -140,7 +142,8 @@ object DemoServer {
     private class Film(
         val id: Int, val title: String, val year: Int, val minutes: Int, val rating: Double, val genre: String,
         val watched: Boolean = false, val resumeMinutes: Int = 0, val tagline: String = "", val plot: String = "",
-        val mpaa: String = "", val age: String = "", val top250: Int = 0, val mine: Int = 0,
+        val mpaa: String = "", val age: String = "", val ageLevel: String = "", val top250: Int = 0,
+        val mine: Int = 0,
     )
     private class Show(val id: Int, val title: String, val year: Int, val rating: Double, val seasons: Int, val perSeason: Int, val seenUpTo: Int) {
         /** Every episode as season and number, in the order they are watched. */
@@ -153,14 +156,15 @@ object DemoServer {
     private val films = listOf(
         Film(
             1, "Dune: Part Two", 2024, 166, 8.5, "Science Fiction", resumeMinutes = 71, tagline = DUNE_TAGLINE,
-            plot = DUNE_PLOT, mpaa = DUNE_MPAA, age = DUNE_AGE, top250 = DUNE_TOP250, mine = DUNE_MINE,
+            plot = DUNE_PLOT, mpaa = DUNE_MPAA, age = DUNE_AGE, ageLevel = DUNE_AGE_LEVEL, top250 = DUNE_TOP250,
+            mine = DUNE_MINE,
         ),
         // A slogan and a plot for the first two only: the rest play without
         // them, the way a file the library knows little about does.
         Film(
             2, "Oppenheimer", 2023, 180, 8.3, "Drama", resumeMinutes = 40,
             // Rated by the American board, as a scraper set to the US writes it.
-            tagline = "The world forever changes.", mpaa = "Rated R", age = "mpa_r",
+            tagline = "The world forever changes.", mpaa = "Rated R", age = "mpa_r", ageLevel = "R",
             plot = "J. Robert Oppenheimer is asked to lead the race for the atomic bomb from a laboratory " +
                 "built in the New Mexico desert. Years after Los Alamos, a closed security hearing turns " +
                 "his own past against him.",
@@ -229,6 +233,7 @@ object DemoServer {
     private var playingRatings = filmRatings(films.first())
     private var playingMpaa = DUNE_MPAA
     private var playingAge = DUNE_AGE
+    private var playingAgeLevel = DUNE_AGE_LEVEL
     private var playingTop250 = DUNE_TOP250
     private var playingMine = DUNE_MINE
     private var playingShow = ""
@@ -439,8 +444,9 @@ object DemoServer {
                     }
                 }
                 put("mpaa", playingMpaa)
-                // The mark the add-on reads the age rating as.
+                // The mark the add-on reads the age rating as, and its level.
                 put("age", playingAge)
+                put("age_level", playingAgeLevel)
                 put("userrating", playingMine)
                 put("top250", playingTop250)
             }
@@ -637,7 +643,8 @@ object DemoServer {
                 payload["movieid"]?.jsonPrimitive?.int?.let { id -> films.firstOrNull { it.id == id } }?.let { f ->
                     playingTitle = f.title; playingTag = "movie-${f.id}"; playingYear = f.year; playingGenre = f.genre
                     playingTagline = f.tagline; playingPlot = f.plot
-                    playingRatings = filmRatings(f); playingMpaa = f.mpaa; playingAge = f.age; playingTop250 = f.top250; playingMine = f.mine
+                    playingRatings = filmRatings(f); playingMpaa = f.mpaa; playingAge = f.age; playingAgeLevel = f.ageLevel
+                    playingTop250 = f.top250; playingMine = f.mine
                     playingShow = ""; playingSeason = ""; playingEpisode = ""
                     durationSeconds = f.minutes * 60
                     positionSeconds = if (fromStart || filmWatched(f)) 0.0 else f.resumeMinutes * 60.0
@@ -653,7 +660,7 @@ object DemoServer {
                     playingPlot = "Season $season, episode $episode of ${show.title}, made up for the demo box like every episode on it."
                     // Rated on its own, with no count, and its show's age rating.
                     playingRatings = listOf(Triple("tvdb", show.rating, 0))
-                    playingMpaa = "TV-MA"; playingAge = "tv_ma"; playingTop250 = 0; playingMine = 0
+                    playingMpaa = "TV-MA"; playingAge = "tv_ma"; playingAgeLevel = "MA"; playingTop250 = 0; playingMine = 0
                     durationSeconds = 52 * 60; positionSeconds = 0.0
                 }
                 paused = false

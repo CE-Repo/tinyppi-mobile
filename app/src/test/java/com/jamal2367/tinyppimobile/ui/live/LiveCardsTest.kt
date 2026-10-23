@@ -229,6 +229,7 @@ class LiveCardsTest {
                     top250 = 27,
                     mpaa = "FSK 12",
                     age = "fsk12",
+                    ageLevel = "12",
                 ),
             ),
         )
@@ -247,8 +248,8 @@ class LiveCardsTest {
         )) {
             rule.onNodeWithContentDescription(said).assertIsDisplayed()
         }
-        // Every badge one height: the shields, the heart's, the place's and the
-        // age rating's mark on its own.
+        // Every badge one height: the scores' shields, the heart's, the
+        // place's and the age rating's.
         val heights = listOf(
             "FSK 12", "IMDb 8.5, ${votes(612_345, "612,345")}", "Letterboxd 8.9, ${votes(3, "3")}",
             "${str(R.string.live_rating_mine)} 9", str(R.string.live_rating_top250, 27),
@@ -282,26 +283,34 @@ class LiveCardsTest {
         rule.until { rule.onAllNodesWithContentDescription("Rated PG-13").fetchSemanticsNodes().isNotEmpty() }
 
         // Ratings without a plot: the card for them alone, and no slogan.
+        // From an add-on too old to send the level beside its mark, the
+        // board's plate stands alone, the whole height of a shield and as
+        // wide as it is drawn (30 by 22).
         fake.playing(told.copy(media = MediaInfo(tagline = "Only this.", mpaa = "FSK 16", age = "fsk16")))
         rule.until { rule.onAllNodesWithContentDescription("FSK 16").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(true, seen(str(R.string.live_plot)))
-        // Centred: a mark alone stands in the middle of the card, which is
-        // the middle of the screen.
         val alone = rule.onNodeWithContentDescription("FSK 16").fetchSemanticsNode().boundsInRoot
+        assertEquals(30f / 22f, alone.width / alone.height, 0.05f)
+        // Centred: a badge alone stands in the middle of the card, which is
+        // the middle of the screen.
         assertEquals(screen.center.x, alone.center.x, 1f)
         assertEquals(false, seen("Only this."))
 
-        // So does the FSK's, which is written out: "FSK 12".
-        fake.playing(told.copy(media = MediaInfo(plot = "Plot.", mpaa = "FSK 12", age = "fsk12")))
-        rule.until { rule.onAllNodesWithContentDescription("FSK 12").fetchSemanticsNodes().isNotEmpty() }
-        val fsk = rule.onNodeWithContentDescription("FSK 12").fetchSemanticsNode().boundsInRoot
-        assertEquals(2f, fsk.width / fsk.height, 0.05f)
-
-        // An American one wears its board's plate, twice as wide as it is tall.
-        fake.playing(told.copy(media = MediaInfo(plot = "Plot.", mpaa = "Rated PG-13", age = "mpa_pg13")))
-        rule.until { rule.onAllNodesWithContentDescription("Rated PG-13").fetchSemanticsNodes().isNotEmpty() }
-        val plate = rule.onNodeWithContentDescription("Rated PG-13").fetchSemanticsNode().boundsInRoot
-        assertEquals(2f, plate.width / plate.height, 0.05f)
+        // With its level, the age rating is a shield like the scores': the
+        // board's plate on the left, the level written beside it.
+        val density = context.resources.displayMetrics.density
+        fun shieldOf(said: String, age: String, level: String, plateWidth: Float) {
+            fake.playing(told.copy(media = MediaInfo(plot = "Plot.", mpaa = said, age = age, ageLevel = level)))
+            rule.until { rule.onAllNodesWithContentDescription(said).fetchSemanticsNodes().isNotEmpty() }
+            val shield = rule.onNodeWithContentDescription(said).fetchSemanticsNode().boundsInRoot
+            assertEquals(26f * density, shield.height, 0.5f)
+            // The plate, edge to edge, and the figure's own room beside it.
+            assertEquals(true, shield.width > (26f * plateWidth / 22f + 16f) * density)
+        }
+        shieldOf("FSK 12", "fsk12", "12", 30f)
+        shieldOf("Rated PG-13", "mpa_pg13", "PG-13", 32f)
+        shieldOf("TV-MA", "tv_ma", "MA", 24f)
+        shieldOf("15", "bbfc_15", "15", 38f)
     }
 
     @Test

@@ -290,10 +290,17 @@ data class MediaInfo(
     val mpaa: String = "",
     /**
      * The mark the add-on read [mpaa] as - `fsk12`, `mpa_pg13`, `tv_ma`,
-     * `bbfc_15` - which is drawn as that board's coloured mark; empty for an
-     * age rating it could not place, which is written out instead.
+     * `bbfc_15` - which is drawn as the left of a shield: the board's name
+     * on the level's colour. Empty for an age rating it could not place,
+     * which is written out instead.
      */
     val age: String = "",
+    /**
+     * The level written beside [age]'s mark - `12`, `PG-13`, `MA`, `15` -
+     * as its board writes it; empty where there is no mark, and from an
+     * add-on too old to send it, whose mark then stands alone.
+     */
+    @SerialName("age_level") val ageLevel: String = "",
     /** The reader's own rating, 1 to 10; 0 for none. */
     @SerialName("userrating") val userRating: Int = 0,
     /** The place in the IMDb Top 250; 0 for none. */

@@ -139,6 +139,7 @@ class ModelsTest {
         assertFalse(MediaInfo(mpaa = " ").hasRatings)
         assertEquals(SourceRating("", 0.0, 0), SourceRating())
         assertEquals("", MediaInfo().age)
+        assertEquals("", MediaInfo().ageLevel)
         for (rated in listOf(
             MediaInfo(ratings = listOf(SourceRating("imdb", 8.5, 10))),
             MediaInfo(userRating = 9),

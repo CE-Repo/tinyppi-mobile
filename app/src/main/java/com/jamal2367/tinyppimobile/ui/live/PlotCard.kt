@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -133,21 +134,16 @@ private fun RatingRow(media: MediaInfo) {
     ) {
         if (media.mpaa.isNotBlank()) {
             // One the add-on could place - FSK, MPA, TV Parental Guidelines,
-            // BBFC - is that board's coloured mark and nothing else, as tall
-            // as the shields beside it and as wide as it is drawn; any other
-            // is written as the scraper wrote it.
+            // BBFC - is a shield like the scores': the board's name on the
+            // colour of the level, edge to edge on the left, and the level
+            // beside it ("FSK" | "12"). Any other is written as the scraper
+            // wrote it.
             val said = media.mpaa.trim()
             val drawing = AGE_MARKS[media.age]
             if (drawing != null) {
-                val painter = painterResource(drawing)
-                Image(
-                    painter = painter,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .heardAs(said)
-                        .height(tall)
-                        .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),
-                )
+                RatingShield(spoken = said, value = media.ageLevel.trim(), tall = tall, inset = 0.dp) {
+                    BoardPlate(drawing)
+                }
             } else {
                 RatingShield(spoken = said, value = said, tall = tall)
             }
@@ -210,8 +206,9 @@ private val TOP250 = HouseMark(R.drawable.rating_top250, Color(0xFFF5C518))
 
 /**
  * The age ratings there is a drawing of, by the name the add-on gives the
- * mark (see `age_mark` in its `web/ratings.py`): the FSK's, the MPA's and the
- * TV Parental Guidelines' - both in the FSK's colours - and the BBFC's.
+ * mark (see `age_rating` in its `web/ratings.py`): the plate of the FSK's,
+ * the MPA's and the TV Parental Guidelines' - both in the FSK's colours - and
+ * the BBFC's levels, each the board's name on the level's colour.
  */
 private val AGE_MARKS = mapOf(
     "fsk0" to R.drawable.rating_fsk0,
@@ -249,9 +246,11 @@ private fun sourceName(entry: SourceRating): String =
 
 /**
  * One rating as a shield: [side] on the left, on [ground] - a house's own
- * colour, so its mark runs into it and the left reads as one plate - and on
- * the right the figure in bold with how many voted. Square-cornered like a
- * plaque rather than round like a button.
+ * colour, so its mark runs into it and the left reads as one plate - [inset]
+ * from its edges, and on the right the figure in bold with how many voted.
+ * Square-cornered like a plaque rather than round like a button. Without a
+ * figure - an age rating from an add-on too old to send its level - the
+ * side stands alone.
  *
  * Heard as [spoken] and nothing else - "IMDb 8.5, 612,345 votes" rather than
  * "8.5 612,345" with nothing to say what either is.
@@ -263,6 +262,7 @@ private fun RatingShield(
     tall: Dp,
     note: String? = null,
     ground: Color = Color.Transparent,
+    inset: Dp = 2.dp,
     side: (@Composable () -> Unit)? = null,
 ) {
     Row(
@@ -279,32 +279,34 @@ private fun RatingShield(
                 modifier = Modifier
                     .fillMaxHeight()
                     .background(ground)
-                    .padding(horizontal = 2.dp),
+                    .padding(horizontal = inset),
                 contentAlignment = Alignment.Center,
             ) { side() }
         }
         // On one line, centred in the height the shield is given: a long age
         // rating written out is cut at the edge rather than growing a second.
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-        ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (note != null) {
+        if (value.isNotEmpty()) {
+            Row(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
                 Text(
-                    text = note,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = value,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
+                if (note != null) {
+                    Text(
+                        text = note,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
             }
         }
     }
@@ -326,6 +328,24 @@ private fun DrawnMark(drawing: Int) {
         contentDescription = null,
         modifier = Modifier
             .height(MARK)
+            .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),
+    )
+}
+
+/**
+ * An age rating board's plate: its name on the level's colour, the whole
+ * height of the shield and as wide as it is drawn, so the colour runs to the
+ * shield's edges as a house's ground does.
+ */
+@Composable
+private fun BoardPlate(drawing: Int) {
+    val painter = painterResource(drawing)
+    Image(
+        painter = painter,
+        contentDescription = null,
+        contentScale = ContentScale.FillBounds,
+        modifier = Modifier
+            .fillMaxHeight()
             .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),
     )
 }
@@ -363,8 +383,8 @@ private val MARK = 20.dp
 private val SHIELD = RoundedCornerShape(7.dp)
 
 /**
- * How tall every badge stands - a shield, a heart, an age rating's mark on
- * its own - so a row of them is one height whatever it holds. It grows with
+ * How tall every badge stands - a shield, a heart, an age rating's - so a
+ * row of them is one height whatever it holds. It grows with
  * the reader's font size, and all of them with it: a shield's figures are set
  * in text and must not be cut, and a mark beside it must not then stand short.
  */
@@ -387,6 +407,7 @@ internal fun PlotCardPreview() {
                         ratings = listOf(SourceRating("imdb", 8.5, 612_345), SourceRating("tmdb", 8.2, 6_120)),
                         mpaa = "FSK 12",
                         age = "fsk12",
+                        ageLevel = "12",
                         userRating = 9,
                         top250 = 27,
                     ),

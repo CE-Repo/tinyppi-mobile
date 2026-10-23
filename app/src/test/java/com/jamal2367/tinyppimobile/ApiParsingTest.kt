@@ -186,13 +186,15 @@ class ApiParsingTest {
         val snapshot = json.decodeFromString(
             Snapshot.serializer(),
             """{"playing":true,"media":{"ratings":[{"source":"imdb","rating":8.5,"votes":612345},
-               {"source":"tmdb","rating":8.2,"votes":0}],"mpaa":"FSK 12","age":"fsk12","userrating":9,"top250":27}}""",
+               {"source":"tmdb","rating":8.2,"votes":0}],"mpaa":"FSK 12","age":"fsk12",
+               "age_level":"12","userrating":9,"top250":27}}""",
         )
         assertEquals(listOf("imdb", "tmdb"), snapshot.media.ratings.map { it.source })
         assertEquals(8.5, snapshot.media.ratings[0].rating, 0.0)
         assertEquals(612_345, snapshot.media.ratings[0].votes)
         assertEquals("FSK 12", snapshot.media.mpaa)
         assertEquals("fsk12", snapshot.media.age)
+        assertEquals("12", snapshot.media.ageLevel)
         assertEquals(9, snapshot.media.userRating)
         assertEquals(27, snapshot.media.top250)
     }
