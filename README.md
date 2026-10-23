@@ -48,6 +48,9 @@ command endpoints.
   graded and what is actually leaving the box. A conversion gets a badge of its
   own, because that is the one thing on the screen that is a decision rather
   than a reading.
+- **An overview of the title**: every rating the library holds for it, as
+  the rating services' coloured marks, its slogan and its plot, in a card of
+  their own under it.
 - **The Dolby Vision metadata view**: the same list the overlay's second window
   is built from, trim tables and all.
 - **The luminance chart and the event log** the box keeps for the running
@@ -133,9 +136,41 @@ with the same wrong token would turn a clear error into a confusing one.
 
 ### Live
 
-The title with its poster, the source and output badges, the video and audio
-formats named in badges of their own, the progress, and — on a box that allows
-it — the transport row, the track pickers and the VS10 conversions.
+The title with its poster, its year and genre (its first two) and under them
+its studio (only the first, with no "…"; an episode's is its show's), the
+director's name alone (only the first as well) in
+the middle of the room left between those lines and the format badges, the
+source and output badges, the video and audio formats named in badges of
+their own, the progress, and — on a box that allows it — the transport row,
+the track pickers and the VS10 conversions.
+
+Under the card of what is playing, the **Overview** card, all of it centred:
+the plot, with the slogan in italics above it where there is one — most
+episodes carry a plot and no slogan; a long plot is cut to four lines, and
+*Show more* under it lets the rest out (*Show less* takes it back) — under them, past a thin rule, the cast:
+its name in bold on a line of its own, centred over its first eight names in
+billing order, ending in "…" where there are more, and left out where Kodi
+has none; the genre, the studio and the director stand in the card above.
+Last, past another rule, every rating Kodi's library holds for the title, as
+a row of small shields. Each has its source's mark on the left, on a
+ground of the source's colour, instead of its name, and what it gave on the
+right — the same marks and shields the add-on's dashboard draws: first the
+age rating, where the add-on could place it, as a shield like the others:
+its board's name on the colour of the level and the level beside it — "FSK" |
+"12", "MPA" | "PG-13" for films and "TV" | "MA" for series (both in the FSK's
+colours), "BBFC" | "15" — and written out where it could not, then a score for each source the scraper or the NFO wrote — IMDb, TMDB,
+Trakt, TVDB, Metacritic, Rotten Tomatoes; any other gets its first letter on a
+plain plate — or, where the add-on was given an MDBList API key, every one
+MDBList gathers for a film (Letterboxd, Rotten Tomatoes' Popcornmeter,
+Metacritic's users, Roger Ebert and MyAnimeList among them, each with a mark
+of its own), with how many voted, your own rating behind a heart and the
+place in the IMDb Top 250. A screen reader hears each shield as one sentence ("IMDb
+8.5, 612,345 votes"). An episode is rated on its own and carries its show's
+age rating. The slogan only ever stands
+above a plot: without a plot the card shows the ratings and the cast alone,
+and with none of them it is left out, as it is for a file that is not in the
+library. It folds, moves and comes off the screen like
+every other card on it (see [Arranging the cards](#arranging-the-cards)).
 
 A file with chapters carries a dot on the progress bar where each chapter
 ahead of the position starts, and the one playing is named over the bar —
@@ -289,7 +324,7 @@ app draws it; **Done**, or
 the back gesture, returns to the cards. The order and the removed cards are
 remembered per screen, by the card's own name rather than its heading, so they
 survive a change of language. A card that only comes with some titles — the
-VS10 card, the HDR10 panel — keeps its place for when it comes back, and a card
+plot card, the VS10 card, the HDR10 panel — keeps its place for when it comes back, and a card
 the app has never shown before arrives next to the one it follows by default.
 Any other screen whose cards have all been removed says so, with the way back
 to them.

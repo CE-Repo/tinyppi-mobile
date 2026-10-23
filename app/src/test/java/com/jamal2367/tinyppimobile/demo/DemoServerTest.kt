@@ -176,11 +176,47 @@ class DemoServerTest {
 
         // Starting things off the shelves.
         post("/api/play", """{"movieid":1}""")
+        assertEquals("Long live the fighters.", state()["media"]!!.jsonObject["tagline"]!!.jsonPrimitive.content)
+        val rated = state()["media"]!!.jsonObject
+        assertEquals("imdb", rated["ratings"]!!.jsonArray[0].jsonObject["source"]!!.jsonPrimitive.content)
+        assertEquals(612_000, rated["ratings"]!!.jsonArray[0].jsonObject["votes"]!!.jsonPrimitive.int)
+        // Rated as MDBList rates it, every house it gathers.
+        assertEquals(
+            listOf("imdb", "tmdb", "trakt", "letterboxd", "metacritic", "rottentomatoes", "popcorn"),
+            rated["ratings"]!!.jsonArray.map { it.jsonObject["source"]!!.jsonPrimitive.content },
+        )
+        assertEquals("FSK 12", rated["mpaa"]!!.jsonPrimitive.content)
+        assertEquals("fsk12", rated["age"]!!.jsonPrimitive.content)
+        assertEquals("12", rated["age_level"]!!.jsonPrimitive.content)
+        // And who made it, cut as the add-on cuts it.
+        assertEquals("Denis Villeneuve", rated["directors"]!!.jsonArray.single().jsonPrimitive.content)
+        assertEquals(null, rated["directors_more"])
+        assertEquals(8, rated["cast"]!!.jsonArray.size)
+        assertEquals(true, rated["cast_more"]!!.jsonPrimitive.boolean)
+        assertEquals("Legendary Pictures", rated["studios"]!!.jsonArray.single().jsonPrimitive.content)
+        assertEquals(null, rated["studios_more"])
+        assertEquals(null, rated["genres"])
+        assertEquals(9, rated["userrating"]!!.jsonPrimitive.int)
+        assertEquals(27, rated["top250"]!!.jsonPrimitive.int)
         post("/api/play", """{"movieid":3,"resume":false}""")
+        // A film the pretend library says nothing about, nor rates for its age.
+        assertEquals("", state()["media"]!!.jsonObject["plot"]!!.jsonPrimitive.content)
+        assertEquals(0, state()["media"]!!.jsonObject["cast"]!!.jsonArray.size)
+        // Rated as a scraper leaves a film.
+        assertEquals(2, state()["media"]!!.jsonObject["ratings"]!!.jsonArray.size)
+        assertEquals("", state()["media"]!!.jsonObject["age"]!!.jsonPrimitive.content)
         post("/api/play", """{"movieid":6}""")
         post("/api/play", """{"movieid":999}""")
         post("/api/play", """{"episodeid":102203}""")
         assertEquals("2", state()["media"]!!.jsonObject["season"]!!.jsonPrimitive.content)
+        // An episode: a plot and no slogan, its own score and its show's age rating.
+        assertEquals("", state()["media"]!!.jsonObject["tagline"]!!.jsonPrimitive.content)
+        assertEquals("tvdb", state()["media"]!!.jsonObject["ratings"]!!.jsonArray.single().jsonObject["source"]!!.jsonPrimitive.content)
+        assertEquals("TV-MA", state()["media"]!!.jsonObject["mpaa"]!!.jsonPrimitive.content)
+        assertEquals("tv_ma", state()["media"]!!.jsonObject["age"]!!.jsonPrimitive.content)
+        assertEquals("MA", state()["media"]!!.jsonObject["age_level"]!!.jsonPrimitive.content)
+        assertEquals("Sam Guest", state()["media"]!!.jsonObject["cast"]!!.jsonArray.first().jsonPrimitive.content)
+        assertTrue(state()["media"]!!.jsonObject["plot"]!!.jsonPrimitive.content.startsWith("Season 2, episode 3"))
         chapters = state()["chapters"]!!.jsonArray
         assertEquals(6, chapters.size)
         assertEquals("", chapters[0].jsonObject["name"]!!.jsonPrimitive.content)

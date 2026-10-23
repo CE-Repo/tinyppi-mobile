@@ -92,6 +92,19 @@ class FormattersTest {
     }
 
     @Test
+    fun `a count is grouped the way the reader writes numbers`() {
+        assertEquals("612.345", Formatters.count(612_345, java.util.Locale.GERMANY))
+        assertEquals("612,345", Formatters.count(612_345, java.util.Locale.US))
+        assertEquals("7", Formatters.count(7))
+    }
+
+    @Test
+    fun `names are a line, and a cut list ends in an ellipsis`() {
+        assertEquals("Syncopy, Atlas Entertainment", Formatters.names(listOf("Syncopy", "Atlas Entertainment"), false))
+        assertEquals("Syncopy, …", Formatters.names(listOf("Syncopy"), true))
+    }
+
+    @Test
     fun `a clock the box sent reads back as the seconds it stands for`() {
         assertEquals(389.0, Formatters.clockSeconds("00:06:29"))
         assertEquals(7214.0, Formatters.clockSeconds("02:00:14"))

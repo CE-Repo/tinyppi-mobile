@@ -14,7 +14,9 @@ import android.util.Log
 import androidx.core.graphics.createBitmap
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.double
@@ -58,6 +60,30 @@ object DemoServer {
     private const val PORT = 8099
     private val ADDED_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
+    /** What the film the box starts on says about itself. */
+    private const val DUNE_TAGLINE = "Long live the fighters."
+    private const val DUNE_PLOT = "Paul Atreides lives among the Fremen now, learning the desert at Chani's side " +
+        "while the Harkonnens tighten their grip on Arrakis. As the prophecy the Fremen believe in closes " +
+        "around him, he has to decide how much of himself to give up to bring down the men who destroyed " +
+        "his family."
+
+    /** How the film the box starts on is rated, every way the library can. */
+    private const val DUNE_MPAA = "FSK 12"
+    private const val DUNE_AGE = "fsk12"
+    private const val DUNE_AGE_LEVEL = "12"
+    private const val DUNE_TOP250 = 27
+    private const val DUNE_MINE = 9
+
+    /** Who made it, more of the cast than the add-on sends (see putNames). */
+    private val DUNE_CREDITS = Credits(
+        directors = listOf("Denis Villeneuve"),
+        cast = listOf(
+            "Timothée Chalamet", "Zendaya", "Rebecca Ferguson", "Javier Bardem", "Josh Brolin", "Austin Butler",
+            "Florence Pugh", "Dave Bautista", "Christopher Walken", "Léa Seydoux",
+        ),
+        studios = listOf("Legendary Pictures"),
+    )
+
     /** What a film's chapters are called on the pretend box. */
     private val FILM_CHAPTERS = listOf(
         "Opening", "Arrakis", "The Fremen", "Sietch Tabr", "The Water of Life", "Sandworm",
@@ -97,6 +123,15 @@ object DemoServer {
         playingTag = "movie-1"
         playingYear = 2024
         playingGenre = "Science Fiction"
+        playingTagline = DUNE_TAGLINE
+        playingPlot = DUNE_PLOT
+        playingRatings = filmRatings(films.first())
+        playingMpaa = DUNE_MPAA
+        playingAge = DUNE_AGE
+        playingAgeLevel = DUNE_AGE_LEVEL
+        playingTop250 = DUNE_TOP250
+        playingMine = DUNE_MINE
+        playingCredits = DUNE_CREDITS
         playingShow = ""
         playingSeason = ""
         playingEpisode = ""
@@ -117,7 +152,19 @@ object DemoServer {
 
     /* --- The pretend library --------------------------------------------- */
 
-    private class Film(val id: Int, val title: String, val year: Int, val minutes: Int, val rating: Double, val genre: String, val watched: Boolean = false, val resumeMinutes: Int = 0)
+    private class Film(
+        val id: Int, val title: String, val year: Int, val minutes: Int, val rating: Double, val genre: String,
+        val watched: Boolean = false, val resumeMinutes: Int = 0, val tagline: String = "", val plot: String = "",
+        val mpaa: String = "", val age: String = "", val ageLevel: String = "", val top250: Int = 0,
+        val mine: Int = 0, val credits: Credits = Credits(),
+    )
+
+    /** Who made a title: its directors, cast and studios. */
+    private class Credits(
+        val directors: List<String> = emptyList(),
+        val cast: List<String> = emptyList(),
+        val studios: List<String> = emptyList(),
+    )
     private class Show(val id: Int, val title: String, val year: Int, val rating: Double, val seasons: Int, val perSeason: Int, val seenUpTo: Int) {
         /** Every episode as season and number, in the order they are watched. */
         val episodes: List<Pair<Int, Int>> = (1..seasons).flatMap { season -> (1..perSeason).map { season to it } }
@@ -127,8 +174,29 @@ object DemoServer {
     }
 
     private val films = listOf(
-        Film(1, "Dune: Part Two", 2024, 166, 8.5, "Science Fiction", resumeMinutes = 71),
-        Film(2, "Oppenheimer", 2023, 180, 8.3, "Drama", resumeMinutes = 40),
+        Film(
+            1, "Dune: Part Two", 2024, 166, 8.5, "Science Fiction", resumeMinutes = 71, tagline = DUNE_TAGLINE,
+            plot = DUNE_PLOT, mpaa = DUNE_MPAA, age = DUNE_AGE, ageLevel = DUNE_AGE_LEVEL, top250 = DUNE_TOP250,
+            mine = DUNE_MINE, credits = DUNE_CREDITS,
+        ),
+        // A slogan and a plot for the first two only: the rest play without
+        // them, the way a file the library knows little about does.
+        Film(
+            2, "Oppenheimer", 2023, 180, 8.3, "Drama", resumeMinutes = 40,
+            // Rated by the American board, as a scraper set to the US writes it.
+            tagline = "The world forever changes.", mpaa = "Rated R", age = "mpa_r", ageLevel = "R",
+            plot = "J. Robert Oppenheimer is asked to lead the race for the atomic bomb from a laboratory " +
+                "built in the New Mexico desert. Years after Los Alamos, a closed security hearing turns " +
+                "his own past against him.",
+            credits = Credits(
+                directors = listOf("Christopher Nolan"),
+                cast = listOf(
+                    "Cillian Murphy", "Emily Blunt", "Matt Damon", "Robert Downey Jr.", "Florence Pugh", "Josh Hartnett",
+                    "Casey Affleck",
+                ),
+                studios = listOf("Syncopy", "Atlas Entertainment"),
+            ),
+        ),
         Film(3, "Blade Runner 2049", 2017, 164, 8.0, "Science Fiction", resumeMinutes = 132),
         Film(4, "Mad Max: Fury Road", 2015, 120, 8.1, "Action", watched = true),
         Film(5, "Interstellar", 2014, 169, 8.7, "Science Fiction", watched = true),
@@ -165,6 +233,25 @@ object DemoServer {
         Show(109, "Chernobyl", 2019, 9.3, 1, 5, 5),
     )
 
+    /**
+     * A film's scores, made up from its rating: IMDb's with a count of votes
+     * in proportion, and TMDb's a little under it with far fewer.
+     */
+    private fun filmRatings(film: Film): List<Triple<String, Double, Int>> {
+        val votes = (film.rating * 72_000).toInt()
+        val scraped = listOf(Triple("imdb", film.rating, votes), Triple("tmdb", film.rating - 0.3, votes / 90))
+        // The films the library knows best are rated as MDBList rates them,
+        // every house it gathers; the rest as a scraper leaves them.
+        if (film.plot.isEmpty()) return scraped
+        return scraped + listOf(
+            Triple("trakt", film.rating - 0.1, votes / 20),
+            Triple("letterboxd", film.rating + 0.3, votes * 2),
+            Triple("metacritic", film.rating - 0.6, 67),
+            Triple("rottentomatoes", film.rating + 0.7, 410),
+            Triple("popcorn", film.rating + 1.0, 10_000),
+        )
+    }
+
     private fun episodeId(show: Show, season: Int, episode: Int) = show.id * 1000 + season * 100 + episode
     private fun showOfEpisode(id: Int) = shows.firstOrNull { it.id == id / 1000 }
     private fun episodeTitle(season: Int, episode: Int) = listOf(
@@ -179,6 +266,15 @@ object DemoServer {
     private var playingTag = "movie-1"
     private var playingYear = 2024
     private var playingGenre = "Science Fiction"
+    private var playingTagline = DUNE_TAGLINE
+    private var playingPlot = DUNE_PLOT
+    private var playingRatings = filmRatings(films.first())
+    private var playingMpaa = DUNE_MPAA
+    private var playingAge = DUNE_AGE
+    private var playingAgeLevel = DUNE_AGE_LEVEL
+    private var playingTop250 = DUNE_TOP250
+    private var playingMine = DUNE_MINE
+    private var playingCredits = DUNE_CREDITS
     private var playingShow = ""
     private var playingSeason = ""
     private var playingEpisode = ""
@@ -379,6 +475,24 @@ object DemoServer {
                 put("show", playingShow)
                 put("season", playingSeason)
                 put("episode", playingEpisode)
+                put("tagline", playingTagline)
+                put("plot", playingPlot)
+                putJsonArray("ratings") {
+                    playingRatings.forEach { (source, rating, votes) ->
+                        add(buildJsonObject { put("source", source); put("rating", rating); put("votes", votes) })
+                    }
+                }
+                put("mpaa", playingMpaa)
+                // The mark the add-on reads the age rating as, and its level.
+                put("age", playingAge)
+                put("age_level", playingAgeLevel)
+                put("userrating", playingMine)
+                put("top250", playingTop250)
+                // Who made it, cut as the add-on cuts it: the director and the
+                // studio the first alone.
+                putJsonArray("directors") { playingCredits.directors.take(1).forEach { add(it) } }
+                putNames("cast", playingCredits.cast, 8)
+                putJsonArray("studios") { playingCredits.studios.take(1).forEach { add(it) } }
             }
             putJsonObject("controls") {
                 putJsonArray("audio") {
@@ -424,6 +538,12 @@ object DemoServer {
 
     private fun metaCells(kind: String, name: String, cells: List<String>) = buildJsonObject {
         put("kind", kind); put("name", name); put("cells", JsonArray(cells.map(::JsonPrimitive)))
+    }
+
+    /** A list of names as the add-on sends it: its first [limit], and whether it has more. */
+    private fun JsonObjectBuilder.putNames(key: String, names: List<String>, limit: Int) {
+        putJsonArray(key) { names.take(limit).forEach { add(it) } }
+        put("${key}_more", names.size > limit)
     }
 
     private fun track(index: Int, label: String) = buildJsonObject { put("index", index); put("label", label) }
@@ -572,6 +692,9 @@ object DemoServer {
             "/api/play" -> {
                 payload["movieid"]?.jsonPrimitive?.int?.let { id -> films.firstOrNull { it.id == id } }?.let { f ->
                     playingTitle = f.title; playingTag = "movie-${f.id}"; playingYear = f.year; playingGenre = f.genre
+                    playingTagline = f.tagline; playingPlot = f.plot
+                    playingRatings = filmRatings(f); playingMpaa = f.mpaa; playingAge = f.age; playingAgeLevel = f.ageLevel
+                    playingTop250 = f.top250; playingMine = f.mine; playingCredits = f.credits
                     playingShow = ""; playingSeason = ""; playingEpisode = ""
                     durationSeconds = f.minutes * 60
                     positionSeconds = if (fromStart || filmWatched(f)) 0.0 else f.resumeMinutes * 60.0
@@ -582,6 +705,18 @@ object DemoServer {
                     val episode = id % 100
                     playingTitle = episodeTitle(season, episode); playingTag = "show-${show.id}"; playingYear = show.year
                     playingGenre = "Drama"; playingShow = show.title; playingSeason = "$season"; playingEpisode = "$episode"
+                    // An episode has a plot and, as most do, no slogan.
+                    playingTagline = ""
+                    playingPlot = "Season $season, episode $episode of ${show.title}, made up for the demo box like every episode on it."
+                    // Rated on its own, with no count, and its show's age rating.
+                    playingRatings = listOf(Triple("tvdb", show.rating, 0))
+                    playingMpaa = "TV-MA"; playingAge = "tv_ma"; playingAgeLevel = "MA"; playingTop250 = 0; playingMine = 0
+                    // Its show's studio, its own director, and its guests
+                    // before the show's cast.
+                    playingCredits = Credits(
+                        directors = listOf("Alex Example"),
+                        cast = listOf("Sam Guest", "Robin Lead", "Kim Second"), studios = listOf("Demo Studios"),
+                    )
                     durationSeconds = 52 * 60; positionSeconds = 0.0
                 }
                 paused = false

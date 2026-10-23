@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.longClick
 import androidx.test.core.app.ApplicationProvider
 import com.jamal2367.tinyppimobile.R
+import com.jamal2367.tinyppimobile.data.model.MediaInfo
 import com.jamal2367.tinyppimobile.data.model.PlayerControls
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.model.Track
@@ -32,6 +33,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /** The live screen, in each state a box can be in, and every button on it. */
 @RunWith(RobolectricTestRunner::class)
@@ -153,6 +155,61 @@ class LiveScreenTest {
         rule.onNodeWithContentDescription(str(R.string.live_play)).assertIsDisplayed()
         rule.onNodeWithContentDescription(str(R.string.live_volume)).performClick()
         rule.onNodeWithContentDescription(str(R.string.live_unmute)).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the first studio stands on a line of its own under the year and the genre`() {
+        fake.playing(
+            Screens.film.copy(media = Screens.film.media.copy(studios = listOf("Syncopy", "Atlas Entertainment"))),
+        )
+        showLive()
+        val genre = rule.onNodeWithText("2024 · Science Fiction").fetchSemanticsNode().boundsInRoot
+        val studio = rule.onNodeWithText("Syncopy").fetchSemanticsNode().boundsInRoot
+        assertEquals(true, studio.top >= genre.bottom)
+        assertEquals(genre.left, studio.left, 0.5f)
+        // Alone, with nothing to say there are more.
+        assertEquals(true, rule.onAllNodesWithText("Atlas", substring = true).fetchSemanticsNodes().isEmpty())
+    }
+
+    // Drawn for real: the measuring the stand-in graphics do sets every word
+    // too tall for the column to leave any room beside the poster.
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `who directed it stands in the middle between the lines above and the badges`() {
+        fun box(text: String) = rule.onNodeWithText(text).fetchSemanticsNode().boundsInRoot
+        // A title alone over it, so the poster beside the column leaves it
+        // room to stand in.
+        fake.playing(Screens.film.copy(media = MediaInfo(directors = listOf("Christopher Nolan"))))
+        showLive()
+        val title = box("Dune: Part Two")
+        val director = box("Christopher Nolan")
+        // The badges' words sit inside their pills: two rows are a pill and
+        // the rows' gap apart, which says how far in.
+        val first = box("UHD")
+        val second = box("TrueHD")
+        val inset = (second.top - first.top - 10f * context.resources.displayMetrics.density - first.height) / 2
+        val over = director.top - title.bottom
+        assertEquals(over, first.top - inset - director.bottom, 1.5f)
+        assertEquals(true, over > 8f * context.resources.displayMetrics.density)
+
+        // Under the studio, where there is one, and level with it.
+        fake.playing(
+            Screens.film.copy(
+                media = Screens.film.media.copy(studios = listOf("Syncopy"), directors = listOf("Christopher Nolan")),
+            ),
+        )
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("Syncopy").fetchSemanticsNodes().isNotEmpty() }
+        val studio = box("Syncopy")
+        val under = box("Christopher Nolan")
+        assertEquals(true, under.top >= studio.bottom)
+        assertEquals(studio.left, under.left, 0.5f)
+
+        // The first of more than one alone, with nothing to say there are more.
+        fake.playing(
+            Screens.film.copy(media = Screens.film.media.copy(directors = listOf("Joel Coen", "Ethan Coen"))),
+        )
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("Joel Coen").fetchSemanticsNodes().isNotEmpty() }
+        assertEquals(true, rule.onAllNodesWithText("Ethan Coen", substring = true).fetchSemanticsNodes().isEmpty())
     }
 
     @Test

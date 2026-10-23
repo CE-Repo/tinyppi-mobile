@@ -175,6 +175,44 @@ class ApiParsingTest {
             """{"playing":true,"media":{"year":"2021"}}""",
         )
         assertNull(snapshot.media.episodeLabel)
+        // An add-on older than the plot card sends none of its fields.
+        assertEquals("", snapshot.media.tagline)
+        assertEquals("", snapshot.media.plot)
+        assertFalse(snapshot.media.hasRatings)
+    }
+
+    @Test
+    fun `the ratings arrive as the add-on sorted them`() {
+        val snapshot = json.decodeFromString(
+            Snapshot.serializer(),
+            """{"playing":true,"media":{"ratings":[{"source":"imdb","rating":8.5,"votes":612345},
+               {"source":"tmdb","rating":8.2,"votes":0}],"mpaa":"FSK 12","age":"fsk12",
+               "age_level":"12","userrating":9,"top250":27,"directors":["Denis Villeneuve"],
+               "cast":["Timothée Chalamet","Zendaya"],"cast_more":true,"studios":[]}}""",
+        )
+        assertEquals(listOf("imdb", "tmdb"), snapshot.media.ratings.map { it.source })
+        assertEquals(8.5, snapshot.media.ratings[0].rating, 0.0)
+        assertEquals(612_345, snapshot.media.ratings[0].votes)
+        assertEquals("FSK 12", snapshot.media.mpaa)
+        assertEquals("fsk12", snapshot.media.age)
+        assertEquals("12", snapshot.media.ageLevel)
+        assertEquals(listOf("Denis Villeneuve"), snapshot.media.directors)
+        assertEquals(listOf("Timothée Chalamet", "Zendaya"), snapshot.media.cast)
+        assertEquals(true, snapshot.media.castMore)
+        // One the add-on left out is none.
+        assertEquals(emptyList<String>(), snapshot.media.studios)
+        assertEquals(9, snapshot.media.userRating)
+        assertEquals(27, snapshot.media.top250)
+    }
+
+    @Test
+    fun `the slogan and the plot arrive as the library has them`() {
+        val snapshot = json.decodeFromString(
+            Snapshot.serializer(),
+            """{"playing":true,"media":{"tagline":"Long live the fighters.","plot":"Paul joins the Fremen.\nChani watches."}}""",
+        )
+        assertEquals("Long live the fighters.", snapshot.media.tagline)
+        assertEquals("Paul joins the Fremen.\nChani watches.", snapshot.media.plot)
     }
 
     @Test

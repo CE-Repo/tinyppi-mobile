@@ -271,7 +271,72 @@ data class MediaInfo(
     val show: String = "",
     val season: String = "",
     val episode: String = "",
+    /**
+     * The slogan, as the library has it - empty for a file it does not know
+     * and for most episodes, and against an add-on older than the field.
+     */
+    val tagline: String = "",
+    /** What the title is about, with the library's own line breaks. */
+    val plot: String = "",
+    /**
+     * Every source's rating the library holds, the known ones first (see
+     * `web/ratings.py` in the add-on). An episode's are its own.
+     */
+    val ratings: List<SourceRating> = emptyList(),
+    /**
+     * The age rating as the scraper wrote it - `FSK 12`, `Rated PG-13` - and
+     * for an episode its show's.
+     */
+    val mpaa: String = "",
+    /**
+     * The mark the add-on read [mpaa] as - `fsk12`, `mpa_pg13`, `tv_ma`,
+     * `bbfc_15` - which is drawn as the left of a shield: the board's name
+     * on the level's colour. Empty for an age rating it could not place,
+     * which is written out instead.
+     */
+    val age: String = "",
+    /**
+     * The level written beside [age]'s mark - `12`, `PG-13`, `MA`, `15` -
+     * as its board writes it; empty where there is no mark, and from an
+     * add-on too old to send it, whose mark then stands alone.
+     */
+    @SerialName("age_level") val ageLevel: String = "",
+    /** The reader's own rating, 1 to 10; 0 for none. */
+    @SerialName("userrating") val userRating: Int = 0,
+    /** The place in the IMDb Top 250; 0 for none. */
+    val top250: Int = 0,
+    /**
+     * Who made it, as the add-on splits Kodi's readings into names and cuts
+     * them: the first director and the first studio alone, and the cast's
+     * leads in billing order with whether there are more. The studio and the
+     * director stand in the card of what is playing, the cast in the plot
+     * card. An episode's studio is its show's, and its cast its own guests
+     * and then the show's.
+     */
+    val directors: List<String> = emptyList(),
+    val cast: List<String> = emptyList(),
+    @SerialName("cast_more") val castMore: Boolean = false,
+    val studios: List<String> = emptyList(),
 ) {
+    /**
+     * Whether there is a plot to print. A slogan goes only with one: on its
+     * own it says too little.
+     */
+    val hasPlot: Boolean
+        get() = plot.isNotBlank()
+
+    /** Whether the library rated the title in any of the ways it can. */
+    val hasRatings: Boolean
+        get() = ratings.isNotEmpty() || userRating > 0 || top250 > 0 || mpaa.isNotBlank()
+
+    /** Whether Kodi says who is in the title: the plot card's credits. */
+    val hasCredits: Boolean
+        get() = cast.isNotEmpty()
+
+    /** Whether the plot card is drawn: for a plot, for ratings, for credits. */
+    val showsPlotCard: Boolean
+        get() = hasPlot || hasRatings || hasCredits
+
     /** `S02E07`, when this is an episode of something. */
     val episodeLabel: String?
         get() {
@@ -280,6 +345,18 @@ data class MediaInfo(
             return String.format(Locale.ROOT, "S%02dE%02d", s, e)
         }
 }
+
+/**
+ * One source's rating of the playing title, out of ten: `imdb`, `tmdb`,
+ * `trakt`, `tvdb`, `metacritic`, or whatever else an NFO named.
+ */
+@Serializable
+data class SourceRating(
+    val source: String = "",
+    val rating: Double = 0.0,
+    /** How many voted; 0 where the library does not say. */
+    val votes: Int = 0,
+)
 
 /** The switchable side of the player. Empty unless the server allows control. */
 @Serializable

@@ -243,7 +243,12 @@ private val RATING_STAR = Color(0xFFF4C04F)
 private val RATING_STAR_SIZE = 13.dp
 
 /** What a badge calls the house whose rating it draws. Brand names, untranslated. */
-private val RATING_NAMES = mapOf("imdb" to "IMDb", "tmdb" to "TMDb")
+internal val RATING_NAMES = mapOf(
+    "imdb" to "IMDb", "tmdb" to "TMDb", "trakt" to "Trakt", "tvdb" to "TVDB", "letterboxd" to "Letterboxd",
+    "metacritic" to "Metacritic", "metacriticuser" to "Metacritic User Score",
+    "rottentomatoes" to "Rotten Tomatoes", "popcorn" to "Rotten Tomatoes Popcornmeter",
+    "rogerebert" to "Roger Ebert", "myanimelist" to "MyAnimeList",
+)
 
 /** What stands between a year and a length, or a number and a length. */
 internal const val META_GAP = " \u00b7 "

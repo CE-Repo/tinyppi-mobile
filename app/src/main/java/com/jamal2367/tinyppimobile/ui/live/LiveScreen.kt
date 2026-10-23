@@ -147,6 +147,7 @@ private fun LiveContent(
 ) {
     val layout = LocalCardLayout.current
     val labels = LiveCardLabels(
+        plot = stringResource(R.string.live_plot),
         controls = stringResource(R.string.live_transport),
         vs10 = stringResource(R.string.live_vs10),
     )
@@ -191,10 +192,12 @@ private fun LiveContent(
         }
 
         // Every other card the screen has now, in the order it draws them
-        // until the reader moves one: what can be done to what is playing,
-        // and the readings the overlay prints (see CardLayout).
+        // until the reader moves one: what the title is about and how it is
+        // rated, what can be done to it, and the readings the overlay prints
+        // (see CardLayout).
         val groups = snapshot.groups.associateBy { "$GROUP_PREFIX${it.id}" }
         val present = buildList {
+            if (snapshot.media.showsPlotCard) add(FOLD_PLOT)
             if (canControl) add(FOLD_CONTROLS)
             if (snapshot.vs10.options.isNotEmpty()) add(FOLD_VS10)
             addAll(groups.keys)
@@ -207,6 +210,7 @@ private fun LiveContent(
                     ArrangeableCard(
                         id,
                         when (id) {
+                            FOLD_PLOT -> labels.plot
                             FOLD_CONTROLS -> labels.controls
                             FOLD_VS10 -> labels.vs10
                             else -> groups.getValue(id).title
@@ -226,6 +230,8 @@ private fun LiveContent(
         // and its fold as the box adds and drops panels mid-film.
         for (id in shown) {
             when (id) {
+                FOLD_PLOT -> item(key = id) { PlotCard(snapshot.media) }
+
                 FOLD_CONTROLS -> item(key = id) {
                     ControlsCard(
                         snapshot = snapshot,
@@ -254,7 +260,7 @@ private fun LiveContent(
 }
 
 /** What the arranging list calls the cards that do not carry a heading of the box's. */
-private class LiveCardLabels(val controls: String, val vs10: String)
+private class LiveCardLabels(val plot: String, val controls: String, val vs10: String)
 
 /**
  * What each card on this screen is remembered by.
@@ -262,6 +268,7 @@ private class LiveCardLabels(val controls: String, val vs10: String)
  * Written out rather than taken from the heading: the heading is translated,
  * and a card folded away in German should still be folded in English.
  */
+internal const val FOLD_PLOT = "live.plot"
 internal const val FOLD_CONTROLS = "live.controls"
 internal const val FOLD_VS10 = "live.vs10"
 

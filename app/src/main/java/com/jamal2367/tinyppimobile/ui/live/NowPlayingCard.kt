@@ -187,6 +187,17 @@ internal fun NowPlayingCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+                // Who made it, the first studio alone, on a line of its own
+                // under what kind of film it is, and in the same voice.
+                snapshot.media.studios.firstOrNull()?.let { studio ->
+                    Text(
+                        text = studio,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
 
                 // All of the slack above the badges rather than half of it
                 // either side, which lands the block on the bottom edge of the
@@ -195,6 +206,19 @@ internal fun NowPlayingCard(
                 // picture finish on the same line. Centred, they floated in
                 // the middle of the card against nothing.
                 Spacer(Modifier.weight(1f))
+                // Who directed it, in the middle of that slack: a weighted
+                // spacer either side of it shares the slack out evenly. The
+                // first name alone, in the voice of the lines above it.
+                snapshot.media.directors.firstOrNull()?.let { director ->
+                    Text(
+                        text = director,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.weight(1f))
+                }
 
                 // The two rows travel together, a badge's own gap apart. They
                 // used to have one of those weighted spacers between them,
