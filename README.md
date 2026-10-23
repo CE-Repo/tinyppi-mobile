@@ -167,7 +167,7 @@ Metacritic's users, Roger Ebert and MyAnimeList among them, each with a mark
 of its own), your own rating behind a heart and the place in the IMDb Top
 250, which the add-on reads off IMDb's current chart. A screen reader hears
 each shield as one sentence ("IMDb 8.5"), and a tap or a long press on one
-shows the same words over it for a moment, for a mark you do not know. An episode is rated on its own and carries its show's
+shows over it for a moment whose it is ("IMDb"), for a mark you do not know. An episode is rated on its own and carries its show's
 age rating. The slogan only ever stands
 above a plot: without a plot the card shows the ratings and the cast alone,
 and with none of them it is left out, as it is for a file that is not in the

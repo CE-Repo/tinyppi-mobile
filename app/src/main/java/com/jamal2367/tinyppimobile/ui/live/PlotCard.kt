@@ -245,8 +245,8 @@ private fun creditLine(label: String, names: String, colors: ColorScheme): Annot
 private fun RatingRow(media: MediaInfo, colourful: Boolean) {
     val tall = badgeHeight()
     val colours = MaterialTheme.colorScheme
-    // On the accent, marks in white on a dark theme and in black on a light one.
-    val mono = if (colours.background.luminance() < 0.5f) Color.White else Color.Black
+    // On the accent, marks in black on a dark theme and in white on a light one.
+    val mono = if (colours.background.luminance() < 0.5f) Color.Black else Color.White
     fun ink(name: String) = if (colourful) null else inked(mono, inkingOf(name))
     fun ground(colour: Color) = if (colourful) colour else colours.primary
     FlowRow(
@@ -271,13 +271,14 @@ private fun RatingRow(media: MediaInfo, colourful: Boolean) {
             if (drawing != null) {
                 RatingShield(
                     spoken = said,
+                    named = boardOf(media.age),
                     value = media.ageLevel.trim(),
                     tall = tall,
                     ground = ground(Color.Transparent),
                     inset = 0.dp,
                 ) { BoardPlate(drawing, ink(media.age)) }
             } else {
-                RatingShield(spoken = said, value = said, tall = tall)
+                RatingShield(spoken = said, named = said, value = said, tall = tall)
             }
         }
         media.ratings.forEach { entry ->
@@ -286,6 +287,7 @@ private fun RatingRow(media: MediaInfo, colourful: Boolean) {
             val mark = RATING_MARKS[entry.source]
             RatingShield(
                 spoken = "$name $value".trim(),
+                named = name,
                 value = value,
                 tall = tall,
                 ground = ground(mark?.ground ?: colours.surfaceContainerHigh),
@@ -303,6 +305,7 @@ private fun RatingRow(media: MediaInfo, colourful: Boolean) {
             // says it is theirs and not a house's.
             RatingShield(
                 spoken = "${stringResource(R.string.live_rating_mine)} $value",
+                named = stringResource(R.string.live_rating_mine),
                 value = value,
                 tall = tall,
                 ground = colours.primary,
@@ -311,6 +314,7 @@ private fun RatingRow(media: MediaInfo, colourful: Boolean) {
         if (media.top250 > 0) {
             RatingShield(
                 spoken = stringResource(R.string.live_rating_top250, media.top250),
+                named = "IMDb Top 250",
                 value = "#${media.top250}",
                 tall = tall,
                 ground = ground(TOP250.ground),
@@ -338,6 +342,14 @@ private val RATING_MARKS = mapOf(
 )
 
 private val TOP250 = HouseMark(R.drawable.rating_top250, Color(0xFFF5C518))
+
+/** The board an age rating's mark is from, by its name ("fsk12" is the FSK's). */
+private fun boardOf(age: String): String = when {
+    age.startsWith("fsk") -> "FSK"
+    age.startsWith("mpa_") -> "MPA"
+    age.startsWith("tv_") -> "TV Parental Guidelines"
+    else -> "BBFC"
+}
 
 /**
  * The age ratings there is a drawing of, by the name the add-on gives the
@@ -388,13 +400,14 @@ private fun sourceName(entry: SourceRating): String =
  * side stands alone.
  *
  * Heard as [spoken] and nothing else - "IMDb 8.5" rather than a bare "8.5"
- * with nothing to say what it is. A tap - or a long press - shows the same
- * words over it for a moment, for a mark the reader does not know.
+ * with nothing to say what it is. A tap - or a long press - shows over it
+ * for a moment whose it is, [named], for a mark the reader does not know.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RatingShield(
     spoken: String,
+    named: String,
     value: String,
     tall: Dp,
     ground: Color = Color.Transparent,
@@ -405,7 +418,7 @@ private fun RatingShield(
     val scope = rememberCoroutineScope()
     TooltipBox(
         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(spoken) } },
+        tooltip = { PlainTooltip { Text(named) } },
         state = told,
     ) {
         Shield(spoken, value, tall, ground, inset, side) { scope.launch { told.show() } }

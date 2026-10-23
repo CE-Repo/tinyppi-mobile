@@ -216,24 +216,24 @@ class LiveCardsTest {
         assertEquals(true, holds("TVDB 7.9", accent))
         // A source with no drawing: its letter on the accent too.
         assertEquals(true, holds("Filmaffinity 7.0", accent))
-        // The marks in black on the light theme.
-        assertEquals(true, holds("Metacritic 7.4", Color.Black))
-        assertEquals(false, holds("Metacritic 7.4", Color.White))
+        // The marks in white on the light theme.
+        assertEquals(true, holds("Metacritic 7.4", Color.White))
+        assertEquals(false, holds("Metacritic 7.4", Color.Black))
     }
 
     // Drawn for real, on the dark theme.
     @Test
     @Config(qualifiers = "+night")
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    fun `on the dark theme the marks on the accent are white`() {
+    fun `on the dark theme the marks on the accent are black`() {
         fake.settings.value = fake.settings.value.copy(colourfulRatings = false)
         fake.playing(told.copy(media = told.media.copy(ratings = listOf(SourceRating("metacritic", 7.4, 0)))))
         showLive()
         val pixels = rule.onNodeWithContentDescription("Metacritic 7.4").captureToImage().toPixelMap().let { map ->
             (0 until map.width).flatMap { x -> (0 until map.height).map { y -> map[x, y] } }
         }
-        assertEquals(true, pixels.any { it.red > 0.97f && it.green > 0.97f && it.blue > 0.97f })
-        assertEquals(false, pixels.any { it.red < 0.03f && it.green < 0.03f && it.blue < 0.03f })
+        // The dark theme's own greys are never black: black is the mark's.
+        assertEquals(true, pixels.any { it.red < 0.03f && it.green < 0.03f && it.blue < 0.03f })
     }
 
     @Test
@@ -347,13 +347,15 @@ class LiveCardsTest {
         assertEquals(heights.map { heights.first() }, heights)
         assertEquals(24f * context.resources.displayMetrics.density, heights.first(), 0.5f)
         assertEquals(false, seen("8.5"))
-        // A tap on one shows its words over it: the house a mark is from.
-        assertEquals(false, seen("Filmaffinity 8.9"))
+        // A tap on one shows over it the house a mark is from, and not
+        // what it gave: that stands on the shield already.
+        assertEquals(false, seen("Filmaffinity"))
         rule.onNodeWithContentDescription("Filmaffinity 8.9").performClick()
-        rule.until { seen("Filmaffinity 8.9") }
+        rule.until { seen("Filmaffinity") }
+        assertEquals(false, seen("Filmaffinity 8.9"))
         // And only for a moment.
         rule.mainClock.advanceTimeBy(5_000)
-        rule.until { !seen("Filmaffinity 8.9") }
+        rule.until { !seen("Filmaffinity") }
         // The ratings stand under the plot, the age rating first: on the
         // first line, before the first score.
         val plot = rule.onNodeWithText("Paul joins the Fremen.").fetchSemanticsNode().boundsInRoot
