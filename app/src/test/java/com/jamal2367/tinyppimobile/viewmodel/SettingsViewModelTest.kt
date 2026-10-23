@@ -58,7 +58,6 @@ class SettingsViewModelTest {
         vm.setVolumeKeys(false)
         vm.setShowArtwork(false)
         vm.setShowChapters(false)
-        vm.setColourfulRatings(false)
         vm.setAdaptiveColor(false)
         vm.setAdaptiveColorIntensity(0.7f)
         vm.setTabHidden(TopLevelDestination.entries.first { it.canHide }, true)
@@ -66,7 +65,7 @@ class SettingsViewModelTest {
         Robo.until {
             val s = vm.state.value.settings
             s.secondary.host == "b" && s.connectionMode == ConnectionMode.PRIMARY_ONLY && s.themeMode == ThemeMode.DARK &&
-                !s.liveUpdates && s.pollIntervalSeconds == 5 && s.keepScreenOn && !s.volumeKeys && !s.showArtwork && !s.showChapters && !s.colourfulRatings &&
+                !s.liveUpdates && s.pollIntervalSeconds == 5 && s.keepScreenOn && !s.volumeKeys && !s.showArtwork && !s.showChapters &&
                 !s.adaptiveColor && s.adaptiveColorIntensity == 0.7f && s.hiddenTabs.size == 1
         }
 

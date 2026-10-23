@@ -129,12 +129,6 @@ data class AppSettings(
      */
     val showChapters: Boolean = true,
     /**
-     * Whether the rating badges wear each service's colours, or all stand
-     * on the app's accent. On by default: a mark is told apart by
-     * its colour before its shape.
-     */
-    val colourfulRatings: Boolean = true,
-    /**
      * Whether the app paints itself in the colour of what is playing.
      *
      * On by default, and read off the poster - so it follows [showArtwork]:

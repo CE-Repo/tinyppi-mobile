@@ -155,21 +155,18 @@ class LiveCardsTest {
     // Drawn for real: the colours are read off the pixels.
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    fun `the rating badges wear their houses' colours, or the accent where the reader asked`() {
+    fun `the rating badges wear their houses' colours`() {
         fun pixels(said: String) = rule.onNodeWithContentDescription(said).captureToImage().toPixelMap().let { map ->
             (0 until map.width).flatMap { x -> (0 until map.height).map { y -> map[x, y] } }
         }
         fun near(a: Color, b: Color) =
             maxOf(kotlin.math.abs(a.red - b.red), kotlin.math.abs(a.green - b.green), kotlin.math.abs(a.blue - b.blue)) < 0.04f
         fun holds(said: String, colour: Color) = pixels(said).any { near(it, colour) }
-        val mine = "${str(R.string.live_rating_mine)} 9"
         // Each house's own colour, as the shields draw it.
         val houses = mapOf(
             "FSK 12" to Color(0xFF00A651),
             "Metacritic 7.4" to Color(0xFF66CC33),
-            // White lines on its purple: only the white is inked.
             "Trakt 8.8" to Color(0xFF9F42C6),
-            // Inked as it is red: the tomato, not its leaf.
             "Rotten Tomatoes 9.1" to Color(0xFFF9D320),
             str(R.string.live_rating_top250, 17) to Color(0xFFF5C518),
         )
@@ -193,47 +190,11 @@ class LiveCardsTest {
             ),
         )
         showLive()
+        letOut()
         houses.forEach { (said, colour) -> assertEquals(said, true, holds(said, colour)) }
         // IMDb's yellow is a thin line on a dark ground of its own.
         assertEquals(true, holds("IMDb 8.5", Color(0xFF121212)))
         assertEquals(true, holds("TVDB 7.9", Color(0xFF555555)))
-        // The reader's own stands on the accent either way: its ground's
-        // colour, left of the heart, is the accent's.
-        val accent = rule.onNodeWithContentDescription(mine).captureToImage().toPixelMap().let { it[2, it.height / 2] }
-
-        // On the accent: no house's colour left, the accent behind every one.
-        fake.settings.value = fake.settings.value.copy(colourfulRatings = false)
-        rule.waitForIdle()
-        houses.forEach { (said, colour) ->
-            assertEquals(said, false, holds(said, colour))
-            assertEquals(said, true, holds(said, accent))
-        }
-        assertEquals(true, holds(mine, accent))
-        // IMDb's dark ground, near the black its mark is now inked in: the
-        // accent stands behind it.
-        assertEquals(true, holds("IMDb 8.5", accent))
-        // TheTVDB's letters inked, its grey plate left out for the accent.
-        assertEquals(true, holds("TVDB 7.9", accent))
-        // A source with no drawing: its letter on the accent too.
-        assertEquals(true, holds("Filmaffinity 7.0", accent))
-        // The marks in white on the light theme.
-        assertEquals(true, holds("Metacritic 7.4", Color.White))
-        assertEquals(false, holds("Metacritic 7.4", Color.Black))
-    }
-
-    // Drawn for real, on the dark theme.
-    @Test
-    @Config(qualifiers = "+night")
-    @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    fun `on the dark theme the marks on the accent are black`() {
-        fake.settings.value = fake.settings.value.copy(colourfulRatings = false)
-        fake.playing(told.copy(media = told.media.copy(ratings = listOf(SourceRating("metacritic", 7.4, 0)))))
-        showLive()
-        val pixels = rule.onNodeWithContentDescription("Metacritic 7.4").captureToImage().toPixelMap().let { map ->
-            (0 until map.width).flatMap { x -> (0 until map.height).map { y -> map[x, y] } }
-        }
-        // The dark theme's own greys are never black: black is the mark's.
-        assertEquals(true, pixels.any { it.red < 0.03f && it.green < 0.03f && it.blue < 0.03f })
     }
 
     @Test
@@ -324,6 +285,7 @@ class LiveCardsTest {
             ),
         )
         showLive()
+        letOut()
         rule.onNodeWithText(str(R.string.live_plot)).assertIsDisplayed()
         // Each pill is heard as one sentence; the drawing and the figures are not heard apart.
         for (said in listOf(
@@ -358,14 +320,14 @@ class LiveCardsTest {
         rule.until { !seen("Filmaffinity") }
         // The ratings stand under the plot, the age rating first: on the
         // first line, before the first score.
-        val plot = rule.onNodeWithText("Paul joins the Fremen.").fetchSemanticsNode().boundsInRoot
+        val plot = rule.onNodeWithText("Paul joins the Fremen.", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         val imdb = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot
         val age = rule.onNodeWithContentDescription("FSK 12").fetchSemanticsNode().boundsInRoot
         assertEquals(true, age.top >= plot.bottom)
         // The slogan and the plot centred: a line alone stands in the middle
         // of the card, which is the middle of the screen.
         val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
-        val slogan = rule.onNodeWithText("Long live the fighters.").fetchSemanticsNode().boundsInRoot
+        val slogan = rule.onNodeWithText("Long live the fighters.", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         assertEquals(screen.center.x, slogan.center.x, 1f)
         assertEquals(screen.center.x, plot.center.x, 1f)
         // Right over the plot, a few dp over it: the two read as one text.
@@ -402,6 +364,7 @@ class LiveCardsTest {
         val density = context.resources.displayMetrics.density
         fun shieldOf(said: String, age: String, level: String, plateWidth: Float) {
             fake.playing(told.copy(media = MediaInfo(plot = "Plot.", mpaa = said, age = age, ageLevel = level)))
+            letOut()
             rule.until { rule.onAllNodesWithContentDescription(said).fetchSemanticsNodes().isNotEmpty() }
             val shield = rule.onNodeWithContentDescription(said).fetchSemanticsNode().boundsInRoot
             assertEquals(26f * density, shield.height, 0.5f)
@@ -422,6 +385,7 @@ class LiveCardsTest {
         )
         fake.playing(told.copy(media = told.media.copy(ratings = sources.map { (source, _) -> SourceRating(source, 7.5) })))
         showLive()
+        letOut()
         val heights = sources.map { (_, name) ->
             rule.onNodeWithContentDescription("$name 7.5").fetchSemanticsNode().boundsInRoot.height
         }
@@ -444,21 +408,23 @@ class LiveCardsTest {
             ),
         )
         showLive()
+        letOut()
         // Under the plot and over the ratings, cut with an ellipsis, and
         // centred: it stands in the middle of the card, which is the middle
         // of the screen.
         val cast = rule.onNodeWithText(
             "${str(R.string.live_credit_cast)}\nTimothée Chalamet, Zendaya, Rebecca Ferguson, Javier Bardem, Josh Brolin, …",
+            useUnmergedTree = true,
         ).fetchSemanticsNode().boundsInRoot
-        val plot = rule.onNodeWithText("Paul joins the Fremen.").fetchSemanticsNode().boundsInRoot
+        val plot = rule.onNodeWithText("Paul joins the Fremen.", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         val imdb = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot
         // The director first, under its heading, then the cast.
-        val director = rule.onNodeWithText("${str(R.string.live_credit_director)}\nDenis Villeneuve")
+        val director = rule.onNodeWithText("${str(R.string.live_credit_director)}\nDenis Villeneuve", useUnmergedTree = true)
             .fetchSemanticsNode().boundsInRoot
         assertEquals(true, director.top >= plot.bottom)
         assertEquals(true, cast.top >= director.bottom)
         // Then the ratings, under a heading of their own, centred like the rest.
-        val heading = rule.onNodeWithText(str(R.string.live_ratings)).fetchSemanticsNode().boundsInRoot
+        val heading = rule.onNodeWithText(str(R.string.live_ratings), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         assertEquals(true, heading.top >= cast.bottom)
         assertEquals(true, imdb.top >= heading.bottom)
         val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
@@ -506,6 +472,15 @@ class LiveCardsTest {
 
     private fun foldable(label: Int) = rule.onAllNodes(folds(label)).fetchSemanticsNodes().isNotEmpty()
 
+    /** Lets out a folded overview - its credits and ratings - where it is folded. */
+    private fun letOut() {
+        rule.waitForIdle()
+        if (foldable(R.string.live_plot_more)) {
+            rule.onNode(folds(R.string.live_plot_more)).performClick()
+            rule.until { foldable(R.string.live_plot_less) }
+        }
+    }
+
     /** Where [text] is drawn, on its own rather than as part of the plot it folds with. */
     private fun bounds(text: String) = rule.onNodeWithText(text, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
 
@@ -525,7 +500,9 @@ class LiveCardsTest {
         rule.onNode(folds(R.string.live_plot_more)).performClick()
         rule.until { foldable(R.string.live_plot_less) }
         assertEquals(true, bounds(long).height > cut.height * 2)
-        rule.onNode(folds(R.string.live_plot_less)).performClick()
+        // A tap on the plot itself: the middle of all it lets out may be a
+        // rating's shield, whose tap is its own.
+        rule.onNodeWithText(long, useUnmergedTree = true).performClick()
         rule.until { foldable(R.string.live_plot_more) }
         assertEquals(cut.height, bounds(long).height, 0.5f)
 
@@ -536,8 +513,8 @@ class LiveCardsTest {
         fake.playing(told.copy(media = told.media.copy(plot = other)))
         rule.until { seen(other) && foldable(R.string.live_plot_more) }
 
-        // A short one is nothing to tap.
-        fake.playing(told)
+        // A short one with nothing under it is nothing to tap.
+        fake.playing(told.copy(media = MediaInfo(plot = "Paul joins the Fremen.")))
         rule.until { seen("Paul joins the Fremen.") }
         assertEquals(false, foldable(R.string.live_plot_more))
         assertEquals(false, foldable(R.string.live_plot_less))
@@ -581,10 +558,17 @@ class LiveCardsTest {
         rule.onNodeWithText(credit, useUnmergedTree = true).performClick()
         rule.until { !seen(credit) && !seen(str(R.string.live_ratings)) }
 
-        // Under a plot that fits, they stand as they are.
+        // Under a plot that fits they fold all the same: there is more to
+        // show than its lines.
         fake.playing(told.copy(media = told.media.copy(cast = listOf("Timothée Chalamet", "Zendaya"))))
+        rule.until { seen("Paul joins the Fremen.") && foldable(R.string.live_plot_more) }
+        assertEquals(false, seen(credit))
+        rule.onNode(folds(R.string.live_plot_more)).performClick()
         rule.until { seen(credit) }
-        assertEquals(false, foldable(R.string.live_plot_more))
+        // A plot that fits with nothing under it is no button.
+        fake.playing(told.copy(media = told.media.copy(cast = emptyList(), directors = emptyList(), ratings = emptyList(),
+            userRating = 0, top250 = 0, mpaa = "")))
+        rule.until { !foldable(R.string.live_plot_more) && !foldable(R.string.live_plot_less) }
     }
 
     @Test

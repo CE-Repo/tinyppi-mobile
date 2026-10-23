@@ -42,9 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ColorMatrix
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -52,6 +49,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -92,25 +90,27 @@ import java.util.Locale
  * own: short facts about the film, taken in at a glance.
  */
 @Composable
-internal fun PlotCard(media: MediaInfo, colourfulRatings: Boolean) {
+internal fun PlotCard(media: MediaInfo) {
     SectionCard(title = stringResource(R.string.live_plot), foldId = FOLD_PLOT) {
         if (media.hasPlot) {
-            // A long plot is cut to a few lines, and a tap on it lets the
-            // rest out and takes it back. It folds only where there is more
-            // to show, and a new plot starts cut again. The credits and the
-            // ratings hang on the plot's end: they come out with the rest of
-            // a cut plot, and stand under one that fits. To a screen reader
-            // it is a button that says what a tap does; a tap on a rating's
-            // shield is the shield's.
+            // The card starts folded: the plot cut to a few lines, and the
+            // credits and the ratings hanging on its end hidden under it. A
+            // tap on it lets all of it out, and another folds it again. It
+            // folds wherever there is more than those lines to show - a plot
+            // that runs past them, or credits or ratings under it - and a new
+            // plot starts folded again. To a screen reader it is a button
+            // that says what a tap does; a tap on a rating's shield is the
+            // shield's.
             var open by rememberSaveable(media.plot) { mutableStateOf(false) }
             var cut by remember(media.plot) { mutableStateOf(false) }
+            val folds = cut || media.hasCredits || media.hasRatings
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(
-                        // Only one with more to show is a button at all: one
-                        // that fits reads as its plot and its credits.
-                        if (open || cut) {
+                        // Only one with more to show is a button at all: a
+                        // plot that fits with nothing under it reads as text.
+                        if (folds) {
                             Modifier
                                 .clip(FOLD_SHAPE)
                                 .clickable(
@@ -145,17 +145,19 @@ internal fun PlotCard(media: MediaInfo, colourfulRatings: Boolean) {
                     textAlign = TextAlign.Center,
                     maxLines = if (open) Int.MAX_VALUE else PLOT_LINES,
                     overflow = TextOverflow.Ellipsis,
-                    onTextLayout = { cut = it.hasVisualOverflow },
+                    // Measured folded: an open plot no longer runs past its
+                    // lines, but is still one that folds.
+                    onTextLayout = { if (!open) cut = it.hasVisualOverflow },
                 )
-                if (open || !cut) {
+                if (open) {
                     if (media.hasCredits) Credits(media, Modifier.padding(top = 12.dp))
-                    if (media.hasRatings) Ratings(media, colourfulRatings, Modifier.padding(top = 16.dp))
+                    if (media.hasRatings) Ratings(media, Modifier.padding(top = 16.dp))
                 }
             }
         } else {
             // Without a plot, the credits and the ratings on their own.
             if (media.hasCredits) Credits(media, Modifier.align(Alignment.CenterHorizontally))
-            if (media.hasRatings) Ratings(media, colourfulRatings, Modifier.padding(top = RATINGS_GAP))
+            if (media.hasRatings) Ratings(media, Modifier.padding(top = RATINGS_GAP))
         }
     }
 }
@@ -165,7 +167,7 @@ internal fun PlotCard(media: MediaInfo, colourfulRatings: Boolean) {
  * under the cast as the cast is under the director.
  */
 @Composable
-private fun Ratings(media: MediaInfo, colourful: Boolean, modifier: Modifier) {
+private fun Ratings(media: MediaInfo, modifier: Modifier) {
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -178,7 +180,7 @@ private fun Ratings(media: MediaInfo, colourful: Boolean, modifier: Modifier) {
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
         )
-        RatingRow(media, colourful)
+        RatingRow(media)
     }
 }
 
@@ -236,19 +238,13 @@ private fun creditLine(label: String, names: String, colors: ColorScheme): Annot
  * serves: the houses' own logos where there is one, the rest drawn by
  * `tools/gen_rating_marks.py` in script.tinyppi - and
  * says in words what it shows, since a screen reader can say nothing of a
- * drawing. Not [colourful] - the reader's choice in the settings - every one
- * of them stands on the app's accent instead, as the reader's own heart
- * does, its mark in the accent's ink on it (see [inked]).
+ * drawing.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun RatingRow(media: MediaInfo, colourful: Boolean) {
+private fun RatingRow(media: MediaInfo) {
     val tall = badgeHeight()
     val colours = MaterialTheme.colorScheme
-    // On the accent, marks in black on a dark theme and in white on a light one.
-    val mono = if (colours.background.luminance() < 0.5f) Color.Black else Color.White
-    fun ink(name: String) = if (colourful) null else inked(mono, inkingOf(name))
-    fun ground(colour: Color) = if (colourful) colour else colours.primary
     FlowRow(
         // Every line of them centred, the last one too.
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
@@ -274,9 +270,8 @@ private fun RatingRow(media: MediaInfo, colourful: Boolean) {
                     named = boardOf(media.age),
                     value = media.ageLevel.trim(),
                     tall = tall,
-                    ground = ground(Color.Transparent),
                     inset = 0.dp,
-                ) { BoardPlate(drawing, ink(media.age)) }
+                ) { BoardPlate(drawing) }
             } else {
                 RatingShield(spoken = said, named = said, value = said, tall = tall)
             }
@@ -290,13 +285,9 @@ private fun RatingRow(media: MediaInfo, colourful: Boolean) {
                 named = name,
                 value = value,
                 tall = tall,
-                ground = ground(mark?.ground ?: colours.surfaceContainerHigh),
+                ground = mark?.ground ?: colours.surfaceContainerHigh,
             ) {
-                if (mark != null) {
-                    DrawnMark(mark.drawing, ink(entry.source))
-                } else {
-                    LetterMark(name.take(1), if (colourful) colours.onSurfaceVariant else mono)
-                }
+                if (mark != null) DrawnMark(mark.drawing) else LetterMark(name.take(1))
             }
         }
         if (media.userRating > 0) {
@@ -309,7 +300,7 @@ private fun RatingRow(media: MediaInfo, colourful: Boolean) {
                 value = value,
                 tall = tall,
                 ground = colours.primary,
-            ) { HeartMark(if (colourful) colours.onPrimary else mono) }
+            ) { HeartMark() }
         }
         if (media.top250 > 0) {
             RatingShield(
@@ -317,8 +308,8 @@ private fun RatingRow(media: MediaInfo, colourful: Boolean) {
                 named = "IMDb Top 250",
                 value = "#${media.top250}",
                 tall = tall,
-                ground = ground(TOP250.ground),
-            ) { DrawnMark(TOP250.drawing, ink("top250")) }
+                ground = TOP250.ground,
+            ) { DrawnMark(TOP250.drawing) }
         }
     }
 }
@@ -472,20 +463,21 @@ private fun Shield(
 }
 
 /**
- * A badge heard as [spoken] and as nothing it holds. Built outside the
- * composition, where a lambda is just a lambda and not one more thing for the
- * Compose compiler to remember against its argument.
+ * A badge heard as [spoken] and as nothing it holds - on its own, not as
+ * part of the plot it folds with. Built outside the composition, where a
+ * lambda is just a lambda and not one more thing for the Compose compiler to
+ * remember against its argument.
  */
-private fun Modifier.heardAs(spoken: String): Modifier = clearAndSetSemantics { contentDescription = spoken }
+private fun Modifier.heardAs(spoken: String): Modifier =
+    semantics(mergeDescendants = true) {}.clearAndSetSemantics { contentDescription = spoken }
 
 /** A house's drawing, as tall as a line of the shield and as wide as it is drawn. */
 @Composable
-private fun DrawnMark(drawing: Int, ink: ColorFilter?) {
+private fun DrawnMark(drawing: Int) {
     val painter = painterResource(drawing)
     Image(
         painter = painter,
         contentDescription = null,
-        colorFilter = ink,
         modifier = Modifier
             .height(MARK)
             .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),
@@ -498,12 +490,11 @@ private fun DrawnMark(drawing: Int, ink: ColorFilter?) {
  * shield's edges as a house's ground does.
  */
 @Composable
-private fun BoardPlate(drawing: Int, ink: ColorFilter?) {
+private fun BoardPlate(drawing: Int) {
     val painter = painterResource(drawing)
     Image(
         painter = painter,
         contentDescription = null,
-        colorFilter = ink,
         contentScale = ContentScale.FillBounds,
         modifier = Modifier
             .fillMaxHeight()
@@ -511,14 +502,14 @@ private fun BoardPlate(drawing: Int, ink: ColorFilter?) {
     )
 }
 
-/** A source there is no drawing of: its first letter in [colour] on the plate. */
+/** A source there is no drawing of: its first letter on the plate. */
 @Composable
-private fun LetterMark(letter: String, colour: Color) {
+private fun LetterMark(letter: String) {
     Text(
         text = letter,
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.ExtraBold,
-        color = colour,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
         modifier = Modifier
             .padding(horizontal = 4.dp)
@@ -526,77 +517,18 @@ private fun LetterMark(letter: String, colour: Color) {
     )
 }
 
-/** The heart the reader's own rating wears, in [tint] on the accent it is drawn on. */
+/** The heart the reader's own rating wears, on the accent it is drawn on. */
 @Composable
-private fun HeartMark(tint: Color) {
+private fun HeartMark() {
     Icon(
         imageVector = Icons.Rounded.Favorite,
         contentDescription = null,
-        tint = tint,
+        tint = MaterialTheme.colorScheme.onPrimary,
         modifier = Modifier
             .padding(horizontal = 4.dp)
             .size(11.dp),
     )
 }
-
-/**
- * A mark in one colour, [ink], for a shield on the accent. What is dark in a
- * mark - the letters on IMDb's plate, the "m" on Metacritic's circle, TMDb's
- * plate - is left out for the accent to show through, and the rest drawn in
- * the ink, by how its [inking] reads a pixel.
- */
-private fun inked(ink: Color, inking: FloatArray): ColorFilter = ColorFilter.colorMatrix(
-    ColorMatrix(
-        floatArrayOf(
-            0f, 0f, 0f, 0f, ink.red * 255f,
-            0f, 0f, 0f, 0f, ink.green * 255f,
-            0f, 0f, 0f, 0f, ink.blue * 255f,
-        ) + inking,
-    ),
-)
-
-/**
- * How opaque the ink is for a pixel of a mark, as a row of a colour matrix
- * over its red, green, blue and alpha: as it is light past a fifth of the way
- * for most marks; past seven tenths for one drawn white on a colour (see
- * [LIGHT_INKED]), or plate and letters would be one, and past half for
- * TheTVDB's letters on its grey; for Rotten Tomatoes as it is red, so its
- * leaf stays apart from the tomato; and for Metacritic's black mark as it
- * is drawn at all. The same the dashboard inks with (the #ink filters in
- * its index.html).
- */
-private fun inkingOf(name: String): FloatArray = when {
-    name == "rottentomatoes" -> floatArrayOf(10f, 0f, 0f, 10f, -15f * 255f)
-    // Black on nothing: the whole of it.
-    name == "metacritic" -> floatArrayOf(0f, 0f, 0f, 1f, 0f)
-    // Green and white letters on a grey plate: the letters.
-    name == "tvdb" -> lightness(gain = 10f, from = 0.5f)
-    name in LIGHT_INKED -> lightness(gain = 10f, from = 0.7f)
-    else -> lightness(gain = 20f, from = 0.2f)
-}
-
-/**
- * Opaque as a pixel is light past [from], [gain] times as steeply - and only
- * where the mark itself is: a filter reads a pixel's colour without its
- * opacity, so a soft edge would otherwise be inked whole and a thin letter
- * grow into a block. The opacity, weighed as steeply, takes it back off.
- */
-private fun lightness(gain: Float, from: Float) =
-    floatArrayOf(0.2126f * gain, 0.7152f * gain, 0.0722f * gain, gain, -(from + 1f) * gain * 255f)
-
-/**
- * The marks drawn in white on a colour: Trakt's tick on its purple, the
- * Popcornmeter's stripes and popcorn on its red tub, Roger Ebert's and
- * MyAnimeList's names on theirs, and the age ratings whose level's
- * colour carries its board's name in white. On the accent only their white
- * is inked.
- */
-private val LIGHT_INKED = setOf(
-    "trakt", "popcorn", "rogerebert", "myanimelist",
-    "fsk12", "fsk16", "fsk18",
-    "mpa_g", "mpa_r", "mpa_nc17", "tv_y", "tv_y7", "tv_g", "tv_ma",
-    "bbfc_u", "bbfc_12a", "bbfc_12", "bbfc_15", "bbfc_18", "bbfc_r18",
-)
 
 /** The air over the ratings' heading, besides the card's own between its rows. */
 private val RATINGS_GAP = 6.dp
@@ -646,7 +578,6 @@ internal fun PlotCardPreview() {
                         cast = listOf("Timothée Chalamet", "Zendaya", "Rebecca Ferguson", "Javier Bardem", "Josh Brolin"),
                         castMore = true,
                     ),
-                    colourfulRatings = true,
                 )
             }
         }

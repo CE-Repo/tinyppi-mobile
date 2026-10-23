@@ -145,15 +145,16 @@ the track pickers and the VS10 conversions.
 Under the card of what is playing, the **Overview** card, all of it centred:
 the plot, with the slogan right over it where there is one, upright and set
 like a credit's heading so the two read as one text — most
-episodes carry a plot and no slogan; a long plot is cut to five lines, and a
-tap on it lets the rest out and another takes it back — and
+episodes carry a plot and no slogan — and
 hanging on the plot's end the director, then the cast, each its heading in
 bold on a line of its own centred over the names (every director, and the
 whole cast in billing order), left out where Kodi has none. The genre and
 the studio stand in the card above. Last, under the heading Ratings, every
-rating Kodi's library holds for the title, as a row of small shields. Under a
-cut plot the credits and the ratings stay hidden and come out with the rest
-of it; under one that fits they stand as they are. Each has its source's mark on the left, on a
+rating Kodi's library holds for the title, as a row of small shields. The
+card starts folded: the plot cut to five lines, and the credits and the
+ratings hidden under it. A tap on the plot lets all of it out, and another
+folds it again; only a plot that fits with nothing under it has nothing to
+fold. Each has its source's mark on the left, on a
 ground of the source's colour, instead of its name, and what it gave on the
 right — the same marks and shields the add-on's dashboard draws: first the
 age rating, where the add-on could place it, as a shield like the others:
