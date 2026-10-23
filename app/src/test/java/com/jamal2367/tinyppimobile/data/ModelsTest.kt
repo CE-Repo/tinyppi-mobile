@@ -143,7 +143,6 @@ class ModelsTest {
         assertFalse(MediaInfo().hasCredits)
         // Any one list of names is credits, and draws the card on its own.
         for (credited in listOf(
-            MediaInfo(genres = listOf("Drama")),
             MediaInfo(directors = listOf("Denis Villeneuve")),
             MediaInfo(cast = listOf("Zendaya")),
             MediaInfo(studios = listOf("A24")),

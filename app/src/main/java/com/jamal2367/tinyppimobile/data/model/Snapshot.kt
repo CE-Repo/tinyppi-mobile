@@ -306,15 +306,18 @@ data class MediaInfo(
     /** The place in the IMDb Top 250; 0 for none. */
     val top250: Int = 0,
     /**
-     * Who made it, as the add-on splits Kodi's readings into names: the
-     * genres, the directors, the cast's leads in billing order and the
-     * studios. An episode's genres and studios are its show's, and its cast
-     * its own guests and then the show's.
+     * Who made it, as the add-on splits Kodi's readings into names and cuts
+     * them: the first directors, the cast's leads in billing order and the
+     * first studios, each with whether there are more. An episode's studios
+     * are its show's, and its cast its own guests and then the show's. Its
+     * genre is [genre], for the card above.
      */
-    val genres: List<String> = emptyList(),
     val directors: List<String> = emptyList(),
+    @SerialName("directors_more") val directorsMore: Boolean = false,
     val cast: List<String> = emptyList(),
+    @SerialName("cast_more") val castMore: Boolean = false,
     val studios: List<String> = emptyList(),
+    @SerialName("studios_more") val studiosMore: Boolean = false,
 ) {
     /**
      * Whether there is a plot to print. A slogan goes only with one: on its
@@ -329,7 +332,7 @@ data class MediaInfo(
 
     /** Whether Kodi says who made the title in any of the ways it can. */
     val hasCredits: Boolean
-        get() = genres.isNotEmpty() || directors.isNotEmpty() || cast.isNotEmpty() || studios.isNotEmpty()
+        get() = directors.isNotEmpty() || cast.isNotEmpty() || studios.isNotEmpty()
 
     /** Whether the plot card is drawn: for a plot, for ratings, for credits. */
     val showsPlotCard: Boolean

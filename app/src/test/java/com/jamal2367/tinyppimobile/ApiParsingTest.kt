@@ -187,8 +187,8 @@ class ApiParsingTest {
             Snapshot.serializer(),
             """{"playing":true,"media":{"ratings":[{"source":"imdb","rating":8.5,"votes":612345},
                {"source":"tmdb","rating":8.2,"votes":0}],"mpaa":"FSK 12","age":"fsk12",
-               "age_level":"12","userrating":9,"top250":27,"genres":["Science Fiction","Adventure"],
-               "directors":["Denis Villeneuve"],"cast":["Timothée Chalamet","Zendaya"],"studios":[]}}""",
+               "age_level":"12","userrating":9,"top250":27,"directors":["Denis Villeneuve"],
+               "directors_more":false,"cast":["Timothée Chalamet","Zendaya"],"cast_more":true,"studios":[]}}""",
         )
         assertEquals(listOf("imdb", "tmdb"), snapshot.media.ratings.map { it.source })
         assertEquals(8.5, snapshot.media.ratings[0].rating, 0.0)
@@ -196,10 +196,13 @@ class ApiParsingTest {
         assertEquals("FSK 12", snapshot.media.mpaa)
         assertEquals("fsk12", snapshot.media.age)
         assertEquals("12", snapshot.media.ageLevel)
-        assertEquals(listOf("Science Fiction", "Adventure"), snapshot.media.genres)
         assertEquals(listOf("Denis Villeneuve"), snapshot.media.directors)
+        assertEquals(false, snapshot.media.directorsMore)
         assertEquals(listOf("Timothée Chalamet", "Zendaya"), snapshot.media.cast)
+        assertEquals(true, snapshot.media.castMore)
+        // One the add-on left out is none, and not cut.
         assertEquals(emptyList<String>(), snapshot.media.studios)
+        assertEquals(false, snapshot.media.studiosMore)
         assertEquals(9, snapshot.media.userRating)
         assertEquals(27, snapshot.media.top250)
     }

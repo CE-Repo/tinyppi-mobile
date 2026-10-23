@@ -155,10 +155,11 @@ plain plate — with how many voted, your own rating behind a heart and the
 place in the IMDb Top 250. A screen reader hears each shield as one sentence ("IMDb
 8.5, 612,345 votes"). An episode is rated on its own and carries its show's
 age rating. Under the ratings, past another rule, the credits: a centred
-line each with its name in bold and then the names — the genres, the
-director, the cast (its first eight, in billing order) and the studio — each
-named for one or for more than one ("Studio", "Studios") and left out where
-Kodi has none. An episode's genres and studio are its show's. The slogan only
+line each with its name in bold and then the names — the director (up to
+three), the cast (its first five, in billing order) and the studio (up to
+four), each ending in "…" where there are more — named for one or for more
+than one ("Studio", "Studios") and left out where Kodi has none; the genre
+stands in the card above. An episode's studio is its show's. The slogan only
 ever stands above a plot: without a plot the card shows the ratings and the
 credits alone, and with none of them it is left out, as it is for a file that
 is not in the library. It folds, moves and comes off the screen like

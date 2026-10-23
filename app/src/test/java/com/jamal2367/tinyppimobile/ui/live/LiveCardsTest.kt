@@ -320,20 +320,21 @@ class LiveCardsTest {
             told.copy(
                 media = told.media.copy(
                     ratings = listOf(SourceRating("imdb", 8.5, 0)),
-                    genres = listOf("Science Fiction", "Adventure"),
+                    genre = "Science Fiction",
                     directors = listOf("Denis Villeneuve"),
-                    cast = listOf("Timothée Chalamet", "Zendaya"),
+                    cast = listOf("Timothée Chalamet", "Zendaya", "Rebecca Ferguson", "Javier Bardem", "Josh Brolin"),
+                    castMore = true,
                     studios = listOf("Legendary Pictures"),
                 ),
             ),
         )
         showLive()
         // In the order they are asked about, each named for one or for more
-        // than one, and under the ratings.
+        // than one, and under the ratings; a list the add-on cut ends in an
+        // ellipsis. The genre is the card above's alone.
         val lines = listOf(
-            "${named(R.plurals.live_credit_genres, 2)} Science Fiction, Adventure",
             "${named(R.plurals.live_credit_directors, 1)} Denis Villeneuve",
-            "${str(R.string.live_credit_cast)} Timothée Chalamet, Zendaya",
+            "${str(R.string.live_credit_cast)} Timothée Chalamet, Zendaya, Rebecca Ferguson, Javier Bardem, Josh Brolin, …",
             "${named(R.plurals.live_credit_studios, 1)} Legendary Pictures",
         )
         val boxes = lines.map { rule.onNodeWithText(it).fetchSemanticsNode().boundsInRoot }
@@ -344,21 +345,27 @@ class LiveCardsTest {
         // middle of the screen.
         val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
         boxes.forEach { assertEquals(screen.center.x, it.center.x, 1f) }
+        assertEquals(1, rule.onAllNodesWithText("Science Fiction", substring = true).fetchSemanticsNodes().size)
 
-        // One genre, two directors and studios, no cast: that line left out.
+        // Three directors and more, two studios, no cast: that line left out.
+        // One studio with more behind it is named for more.
         fake.playing(
             told.copy(
                 media = told.media.copy(
-                    genres = listOf("Drama"),
-                    directors = listOf("Joel Coen", "Ethan Coen"),
+                    directors = listOf("Joel Coen", "Ethan Coen", "Somebody"),
+                    directorsMore = true,
                     studios = listOf("A24", "Working Title"),
                 ),
             ),
         )
-        rule.until { seen("${named(R.plurals.live_credit_genres, 1)} Drama") }
-        assertEquals(true, seen("${named(R.plurals.live_credit_directors, 2)} Joel Coen, Ethan Coen"))
+        rule.until { seen("${named(R.plurals.live_credit_directors, 4)} Joel Coen, Ethan Coen, Somebody, …") }
         assertEquals(true, seen("${named(R.plurals.live_credit_studios, 2)} A24, Working Title"))
-        assertEquals(false, seen(str(R.string.live_credit_cast)))
+        assertEquals(
+            true,
+            rule.onAllNodesWithText("${str(R.string.live_credit_cast)} ", substring = true).fetchSemanticsNodes().isEmpty(),
+        )
+        fake.playing(told.copy(media = told.media.copy(studios = listOf("A24"), studiosMore = true)))
+        rule.until { seen("${named(R.plurals.live_credit_studios, 2)} A24, …") }
 
         // Ratings and credits with no plot: the rule between them still.
         fake.playing(told.copy(media = MediaInfo(mpaa = "FSK 16", age = "fsk16", ageLevel = "16", studios = listOf("A24"))))

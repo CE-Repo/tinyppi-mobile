@@ -14,6 +14,7 @@ import android.util.Log
 import androidx.core.graphics.createBitmap
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
@@ -73,9 +74,8 @@ object DemoServer {
     private const val DUNE_TOP250 = 27
     private const val DUNE_MINE = 9
 
-    /** Who made it, as the add-on sends it: the cast cut to its leads. */
+    /** Who made it, more of the cast than the add-on sends (see putNames). */
     private val DUNE_CREDITS = Credits(
-        genres = listOf("Science Fiction", "Adventure"),
         directors = listOf("Denis Villeneuve"),
         cast = listOf(
             "Timothée Chalamet", "Zendaya", "Rebecca Ferguson", "Javier Bardem", "Josh Brolin", "Austin Butler",
@@ -159,9 +159,8 @@ object DemoServer {
         val mine: Int = 0, val credits: Credits = Credits(),
     )
 
-    /** Who made a title: its genres, directors, cast and studios. */
+    /** Who made a title: its directors, cast and studios. */
     private class Credits(
-        val genres: List<String> = emptyList(),
         val directors: List<String> = emptyList(),
         val cast: List<String> = emptyList(),
         val studios: List<String> = emptyList(),
@@ -190,9 +189,11 @@ object DemoServer {
                 "built in the New Mexico desert. Years after Los Alamos, a closed security hearing turns " +
                 "his own past against him.",
             credits = Credits(
-                genres = listOf("Drama", "History"),
                 directors = listOf("Christopher Nolan"),
-                cast = listOf("Cillian Murphy", "Emily Blunt", "Matt Damon", "Robert Downey Jr.", "Florence Pugh"),
+                cast = listOf(
+                    "Cillian Murphy", "Emily Blunt", "Matt Damon", "Robert Downey Jr.", "Florence Pugh", "Josh Hartnett",
+                    "Casey Affleck",
+                ),
                 studios = listOf("Syncopy", "Atlas Entertainment"),
             ),
         ),
@@ -477,11 +478,10 @@ object DemoServer {
                 put("age_level", playingAgeLevel)
                 put("userrating", playingMine)
                 put("top250", playingTop250)
-                // Who made it, as lists of names.
-                putJsonArray("genres") { playingCredits.genres.forEach { add(it) } }
-                putJsonArray("directors") { playingCredits.directors.forEach { add(it) } }
-                putJsonArray("cast") { playingCredits.cast.forEach { add(it) } }
-                putJsonArray("studios") { playingCredits.studios.forEach { add(it) } }
+                // Who made it, cut as the add-on cuts it.
+                putNames("directors", playingCredits.directors, 3)
+                putNames("cast", playingCredits.cast, 5)
+                putNames("studios", playingCredits.studios, 4)
             }
             putJsonObject("controls") {
                 putJsonArray("audio") {
@@ -527,6 +527,12 @@ object DemoServer {
 
     private fun metaCells(kind: String, name: String, cells: List<String>) = buildJsonObject {
         put("kind", kind); put("name", name); put("cells", JsonArray(cells.map(::JsonPrimitive)))
+    }
+
+    /** A list of names as the add-on sends it: its first [limit], and whether it has more. */
+    private fun JsonObjectBuilder.putNames(key: String, names: List<String>, limit: Int) {
+        putJsonArray(key) { names.take(limit).forEach { add(it) } }
+        put("${key}_more", names.size > limit)
     }
 
     private fun track(index: Int, label: String) = buildJsonObject { put("index", index); put("label", label) }
@@ -694,10 +700,10 @@ object DemoServer {
                     // Rated on its own, with no count, and its show's age rating.
                     playingRatings = listOf(Triple("tvdb", show.rating, 0))
                     playingMpaa = "TV-MA"; playingAge = "tv_ma"; playingAgeLevel = "MA"; playingTop250 = 0; playingMine = 0
-                    // Its show's genre and studio, its own director, and its
-                    // guests before the show's cast.
+                    // Its show's studio, its own director, and its guests
+                    // before the show's cast.
                     playingCredits = Credits(
-                        genres = listOf("Drama"), directors = listOf("Alex Example"),
+                        directors = listOf("Alex Example"),
                         cast = listOf("Sam Guest", "Robin Lead", "Kim Second"), studios = listOf("Demo Studios"),
                     )
                     durationSeconds = 52 * 60; positionSeconds = 0.0

@@ -183,11 +183,13 @@ class DemoServerTest {
         assertEquals("FSK 12", rated["mpaa"]!!.jsonPrimitive.content)
         assertEquals("fsk12", rated["age"]!!.jsonPrimitive.content)
         assertEquals("12", rated["age_level"]!!.jsonPrimitive.content)
-        // And who made it, as lists of names.
+        // And who made it, cut as the add-on cuts it.
         assertEquals("Denis Villeneuve", rated["directors"]!!.jsonArray.single().jsonPrimitive.content)
-        assertEquals(8, rated["cast"]!!.jsonArray.size)
+        assertEquals(false, rated["directors_more"]!!.jsonPrimitive.boolean)
+        assertEquals(5, rated["cast"]!!.jsonArray.size)
+        assertEquals(true, rated["cast_more"]!!.jsonPrimitive.boolean)
         assertEquals("Legendary Pictures", rated["studios"]!!.jsonArray.single().jsonPrimitive.content)
-        assertEquals(2, rated["genres"]!!.jsonArray.size)
+        assertEquals(null, rated["genres"])
         assertEquals(9, rated["userrating"]!!.jsonPrimitive.int)
         assertEquals(27, rated["top250"]!!.jsonPrimitive.int)
         post("/api/play", """{"movieid":3,"resume":false}""")

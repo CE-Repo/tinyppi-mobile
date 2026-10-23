@@ -127,10 +127,6 @@
     </plurals>
     <string name="live_rating_mine">My rating</string>
     <string name="live_rating_top250">Top 250 · #%1$d</string>
-    <plurals name="live_credit_genres">
-        <item quantity="one">Genre</item>
-        <item quantity="other">Genres</item>
-    </plurals>
     <plurals name="live_credit_directors">
         <item quantity="one">Director</item>
         <item quantity="other">Directors</item>

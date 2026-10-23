@@ -118,19 +118,27 @@ internal fun PlotCard(media: MediaInfo) {
 
 /**
  * Who made the title, a centred line each in the order a film's credits are
- * asked about: what kind of film it is, who directed it, who is in it - the
- * leads, as the add-on cuts them - and who made it. Each is what it is in
- * bold and the text's full colour, named for one or for more than one
- * ("Studio", "Studios"), and then the names in the plot's quieter one; a
- * list Kodi has none of is left out.
+ * asked about: who directed it, who is in it and who made it - what kind of
+ * film it is stands in the card above. The first names of each, as the
+ * add-on cuts them, with an ellipsis after them where there are more. Each is
+ * what it is in bold and the text's full colour, named for one or for more
+ * than one ("Studio", "Studios"), and then the names in the plot's quieter
+ * one; a list Kodi has none of is left out.
  */
 @Composable
 private fun Credits(media: MediaInfo) {
     val credits = listOf(
-        pluralStringResource(R.plurals.live_credit_genres, media.genres.size) to media.genres,
-        pluralStringResource(R.plurals.live_credit_directors, media.directors.size) to media.directors,
-        stringResource(R.string.live_credit_cast) to media.cast,
-        pluralStringResource(R.plurals.live_credit_studios, media.studios.size) to media.studios,
+        Credit(
+            pluralStringResource(R.plurals.live_credit_directors, counted(media.directors, media.directorsMore)),
+            media.directors,
+            media.directorsMore,
+        ),
+        Credit(stringResource(R.string.live_credit_cast), media.cast, media.castMore),
+        Credit(
+            pluralStringResource(R.plurals.live_credit_studios, counted(media.studios, media.studiosMore)),
+            media.studios,
+            media.studiosMore,
+        ),
     )
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -141,12 +149,12 @@ private fun Credits(media: MediaInfo) {
     ) {
         val named = SpanStyle(fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
         val names = SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)
-        credits.filter { (_, list) -> list.isNotEmpty() }.forEach { (label, list) ->
+        credits.filter { it.names.isNotEmpty() }.forEach { credit ->
             Text(
                 text = buildAnnotatedString {
-                    withStyle(named) { append(label) }
+                    withStyle(named) { append(credit.label) }
                     append(" ")
-                    withStyle(names) { append(list.joinToString(", ")) }
+                    withStyle(names) { append(credit.names.joinToString(", ") + if (credit.more) ", …" else "") }
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
@@ -154,6 +162,12 @@ private fun Credits(media: MediaInfo) {
         }
     }
 }
+
+/** One line of the credits: what it is called, its names and whether the add-on cut it. */
+private class Credit(val label: String, val names: List<String>, val more: Boolean)
+
+/** How many a list holds, for what it is called: a cut one is more than it shows. */
+private fun counted(names: List<String>, more: Boolean): Int = names.size + if (more) 1 else 0
 
 /**
  * Every rating the library holds: the age rating first - who the film is for
@@ -460,9 +474,9 @@ internal fun PlotCardPreview() {
                         ageLevel = "12",
                         userRating = 9,
                         top250 = 27,
-                        genres = listOf("Science Fiction", "Adventure"),
                         directors = listOf("Denis Villeneuve"),
-                        cast = listOf("Timothée Chalamet", "Zendaya", "Rebecca Ferguson"),
+                        cast = listOf("Timothée Chalamet", "Zendaya", "Rebecca Ferguson", "Javier Bardem", "Josh Brolin"),
+                        castMore = true,
                         studios = listOf("Legendary Pictures"),
                     ),
                 )
