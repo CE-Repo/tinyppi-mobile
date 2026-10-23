@@ -187,11 +187,11 @@ internal fun NowPlayingCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                // Who made it, on a line of its own under what kind of film
-                // it is, and in the same voice.
-                snapshot.media.studios.takeIf { it.isNotEmpty() }?.let { studios ->
+                // Who made it, the first studio alone, on a line of its own
+                // under what kind of film it is, and in the same voice.
+                snapshot.media.studios.firstOrNull()?.let { studio ->
                     Text(
-                        text = Formatters.names(studios, snapshot.media.studiosMore),
+                        text = studio,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,

@@ -199,9 +199,8 @@ class ApiParsingTest {
         assertEquals(listOf("Denis Villeneuve"), snapshot.media.directors)
         assertEquals(listOf("Timothée Chalamet", "Zendaya"), snapshot.media.cast)
         assertEquals(true, snapshot.media.castMore)
-        // One the add-on left out is none, and not cut.
+        // One the add-on left out is none.
         assertEquals(emptyList<String>(), snapshot.media.studios)
-        assertEquals(false, snapshot.media.studiosMore)
         assertEquals(9, snapshot.media.userRating)
         assertEquals(27, snapshot.media.top250)
     }

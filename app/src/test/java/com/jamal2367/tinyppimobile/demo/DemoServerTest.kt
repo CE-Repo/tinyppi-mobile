@@ -189,6 +189,7 @@ class DemoServerTest {
         assertEquals(8, rated["cast"]!!.jsonArray.size)
         assertEquals(true, rated["cast_more"]!!.jsonPrimitive.boolean)
         assertEquals("Legendary Pictures", rated["studios"]!!.jsonArray.single().jsonPrimitive.content)
+        assertEquals(null, rated["studios_more"])
         assertEquals(null, rated["genres"])
         assertEquals(9, rated["userrating"]!!.jsonPrimitive.int)
         assertEquals(27, rated["top250"]!!.jsonPrimitive.int)

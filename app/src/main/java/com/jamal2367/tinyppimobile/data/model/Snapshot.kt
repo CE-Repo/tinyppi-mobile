@@ -307,17 +307,16 @@ data class MediaInfo(
     val top250: Int = 0,
     /**
      * Who made it, as the add-on splits Kodi's readings into names and cuts
-     * them: the first director alone, and the cast's leads in billing order
-     * and the first studios, each with whether there are more. The studios
-     * and the director stand in the card of what is playing, the cast in the
-     * plot card. An episode's studios are its show's, and its cast its own guests
+     * them: the first director and the first studio alone, and the cast's
+     * leads in billing order with whether there are more. The studio and the
+     * director stand in the card of what is playing, the cast in the plot
+     * card. An episode's studio is its show's, and its cast its own guests
      * and then the show's.
      */
     val directors: List<String> = emptyList(),
     val cast: List<String> = emptyList(),
     @SerialName("cast_more") val castMore: Boolean = false,
     val studios: List<String> = emptyList(),
-    @SerialName("studios_more") val studiosMore: Boolean = false,
 ) {
     /**
      * Whether there is a plot to print. A slogan goes only with one: on its

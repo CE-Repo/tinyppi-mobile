@@ -158,17 +158,17 @@ class LiveScreenTest {
     }
 
     @Test
-    fun `the studio stands on a line of its own under the year and the genre`() {
+    fun `the first studio stands on a line of its own under the year and the genre`() {
         fake.playing(
-            Screens.film.copy(
-                media = Screens.film.media.copy(studios = listOf("Syncopy", "Atlas Entertainment"), studiosMore = true),
-            ),
+            Screens.film.copy(media = Screens.film.media.copy(studios = listOf("Syncopy", "Atlas Entertainment"))),
         )
         showLive()
         val genre = rule.onNodeWithText("2024 · Science Fiction").fetchSemanticsNode().boundsInRoot
-        val studio = rule.onNodeWithText("Syncopy, Atlas Entertainment, …").fetchSemanticsNode().boundsInRoot
+        val studio = rule.onNodeWithText("Syncopy").fetchSemanticsNode().boundsInRoot
         assertEquals(true, studio.top >= genre.bottom)
         assertEquals(genre.left, studio.left, 0.5f)
+        // Alone, with nothing to say there are more.
+        assertEquals(true, rule.onAllNodesWithText("Atlas", substring = true).fetchSemanticsNodes().isEmpty())
     }
 
     // Drawn for real: the measuring the stand-in graphics do sets every word
