@@ -101,24 +101,28 @@ internal fun PlotCard(media: MediaInfo) {
             // A long plot is cut to a few lines, and the button under it lets
             // the rest out and takes it back. It is there only where there is
             // more to show, and a new plot starts cut again.
+            // The two together, without the card's gap between them: the
+            // button belongs to the paragraph rather than standing as a row
+            // of its own.
             var open by rememberSaveable(media.plot) { mutableStateOf(false) }
             var cut by remember(media.plot) { mutableStateOf(false) }
-            Text(
-                text = media.plot.trim(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                maxLines = if (open) Int.MAX_VALUE else PLOT_LINES,
-                overflow = TextOverflow.Ellipsis,
-                onTextLayout = { cut = it.hasVisualOverflow },
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            )
-            if (open || cut) {
-                TextButton(
-                    onClick = { open = !open },
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                ) {
-                    Text(stringResource(if (open) R.string.live_plot_less else R.string.live_plot_more))
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = media.plot.trim(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    maxLines = if (open) Int.MAX_VALUE else PLOT_LINES,
+                    overflow = TextOverflow.Ellipsis,
+                    onTextLayout = { cut = it.hasVisualOverflow },
+                )
+                if (open || cut) {
+                    TextButton(onClick = { open = !open }) {
+                        Text(stringResource(if (open) R.string.live_plot_less else R.string.live_plot_more))
+                    }
                 }
             }
         }
