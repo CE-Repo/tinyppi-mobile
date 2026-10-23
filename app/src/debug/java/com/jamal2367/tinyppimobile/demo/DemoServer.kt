@@ -79,7 +79,7 @@ object DemoServer {
         directors = listOf("Denis Villeneuve"),
         cast = listOf(
             "Timothée Chalamet", "Zendaya", "Rebecca Ferguson", "Javier Bardem", "Josh Brolin", "Austin Butler",
-            "Florence Pugh", "Dave Bautista",
+            "Florence Pugh", "Dave Bautista", "Christopher Walken", "Léa Seydoux",
         ),
         studios = listOf("Legendary Pictures"),
     )
@@ -479,8 +479,8 @@ object DemoServer {
                 put("userrating", playingMine)
                 put("top250", playingTop250)
                 // Who made it, cut as the add-on cuts it.
-                putNames("directors", playingCredits.directors, 3)
-                putNames("cast", playingCredits.cast, 5)
+                putNames("directors", playingCredits.directors, 1)
+                putNames("cast", playingCredits.cast, 8)
                 putNames("studios", playingCredits.studios, 4)
             }
             putJsonObject("controls") {

@@ -72,16 +72,16 @@ import java.util.Locale
  * full colour, as the line a poster carries, and the plot in the quieter
  * colour the year and genre are set in, since it is the one paragraph on the
  * screen and the readings below it should not have to shout over it. Under
- * them, past a thin rule, the ratings as a row of their own: short facts
- * about the film, taken in at a glance. And past another, the cast as a
- * plain line.
+ * them, past a thin rule, the cast as a plain line, and last, past another,
+ * the ratings as a row of their own: short facts about the film, taken in at
+ * a glance.
  */
 @Composable
 internal fun PlotCard(media: MediaInfo) {
     SectionCard(title = stringResource(R.string.live_plot), foldId = FOLD_PLOT) {
         if (media.hasPlot) {
-            // Centred as a block and line by line, over the row of ratings
-            // under them, so the card reads down its middle.
+            // Centred as a block and line by line, over the cast and the
+            // ratings under them, so the card reads down its middle.
             if (media.tagline.isNotBlank()) {
                 Text(
                     text = media.tagline.trim(),
@@ -100,17 +100,10 @@ internal fun PlotCard(media: MediaInfo) {
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
         }
-        if (media.hasRatings) {
+        if (media.hasCredits) {
             // A thin rule between the plot and them, where there is a plot:
             // the same hairline the rows of a reading card are ruled with.
             if (media.hasPlot) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
-            }
-            RatingRow(media)
-        }
-        if (media.hasCredits) {
-            // The same rule over them, from the ratings or from the plot.
-            if (media.hasPlot || media.hasRatings) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
             }
             // Who is in it, the leads as the add-on cuts them, centred like
@@ -127,16 +120,23 @@ internal fun PlotCard(media: MediaInfo) {
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
         }
+        if (media.hasRatings) {
+            // Last, past the same rule, from the cast or from the plot.
+            if (media.hasPlot || media.hasCredits) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
+            }
+            RatingRow(media)
+        }
     }
 }
 
 /**
  * A credit as a line: what it is in bold and the text's full colour, then the
- * names in the quieter one the plot and the year and genre are set in. Heard
- * as it reads, "Director Denis Villeneuve". Built outside the composition,
- * like [heardAs]: a line of text has nothing to remember.
+ * names in the quieter one the plot is set in. Heard as it reads, "Cast
+ * Timothée Chalamet, Zendaya". Built outside the composition, like
+ * [heardAs]: a line of text has nothing to remember.
  */
-internal fun creditLine(label: String, names: String, colors: ColorScheme): AnnotatedString = buildAnnotatedString {
+private fun creditLine(label: String, names: String, colors: ColorScheme): AnnotatedString = buildAnnotatedString {
     withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = colors.onSurface)) { append(label) }
     append(" ")
     withStyle(SpanStyle(color = colors.onSurfaceVariant)) { append(names) }

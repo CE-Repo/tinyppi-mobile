@@ -314,7 +314,7 @@ class LiveCardsTest {
     }
 
     @Test
-    fun `the overview card ends with the cast, a centred line`() {
+    fun `the overview card has the cast over the ratings, a centred line`() {
         fake.playing(
             told.copy(
                 media = told.media.copy(
@@ -328,13 +328,16 @@ class LiveCardsTest {
             ),
         )
         showLive()
-        // Under the ratings, cut with an ellipsis, and centred: it stands in
-        // the middle of the card, which is the middle of the screen.
+        // Under the plot and over the ratings, cut with an ellipsis, and
+        // centred: it stands in the middle of the card, which is the middle
+        // of the screen.
         val cast = rule.onNodeWithText(
             "${str(R.string.live_credit_cast)} Timothée Chalamet, Zendaya, Rebecca Ferguson, Javier Bardem, Josh Brolin, …",
         ).fetchSemanticsNode().boundsInRoot
+        val plot = rule.onNodeWithText("Paul joins the Fremen.").fetchSemanticsNode().boundsInRoot
         val imdb = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot
-        assertEquals(true, cast.top >= imdb.bottom)
+        assertEquals(true, cast.top >= plot.bottom)
+        assertEquals(true, imdb.top >= cast.bottom)
         val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
         assertEquals(screen.center.x, cast.center.x, 1f)
         // The genre, the studio and the director are the card above's alone.

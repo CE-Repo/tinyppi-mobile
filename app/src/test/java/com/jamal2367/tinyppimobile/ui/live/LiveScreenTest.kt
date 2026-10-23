@@ -176,14 +176,13 @@ class LiveScreenTest {
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun `who directed it stands in the middle between the lines above and the badges`() {
-        fun named(count: Int) = context.resources.getQuantityString(R.plurals.live_credit_directors, count)
         fun box(text: String) = rule.onNodeWithText(text).fetchSemanticsNode().boundsInRoot
         // A title alone over it, so the poster beside the column leaves it
         // room to stand in.
         fake.playing(Screens.film.copy(media = MediaInfo(directors = listOf("Christopher Nolan"))))
         showLive()
         val title = box("Dune: Part Two")
-        val director = box("${named(1)} Christopher Nolan")
+        val director = box("Christopher Nolan")
         // The badges' words sit inside their pills: two rows are a pill and
         // the rows' gap apart, which says how far in.
         val first = box("UHD")
@@ -201,17 +200,17 @@ class LiveScreenTest {
         )
         rule.waitUntil(5_000) { rule.onAllNodesWithText("Syncopy").fetchSemanticsNodes().isNotEmpty() }
         val studio = box("Syncopy")
-        val under = box("${named(1)} Christopher Nolan")
+        val under = box("Christopher Nolan")
         assertEquals(true, under.top >= studio.bottom)
         assertEquals(studio.left, under.left, 0.5f)
 
-        // Named for more where the add-on cut the list, with an ellipsis.
+        // The name alone, and an ellipsis after it where the add-on cut the list.
         fake.playing(
             Screens.film.copy(
                 media = Screens.film.media.copy(directors = listOf("Joel Coen"), directorsMore = true),
             ),
         )
-        rule.waitUntil(5_000) { rule.onAllNodesWithText("${named(2)} Joel Coen, …").fetchSemanticsNodes().isNotEmpty() }
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("Joel Coen, …").fetchSemanticsNodes().isNotEmpty() }
     }
 
     @Test

@@ -136,17 +136,22 @@ with the same wrong token would turn a clear error into a confusing one.
 
 ### Live
 
-The title with its poster, its year and genre and under them its studio (up
-to four, ending in "…" where there are more; an episode's is its show's), the
-director (up to three, the same way) in the middle of the room left between
-those lines and the format badges, the source and output badges, the video and audio formats named in badges of
+The title with its poster, its year and genre (its first two) and under them
+its studio (up to four, ending in "…" where there are more; an episode's is
+its show's), the director's name alone (the first, the same way) in the
+middle of the room left between those lines and the format badges, the
+source and output badges, the video and audio formats named in badges of
 their own, the progress, and — on a box that allows it — the transport row,
 the track pickers and the VS10 conversions.
 
 Under the card of what is playing, the **Overview** card, all of it centred:
 the plot, with the slogan in italics above it where there is one — most
-episodes carry a plot and no slogan — and under them, past a thin rule, every
-rating Kodi's library holds for the title, as a row of small shields. Each has its source's mark on the left, on a
+episodes carry a plot and no slogan — under them, past a thin rule, the cast:
+a centred line with its name in bold and then its first eight names, in
+billing order, ending in "…" where there are more, and left out where Kodi
+has none; the genre, the studio and the director stand in the card above.
+Last, past another rule, every rating Kodi's library holds for the title, as
+a row of small shields. Each has its source's mark on the left, on a
 ground of the source's colour, instead of its name, and what it gave on the
 right — the same marks and shields the add-on's dashboard draws: first the
 age rating, where the add-on could place it, as a shield like the others:
@@ -157,10 +162,7 @@ Trakt, TVDB, Metacritic, Rotten Tomatoes; any other gets its first letter on a
 plain plate — with how many voted, your own rating behind a heart and the
 place in the IMDb Top 250. A screen reader hears each shield as one sentence ("IMDb
 8.5, 612,345 votes"). An episode is rated on its own and carries its show's
-age rating. Under the ratings, past another rule, the cast: a centred line
-with its name in bold and then its first five names, in billing order, ending
-in "…" where there are more, and left out where Kodi has none; the genre, the
-studio and the director stand in the card above. The slogan only ever stands
+age rating. The slogan only ever stands
 above a plot: without a plot the card shows the ratings and the cast alone,
 and with none of them it is left out, as it is for a file that is not in the
 library. It folds, moves and comes off the screen like

@@ -186,7 +186,7 @@ class DemoServerTest {
         // And who made it, cut as the add-on cuts it.
         assertEquals("Denis Villeneuve", rated["directors"]!!.jsonArray.single().jsonPrimitive.content)
         assertEquals(false, rated["directors_more"]!!.jsonPrimitive.boolean)
-        assertEquals(5, rated["cast"]!!.jsonArray.size)
+        assertEquals(8, rated["cast"]!!.jsonArray.size)
         assertEquals(true, rated["cast_more"]!!.jsonPrimitive.boolean)
         assertEquals("Legendary Pictures", rated["studios"]!!.jsonArray.single().jsonPrimitive.content)
         assertEquals(null, rated["genres"])
