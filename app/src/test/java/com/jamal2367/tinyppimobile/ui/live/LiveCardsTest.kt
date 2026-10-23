@@ -3,7 +3,10 @@ package com.jamal2367.tinyppimobile.ui.live
 import android.content.Context
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -393,37 +396,50 @@ class LiveCardsTest {
         assertEquals(false, seen("Paul joins the Fremen."))
     }
 
+    /** The plot, pressable to [label] it: a button that says what a tap does. */
+    private fun folds(label: Int) = SemanticsMatcher("taps to ${str(label)}") {
+        it.config.getOrNull(SemanticsActions.OnClick)?.label == str(label) &&
+            !it.config.contains(SemanticsProperties.Disabled) &&
+            it.config.getOrNull(SemanticsProperties.Role) == Role.Button
+    }
+
+    private fun foldable(label: Int) = rule.onAllNodes(folds(label)).fetchSemanticsNodes().isNotEmpty()
+
+    /** Where [text] is drawn, on its own rather than as part of the plot it folds with. */
+    private fun bounds(text: String) = rule.onNodeWithText(text, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+
     // Drawn for real: how many lines a plot takes is measured.
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    fun `a long plot is cut to three lines, and a button lets the rest out`() {
+    fun `a long plot is cut to three lines, and a tap on it lets the rest out`() {
         val long = List(40) { "Paul joins the Fremen and walks the desert." }.joinToString(" ")
         fake.playing(told.copy(media = told.media.copy(plot = long)))
         showLive()
-        fun plot() = rule.onNodeWithText(long).fetchSemanticsNode().boundsInRoot
-        val cut = plot()
-        rule.onNodeWithText(str(R.string.live_plot_more)).assertIsDisplayed()
+        val cut = bounds(long)
+        // No button of its own: the plot is the button.
+        assertEquals(false, seen(str(R.string.live_plot_more)))
+        rule.onNode(folds(R.string.live_plot_more)).assertIsDisplayed()
 
-        // Let out: all of it, and the button takes it back.
-        rule.onNodeWithText(str(R.string.live_plot_more)).performClick()
-        rule.until { seen(str(R.string.live_plot_less)) }
-        assertEquals(true, plot().height > cut.height * 2)
-        rule.onNodeWithText(str(R.string.live_plot_less)).performClick()
-        rule.until { seen(str(R.string.live_plot_more)) }
-        assertEquals(cut.height, plot().height, 0.5f)
+        // Let out: all of it, and another tap takes it back.
+        rule.onNode(folds(R.string.live_plot_more)).performClick()
+        rule.until { foldable(R.string.live_plot_less) }
+        assertEquals(true, bounds(long).height > cut.height * 2)
+        rule.onNode(folds(R.string.live_plot_less)).performClick()
+        rule.until { foldable(R.string.live_plot_more) }
+        assertEquals(cut.height, bounds(long).height, 0.5f)
 
         // A new plot starts cut, even after the last was let out.
-        rule.onNodeWithText(str(R.string.live_plot_more)).performClick()
-        rule.until { seen(str(R.string.live_plot_less)) }
+        rule.onNode(folds(R.string.live_plot_more)).performClick()
+        rule.until { foldable(R.string.live_plot_less) }
         val other = "$long Again."
         fake.playing(told.copy(media = told.media.copy(plot = other)))
-        rule.until { seen(other) && seen(str(R.string.live_plot_more)) }
+        rule.until { seen(other) && foldable(R.string.live_plot_more) }
 
-        // A short one has no button.
+        // A short one is nothing to tap.
         fake.playing(told)
         rule.until { seen("Paul joins the Fremen.") }
-        assertEquals(false, seen(str(R.string.live_plot_more)))
-        assertEquals(false, seen(str(R.string.live_plot_less)))
+        assertEquals(false, foldable(R.string.live_plot_more))
+        assertEquals(false, foldable(R.string.live_plot_less))
     }
 
     // Drawn for real: whether the plot is cut is measured.
@@ -443,25 +459,23 @@ class LiveCardsTest {
             ),
         )
         showLive()
-        rule.onNodeWithText(str(R.string.live_plot_more)).assertIsDisplayed()
+        rule.onNode(folds(R.string.live_plot_more)).assertIsDisplayed()
         assertEquals(false, seen(credit))
         assertEquals(false, seen(director))
 
-        // Let out: under the whole plot, over the button that takes it back.
-        rule.onNodeWithText(str(R.string.live_plot_more)).performClick()
+        // Let out: under the whole plot, the director over the cast; a tap
+        // on them folds it all again, as one on the plot does.
+        rule.onNode(folds(R.string.live_plot_more)).performClick()
         rule.until { seen(credit) && seen(director) }
-        val plot = rule.onNodeWithText(long).fetchSemanticsNode().boundsInRoot
-        val cast = rule.onNodeWithText(credit).fetchSemanticsNode().boundsInRoot
-        val less = rule.onNodeWithText(str(R.string.live_plot_less)).fetchSemanticsNode().boundsInRoot
-        assertEquals(true, cast.top >= plot.bottom)
-        assertEquals(true, less.top >= cast.bottom)
-        rule.onNodeWithText(str(R.string.live_plot_less)).performClick()
+        assertEquals(true, bounds(director).top >= bounds(long).bottom)
+        assertEquals(true, bounds(credit).top >= bounds(director).bottom)
+        rule.onNodeWithText(credit, useUnmergedTree = true).performClick()
         rule.until { !seen(credit) }
 
-        // Under a plot that fits, it stands as it is.
+        // Under a plot that fits, they stand as they are.
         fake.playing(told.copy(media = told.media.copy(cast = listOf("Timothée Chalamet", "Zendaya"))))
         rule.until { seen(credit) }
-        assertEquals(false, seen(str(R.string.live_plot_more)))
+        assertEquals(false, foldable(R.string.live_plot_more))
     }
 
     @Test

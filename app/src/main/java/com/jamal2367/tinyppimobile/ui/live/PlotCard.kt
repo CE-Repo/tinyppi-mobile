@@ -3,6 +3,7 @@ package com.jamal2367.tinyppimobile.ui.live
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +40,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.AnnotatedString
@@ -97,17 +98,33 @@ internal fun PlotCard(media: MediaInfo) {
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                 )
             }
-            // A long plot is cut to a few lines, and the button under it lets
-            // the rest out and takes it back. It is there only where there is
-            // more to show, and a new plot starts cut again.
-            // The two together, without the card's gap between them: the
-            // button belongs to the paragraph rather than standing as a row
-            // of its own. The credits hang on the plot's end: they come out
-            // with the rest of a cut plot, and stand under one that fits.
+            // A long plot is cut to a few lines, and a tap on it lets the
+            // rest out and takes it back. It folds only where there is more
+            // to show, and a new plot starts cut again. The credits hang on
+            // the plot's end: they come out with the rest of a cut plot, and
+            // stand under one that fits. To a screen reader it is a button
+            // that says what a tap does.
             var open by rememberSaveable(media.plot) { mutableStateOf(false) }
             var cut by remember(media.plot) { mutableStateOf(false) }
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(
+                        // Only one with more to show is a button at all: one
+                        // that fits reads as its plot and its credits.
+                        if (open || cut) {
+                            Modifier
+                                .clip(FOLD_SHAPE)
+                                .clickable(
+                                    onClickLabel = stringResource(
+                                        if (open) R.string.live_plot_less else R.string.live_plot_more,
+                                    ),
+                                    role = Role.Button,
+                                ) { open = !open }
+                        } else {
+                            Modifier
+                        },
+                    ),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
@@ -121,11 +138,6 @@ internal fun PlotCard(media: MediaInfo) {
                 )
                 if (media.hasCredits && (open || !cut)) {
                     Credits(media, Modifier.padding(top = 12.dp))
-                }
-                if (open || cut) {
-                    TextButton(onClick = { open = !open }) {
-                        Text(stringResource(if (open) R.string.live_plot_less else R.string.live_plot_more))
-                    }
                 }
             }
         } else if (media.hasCredits) {
@@ -443,6 +455,9 @@ private fun HeartMark() {
             .size(13.dp),
     )
 }
+
+/** The corners of the ripple a tap on the plot draws. */
+private val FOLD_SHAPE = RoundedCornerShape(8.dp)
 
 /** How many lines of a plot are shown until the reader asks for the rest. */
 private const val PLOT_LINES = 3

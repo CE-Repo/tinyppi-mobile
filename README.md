@@ -144,8 +144,8 @@ the track pickers and the VS10 conversions.
 
 Under the card of what is playing, the **Overview** card, all of it centred:
 the plot, with the slogan in italics above it where there is one — most
-episodes carry a plot and no slogan; a long plot is cut to three lines, and
-*Show more* under it lets the rest out (*Show less* takes it back) — and
+episodes carry a plot and no slogan; a long plot is cut to three lines, and a
+tap on it lets the rest out and another takes it back — and
 hanging on the plot's end the director, then the cast, each its heading in
 bold on a line of its own centred over the names (every director, and the
 whole cast in billing order), left out where Kodi has none. Under a cut plot they stay hidden and come out with the rest of it;
