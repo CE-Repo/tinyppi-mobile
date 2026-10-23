@@ -97,10 +97,11 @@ internal fun PlotCard(media: MediaInfo, colourfulRatings: Boolean) {
         if (media.hasPlot) {
             // A long plot is cut to a few lines, and a tap on it lets the
             // rest out and takes it back. It folds only where there is more
-            // to show, and a new plot starts cut again. The credits hang on
-            // the plot's end: they come out with the rest of a cut plot, and
-            // stand under one that fits. To a screen reader it is a button
-            // that says what a tap does.
+            // to show, and a new plot starts cut again. The credits and the
+            // ratings hang on the plot's end: they come out with the rest of
+            // a cut plot, and stand under one that fits. To a screen reader
+            // it is a button that says what a tap does; a tap on a rating's
+            // shield is the shield's.
             var open by rememberSaveable(media.plot) { mutableStateOf(false) }
             var cut by remember(media.plot) { mutableStateOf(false) }
             Column(
@@ -146,34 +147,38 @@ internal fun PlotCard(media: MediaInfo, colourfulRatings: Boolean) {
                     overflow = TextOverflow.Ellipsis,
                     onTextLayout = { cut = it.hasVisualOverflow },
                 )
-                if (media.hasCredits && (open || !cut)) {
-                    Credits(media, Modifier.padding(top = 12.dp))
+                if (open || !cut) {
+                    if (media.hasCredits) Credits(media, Modifier.padding(top = 12.dp))
+                    if (media.hasRatings) Ratings(media, colourfulRatings, Modifier.padding(top = 16.dp))
                 }
             }
-        } else if (media.hasCredits) {
-            // Without a plot, the credits on their own.
-            Credits(media, Modifier.align(Alignment.CenterHorizontally))
+        } else {
+            // Without a plot, the credits and the ratings on their own.
+            if (media.hasCredits) Credits(media, Modifier.align(Alignment.CenterHorizontally))
+            if (media.hasRatings) Ratings(media, colourfulRatings, Modifier.padding(top = RATINGS_GAP))
         }
-        if (media.hasRatings) {
-            // Last, under a heading of their own like a credit's, as far
-            // under the cast as the cast is under the director.
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = RATINGS_GAP),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.live_ratings),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                )
-                RatingRow(media, colourfulRatings)
-            }
-        }
+    }
+}
+
+/**
+ * The ratings, last, under a heading of their own like a credit's, as far
+ * under the cast as the cast is under the director.
+ */
+@Composable
+private fun Ratings(media: MediaInfo, colourful: Boolean, modifier: Modifier) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.live_ratings),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+        )
+        RatingRow(media, colourful)
     }
 }
 
@@ -227,8 +232,9 @@ private fun creditLine(label: String, names: String, colors: ColorScheme): Annot
  * Top 250.
  *
  * Each is a small shield wearing its house's mark on a ground of its house's
- * colour rather than its name - the same drawings the add-on's dashboard
- * serves (`tools/gen_rating_marks.py` in script.tinyppi writes both) - and
+ * colour rather than its name - the same marks the add-on's dashboard
+ * serves: the houses' own logos where there is one, the rest drawn by
+ * `tools/gen_rating_marks.py` in script.tinyppi - and
  * says in words what it shows, since a screen reader can say nothing of a
  * drawing. Not [colourful] - the reader's choice in the settings - every one
  * of them stands on the app's accent instead, as the reader's own heart
@@ -318,11 +324,11 @@ private class HouseMark(val drawing: Int, val ground: Color)
 
 /** The houses there is a drawing of, by the name the add-on gives them. */
 private val RATING_MARKS = mapOf(
-    "imdb" to HouseMark(R.drawable.rating_imdb, Color(0xFFF5C518)),
+    "imdb" to HouseMark(R.drawable.rating_imdb, Color(0xFF121212)),
     "tmdb" to HouseMark(R.drawable.rating_tmdb, Color(0xFF0D253F)),
-    "trakt" to HouseMark(R.drawable.rating_trakt, Color(0xFFED1C24)),
-    "tvdb" to HouseMark(R.drawable.rating_tvdb, Color(0xFF1E2A33)),
-    "letterboxd" to HouseMark(R.drawable.rating_letterboxd, Color(0xFF14181C)),
+    "trakt" to HouseMark(R.drawable.rating_trakt, Color(0xFF9F42C6)),
+    "tvdb" to HouseMark(R.drawable.rating_tvdb, Color(0xFF555555)),
+    "letterboxd" to HouseMark(R.drawable.rating_letterboxd, Color(0xFF202830)),
     "metacritic" to HouseMark(R.drawable.rating_metacritic, Color(0xFF66CC33)),
     "metacriticuser" to HouseMark(R.drawable.rating_metacriticuser, Color(0xFF66CC33)),
     "rottentomatoes" to HouseMark(R.drawable.rating_rottentomatoes, Color(0xFFF9D320)),
@@ -540,28 +546,40 @@ private fun inked(ink: Color, inking: FloatArray): ColorFilter = ColorFilter.col
  * How opaque the ink is for a pixel of a mark, as a row of a colour matrix
  * over its red, green, blue and alpha: as it is light past a fifth of the way
  * for most marks; past seven tenths for one drawn white on a colour (see
- * [LIGHT_INKED]), or plate and letters would be one; and for Rotten
- * Tomatoes as it is red, so its leaf stays apart from the tomato. The same
- * three the dashboard inks with (#inkDark, #inkLight and #inkRed in its
- * index.html).
+ * [LIGHT_INKED]), or plate and letters would be one, and past half for
+ * TheTVDB's letters on its grey; for Rotten Tomatoes as it is red, so its
+ * leaf stays apart from the tomato; and for Metacritic's black mark as it
+ * is drawn at all. The same the dashboard inks with (the #ink filters in
+ * its index.html).
  */
 private fun inkingOf(name: String): FloatArray = when {
-    name == "rottentomatoes" -> floatArrayOf(10f, 0f, 0f, 0f, -5f * 255f)
+    name == "rottentomatoes" -> floatArrayOf(10f, 0f, 0f, 10f, -15f * 255f)
+    // Black on nothing: the whole of it.
+    name == "metacritic" -> floatArrayOf(0f, 0f, 0f, 1f, 0f)
+    // Green and white letters on a grey plate: the letters.
+    name == "tvdb" -> lightness(gain = 10f, from = 0.5f)
     name in LIGHT_INKED -> lightness(gain = 10f, from = 0.7f)
     else -> lightness(gain = 20f, from = 0.2f)
 }
 
+/**
+ * Opaque as a pixel is light past [from], [gain] times as steeply - and only
+ * where the mark itself is: a filter reads a pixel's colour without its
+ * opacity, so a soft edge would otherwise be inked whole and a thin letter
+ * grow into a block. The opacity, weighed as steeply, takes it back off.
+ */
 private fun lightness(gain: Float, from: Float) =
-    floatArrayOf(0.2126f * gain, 0.7152f * gain, 0.0722f * gain, 0f, -from * gain * 255f)
+    floatArrayOf(0.2126f * gain, 0.7152f * gain, 0.0722f * gain, gain, -(from + 1f) * gain * 255f)
 
 /**
- * The marks drawn in white on a colour: Trakt's ring on its red, Roger
- * Ebert's and MyAnimeList's names on theirs, and the age ratings whose level's
+ * The marks drawn in white on a colour: Trakt's tick on its purple, the
+ * Popcornmeter's stripes and popcorn on its red tub, Roger Ebert's and
+ * MyAnimeList's names on theirs, and the age ratings whose level's
  * colour carries its board's name in white. On the accent only their white
  * is inked.
  */
 private val LIGHT_INKED = setOf(
-    "trakt", "rogerebert", "myanimelist",
+    "trakt", "popcorn", "rogerebert", "myanimelist",
     "fsk12", "fsk16", "fsk18",
     "mpa_g", "mpa_r", "mpa_nc17", "tv_y", "tv_y7", "tv_g", "tv_ma",
     "bbfc_u", "bbfc_12a", "bbfc_12", "bbfc_15", "bbfc_18", "bbfc_r18",

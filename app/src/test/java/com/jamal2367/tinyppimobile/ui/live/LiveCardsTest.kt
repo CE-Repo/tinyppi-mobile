@@ -166,10 +166,9 @@ class LiveCardsTest {
         // Each house's own colour, as the shields draw it.
         val houses = mapOf(
             "FSK 12" to Color(0xFF00A651),
-            "IMDb 8.5" to Color(0xFFF5C518),
             "Metacritic 7.4" to Color(0xFF66CC33),
-            // White lines on its red: only the white is inked.
-            "Trakt 8.8" to Color(0xFFED1C24),
+            // White lines on its purple: only the white is inked.
+            "Trakt 8.8" to Color(0xFF9F42C6),
             // Inked as it is red: the tomato, not its leaf.
             "Rotten Tomatoes 9.1" to Color(0xFFF9D320),
             str(R.string.live_rating_top250, 17) to Color(0xFFF5C518),
@@ -182,6 +181,7 @@ class LiveCardsTest {
                         SourceRating("metacritic", 7.4, 0),
                         SourceRating("trakt", 8.8, 0),
                         SourceRating("rottentomatoes", 9.1, 0),
+                        SourceRating("tvdb", 7.9, 0),
                         SourceRating("filmaffinity", 7.0, 0),
                     ),
                     userRating = 9,
@@ -194,6 +194,9 @@ class LiveCardsTest {
         )
         showLive()
         houses.forEach { (said, colour) -> assertEquals(said, true, holds(said, colour)) }
+        // IMDb's yellow is a thin line on a dark ground of its own.
+        assertEquals(true, holds("IMDb 8.5", Color(0xFF121212)))
+        assertEquals(true, holds("TVDB 7.9", Color(0xFF555555)))
         // The reader's own stands on the accent either way: its ground's
         // colour, left of the heart, is the accent's.
         val accent = rule.onNodeWithContentDescription(mine).captureToImage().toPixelMap().let { it[2, it.height / 2] }
@@ -206,11 +209,16 @@ class LiveCardsTest {
             assertEquals(said, true, holds(said, accent))
         }
         assertEquals(true, holds(mine, accent))
+        // IMDb's dark ground, near the black its mark is now inked in: the
+        // accent stands behind it.
+        assertEquals(true, holds("IMDb 8.5", accent))
+        // TheTVDB's letters inked, its grey plate left out for the accent.
+        assertEquals(true, holds("TVDB 7.9", accent))
         // A source with no drawing: its letter on the accent too.
         assertEquals(true, holds("Filmaffinity 7.0", accent))
         // The marks in black on the light theme.
-        assertEquals(true, holds("IMDb 8.5", Color.Black))
-        assertEquals(false, holds("IMDb 8.5", Color.White))
+        assertEquals(true, holds("Metacritic 7.4", Color.Black))
+        assertEquals(false, holds("Metacritic 7.4", Color.White))
     }
 
     // Drawn for real, on the dark theme.
@@ -219,9 +227,9 @@ class LiveCardsTest {
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun `on the dark theme the marks on the accent are white`() {
         fake.settings.value = fake.settings.value.copy(colourfulRatings = false)
-        fake.playing(told.copy(media = told.media.copy(ratings = listOf(SourceRating("imdb", 8.5, 0)))))
+        fake.playing(told.copy(media = told.media.copy(ratings = listOf(SourceRating("metacritic", 7.4, 0)))))
         showLive()
-        val pixels = rule.onNodeWithContentDescription("IMDb 8.5").captureToImage().toPixelMap().let { map ->
+        val pixels = rule.onNodeWithContentDescription("Metacritic 7.4").captureToImage().toPixelMap().let { map ->
             (0 until map.width).flatMap { x -> (0 until map.height).map { y -> map[x, y] } }
         }
         assertEquals(true, pixels.any { it.red > 0.97f && it.green > 0.97f && it.blue > 0.97f })
@@ -546,6 +554,7 @@ class LiveCardsTest {
                     plot = long,
                     directors = listOf("Denis Villeneuve"),
                     cast = listOf("Timothée Chalamet", "Zendaya"),
+                    ratings = listOf(SourceRating("imdb", 8.5, 0)),
                 ),
             ),
         )
@@ -553,15 +562,22 @@ class LiveCardsTest {
         rule.onNode(folds(R.string.live_plot_more)).assertIsDisplayed()
         assertEquals(false, seen(credit))
         assertEquals(false, seen(director))
+        assertEquals(false, seen(str(R.string.live_ratings)))
 
-        // Let out: under the whole plot, the director over the cast; a tap
-        // on them folds it all again, as one on the plot does.
+        // Let out: under the whole plot, the director over the cast, and the
+        // ratings last; a tap on a shield is the shield's, and one on the
+        // credits folds it all again, as one on the plot does.
         rule.onNode(folds(R.string.live_plot_more)).performClick()
-        rule.until { seen(credit) && seen(director) }
+        rule.until { seen(credit) && seen(director) && seen(str(R.string.live_ratings)) }
         assertEquals(true, bounds(director).top >= bounds(long).bottom)
         assertEquals(true, bounds(credit).top >= bounds(director).bottom)
+        assertEquals(true, bounds(str(R.string.live_ratings)).top >= bounds(credit).bottom)
+        rule.onNodeWithContentDescription("IMDb 8.5", useUnmergedTree = true).performClick()
+        rule.mainClock.advanceTimeBy(5_000)
+        rule.waitForIdle()
+        assertEquals(true, seen(credit))
         rule.onNodeWithText(credit, useUnmergedTree = true).performClick()
-        rule.until { !seen(credit) }
+        rule.until { !seen(credit) && !seen(str(R.string.live_ratings)) }
 
         // Under a plot that fits, they stand as they are.
         fake.playing(told.copy(media = told.media.copy(cast = listOf("Timothée Chalamet", "Zendaya"))))

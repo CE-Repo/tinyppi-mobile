@@ -149,10 +149,11 @@ episodes carry a plot and no slogan; a long plot is cut to five lines, and a
 tap on it lets the rest out and another takes it back — and
 hanging on the plot's end the director, then the cast, each its heading in
 bold on a line of its own centred over the names (every director, and the
-whole cast in billing order), left out where Kodi has none. Under a cut plot they stay hidden and come out with the rest of it;
-under one that fits they stand as they are. The genre and the studio stand in
-the card above. Last, under the heading Ratings, every rating Kodi's library holds for the title, as
-a row of small shields. Each has its source's mark on the left, on a
+whole cast in billing order), left out where Kodi has none. The genre and
+the studio stand in the card above. Last, under the heading Ratings, every
+rating Kodi's library holds for the title, as a row of small shields. Under a
+cut plot the credits and the ratings stay hidden and come out with the rest
+of it; under one that fits they stand as they are. Each has its source's mark on the left, on a
 ground of the source's colour, instead of its name, and what it gave on the
 right — the same marks and shields the add-on's dashboard draws: first the
 age rating, where the add-on could place it, as a shield like the others:
