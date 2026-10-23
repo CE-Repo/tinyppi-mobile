@@ -2,17 +2,21 @@ package com.jamal2367.tinyppimobile.ui.live
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material3.Icon
@@ -23,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -30,13 +35,13 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
 import com.jamal2367.tinyppimobile.data.model.SourceRating
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
-import com.jamal2367.tinyppimobile.ui.theme.PillShape
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import com.jamal2367.tinyppimobile.util.Formatters
 import java.util.Locale
@@ -89,10 +94,11 @@ internal fun PlotCard(media: MediaInfo) {
  * for each source with how many voted for it, the reader's own, the place in
  * the IMDb Top 250 and the age rating.
  *
- * Each wears its house's mark in its house's colours rather than its name -
- * the same drawings the add-on's dashboard serves (`tools/gen_rating_marks.py`
- * in script.tinyppi writes both) - and says in words what it shows, since a
- * screen reader can say nothing of a drawing.
+ * Each is a small shield wearing its house's mark on a ground of its house's
+ * colour rather than its name - the same drawings the add-on's dashboard
+ * serves (`tools/gen_rating_marks.py` in script.tinyppi writes both) - and
+ * says in words what it shows, since a screen reader can say nothing of a
+ * drawing.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -100,6 +106,7 @@ private fun RatingRow(media: MediaInfo) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
         media.ratings.forEach { entry ->
             val name = sourceName(entry)
@@ -109,44 +116,68 @@ private fun RatingRow(media: MediaInfo) {
                 "$name $value".trim(),
                 votes?.let { pluralStringResource(R.plurals.live_rating_votes, entry.votes, it) },
             ).joinToString(", ")
-            val drawing = RATING_MARKS[entry.source]
-            RatingBadge(spoken = spoken, value = value, note = votes) {
-                if (drawing != null) DrawnMark(drawing) else LetterMark(name.take(1))
+            val mark = RATING_MARKS[entry.source]
+            RatingShield(
+                spoken = spoken,
+                value = value,
+                note = votes,
+                ground = mark?.ground ?: MaterialTheme.colorScheme.surfaceContainerHigh,
+            ) {
+                if (mark != null) DrawnMark(mark.drawing) else LetterMark(name.take(1))
             }
         }
         if (media.userRating > 0) {
             val value = media.userRating.toString()
-            RatingBadge(spoken = "${stringResource(R.string.live_rating_mine)} $value", value = value) { HeartMark() }
+            // The reader's own wears a heart on the accent, which is what
+            // says it is theirs and not a house's.
+            RatingShield(
+                spoken = "${stringResource(R.string.live_rating_mine)} $value",
+                value = value,
+                ground = MaterialTheme.colorScheme.primary,
+            ) { HeartMark() }
         }
         if (media.top250 > 0) {
-            RatingBadge(
+            RatingShield(
                 spoken = stringResource(R.string.live_rating_top250, media.top250),
                 value = "#${media.top250}",
-            ) { DrawnMark(R.drawable.rating_top250) }
+                ground = TOP250.ground,
+            ) { DrawnMark(TOP250.drawing) }
         }
         if (media.mpaa.isNotBlank()) {
-            // A German age rating is the FSK's coloured mark and nothing else;
-            // any other is written as the scraper wrote it.
+            // A German age rating is the FSK's coloured mark and nothing else,
+            // as tall as the shields beside it; any other is written as the
+            // scraper wrote it.
             val said = media.mpaa.trim()
             val fsk = FSK_MARKS[media.fsk]
             if (fsk != null) {
-                RatingBadge(spoken = said) { DrawnMark(fsk) }
+                Image(
+                    painter = painterResource(fsk),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .heardAs(said)
+                        .size(FSK_SIZE),
+                )
             } else {
-                RatingBadge(spoken = said, value = said)
+                RatingShield(spoken = said, value = said)
             }
         }
     }
 }
 
+/** A house's mark, and the colour of the ground it is drawn on. */
+private class HouseMark(val drawing: Int, val ground: Color)
+
 /** The houses there is a drawing of, by the name the add-on gives them. */
 private val RATING_MARKS = mapOf(
-    "imdb" to R.drawable.rating_imdb,
-    "tmdb" to R.drawable.rating_tmdb,
-    "trakt" to R.drawable.rating_trakt,
-    "tvdb" to R.drawable.rating_tvdb,
-    "metacritic" to R.drawable.rating_metacritic,
-    "rottentomatoes" to R.drawable.rating_rottentomatoes,
+    "imdb" to HouseMark(R.drawable.rating_imdb, Color(0xFFF5C518)),
+    "tmdb" to HouseMark(R.drawable.rating_tmdb, Color(0xFF0D253F)),
+    "trakt" to HouseMark(R.drawable.rating_trakt, Color(0xFFED1C24)),
+    "tvdb" to HouseMark(R.drawable.rating_tvdb, Color(0xFF1E2A33)),
+    "metacritic" to HouseMark(R.drawable.rating_metacritic, Color.Black),
+    "rottentomatoes" to HouseMark(R.drawable.rating_rottentomatoes, Color.White),
 )
+
+private val TOP250 = HouseMark(R.drawable.rating_top250, Color(0xFFF5C518))
 
 /** The FSK's five levels, by the level the add-on reads out of an age rating. */
 private val FSK_MARKS = mapOf(
@@ -166,56 +197,70 @@ private fun sourceName(entry: SourceRating): String =
     RATING_NAMES[entry.source] ?: entry.source.replaceFirstChar { it.titlecase(Locale.ROOT) }
 
 /**
- * One rating as a pill: its mark hugging the left end, the figure in bold
- * and how many voted. Heard as [spoken] and nothing else - "IMDb 8.5,
- * 612,345 votes" rather than "8.5 612,345" with nothing to say what either is.
+ * One rating as a shield: [side] on the left, on [ground] - a house's own
+ * colour, so its mark runs into it and the left reads as one plate - and on
+ * the right the figure in bold with how many voted. Square-cornered like a
+ * plaque rather than round like a button.
  *
- * Every word in the colour made for the pill's ground rather than the muted
- * grey a format badge is written in: a pill of three parts set in grey on a
- * tinted ground - a poster's, or the phone's own palette - came out too faint
- * to read the count in.
+ * Heard as [spoken] and nothing else - "IMDb 8.5, 612,345 votes" rather than
+ * "8.5 612,345" with nothing to say what either is.
  */
 @Composable
-private fun RatingBadge(
+private fun RatingShield(
     spoken: String,
-    value: String? = null,
+    value: String,
     note: String? = null,
-    mark: (@Composable () -> Unit)? = null,
+    ground: Color = Color.Transparent,
+    side: (@Composable () -> Unit)? = null,
 ) {
-    val ink = MaterialTheme.colorScheme.onSecondaryContainer
     Row(
         modifier = Modifier
             .heardAs(spoken)
-            .clip(PillShape)
-            .background(MaterialTheme.colorScheme.secondaryContainer)
-            // Tight to a mark, and a pill's own air beside words.
-            .padding(
-                start = if (mark != null) 4.dp else 10.dp,
-                end = if (value != null) 10.dp else 4.dp,
-                top = 4.dp,
-                bottom = 4.dp,
-            ),
+            .height(IntrinsicSize.Min)
+            .clip(SHIELD)
+            .border(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh, SHIELD)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        mark?.invoke()
-        if (value != null) {
-            Text(text = value, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = ink)
+        if (side != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .background(ground)
+                    .padding(horizontal = 2.dp),
+                contentAlignment = Alignment.Center,
+            ) { side() }
         }
-        if (note != null) {
-            Text(text = note, style = MaterialTheme.typography.labelMedium, color = ink)
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (note != null) {
+                Text(
+                    text = note,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
 
 /**
- * A pill heard as [spoken] and as nothing it holds. Built outside the
+ * A badge heard as [spoken] and as nothing it holds. Built outside the
  * composition, where a lambda is just a lambda and not one more thing for the
  * Compose compiler to remember against its argument.
  */
 private fun Modifier.heardAs(spoken: String): Modifier = clearAndSetSemantics { contentDescription = spoken }
 
-/** A house's drawing, as tall as a line of the pill and as wide as it is drawn. */
+/** A house's drawing, as tall as a line of the shield and as wide as it is drawn. */
 @Composable
 private fun DrawnMark(drawing: Int) {
     val painter = painterResource(drawing)
@@ -228,46 +273,40 @@ private fun DrawnMark(drawing: Int) {
     )
 }
 
-/** A source there is no drawing of: its first letter in a plain circle. */
+/** A source there is no drawing of: its first letter on the plate. */
 @Composable
 private fun LetterMark(letter: String) {
-    Box(
+    Text(
+        text = letter,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.ExtraBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
         modifier = Modifier
-            .size(MARK)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = letter,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.ExtraBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
+            .padding(horizontal = 4.dp)
+            .widthIn(min = 12.dp),
+    )
 }
 
-/** The reader's own rating: a heart on the accent, which says it is theirs and not a house's. */
+/** The heart the reader's own rating wears, on the accent it is drawn on. */
 @Composable
 private fun HeartMark() {
-    Box(
+    Icon(
+        imageVector = Icons.Rounded.Favorite,
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.onPrimary,
         modifier = Modifier
-            .size(MARK)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.Favorite,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier.size(12.dp),
-        )
-    }
+            .padding(horizontal = 4.dp)
+            .size(13.dp),
+    )
 }
 
-/** How tall a mark stands in its pill. */
+/** How tall a mark stands on its plate, and the corners of a shield. */
 private val MARK = 20.dp
+private val SHIELD = RoundedCornerShape(7.dp)
+
+/** An FSK mark, standing alone as tall as a shield. */
+private val FSK_SIZE = 26.dp
 
 /** A film's ratings, slogan and plot, as the card draws them. */
 @PreviewLightDark
