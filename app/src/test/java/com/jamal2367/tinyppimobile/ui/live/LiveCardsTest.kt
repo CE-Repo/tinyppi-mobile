@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
@@ -247,10 +248,10 @@ class LiveCardsTest {
             rule.onNodeWithContentDescription(said).assertIsDisplayed()
         }
         assertEquals(false, seen("8.5"))
-        // The ratings stand above the slogan.
-        val badges = rule.onNodeWithContentDescription("FSK 12").fetchSemanticsNode().boundsInRoot
-        val slogan = rule.onNodeWithText("Long live the fighters.").fetchSemanticsNode().boundsInRoot
-        assertEquals(true, badges.bottom <= slogan.top)
+        // The ratings stand under the plot.
+        val plot = rule.onNodeWithText("Paul joins the Fremen.").fetchSemanticsNode().boundsInRoot
+        val first = rule.onNodeWithContentDescription("IMDb 8.5, ${votes(612_345, "612,345")}").fetchSemanticsNode().boundsInRoot
+        assertEquals(true, first.top >= plot.bottom)
 
         // A score alone - no age rating, no own rating, no place - from a
         // source the library names nothing: a plain circle and its figure.
@@ -266,6 +267,11 @@ class LiveCardsTest {
         fake.playing(told.copy(media = MediaInfo(tagline = "Only this.", mpaa = "FSK 16", fsk = "16")))
         rule.until { rule.onAllNodesWithContentDescription("FSK 16").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(true, seen(str(R.string.live_plot)))
+        // Centred: a mark alone stands in the middle of the card, which is
+        // the middle of the screen.
+        val alone = rule.onNodeWithContentDescription("FSK 16").fetchSemanticsNode().boundsInRoot
+        val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
+        assertEquals(screen.center.x, alone.center.x, 1f)
         assertEquals(false, seen("Only this."))
     }
 

@@ -140,19 +140,19 @@ The title with its poster, the source and output badges, the video and audio
 formats named in badges of their own, the progress, and — on a box that allows
 it — the transport row, the track pickers and the VS10 conversions.
 
-Under the card of what is playing, the **Overview** card. Along its top,
-every rating Kodi's library holds for the title, as a row of small shields,
-each with its source's mark on the left, on a ground of the source's colour,
-instead of its name, and what it gave on the right — the same marks and
-shields the add-on's dashboard draws: a score for each source the scraper
-or the NFO wrote — IMDb, TMDB, Trakt, TVDB, Metacritic, Rotten Tomatoes; any
-other gets a circle with its first letter — with how many voted, your own
-rating behind a heart, the place in the IMDb Top 250, and the age rating: a
-German one as the coloured FSK mark, any other written out. A screen reader
-hears each shield as one sentence ("IMDb 8.5, 612,345 votes"). An episode is rated on its
-own and carries its show's age rating. Under them the plot, with the slogan in
-italics above it where there is one — most episodes carry a plot and no
-slogan. The slogan only ever stands above a plot: without a plot the card
+Under the card of what is playing, the **Overview** card: the plot, with the
+slogan in italics above it where there is one — most episodes carry a plot and
+no slogan — and under them, centred, every rating Kodi's library holds for the
+title, as a row of small shields. Each has its source's mark on the left, on a
+ground of the source's colour, instead of its name, and what it gave on the
+right — the same marks and shields the add-on's dashboard draws: a score for
+each source the scraper or the NFO wrote — IMDb, TMDB, Trakt, TVDB,
+Metacritic, Rotten Tomatoes; any other gets its first letter on a plain
+plate — with how many voted, your own rating behind a heart, the place in the
+IMDb Top 250, and the age rating: a German one as the coloured FSK mark, any
+other written out. A screen reader hears each shield as one sentence ("IMDb
+8.5, 612,345 votes"). An episode is rated on its own and carries its show's
+age rating. The slogan only ever stands above a plot: without a plot the card
 shows the ratings alone, and with neither it is left out, as it is for a file
 that is not in the library. It folds, moves and comes off the screen like
 every other card on it (see [Arranging the cards](#arranging-the-cards)).

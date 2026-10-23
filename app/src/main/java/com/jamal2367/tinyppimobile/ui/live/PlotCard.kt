@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -47,8 +48,8 @@ import com.jamal2367.tinyppimobile.util.Formatters
 import java.util.Locale
 
 /**
- * What the title is about and what it has been given: its ratings, its slogan
- * and its plot, as the box's library has them.
+ * What the title is about and what it has been given: its slogan, its plot
+ * and its ratings, as the box's library has them.
  *
  * Under the card of what is playing until the reader moves it, and like every
  * other card there it folds, comes off the screen and goes back on (see
@@ -58,19 +59,15 @@ import java.util.Locale
  * too little, and above a plot it is left out where there is none, which is
  * most episodes.
  *
- * The ratings come first, as a row of pills of the kind the format badges
- * are: short facts about the film, taken in at a glance before the paragraph
- * under them is read. Then the slogan in italics and in the text's full
- * colour, as the line a poster carries, and the plot in the quieter colour
- * the year and genre are set in, since it is the one paragraph on the screen
- * and the readings below it should not have to shout over it.
+ * The slogan first, in italics and in the text's full colour, as the line a
+ * poster carries, and the plot in the quieter colour the year and genre are
+ * set in, since it is the one paragraph on the screen and the readings below
+ * it should not have to shout over it. Under them, centred as a row of their
+ * own, the ratings: short facts about the film, taken in at a glance.
  */
 @Composable
 internal fun PlotCard(media: MediaInfo) {
     SectionCard(title = stringResource(R.string.live_plot), foldId = FOLD_PLOT) {
-        if (media.hasRatings) {
-            RatingRow(media)
-        }
         if (media.hasPlot) {
             if (media.tagline.isNotBlank()) {
                 Text(
@@ -85,6 +82,9 @@ internal fun PlotCard(media: MediaInfo) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        if (media.hasRatings) {
+            RatingRow(media)
         }
     }
 }
@@ -104,9 +104,15 @@ internal fun PlotCard(media: MediaInfo) {
 @Composable
 private fun RatingRow(media: MediaInfo) {
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        // Every line of them centred, the last one too.
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(6.dp),
         itemVerticalAlignment = Alignment.CenterVertically,
+        // A little more air over them than between the lines of the plot:
+        // they are a row of their own, not its last line.
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 2.dp),
     ) {
         media.ratings.forEach { entry ->
             val name = sourceName(entry)
