@@ -141,8 +141,10 @@ class ModelsTest {
         assertEquals("", MediaInfo().age)
         assertEquals("", MediaInfo().ageLevel)
         assertFalse(MediaInfo().hasCredits)
-        // A studio and a director are the playing card's, and no credit.
-        assertFalse(MediaInfo(studios = listOf("A24"), directors = listOf("Denis Villeneuve")).showsPlotCard)
+        // A studio is the playing card's, and no credit.
+        assertFalse(MediaInfo(studios = listOf("A24")).showsPlotCard)
+        // A director is one, like the cast.
+        assertTrue(MediaInfo(directors = listOf("Denis Villeneuve")).hasCredits)
         // A cast is, and draws the card on its own.
         val credited = MediaInfo(cast = listOf("Zendaya"))
         assertTrue(credited.hasCredits)

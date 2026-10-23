@@ -123,12 +123,10 @@
     <string name="live_plot">Overview</string>
     <string name="live_plot_more">Show more</string>
     <string name="live_plot_less">Show less</string>
-    <plurals name="live_rating_votes">
-        <item quantity="one">%1$s vote</item>
-        <item quantity="other">%1$s votes</item>
-    </plurals>
+    <string name="live_ratings">Ratings</string>
     <string name="live_rating_mine">My rating</string>
     <string name="live_rating_top250">Top 250 · #%1$d</string>
+    <string name="live_credit_director">Director</string>
     <string name="live_credit_cast">Cast</string>
 
     <string name="live_vs10">VS10</string>

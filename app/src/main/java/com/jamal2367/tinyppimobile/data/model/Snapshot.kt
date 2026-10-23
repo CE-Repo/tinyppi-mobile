@@ -306,10 +306,10 @@ data class MediaInfo(
     /** The place in the IMDb Top 250; 0 for none. */
     val top250: Int = 0,
     /**
-     * Who made it, as the add-on splits Kodi's readings into names and cuts
-     * them: the first director and the first studio alone, and the cast's
-     * leads in billing order with whether there are more. The studio and the
-     * director stand in the card of what is playing, the cast in the plot
+     * Who made it, as the add-on splits Kodi's readings into names: every
+     * director, the first studio alone, and the cast's first twenty in
+     * billing order with whether there are more. The studio stands in
+     * the card of what is playing, the director and the cast in the plot
      * card. An episode's studio is its show's, and its cast its own guests
      * and then the show's.
      */
@@ -329,9 +329,9 @@ data class MediaInfo(
     val hasRatings: Boolean
         get() = ratings.isNotEmpty() || userRating > 0 || top250 > 0 || mpaa.isNotBlank()
 
-    /** Whether Kodi says who is in the title: the plot card's credits. */
+    /** Whether Kodi says who directed or is in the title: the plot card's credits. */
     val hasCredits: Boolean
-        get() = cast.isNotEmpty()
+        get() = directors.isNotEmpty() || cast.isNotEmpty()
 
     /** Whether the plot card is drawn: for a plot, for ratings, for credits. */
     val showsPlotCard: Boolean

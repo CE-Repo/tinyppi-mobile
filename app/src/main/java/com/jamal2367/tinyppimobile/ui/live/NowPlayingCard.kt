@@ -206,19 +206,6 @@ internal fun NowPlayingCard(
                 // picture finish on the same line. Centred, they floated in
                 // the middle of the card against nothing.
                 Spacer(Modifier.weight(1f))
-                // Who directed it, in the middle of that slack: a weighted
-                // spacer either side of it shares the slack out evenly. The
-                // first name alone, in the voice of the lines above it.
-                snapshot.media.directors.firstOrNull()?.let { director ->
-                    Text(
-                        text = director,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(Modifier.weight(1f))
-                }
 
                 // The two rows travel together, a badge's own gap apart. They
                 // used to have one of those weighted spacers between them,

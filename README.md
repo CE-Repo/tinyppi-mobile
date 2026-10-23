@@ -138,21 +138,24 @@ with the same wrong token would turn a clear error into a confusing one.
 
 The title with its poster, its year and genre (its first two) and under them
 its studio (only the first, with no "…"; an episode's is its show's), the
-director's name alone (only the first as well) in
-the middle of the room left between those lines and the format badges, the
 source and output badges, the video and audio formats named in badges of
 their own, the progress, and — on a box that allows it — the transport row,
 the track pickers and the VS10 conversions.
 
 Under the card of what is playing, the **Overview** card, all of it centred:
-the plot, with the slogan in italics above it where there is one — most
-episodes carry a plot and no slogan; a long plot is cut to four lines, and
-*Show more* under it lets the rest out (*Show less* takes it back) — under them, past a thin rule, the cast:
-its name in bold on a line of its own, centred over its first eight names in
-billing order, ending in "…" where there are more, and left out where Kodi
-has none; the genre, the studio and the director stand in the card above.
-Last, past another rule, every rating Kodi's library holds for the title, as
-a row of small shields. Each has its source's mark on the left, on a
+the plot, with the slogan right over it where there is one, upright and set
+like a credit's heading so the two read as one text — most
+episodes carry a plot and no slogan — and
+hanging on the plot's end the director, then the cast, each its heading in
+bold on a line of its own centred over the names (every director, and the
+cast's first twenty in billing order, ending in "…" where there are more),
+left out where Kodi has none. The genre and
+the studio stand in the card above. Last, under the heading Ratings, every
+rating Kodi's library holds for the title, as a row of small shields. The
+card starts folded, and folds again for every new title: the plot cut to five lines, and the credits and the
+ratings hidden under it. A tap on the plot lets all of it out, and another
+folds it again; only a plot that fits with nothing under it has nothing to
+fold. Each has its source's mark on the left, on a
 ground of the source's colour, instead of its name, and what it gave on the
 right — the same marks and shields the add-on's dashboard draws: first the
 age rating, where the add-on could place it, as a shield like the others:
@@ -163,9 +166,10 @@ Trakt, TVDB, Metacritic, Rotten Tomatoes; any other gets its first letter on a
 plain plate — or, where the add-on was given an MDBList API key, every one
 MDBList gathers for a film (Letterboxd, Rotten Tomatoes' Popcornmeter,
 Metacritic's users, Roger Ebert and MyAnimeList among them, each with a mark
-of its own), with how many voted, your own rating behind a heart and the
-place in the IMDb Top 250. A screen reader hears each shield as one sentence ("IMDb
-8.5, 612,345 votes"). An episode is rated on its own and carries its show's
+of its own), your own rating behind a heart and the place in the IMDb Top
+250, which the add-on reads off IMDb's current chart. A screen reader hears
+each shield as one sentence ("IMDb 8.5"), and a tap or a long press on one
+shows over it for a moment whose it is ("IMDb"), for a mark you do not know. An episode is rated on its own and carries its show's
 age rating. The slogan only ever stands
 above a plot: without a plot the card shows the ratings and the cast alone,
 and with none of them it is left out, as it is for a file that is not in the

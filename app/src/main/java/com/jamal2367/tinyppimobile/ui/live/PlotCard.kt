@@ -3,6 +3,7 @@ package com.jamal2367.tinyppimobile.ui.live
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,16 +21,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -39,14 +45,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,6 +66,7 @@ import com.jamal2367.tinyppimobile.data.model.SourceRating
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import com.jamal2367.tinyppimobile.util.Formatters
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 /**
@@ -74,42 +81,72 @@ import java.util.Locale
  * own it says too little, and above a plot it is left out where there is
  * none, which is most episodes.
  *
- * Everything in it centred. The slogan first, in italics and in the text's
- * full colour, as the line a poster carries, and the plot in the quieter
+ * Everything in it centred. The slogan first, right over the plot so the two
+ * read as one text, set like a credit's heading, and the plot in the quieter
  * colour the year and genre are set in, since it is the one paragraph on the
  * screen and the readings below it should not have to shout over it. Under
- * them, past a thin rule, the cast as a plain line, and last, past another,
- * the ratings as a row of their own: short facts about the film, taken in at
- * a glance.
+ * the plot, the director and the cast as plain lines, and last, under a
+ * heading of their own, the ratings as a row of their own: short facts about
+ * the film, taken in at a glance. All of them under the plot are folded away
+ * until a tap on it lets them out.
  */
 @Composable
-internal fun PlotCard(media: MediaInfo) {
+internal fun PlotCard(media: MediaInfo, title: String) {
     SectionCard(title = stringResource(R.string.live_plot), foldId = FOLD_PLOT) {
         if (media.hasPlot) {
-            // Centred as a block and line by line, over the cast and the
-            // ratings under them, so the card reads down its middle.
-            if (media.tagline.isNotBlank()) {
-                Text(
-                    text = media.tagline.trim(),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontStyle = FontStyle.Italic,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                )
-            }
-            // A long plot is cut to a few lines, and the button under it lets
-            // the rest out and takes it back. It is there only where there is
-            // more to show, and a new plot starts cut again.
-            // The two together, without the card's gap between them: the
-            // button belongs to the paragraph rather than standing as a row
-            // of its own.
-            var open by rememberSaveable(media.plot) { mutableStateOf(false) }
-            var cut by remember(media.plot) { mutableStateOf(false) }
+            // The card starts folded: the plot cut to a few lines, and the
+            // credits and the ratings hanging on its end hidden under it. A
+            // tap on it lets all of it out, and another folds it again. It
+            // folds wherever there is more than those lines to show - a plot
+            // that runs past them, or credits or ratings under it - and a new
+            // plot starts folded again. To a screen reader it is a button
+            // that says what a tap does; a tap on a rating's shield is the
+            // shield's.
+            //
+            // Folded again for every new title - [title] says which this is -
+            // and every new plot. What was let out is kept with them: a card
+            // that comes back after the playback ended is handed its last
+            // state whatever plays now, and only the same title may find it
+            // open. The plot goes in as its hash, not as the whole text.
+            val shown = "$title\n${media.plot.hashCode()}"
+            var openFor by rememberSaveable { mutableStateOf<String?>(null) }
+            val open = openFor == shown
+            var cut by remember(title, media.plot) { mutableStateOf(false) }
+            val folds = cut || media.hasCredits || media.hasRatings
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(
+                        // Only one with more to show is a button at all: a
+                        // plot that fits with nothing under it reads as text.
+                        if (folds) {
+                            Modifier
+                                .clip(FOLD_SHAPE)
+                                .clickable(
+                                    onClickLabel = stringResource(
+                                        if (open) R.string.live_plot_less else R.string.live_plot_more,
+                                    ),
+                                    role = Role.Button,
+                                ) { openFor = if (open) null else shown }
+                        } else {
+                            Modifier
+                        },
+                    ),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // The slogan right over the plot, so the two read as one
+                // text: upright, set like a credit's heading, and as far
+                // over it as a credit's heading is over its names.
+                if (media.tagline.isNotBlank()) {
+                    Text(
+                        text = media.tagline.trim(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = SLOGAN_GAP),
+                    )
+                }
                 Text(
                     text = media.plot.trim(),
                     style = MaterialTheme.typography.bodyMedium,
@@ -117,43 +154,78 @@ internal fun PlotCard(media: MediaInfo) {
                     textAlign = TextAlign.Center,
                     maxLines = if (open) Int.MAX_VALUE else PLOT_LINES,
                     overflow = TextOverflow.Ellipsis,
-                    onTextLayout = { cut = it.hasVisualOverflow },
+                    // Measured folded: an open plot no longer runs past its
+                    // lines, but is still one that folds.
+                    onTextLayout = { if (!open) cut = it.hasVisualOverflow },
                 )
-                if (open || cut) {
-                    TextButton(onClick = { open = !open }) {
-                        Text(stringResource(if (open) R.string.live_plot_less else R.string.live_plot_more))
-                    }
+                if (open) {
+                    if (media.hasCredits) Credits(media, Modifier.padding(top = 12.dp))
+                    if (media.hasRatings) Ratings(media, Modifier.padding(top = 16.dp))
                 }
             }
-        }
-        if (media.hasCredits) {
-            // A thin rule between the plot and them, where there is a plot:
-            // the same hairline the rows of a reading card are ruled with.
-            if (media.hasPlot) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
-            }
-            // Who is in it, the leads as the add-on cuts them, centred like
-            // everything over it. What kind of film it is, who made it and
-            // who directed it stand in the card above.
-            Text(
-                text = creditLine(
-                    stringResource(R.string.live_credit_cast),
-                    Formatters.names(media.cast, media.castMore),
-                    MaterialTheme.colorScheme,
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            )
-        }
-        if (media.hasRatings) {
-            // Last, past the same rule, from the cast or from the plot.
-            if (media.hasPlot || media.hasCredits) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
-            }
-            RatingRow(media)
+        } else {
+            // Without a plot, the credits and the ratings on their own.
+            if (media.hasCredits) Credits(media, Modifier.align(Alignment.CenterHorizontally))
+            if (media.hasRatings) Ratings(media, Modifier.padding(top = RATINGS_GAP))
         }
     }
+}
+
+/**
+ * The ratings, last, under a heading of their own like a credit's, as far
+ * under the cast as the cast is under the director.
+ */
+@Composable
+private fun Ratings(media: MediaInfo, modifier: Modifier) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.live_ratings),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+        )
+        RatingRow(media)
+    }
+}
+
+/**
+ * Who directed it and who is in it - every director over the cast's first
+ * twenty - centred like everything over them. What kind of film
+ * it is and who made it stand in the card above.
+ */
+@Composable
+private fun Credits(media: MediaInfo, modifier: Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        // A clear gap between the two credits, so each reads as its own.
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        if (media.directors.isNotEmpty()) {
+            CreditText(stringResource(R.string.live_credit_director), Formatters.names(media.directors, false))
+        }
+        if (media.cast.isNotEmpty()) {
+            // The leads alone, however many an older add-on sends.
+            CreditText(
+                stringResource(R.string.live_credit_cast),
+                Formatters.names(media.cast.take(CAST_LIMIT), media.castMore || media.cast.size > CAST_LIMIT),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CreditText(label: String, names: String) {
+    Text(
+        text = creditLine(label, names, MaterialTheme.colorScheme),
+        style = MaterialTheme.typography.bodyMedium,
+        textAlign = TextAlign.Center,
+    )
 }
 
 /**
@@ -170,13 +242,14 @@ private fun creditLine(label: String, names: String, colors: ColorScheme): Annot
 
 /**
  * Every rating the library holds: the age rating first - who the film is for
- * is asked before how good it is - then a score for each source with how many
- * voted for it, in the order the add-on sends them, the reader's own and the
- * place in the IMDb Top 250.
+ * is asked before how good it is - then a score for each source, in the
+ * order the add-on sends them, the reader's own and the place in the IMDb
+ * Top 250.
  *
  * Each is a small shield wearing its house's mark on a ground of its house's
- * colour rather than its name - the same drawings the add-on's dashboard
- * serves (`tools/gen_rating_marks.py` in script.tinyppi writes both) - and
+ * colour rather than its name - the same marks the add-on's dashboard
+ * serves: the houses' own logos where there is one, the rest drawn by
+ * `tools/gen_rating_marks.py` in script.tinyppi - and
  * says in words what it shows, since a screen reader can say nothing of a
  * drawing.
  */
@@ -184,6 +257,7 @@ private fun creditLine(label: String, names: String, colors: ColorScheme): Annot
 @Composable
 private fun RatingRow(media: MediaInfo) {
     val tall = badgeHeight()
+    val colours = MaterialTheme.colorScheme
     FlowRow(
         // Every line of them centred, the last one too.
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
@@ -204,28 +278,27 @@ private fun RatingRow(media: MediaInfo) {
             val said = media.mpaa.trim()
             val drawing = AGE_MARKS[media.age]
             if (drawing != null) {
-                RatingShield(spoken = said, value = media.ageLevel.trim(), tall = tall, inset = 0.dp) {
-                    BoardPlate(drawing)
-                }
+                RatingShield(
+                    spoken = said,
+                    named = boardOf(media.age),
+                    value = media.ageLevel.trim(),
+                    tall = tall,
+                    inset = 0.dp,
+                ) { BoardPlate(drawing) }
             } else {
-                RatingShield(spoken = said, value = said, tall = tall)
+                RatingShield(spoken = said, named = said, value = said, tall = tall)
             }
         }
         media.ratings.forEach { entry ->
             val name = sourceName(entry)
             val value = Formatters.rating(entry.rating)
-            val votes = entry.votes.takeIf { it > 0 }?.let(Formatters::count)
-            val spoken = listOfNotNull(
-                "$name $value".trim(),
-                votes?.let { pluralStringResource(R.plurals.live_rating_votes, entry.votes, it) },
-            ).joinToString(", ")
             val mark = RATING_MARKS[entry.source]
             RatingShield(
-                spoken = spoken,
+                spoken = "$name $value".trim(),
+                named = name,
                 value = value,
                 tall = tall,
-                note = votes,
-                ground = mark?.ground ?: MaterialTheme.colorScheme.surfaceContainerHigh,
+                ground = mark?.ground ?: colours.surfaceContainerHigh,
             ) {
                 if (mark != null) DrawnMark(mark.drawing) else LetterMark(name.take(1))
             }
@@ -236,14 +309,16 @@ private fun RatingRow(media: MediaInfo) {
             // says it is theirs and not a house's.
             RatingShield(
                 spoken = "${stringResource(R.string.live_rating_mine)} $value",
+                named = stringResource(R.string.live_rating_mine),
                 value = value,
                 tall = tall,
-                ground = MaterialTheme.colorScheme.primary,
+                ground = colours.primary,
             ) { HeartMark() }
         }
         if (media.top250 > 0) {
             RatingShield(
                 spoken = stringResource(R.string.live_rating_top250, media.top250),
+                named = "IMDb Top 250",
                 value = "#${media.top250}",
                 tall = tall,
                 ground = TOP250.ground,
@@ -257,20 +332,28 @@ private class HouseMark(val drawing: Int, val ground: Color)
 
 /** The houses there is a drawing of, by the name the add-on gives them. */
 private val RATING_MARKS = mapOf(
-    "imdb" to HouseMark(R.drawable.rating_imdb, Color(0xFFF5C518)),
+    "imdb" to HouseMark(R.drawable.rating_imdb, Color(0xFF121212)),
     "tmdb" to HouseMark(R.drawable.rating_tmdb, Color(0xFF0D253F)),
-    "trakt" to HouseMark(R.drawable.rating_trakt, Color(0xFFED1C24)),
-    "tvdb" to HouseMark(R.drawable.rating_tvdb, Color(0xFF1E2A33)),
-    "letterboxd" to HouseMark(R.drawable.rating_letterboxd, Color(0xFF14181C)),
-    "metacritic" to HouseMark(R.drawable.rating_metacritic, Color.Black),
-    "metacriticuser" to HouseMark(R.drawable.rating_metacriticuser, Color.Black),
-    "rottentomatoes" to HouseMark(R.drawable.rating_rottentomatoes, Color.White),
-    "popcorn" to HouseMark(R.drawable.rating_popcorn, Color.White),
+    "trakt" to HouseMark(R.drawable.rating_trakt, Color(0xFF9F42C6)),
+    "tvdb" to HouseMark(R.drawable.rating_tvdb, Color(0xFF555555)),
+    "letterboxd" to HouseMark(R.drawable.rating_letterboxd, Color(0xFF202830)),
+    "metacritic" to HouseMark(R.drawable.rating_metacritic, Color(0xFF66CC33)),
+    "metacriticuser" to HouseMark(R.drawable.rating_metacriticuser, Color(0xFF66CC33)),
+    "rottentomatoes" to HouseMark(R.drawable.rating_rottentomatoes, Color(0xFFF9D320)),
+    "popcorn" to HouseMark(R.drawable.rating_popcorn, Color(0xFF1E88E5)),
     "rogerebert" to HouseMark(R.drawable.rating_rogerebert, Color(0xFFC8102E)),
     "myanimelist" to HouseMark(R.drawable.rating_myanimelist, Color(0xFF2E51A2)),
 )
 
 private val TOP250 = HouseMark(R.drawable.rating_top250, Color(0xFFF5C518))
+
+/** The board an age rating's mark is from, by its name ("fsk12" is the FSK's). */
+private fun boardOf(age: String): String = when {
+    age.startsWith("fsk") -> "FSK"
+    age.startsWith("mpa_") -> "MPA"
+    age.startsWith("tv_") -> "TV Parental Guidelines"
+    else -> "BBFC"
+}
 
 /**
  * The age ratings there is a drawing of, by the name the add-on gives the
@@ -315,27 +398,52 @@ private fun sourceName(entry: SourceRating): String =
 /**
  * One rating as a shield: [side] on the left, on [ground] - a house's own
  * colour, so its mark runs into it and the left reads as one plate - [inset]
- * from its edges, and on the right the figure in bold with how many voted.
+ * from its edges, and on the right the figure in bold.
  * Square-cornered like a plaque rather than round like a button. Without a
  * figure - an age rating from an add-on too old to send its level - the
  * side stands alone.
  *
- * Heard as [spoken] and nothing else - "IMDb 8.5, 612,345 votes" rather than
- * "8.5 612,345" with nothing to say what either is.
+ * Heard as [spoken] and nothing else - "IMDb 8.5" rather than a bare "8.5"
+ * with nothing to say what it is. A tap - or a long press - shows over it
+ * for a moment whose it is, [named], for a mark the reader does not know.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RatingShield(
     spoken: String,
+    named: String,
     value: String,
     tall: Dp,
-    note: String? = null,
     ground: Color = Color.Transparent,
     inset: Dp = 2.dp,
     side: (@Composable () -> Unit)? = null,
 ) {
+    val told = rememberTooltipState()
+    val scope = rememberCoroutineScope()
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+        tooltip = { PlainTooltip { Text(named) } },
+        state = told,
+    ) {
+        Shield(spoken, value, tall, ground, inset, side) { scope.launch { told.show() } }
+    }
+}
+
+/** The shield itself: [side] and the figure, a tap away from its words. */
+@Composable
+private fun Shield(
+    spoken: String,
+    value: String,
+    tall: Dp,
+    ground: Color,
+    inset: Dp,
+    side: (@Composable () -> Unit)?,
+    onTap: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .heardAs(spoken)
+            .clickable(onClick = onTap)
             .height(tall)
             .clip(SHIELD)
             .border(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh, SHIELD)
@@ -354,38 +462,27 @@ private fun RatingShield(
         // On one line, centred in the height the shield is given: a long age
         // rating written out is cut at the edge rather than growing a second.
         if (value.isNotEmpty()) {
-            Row(
-                modifier = Modifier.padding(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
-            ) {
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (note != null) {
-                    Text(
-                        text = note,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                    )
-                }
-            }
+            Text(
+                text = value,
+                modifier = Modifier.padding(horizontal = 7.dp),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
 
 /**
- * A badge heard as [spoken] and as nothing it holds. Built outside the
- * composition, where a lambda is just a lambda and not one more thing for the
- * Compose compiler to remember against its argument.
+ * A badge heard as [spoken] and as nothing it holds - on its own, not as
+ * part of the plot it folds with. Built outside the composition, where a
+ * lambda is just a lambda and not one more thing for the Compose compiler to
+ * remember against its argument.
  */
-private fun Modifier.heardAs(spoken: String): Modifier = clearAndSetSemantics { contentDescription = spoken }
+private fun Modifier.heardAs(spoken: String): Modifier =
+    semantics(mergeDescendants = true) {}.clearAndSetSemantics { contentDescription = spoken }
 
 /** A house's drawing, as tall as a line of the shield and as wide as it is drawn. */
 @Composable
@@ -442,16 +539,28 @@ private fun HeartMark() {
         tint = MaterialTheme.colorScheme.onPrimary,
         modifier = Modifier
             .padding(horizontal = 4.dp)
-            .size(13.dp),
+            .size(11.dp),
     )
 }
 
+/** How many of the cast are named, as the add-on cuts them; "…" says there are more. */
+private const val CAST_LIMIT = 20
+
+/** The air over the ratings' heading, besides the card's own between its rows. */
+private val RATINGS_GAP = 6.dp
+
+/** The air between the slogan and the plot under it. */
+private val SLOGAN_GAP = 4.dp
+
+/** The corners of the ripple a tap on the plot draws. */
+private val FOLD_SHAPE = RoundedCornerShape(8.dp)
+
 /** How many lines of a plot are shown until the reader asks for the rest. */
-private const val PLOT_LINES = 4
+private const val PLOT_LINES = 5
 
 /** How tall a mark stands on its plate, and the corners of a shield. */
 private val MARK = 20.dp
-private val SHIELD = RoundedCornerShape(7.dp)
+private val SHIELD = RoundedCornerShape(6.dp)
 
 /**
  * How tall every badge stands - a shield, a heart, an age rating's - so a
@@ -485,6 +594,7 @@ internal fun PlotCardPreview() {
                         cast = listOf("Timothée Chalamet", "Zendaya", "Rebecca Ferguson", "Javier Bardem", "Josh Brolin"),
                         castMore = true,
                     ),
+                    title = "Dune: Part Two",
                 )
             }
         }
