@@ -261,8 +261,13 @@ private val RATING_MARKS = mapOf(
     "tmdb" to HouseMark(R.drawable.rating_tmdb, Color(0xFF0D253F)),
     "trakt" to HouseMark(R.drawable.rating_trakt, Color(0xFFED1C24)),
     "tvdb" to HouseMark(R.drawable.rating_tvdb, Color(0xFF1E2A33)),
+    "letterboxd" to HouseMark(R.drawable.rating_letterboxd, Color(0xFF14181C)),
     "metacritic" to HouseMark(R.drawable.rating_metacritic, Color.Black),
+    "metacriticuser" to HouseMark(R.drawable.rating_metacriticuser, Color.Black),
     "rottentomatoes" to HouseMark(R.drawable.rating_rottentomatoes, Color.White),
+    "popcorn" to HouseMark(R.drawable.rating_popcorn, Color.White),
+    "rogerebert" to HouseMark(R.drawable.rating_rogerebert, Color(0xFFC8102E)),
+    "myanimelist" to HouseMark(R.drawable.rating_myanimelist, Color(0xFF2E51A2)),
 )
 
 private val TOP250 = HouseMark(R.drawable.rating_top250, Color(0xFFF5C518))

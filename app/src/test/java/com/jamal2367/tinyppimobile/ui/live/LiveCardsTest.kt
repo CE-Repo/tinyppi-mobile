@@ -224,7 +224,7 @@ class LiveCardsTest {
                         SourceRating("imdb", 8.5, 612_345),
                         SourceRating("tmdb", 8.2, 1),
                         SourceRating("rottentomatoes", 9.2, 0),
-                        SourceRating("letterboxd", 8.9, 3),
+                        SourceRating("filmaffinity", 8.9, 3),
                     ),
                     userRating = 9,
                     top250 = 27,
@@ -242,7 +242,7 @@ class LiveCardsTest {
             "IMDb 8.5, ${votes(612_345, "612,345")}",
             "TMDb 8.2, ${votes(1, "1")}",
             "Rotten Tomatoes 9.2",
-            "Letterboxd 8.9, ${votes(3, "3")}",
+            "Filmaffinity 8.9, ${votes(3, "3")}",
             "${str(R.string.live_rating_mine)} 9",
             str(R.string.live_rating_top250, 27),
             "FSK 12",
@@ -252,7 +252,7 @@ class LiveCardsTest {
         // Every badge one height: the scores' shields, the heart's, the
         // place's and the age rating's.
         val heights = listOf(
-            "FSK 12", "IMDb 8.5, ${votes(612_345, "612,345")}", "Letterboxd 8.9, ${votes(3, "3")}",
+            "FSK 12", "IMDb 8.5, ${votes(612_345, "612,345")}", "Filmaffinity 8.9, ${votes(3, "3")}",
             "${str(R.string.live_rating_mine)} 9", str(R.string.live_rating_top250, 27),
         ).map { rule.onNodeWithContentDescription(it).fetchSemanticsNode().boundsInRoot.height }
         assertEquals(heights.map { heights.first() }, heights)
@@ -312,6 +312,21 @@ class LiveCardsTest {
         shieldOf("Rated PG-13", "mpa_pg13", "PG-13", 32f)
         shieldOf("TV-MA", "tv_ma", "MA", 24f)
         shieldOf("15", "bbfc_15", "15", 38f)
+    }
+
+    @Test
+    fun `the sources MDBList brings wear their own marks and names`() {
+        val sources = listOf(
+            "letterboxd" to "Letterboxd", "metacriticuser" to "Metacritic User Score",
+            "popcorn" to "Rotten Tomatoes Popcornmeter", "rogerebert" to "Roger Ebert", "myanimelist" to "MyAnimeList",
+        )
+        fake.playing(told.copy(media = told.media.copy(ratings = sources.map { (source, _) -> SourceRating(source, 7.5) })))
+        showLive()
+        val heights = sources.map { (_, name) ->
+            rule.onNodeWithContentDescription("$name 7.5").fetchSemanticsNode().boundsInRoot.height
+        }
+        // As tall as every other badge.
+        heights.forEach { assertEquals(26f * context.resources.displayMetrics.density, it, 0.5f) }
     }
 
     @Test

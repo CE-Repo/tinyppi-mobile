@@ -244,8 +244,10 @@ private val RATING_STAR_SIZE = 13.dp
 
 /** What a badge calls the house whose rating it draws. Brand names, untranslated. */
 internal val RATING_NAMES = mapOf(
-    "imdb" to "IMDb", "tmdb" to "TMDb", "trakt" to "Trakt", "tvdb" to "TVDB", "metacritic" to "Metacritic",
-    "rottentomatoes" to "Rotten Tomatoes",
+    "imdb" to "IMDb", "tmdb" to "TMDb", "trakt" to "Trakt", "tvdb" to "TVDB", "letterboxd" to "Letterboxd",
+    "metacritic" to "Metacritic", "metacriticuser" to "Metacritic User Score",
+    "rottentomatoes" to "Rotten Tomatoes", "popcorn" to "Rotten Tomatoes Popcornmeter",
+    "rogerebert" to "Roger Ebert", "myanimelist" to "MyAnimeList",
 )
 
 /** What stands between a year and a length, or a number and a length. */

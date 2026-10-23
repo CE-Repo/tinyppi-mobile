@@ -239,7 +239,17 @@ object DemoServer {
      */
     private fun filmRatings(film: Film): List<Triple<String, Double, Int>> {
         val votes = (film.rating * 72_000).toInt()
-        return listOf(Triple("imdb", film.rating, votes), Triple("tmdb", film.rating - 0.3, votes / 90))
+        val scraped = listOf(Triple("imdb", film.rating, votes), Triple("tmdb", film.rating - 0.3, votes / 90))
+        // The films the library knows best are rated as MDBList rates them,
+        // every house it gathers; the rest as a scraper leaves them.
+        if (film.plot.isEmpty()) return scraped
+        return scraped + listOf(
+            Triple("trakt", film.rating - 0.1, votes / 20),
+            Triple("letterboxd", film.rating + 0.3, votes * 2),
+            Triple("metacritic", film.rating - 0.6, 67),
+            Triple("rottentomatoes", film.rating + 0.7, 410),
+            Triple("popcorn", film.rating + 1.0, 10_000),
+        )
     }
 
     private fun episodeId(show: Show, season: Int, episode: Int) = show.id * 1000 + season * 100 + episode

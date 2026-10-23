@@ -180,6 +180,11 @@ class DemoServerTest {
         val rated = state()["media"]!!.jsonObject
         assertEquals("imdb", rated["ratings"]!!.jsonArray[0].jsonObject["source"]!!.jsonPrimitive.content)
         assertEquals(612_000, rated["ratings"]!!.jsonArray[0].jsonObject["votes"]!!.jsonPrimitive.int)
+        // Rated as MDBList rates it, every house it gathers.
+        assertEquals(
+            listOf("imdb", "tmdb", "trakt", "letterboxd", "metacritic", "rottentomatoes", "popcorn"),
+            rated["ratings"]!!.jsonArray.map { it.jsonObject["source"]!!.jsonPrimitive.content },
+        )
         assertEquals("FSK 12", rated["mpaa"]!!.jsonPrimitive.content)
         assertEquals("fsk12", rated["age"]!!.jsonPrimitive.content)
         assertEquals("12", rated["age_level"]!!.jsonPrimitive.content)
@@ -197,6 +202,8 @@ class DemoServerTest {
         // A film the pretend library says nothing about, nor rates for its age.
         assertEquals("", state()["media"]!!.jsonObject["plot"]!!.jsonPrimitive.content)
         assertEquals(0, state()["media"]!!.jsonObject["cast"]!!.jsonArray.size)
+        // Rated as a scraper leaves a film.
+        assertEquals(2, state()["media"]!!.jsonObject["ratings"]!!.jsonArray.size)
         assertEquals("", state()["media"]!!.jsonObject["age"]!!.jsonPrimitive.content)
         post("/api/play", """{"movieid":6}""")
         post("/api/play", """{"movieid":999}""")

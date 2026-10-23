@@ -160,7 +160,10 @@ its board's name on the colour of the level and the level beside it — "FSK" |
 "12", "MPA" | "PG-13" for films and "TV" | "MA" for series (both in the FSK's
 colours), "BBFC" | "15" — and written out where it could not, then a score for each source the scraper or the NFO wrote — IMDb, TMDB,
 Trakt, TVDB, Metacritic, Rotten Tomatoes; any other gets its first letter on a
-plain plate — with how many voted, your own rating behind a heart and the
+plain plate — or, where the add-on was given an MDBList API key, every one
+MDBList gathers for a film (Letterboxd, Rotten Tomatoes' Popcornmeter,
+Metacritic's users, Roger Ebert and MyAnimeList among them, each with a mark
+of its own), with how many voted, your own rating behind a heart and the
 place in the IMDb Top 250. A screen reader hears each shield as one sentence ("IMDb
 8.5, 612,345 votes"). An episode is rated on its own and carries its show's
 age rating. The slogan only ever stands
