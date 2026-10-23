@@ -273,6 +273,8 @@ class LiveCardsTest {
         val slogan = rule.onNodeWithText("Long live the fighters.").fetchSemanticsNode().boundsInRoot
         assertEquals(screen.center.x, slogan.center.x, 1f)
         assertEquals(screen.center.x, plot.center.x, 1f)
+        // Right over the plot, with no gap: the two read as one text.
+        assertEquals(slogan.bottom, plot.top, 0.5f)
         assertEquals(age.center.y, imdb.center.y, 1f)
         assertEquals(true, age.right <= imdb.left)
 

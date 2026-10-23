@@ -46,7 +46,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -74,8 +73,8 @@ import java.util.Locale
  * own it says too little, and above a plot it is left out where there is
  * none, which is most episodes.
  *
- * Everything in it centred. The slogan first, in italics and in the text's
- * full colour, as the line a poster carries, and the plot in the quieter
+ * Everything in it centred. The slogan first, right over the plot so the two
+ * read as one text, set like a credit's heading, and the plot in the quieter
  * colour the year and genre are set in, since it is the one paragraph on the
  * screen and the readings below it should not have to shout over it. Under
  * the plot, the director and the cast as plain lines - hidden with the rest
@@ -86,18 +85,6 @@ import java.util.Locale
 internal fun PlotCard(media: MediaInfo) {
     SectionCard(title = stringResource(R.string.live_plot), foldId = FOLD_PLOT) {
         if (media.hasPlot) {
-            // Centred as a block and line by line, over the cast and the
-            // ratings under them, so the card reads down its middle.
-            if (media.tagline.isNotBlank()) {
-                Text(
-                    text = media.tagline.trim(),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontStyle = FontStyle.Italic,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                )
-            }
             // A long plot is cut to a few lines, and a tap on it lets the
             // rest out and takes it back. It folds only where there is more
             // to show, and a new plot starts cut again. The credits hang on
@@ -127,6 +114,17 @@ internal fun PlotCard(media: MediaInfo) {
                     ),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // The slogan right over the plot, so the two read as one
+                // text: upright, set like a credit's heading.
+                if (media.tagline.isNotBlank()) {
+                    Text(
+                        text = media.tagline.trim(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                    )
+                }
                 Text(
                     text = media.plot.trim(),
                     style = MaterialTheme.typography.bodyMedium,

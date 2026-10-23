@@ -143,7 +143,8 @@ their own, the progress, and — on a box that allows it — the transport row,
 the track pickers and the VS10 conversions.
 
 Under the card of what is playing, the **Overview** card, all of it centred:
-the plot, with the slogan in italics above it where there is one — most
+the plot, with the slogan right over it where there is one, upright and set
+like a credit's heading so the two read as one text — most
 episodes carry a plot and no slogan; a long plot is cut to three lines, and a
 tap on it lets the rest out and another takes it back — and
 hanging on the plot's end the director, then the cast, each its heading in
