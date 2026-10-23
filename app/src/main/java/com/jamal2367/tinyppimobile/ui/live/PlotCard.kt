@@ -219,15 +219,16 @@ private fun creditLine(label: String, names: String, colors: ColorScheme): Annot
  * serves (`tools/gen_rating_marks.py` in script.tinyppi writes both) - and
  * says in words what it shows, since a screen reader can say nothing of a
  * drawing. Not [colourful] - the reader's choice in the settings - every one
- * of them is drawn in greys instead: its mark without colour, on the plain
- * ground a source without a drawing has.
+ * of them stands on the app's accent instead, as the reader's own heart
+ * does, its mark in the accent's ink on it (see [inked]).
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RatingRow(media: MediaInfo, colourful: Boolean) {
     val tall = badgeHeight()
-    val plain = MaterialTheme.colorScheme.surfaceContainerHigh
-    fun ground(colour: Color) = if (colourful) colour else plain
+    val colours = MaterialTheme.colorScheme
+    fun ink(name: String) = if (colourful) null else inked(colours.onPrimary, name in LIGHT_INKED)
+    fun ground(colour: Color) = if (colourful) colour else colours.primary
     FlowRow(
         // Every line of them centred, the last one too.
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
@@ -248,9 +249,13 @@ private fun RatingRow(media: MediaInfo, colourful: Boolean) {
             val said = media.mpaa.trim()
             val drawing = AGE_MARKS[media.age]
             if (drawing != null) {
-                RatingShield(spoken = said, value = media.ageLevel.trim(), tall = tall, inset = 0.dp) {
-                    BoardPlate(drawing, colourful)
-                }
+                RatingShield(
+                    spoken = said,
+                    value = media.ageLevel.trim(),
+                    tall = tall,
+                    ground = ground(Color.Transparent),
+                    inset = 0.dp,
+                ) { BoardPlate(drawing, ink(media.age)) }
             } else {
                 RatingShield(spoken = said, value = said, tall = tall)
             }
@@ -263,9 +268,13 @@ private fun RatingRow(media: MediaInfo, colourful: Boolean) {
                 spoken = "$name $value".trim(),
                 value = value,
                 tall = tall,
-                ground = mark?.ground?.let(::ground) ?: plain,
+                ground = ground(mark?.ground ?: colours.surfaceContainerHigh),
             ) {
-                if (mark != null) DrawnMark(mark.drawing, colourful) else LetterMark(name.take(1))
+                if (mark != null) {
+                    DrawnMark(mark.drawing, ink(entry.source))
+                } else {
+                    LetterMark(name.take(1), if (colourful) colours.onSurfaceVariant else colours.onPrimary)
+                }
             }
         }
         if (media.userRating > 0) {
@@ -276,10 +285,8 @@ private fun RatingRow(media: MediaInfo, colourful: Boolean) {
                 spoken = "${stringResource(R.string.live_rating_mine)} $value",
                 value = value,
                 tall = tall,
-                ground = ground(MaterialTheme.colorScheme.primary),
-            ) {
-                HeartMark(if (colourful) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+                ground = colours.primary,
+            ) { HeartMark() }
         }
         if (media.top250 > 0) {
             RatingShield(
@@ -287,7 +294,7 @@ private fun RatingRow(media: MediaInfo, colourful: Boolean) {
                 value = "#${media.top250}",
                 tall = tall,
                 ground = ground(TOP250.ground),
-            ) { DrawnMark(TOP250.drawing, colourful) }
+            ) { DrawnMark(TOP250.drawing, ink("top250")) }
         }
     }
 }
@@ -440,12 +447,12 @@ private fun Modifier.heardAs(spoken: String): Modifier = clearAndSetSemantics { 
 
 /** A house's drawing, as tall as a line of the shield and as wide as it is drawn. */
 @Composable
-private fun DrawnMark(drawing: Int, colourful: Boolean) {
+private fun DrawnMark(drawing: Int, ink: ColorFilter?) {
     val painter = painterResource(drawing)
     Image(
         painter = painter,
         contentDescription = null,
-        colorFilter = greys(colourful),
+        colorFilter = ink,
         modifier = Modifier
             .height(MARK)
             .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),
@@ -458,12 +465,12 @@ private fun DrawnMark(drawing: Int, colourful: Boolean) {
  * shield's edges as a house's ground does.
  */
 @Composable
-private fun BoardPlate(drawing: Int, colourful: Boolean) {
+private fun BoardPlate(drawing: Int, ink: ColorFilter?) {
     val painter = painterResource(drawing)
     Image(
         painter = painter,
         contentDescription = null,
-        colorFilter = greys(colourful),
+        colorFilter = ink,
         contentScale = ContentScale.FillBounds,
         modifier = Modifier
             .fillMaxHeight()
@@ -471,14 +478,14 @@ private fun BoardPlate(drawing: Int, colourful: Boolean) {
     )
 }
 
-/** A source there is no drawing of: its first letter on the plate. */
+/** A source there is no drawing of: its first letter in [colour] on the plate. */
 @Composable
-private fun LetterMark(letter: String) {
+private fun LetterMark(letter: String, colour: Color) {
     Text(
         text = letter,
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.ExtraBold,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = colour,
         textAlign = TextAlign.Center,
         modifier = Modifier
             .padding(horizontal = 4.dp)
@@ -486,22 +493,53 @@ private fun LetterMark(letter: String) {
     )
 }
 
-/** The heart the reader's own rating wears, in [tint] on the ground it is drawn on. */
+/** The heart the reader's own rating wears, on the accent it is drawn on. */
 @Composable
-private fun HeartMark(tint: Color) {
+private fun HeartMark() {
     Icon(
         imageVector = Icons.Rounded.Favorite,
         contentDescription = null,
-        tint = tint,
+        tint = MaterialTheme.colorScheme.onPrimary,
         modifier = Modifier
             .padding(horizontal = 4.dp)
             .size(11.dp),
     )
 }
 
-/** A mark drawn in greys, where the reader asked for no colours; null keeps its own. */
-private fun greys(colourful: Boolean): ColorFilter? =
-    if (colourful) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+/**
+ * A mark in one colour, [ink], for a shield on the accent. What is dark in a
+ * mark - the letters on IMDb's plate, the "m" on Metacritic's circle, TMDb's
+ * plate - is left out for the accent to show through, and the rest drawn in
+ * the ink. A mark whose letters or lines are white on a colour ([light]: see
+ * [LIGHT_INKED]) has only its white drawn, or plate and letters would be one.
+ */
+private fun inked(ink: Color, light: Boolean): ColorFilter {
+    // How steeply a pixel's lightness turns into the ink, and from where.
+    val (gain, from) = if (light) 10f to 0.7f else 20f to 0.2f
+    return ColorFilter.colorMatrix(
+        ColorMatrix(
+            floatArrayOf(
+                0f, 0f, 0f, 0f, ink.red * 255f,
+                0f, 0f, 0f, 0f, ink.green * 255f,
+                0f, 0f, 0f, 0f, ink.blue * 255f,
+                0.2126f * gain, 0.7152f * gain, 0.0722f * gain, 0f, -from * gain * 255f,
+            ),
+        ),
+    )
+}
+
+/**
+ * The marks drawn in white on a colour: Trakt's ring on its red, Roger
+ * Ebert's and MyAnimeList's names on theirs, and the age ratings whose level's
+ * colour carries its board's name in white. On the accent only their white
+ * is inked.
+ */
+private val LIGHT_INKED = setOf(
+    "trakt", "rogerebert", "myanimelist",
+    "fsk12", "fsk16", "fsk18",
+    "mpa_g", "mpa_r", "mpa_nc17", "tv_y", "tv_y7", "tv_g", "tv_ma",
+    "bbfc_u", "bbfc_12a", "bbfc_12", "bbfc_15", "bbfc_18", "bbfc_r18",
+)
 
 /** The air between the slogan and the plot under it. */
 private val SLOGAN_GAP = 4.dp

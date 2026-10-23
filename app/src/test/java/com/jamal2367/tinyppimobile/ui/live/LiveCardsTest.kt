@@ -155,22 +155,32 @@ class LiveCardsTest {
     // Drawn for real: the colours are read off the pixels.
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    fun `the rating badges wear their houses' colours, or greys where the reader asked`() {
-        fun colourful(said: String): Boolean {
-            val image = rule.onNodeWithContentDescription(said).captureToImage().toPixelMap()
-            return (0 until image.width).any { x ->
-                (0 until image.height).any { y ->
-                    val pixel = image[x, y]
-                    maxOf(pixel.red, pixel.green, pixel.blue) - minOf(pixel.red, pixel.green, pixel.blue) > 0.25f
-                }
-            }
+    fun `the rating badges wear their houses' colours, or the accent where the reader asked`() {
+        fun pixels(said: String) = rule.onNodeWithContentDescription(said).captureToImage().toPixelMap().let { map ->
+            (0 until map.width).flatMap { x -> (0 until map.height).map { y -> map[x, y] } }
         }
-        val badges = listOf("FSK 12", "IMDb 8.5", "Metacritic 7.4", "${str(R.string.live_rating_mine)} 9",
-            str(R.string.live_rating_top250, 17))
+        fun near(a: Color, b: Color) =
+            maxOf(kotlin.math.abs(a.red - b.red), kotlin.math.abs(a.green - b.green), kotlin.math.abs(a.blue - b.blue)) < 0.04f
+        fun holds(said: String, colour: Color) = pixels(said).any { near(it, colour) }
+        val mine = "${str(R.string.live_rating_mine)} 9"
+        // Each house's own colour, as the shields draw it.
+        val houses = mapOf(
+            "FSK 12" to Color(0xFF00A651),
+            "IMDb 8.5" to Color(0xFFF5C518),
+            "Metacritic 7.4" to Color(0xFF66CC33),
+            // White lines on its red: only the white is inked.
+            "Trakt 8.8" to Color(0xFFED1C24),
+            str(R.string.live_rating_top250, 17) to Color(0xFFF5C518),
+        )
         fake.playing(
             told.copy(
                 media = told.media.copy(
-                    ratings = listOf(SourceRating("imdb", 8.5, 0), SourceRating("metacritic", 7.4, 0)),
+                    ratings = listOf(
+                        SourceRating("imdb", 8.5, 0),
+                        SourceRating("metacritic", 7.4, 0),
+                        SourceRating("trakt", 8.8, 0),
+                        SourceRating("filmaffinity", 7.0, 0),
+                    ),
                     userRating = 9,
                     top250 = 17,
                     mpaa = "FSK 12",
@@ -180,12 +190,21 @@ class LiveCardsTest {
             ),
         )
         showLive()
-        badges.forEach { assertEquals(it, true, colourful(it)) }
+        houses.forEach { (said, colour) -> assertEquals(said, true, holds(said, colour)) }
+        // The reader's own stands on the accent either way: its ground's
+        // colour, left of the heart, is the accent's.
+        val accent = rule.onNodeWithContentDescription(mine).captureToImage().toPixelMap().let { it[2, it.height / 2] }
 
-        // Monochrome: every one of them in greys, marks and grounds alike.
+        // On the accent: no house's colour left, the accent behind every one.
         fake.settings.value = fake.settings.value.copy(colourfulRatings = false)
         rule.waitForIdle()
-        badges.forEach { assertEquals(it, false, colourful(it)) }
+        houses.forEach { (said, colour) ->
+            assertEquals(said, false, holds(said, colour))
+            assertEquals(said, true, holds(said, accent))
+        }
+        assertEquals(true, holds(mine, accent))
+        // A source with no drawing: its letter on the accent too.
+        assertEquals(true, holds("Filmaffinity 7.0", accent))
     }
 
     @Test

@@ -219,7 +219,7 @@
     <string name="settings_chapters">Kapitelmarken</string>
     <string name="settings_chapters_desc">Punkte auf dem Fortschrittsbalken, wo jedes Kapitel beginnt, darüber das laufende Kapitel. Beim Ziehen rastet der Regler an ihnen ein.</string>
     <string name="settings_rating_colours">Farbige Bewertungsschilder</string>
-    <string name="settings_rating_colours_desc">Jedes Bewertungsschild in den Farben seines Dienstes. Aus, alle in den Grautönen der App.</string>
+    <string name="settings_rating_colours_desc">Jedes Bewertungsschild in den Farben seines Dienstes. Aus, alle in der Akzentfarbe der App.</string>
     <string name="settings_adaptive_color">Adaptive Farben</string>
     <string name="settings_adaptive_color_desc">Die App in der Farbe des laufenden Covers einfärben, wie im Dashboard.</string>
     <string name="settings_adaptive_color_intensity">Akzentintensität</string>

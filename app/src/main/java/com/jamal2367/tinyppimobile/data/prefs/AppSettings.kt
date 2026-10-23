@@ -129,8 +129,8 @@ data class AppSettings(
      */
     val showChapters: Boolean = true,
     /**
-     * Whether the rating badges wear each service's colours, or are all
-     * drawn in the app's own greys. On by default: a mark is told apart by
+     * Whether the rating badges wear each service's colours, or all stand
+     * on the app's accent. On by default: a mark is told apart by
      * its colour before its shape.
      */
     val colourfulRatings: Boolean = true,
