@@ -283,6 +283,12 @@ class LiveCardsTest {
         assertEquals(screen.center.x, alone.center.x, 1f)
         assertEquals(false, seen("Only this."))
 
+        // So does the FSK's, which is written out: "FSK 12".
+        fake.playing(told.copy(media = MediaInfo(plot = "Plot.", mpaa = "FSK 12", age = "fsk12")))
+        rule.until { rule.onAllNodesWithContentDescription("FSK 12").fetchSemanticsNodes().isNotEmpty() }
+        val fsk = rule.onNodeWithContentDescription("FSK 12").fetchSemanticsNode().boundsInRoot
+        assertEquals(2f, fsk.width / fsk.height, 0.05f)
+
         // An American one wears its board's plate, twice as wide as it is tall.
         fake.playing(told.copy(media = MediaInfo(plot = "Plot.", mpaa = "Rated PG-13", age = "mpa_pg13")))
         rule.until { rule.onAllNodesWithContentDescription("Rated PG-13").fetchSemanticsNodes().isNotEmpty() }

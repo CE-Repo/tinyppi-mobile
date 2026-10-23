@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -63,8 +64,8 @@ import java.util.Locale
  * full colour, as the line a poster carries, and the plot in the quieter
  * colour the year and genre are set in, since it is the one paragraph on the
  * screen and the readings below it should not have to shout over it. Under
- * them, as a row of their own, the ratings: short facts about the film, taken
- * in at a glance.
+ * them, past a thin rule, the ratings as a row of their own: short facts
+ * about the film, taken in at a glance.
  */
 @Composable
 internal fun PlotCard(media: MediaInfo) {
@@ -91,6 +92,11 @@ internal fun PlotCard(media: MediaInfo) {
             )
         }
         if (media.hasRatings) {
+            // A thin rule between the plot and them, where there is a plot:
+            // the same hairline the rows of a reading card are ruled with.
+            if (media.hasPlot) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
+            }
             RatingRow(media)
         }
     }
