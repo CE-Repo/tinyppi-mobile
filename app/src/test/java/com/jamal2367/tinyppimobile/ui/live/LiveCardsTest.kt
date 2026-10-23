@@ -191,10 +191,13 @@ class LiveCardsTest {
         )
         showLive()
         letOut()
-        houses.forEach { (said, colour) -> assertEquals(said, true, holds(said, colour)) }
-        // IMDb's yellow is a thin line on a dark ground of its own.
-        assertEquals(true, holds("IMDb 8.5", Color(0xFF121212)))
-        assertEquals(true, holds("TVDB 7.9", Color(0xFF555555)))
+        // Read once the screen has settled: a frame caught mid-draw can miss one.
+        val expected = houses + mapOf(
+            // IMDb's yellow is a thin line on a dark ground of its own.
+            "IMDb 8.5" to Color(0xFF121212),
+            "TVDB 7.9" to Color(0xFF555555),
+        )
+        expected.forEach { (said, colour) -> rule.until { holds(said, colour) } }
     }
 
     @Test
@@ -484,6 +487,9 @@ class LiveCardsTest {
         if (foldable(R.string.live_plot_more)) {
             rule.onNode(folds(R.string.live_plot_more)).performClick()
             rule.until { foldable(R.string.live_plot_less) }
+            // Past the tap's ripple, which would tint what is read off the pixels.
+            rule.mainClock.advanceTimeBy(2_000)
+            rule.waitForIdle()
         }
     }
 

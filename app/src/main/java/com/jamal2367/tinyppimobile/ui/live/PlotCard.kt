@@ -85,9 +85,10 @@ import java.util.Locale
  * read as one text, set like a credit's heading, and the plot in the quieter
  * colour the year and genre are set in, since it is the one paragraph on the
  * screen and the readings below it should not have to shout over it. Under
- * the plot, the director and the cast as plain lines - hidden with the rest
- * of a cut plot and let out with it - and last, under a heading of their own, the ratings as a row of their
- * own: short facts about the film, taken in at a glance.
+ * the plot, the director and the cast as plain lines, and last, under a
+ * heading of their own, the ratings as a row of their own: short facts about
+ * the film, taken in at a glance. All of them under the plot are folded away
+ * until a tap on it lets them out.
  */
 @Composable
 internal fun PlotCard(media: MediaInfo, title: String) {
@@ -101,12 +102,13 @@ internal fun PlotCard(media: MediaInfo, title: String) {
             // plot starts folded again. To a screen reader it is a button
             // that says what a tap does; a tap on a rating's shield is the
             // shield's.
-            // Folded again for every new title, [title] saying which this is,
-            // and for a new plot.
-            // Kept with the title and plot it was let out for: a card that
-            // comes back after the playback ended is handed its last state
-            // whatever plays now, and only the same title may find it open.
-            val shown = "$title\n${media.plot}"
+            //
+            // Folded again for every new title - [title] says which this is -
+            // and every new plot. What was let out is kept with them: a card
+            // that comes back after the playback ended is handed its last
+            // state whatever plays now, and only the same title may find it
+            // open. The plot goes in as its hash, not as the whole text.
+            val shown = "$title\n${media.plot.hashCode()}"
             var openFor by rememberSaveable { mutableStateOf<String?>(null) }
             val open = openFor == shown
             var cut by remember(title, media.plot) { mutableStateOf(false) }
@@ -192,8 +194,8 @@ private fun Ratings(media: MediaInfo, modifier: Modifier) {
 }
 
 /**
- * Who directed it and who is in it - the directors over the cast, every name
- * the add-on sends - centred like everything over them. What kind of film
+ * Who directed it and who is in it - every director over the cast's first
+ * twenty - centred like everything over them. What kind of film
  * it is and who made it stand in the card above.
  */
 @Composable
