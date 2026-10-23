@@ -21,15 +21,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -59,6 +66,7 @@ import com.jamal2367.tinyppimobile.data.model.SourceRating
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import com.jamal2367.tinyppimobile.util.Formatters
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 /**
@@ -343,8 +351,10 @@ private fun sourceName(entry: SourceRating): String =
  * side stands alone.
  *
  * Heard as [spoken] and nothing else - "IMDb 8.5" rather than a bare "8.5"
- * with nothing to say what it is.
+ * with nothing to say what it is. A tap - or a long press - shows the same
+ * words over it for a moment, for a mark the reader does not know.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RatingShield(
     spoken: String,
@@ -354,9 +364,32 @@ private fun RatingShield(
     inset: Dp = 2.dp,
     side: (@Composable () -> Unit)? = null,
 ) {
+    val told = rememberTooltipState()
+    val scope = rememberCoroutineScope()
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+        tooltip = { PlainTooltip { Text(spoken) } },
+        state = told,
+    ) {
+        Shield(spoken, value, tall, ground, inset, side) { scope.launch { told.show() } }
+    }
+}
+
+/** The shield itself: [side] and the figure, a tap away from its words. */
+@Composable
+private fun Shield(
+    spoken: String,
+    value: String,
+    tall: Dp,
+    ground: Color,
+    inset: Dp,
+    side: (@Composable () -> Unit)?,
+    onTap: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .heardAs(spoken)
+            .clickable(onClick = onTap)
             .height(tall)
             .clip(SHIELD)
             .border(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh, SHIELD)
@@ -377,7 +410,7 @@ private fun RatingShield(
         if (value.isNotEmpty()) {
             Text(
                 text = value,
-                modifier = Modifier.padding(horizontal = 8.dp),
+                modifier = Modifier.padding(horizontal = 7.dp),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -450,7 +483,7 @@ private fun HeartMark() {
         tint = MaterialTheme.colorScheme.onPrimary,
         modifier = Modifier
             .padding(horizontal = 4.dp)
-            .size(13.dp),
+            .size(11.dp),
     )
 }
 
@@ -461,8 +494,8 @@ private val FOLD_SHAPE = RoundedCornerShape(8.dp)
 private const val PLOT_LINES = 3
 
 /** How tall a mark stands on its plate, and the corners of a shield. */
-private val MARK = 20.dp
-private val SHIELD = RoundedCornerShape(7.dp)
+private val MARK = 17.dp
+private val SHIELD = RoundedCornerShape(6.dp)
 
 /**
  * How tall every badge stands - a shield, a heart, an age rating's - so a
@@ -473,7 +506,7 @@ private val SHIELD = RoundedCornerShape(7.dp)
 @Composable
 private fun badgeHeight(): Dp = BADGE * LocalDensity.current.fontScale.coerceAtLeast(1f)
 
-private val BADGE = 26.dp
+private val BADGE = 22.dp
 
 /** A film's slogan, plot, ratings and cast, as the card draws them. */
 @PreviewLightDark

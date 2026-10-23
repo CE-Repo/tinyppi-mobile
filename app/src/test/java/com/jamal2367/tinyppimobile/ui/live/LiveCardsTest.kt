@@ -259,8 +259,15 @@ class LiveCardsTest {
             "${str(R.string.live_rating_mine)} 9", str(R.string.live_rating_top250, 27),
         ).map { rule.onNodeWithContentDescription(it).fetchSemanticsNode().boundsInRoot.height }
         assertEquals(heights.map { heights.first() }, heights)
-        assertEquals(26f * context.resources.displayMetrics.density, heights.first(), 0.5f)
+        assertEquals(22f * context.resources.displayMetrics.density, heights.first(), 0.5f)
         assertEquals(false, seen("8.5"))
+        // A tap on one shows its words over it: the house a mark is from.
+        assertEquals(false, seen("Filmaffinity 8.9"))
+        rule.onNodeWithContentDescription("Filmaffinity 8.9").performClick()
+        rule.until { seen("Filmaffinity 8.9") }
+        // And only for a moment.
+        rule.mainClock.advanceTimeBy(5_000)
+        rule.until { !seen("Filmaffinity 8.9") }
         // The ratings stand under the plot, the age rating first: on the
         // first line, before the first score.
         val plot = rule.onNodeWithText("Paul joins the Fremen.").fetchSemanticsNode().boundsInRoot
@@ -309,9 +316,9 @@ class LiveCardsTest {
             fake.playing(told.copy(media = MediaInfo(plot = "Plot.", mpaa = said, age = age, ageLevel = level)))
             rule.until { rule.onAllNodesWithContentDescription(said).fetchSemanticsNodes().isNotEmpty() }
             val shield = rule.onNodeWithContentDescription(said).fetchSemanticsNode().boundsInRoot
-            assertEquals(26f * density, shield.height, 0.5f)
+            assertEquals(22f * density, shield.height, 0.5f)
             // The plate, edge to edge, and the figure's own room beside it.
-            assertEquals(true, shield.width > (26f * plateWidth / 22f + 16f) * density)
+            assertEquals(true, shield.width > (22f * plateWidth / 22f + 14f) * density)
         }
         shieldOf("FSK 12", "fsk12", "12", 30f)
         shieldOf("Rated PG-13", "mpa_pg13", "PG-13", 32f)
@@ -331,7 +338,7 @@ class LiveCardsTest {
             rule.onNodeWithContentDescription("$name 7.5").fetchSemanticsNode().boundsInRoot.height
         }
         // As tall as every other badge.
-        heights.forEach { assertEquals(26f * context.resources.displayMetrics.density, it, 0.5f) }
+        heights.forEach { assertEquals(22f * context.resources.displayMetrics.density, it, 0.5f) }
     }
 
     @Test
