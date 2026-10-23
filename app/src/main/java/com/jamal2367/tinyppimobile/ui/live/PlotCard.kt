@@ -445,7 +445,7 @@ private fun HeartMark() {
 }
 
 /** How many lines of a plot are shown until the reader asks for the rest. */
-private const val PLOT_LINES = 4
+private const val PLOT_LINES = 3
 
 /** How tall a mark stands on its plate, and the corners of a shield. */
 private val MARK = 20.dp

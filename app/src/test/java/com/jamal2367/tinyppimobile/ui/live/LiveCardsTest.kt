@@ -396,7 +396,7 @@ class LiveCardsTest {
     // Drawn for real: how many lines a plot takes is measured.
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    fun `a long plot is cut to four lines, and a button lets the rest out`() {
+    fun `a long plot is cut to three lines, and a button lets the rest out`() {
         val long = List(40) { "Paul joins the Fremen and walks the desert." }.joinToString(" ")
         fake.playing(told.copy(media = told.media.copy(plot = long)))
         showLive()
