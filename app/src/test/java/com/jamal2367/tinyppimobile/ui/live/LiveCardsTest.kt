@@ -437,6 +437,12 @@ class LiveCardsTest {
             assertEquals(1, rule.onAllNodesWithText(above, substring = true).fetchSemanticsNodes().size)
         }
 
+        // A longer cast, from an add-on that did not cut it, is cut here: the
+        // first twenty, and an ellipsis.
+        val many = List(25) { "Actor ${it + 1}" }
+        fake.playing(told.copy(media = told.media.copy(cast = many)))
+        rule.until { seen("${str(R.string.live_credit_cast)}\n${many.take(20).joinToString(", ")}, …") }
+
         // A cast the add-on did not cut ends without one.
         fake.playing(told.copy(media = told.media.copy(cast = listOf("Somebody", "Somebody Else"))))
         rule.until { seen("${str(R.string.live_credit_cast)}\nSomebody, Somebody Else") }
@@ -518,6 +524,17 @@ class LiveCardsTest {
         rule.until { foldable(R.string.live_plot_less) }
         fake.playing(told.copy(title = "Another title", media = told.media.copy(plot = other)))
         rule.until { seen("Another title") && foldable(R.string.live_plot_more) }
+        // And after the playback ended with it let out, for the next title:
+        // the card that comes back is not handed the last one's state.
+        rule.onNode(folds(R.string.live_plot_more)).performClick()
+        rule.until { foldable(R.string.live_plot_less) }
+        fake.playing(told.copy(playing = false))
+        rule.until { seen(str(R.string.live_idle_title)) }
+        fake.playing(told.copy(title = "A third title", media = told.media.copy(plot = other)))
+        rule.until { seen("A third title") && foldable(R.string.live_plot_more) }
+        // The same title again, back from nothing playing, as it was left.
+        rule.onNode(folds(R.string.live_plot_more)).performClick()
+        rule.until { foldable(R.string.live_plot_less) }
 
         // A short one with nothing under it is nothing to tap.
         fake.playing(told.copy(media = MediaInfo(plot = "Paul joins the Fremen.")))

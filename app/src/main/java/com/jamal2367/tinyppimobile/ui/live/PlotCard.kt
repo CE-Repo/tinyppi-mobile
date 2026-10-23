@@ -103,7 +103,12 @@ internal fun PlotCard(media: MediaInfo, title: String) {
             // shield's.
             // Folded again for every new title, [title] saying which this is,
             // and for a new plot.
-            var open by rememberSaveable(title, media.plot) { mutableStateOf(false) }
+            // Kept with the title and plot it was let out for: a card that
+            // comes back after the playback ended is handed its last state
+            // whatever plays now, and only the same title may find it open.
+            val shown = "$title\n${media.plot}"
+            var openFor by rememberSaveable { mutableStateOf<String?>(null) }
+            val open = openFor == shown
             var cut by remember(title, media.plot) { mutableStateOf(false) }
             val folds = cut || media.hasCredits || media.hasRatings
             Column(
@@ -120,7 +125,7 @@ internal fun PlotCard(media: MediaInfo, title: String) {
                                         if (open) R.string.live_plot_less else R.string.live_plot_more,
                                     ),
                                     role = Role.Button,
-                                ) { open = !open }
+                                ) { openFor = if (open) null else shown }
                         } else {
                             Modifier
                         },
@@ -203,7 +208,11 @@ private fun Credits(media: MediaInfo, modifier: Modifier) {
             CreditText(stringResource(R.string.live_credit_director), Formatters.names(media.directors, false))
         }
         if (media.cast.isNotEmpty()) {
-            CreditText(stringResource(R.string.live_credit_cast), Formatters.names(media.cast, media.castMore))
+            // The leads alone, however many an older add-on sends.
+            CreditText(
+                stringResource(R.string.live_credit_cast),
+                Formatters.names(media.cast.take(CAST_LIMIT), media.castMore || media.cast.size > CAST_LIMIT),
+            )
         }
     }
 }
@@ -531,6 +540,9 @@ private fun HeartMark() {
             .size(11.dp),
     )
 }
+
+/** How many of the cast are named, as the add-on cuts them; "…" says there are more. */
+private const val CAST_LIMIT = 20
 
 /** The air over the ratings' heading, besides the card's own between its rows. */
 private val RATINGS_GAP = 6.dp
