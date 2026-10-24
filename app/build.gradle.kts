@@ -51,8 +51,8 @@ android {
         applicationId = "com.jamal2367.tinyppimobile"
         minSdk = 26
         targetSdk = 37
-        versionCode = 161
-        versionName = "1.6.1"
+        versionCode = 162
+        versionName = "1.6.2"
 
         val buildNumber = providers.environmentVariable("BUILD_NUMBER").orNull
             ?.trim()
