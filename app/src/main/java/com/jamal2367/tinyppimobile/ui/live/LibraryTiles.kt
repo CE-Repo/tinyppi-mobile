@@ -248,6 +248,7 @@ internal val RATING_NAMES = mapOf(
     "metacritic" to "Metacritic", "metacriticuser" to "Metacritic User Score",
     "rottentomatoes" to "Rotten Tomatoes", "popcorn" to "Rotten Tomatoes Popcornmeter",
     "rogerebert" to "Roger Ebert", "myanimelist" to "MyAnimeList",
+    "mdblist" to "MDBList",
 )
 
 /** What stands between a year and a length, or a number and a length. */

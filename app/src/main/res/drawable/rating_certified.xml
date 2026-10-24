@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Drawn by tools/gen_rating_marks.py in script.tinyppi; edit it there. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="12dp"
+    android:height="12dp"
+    android:viewportWidth="12"
+    android:viewportHeight="12">
+    <path android:pathData="M0 6A6 6 0 1 0 12 6A6 6 0 1 0 0 6Z" android:fillColor="#FFFFFF" />
+    <path android:pathData="M1.2 6A4.8 4.8 0 1 0 10.8 6A4.8 4.8 0 1 0 1.2 6Z" android:fillColor="#FA320A" />
+    <path android:pathData="M3.6 6.2L5.3 7.9L8.5 4.5" android:strokeColor="#FFFFFF" android:strokeWidth="1.5" android:strokeLineCap="round" android:strokeLineJoin="round" />
+</vector>

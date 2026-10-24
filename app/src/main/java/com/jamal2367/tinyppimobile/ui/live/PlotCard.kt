@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -296,14 +297,17 @@ private fun RatingRow(media: MediaInfo) {
             val name = sourceName(entry)
             val value = Formatters.rating(entry.rating)
             val mark = RATING_MARKS[entry.source]
+            // Certified Fresh or Verified Hot: said, and a seal on the mark.
+            val certificate = CERTIFICATES[entry.source]?.takeIf { entry.certified }
+            val named = if (certificate != null) "$name · $certificate" else name
             RatingShield(
-                spoken = "$name $value".trim(),
-                named = name,
+                spoken = "$named $value".trim(),
+                named = named,
                 value = value,
                 tall = tall,
                 ground = mark?.ground ?: colours.surfaceContainerHigh,
             ) {
-                if (mark != null) DrawnMark(mark.drawing) else LetterMark(name.take(1))
+                if (mark != null) DrawnMark(mark.drawing, sealed = certificate != null) else LetterMark(name.take(1))
             }
         }
         if (media.userRating > 0) {
@@ -346,9 +350,13 @@ private val RATING_MARKS = mapOf(
     "popcorn" to HouseMark(R.drawable.rating_popcorn, Color(0xFF1E88E5)),
     "rogerebert" to HouseMark(R.drawable.rating_rogerebert, Color(0xFFC8102E)),
     "myanimelist" to HouseMark(R.drawable.rating_myanimelist, Color(0xFF2E51A2)),
+    "mdblist" to HouseMark(R.drawable.rating_mdblist, Color(0xFF4284CA)),
 )
 
 private val TOP250 = HouseMark(R.drawable.rating_top250, Color(0xFFF5C518))
+
+/** What Rotten Tomatoes calls a rating it certified: its critics' and its audience's. Untranslated. */
+private val CERTIFICATES = mapOf("rottentomatoes" to "Certified Fresh", "popcorn" to "Verified Hot")
 
 /** The board an age rating's mark is from, by its name ("fsk12" is the FSK's). */
 private fun boardOf(age: String): String = when {
@@ -487,17 +495,33 @@ private fun Shield(
 private fun Modifier.heardAs(spoken: String): Modifier =
     semantics(mergeDescendants = true) {}.clearAndSetSemantics { contentDescription = spoken }
 
-/** A house's drawing, as tall as a line of the shield and as wide as it is drawn. */
+/**
+ * A house's drawing, as tall as a line of the shield and as wide as it is
+ * drawn; [sealed], with Rotten Tomatoes' seal on its corner - the same one
+ * the dashboard draws, from `tools/gen_rating_marks.py`.
+ */
 @Composable
-private fun DrawnMark(drawing: Int) {
+private fun DrawnMark(drawing: Int, sealed: Boolean = false) {
     val painter = painterResource(drawing)
-    Image(
-        painter = painter,
-        contentDescription = null,
-        modifier = Modifier
-            .height(MARK)
-            .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),
-    )
+    Box {
+        Image(
+            painter = painter,
+            contentDescription = null,
+            modifier = Modifier
+                .height(MARK)
+                .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),
+        )
+        if (sealed) {
+            Image(
+                painter = painterResource(R.drawable.rating_certified),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 2.dp, y = (-1).dp)
+                    .size(SEAL),
+            )
+        }
+    }
 }
 
 /**
@@ -563,6 +587,7 @@ private const val PLOT_LINES = 5
 
 /** How tall a mark stands on its plate, and the corners of a shield. */
 private val MARK = 20.dp
+private val SEAL = 10.dp
 private val SHIELD = RoundedCornerShape(6.dp)
 
 /**

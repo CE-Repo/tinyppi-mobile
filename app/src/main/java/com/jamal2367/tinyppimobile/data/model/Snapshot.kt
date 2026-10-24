@@ -356,6 +356,11 @@ data class SourceRating(
     val rating: Double = 0.0,
     /** How many voted; 0 where the library does not say. */
     val votes: Int = 0,
+    /**
+     * Rotten Tomatoes certified it: Certified Fresh for `rottentomatoes`,
+     * Verified Hot for `popcorn`. Sent by the add-on only when true.
+     */
+    val certified: Boolean = false,
 )
 
 /** The switchable side of the player. Empty unless the server allows control. */
