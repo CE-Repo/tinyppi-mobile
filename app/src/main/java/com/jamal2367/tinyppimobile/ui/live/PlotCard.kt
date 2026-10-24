@@ -455,6 +455,7 @@ private fun Shield(
             .heardAs(spoken)
             .clickable(onClick = onTap)
             .height(tall)
+            .widthIn(min = SHIELD_WIDTH)
             .clip(SHIELD)
             .border(1.dp, hue.copy(alpha = EDGE), SHIELD)
             .background(hue.copy(alpha = WASH).compositeOver(MaterialTheme.colorScheme.surfaceContainerHighest)),
@@ -479,7 +480,7 @@ private fun Shield(
             Text(
                 text = value,
                 modifier = Modifier.padding(start = if (side != null) 4.dp else 8.dp, end = 8.dp),
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
@@ -550,7 +551,7 @@ private fun BoardPlate(drawing: Int) {
 private fun LetterMark(letter: String) {
     Text(
         text = letter,
-        style = MaterialTheme.typography.labelMedium,
+        style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.ExtraBold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
@@ -569,7 +570,7 @@ private fun HeartMark() {
         tint = MaterialTheme.colorScheme.onPrimary,
         modifier = Modifier
             .padding(horizontal = 4.dp)
-            .size(13.dp),
+            .size(11.dp),
     )
 }
 
@@ -586,9 +587,12 @@ private val FOLD_SHAPE = RoundedCornerShape(8.dp)
 private const val PLOT_LINES = 5
 
 /** How tall a mark stands on its plate, and the corners of a shield and of its plate. */
-private val MARK = 22.dp
-private val SEAL = 12.dp
+private val MARK = 16.dp
+private val SEAL = 9.dp
 private val SHIELD = RoundedCornerShape(7.dp)
+
+/** How narrow a shield may be, so one with a short mark and figure is not a sliver. */
+private val SHIELD_WIDTH = 32.dp
 private val PLATE = RoundedCornerShape(5.dp)
 
 /** How much of its house's colour a shield is washed in, and edged in. */
@@ -604,7 +608,7 @@ private const val EDGE = 0.55f
 @Composable
 private fun badgeHeight(): Dp = BADGE * LocalDensity.current.fontScale.coerceAtLeast(1f)
 
-private val BADGE = 30.dp
+private val BADGE = 24.dp
 
 /** A film's slogan, plot, ratings and cast, as the card draws them. */
 @PreviewLightDark
