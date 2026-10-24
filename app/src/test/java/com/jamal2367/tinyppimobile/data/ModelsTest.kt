@@ -2,6 +2,7 @@ package com.jamal2367.tinyppimobile.data
 
 import com.jamal2367.tinyppimobile.data.model.ActiveArea
 import com.jamal2367.tinyppimobile.data.model.ApiErrorBody
+import com.jamal2367.tinyppimobile.data.model.Award
 import com.jamal2367.tinyppimobile.data.model.Chapter
 import com.jamal2367.tinyppimobile.data.model.CommandAck
 import com.jamal2367.tinyppimobile.data.model.CommandBody
@@ -138,6 +139,7 @@ class ModelsTest {
     fun `any one way of rating a title is a rating, and draws the card without a plot`() {
         assertFalse(MediaInfo(mpaa = " ").hasRatings)
         assertEquals(SourceRating("", 0.0, 0), SourceRating())
+        assertEquals(Award("", emptyList(), 0), Award())
         assertEquals("", MediaInfo().age)
         assertEquals("", MediaInfo().ageLevel)
         assertFalse(MediaInfo().hasCredits)
@@ -155,6 +157,7 @@ class ModelsTest {
             MediaInfo(userRating = 9),
             MediaInfo(top250 = 27),
             MediaInfo(mpaa = "FSK 12"),
+            MediaInfo(awards = listOf(Award("globe", emptyList(), 1))),
         )) {
             assertTrue(rated.hasRatings)
             assertTrue(rated.showsPlotCard)

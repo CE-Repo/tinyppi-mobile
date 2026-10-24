@@ -71,6 +71,12 @@ object DemoServer {
     private const val DUNE_AGE = "fsk12"
     private const val DUNE_AGE_LEVEL = "12"
     private const val DUNE_TOP250 = 27
+
+    /** The big awards Dune: Part Two won or was nominated for, as the add-on's list has them. */
+    private val DUNE_AWARDS = listOf(
+        DemoAward("oscar", listOf("Visual Effects (2025)", "Sound (2025)"), 3),
+        DemoAward("globe", emptyList(), 2),
+    )
     private const val DUNE_MINE = 9
 
     /** Who made it. */
@@ -129,6 +135,7 @@ object DemoServer {
         playingAge = DUNE_AGE
         playingAgeLevel = DUNE_AGE_LEVEL
         playingTop250 = DUNE_TOP250
+        playingAwards = DUNE_AWARDS
         playingMine = DUNE_MINE
         playingCredits = DUNE_CREDITS
         playingShow = ""
@@ -155,8 +162,11 @@ object DemoServer {
         val id: Int, val title: String, val year: Int, val minutes: Int, val rating: Double, val genre: String,
         val watched: Boolean = false, val resumeMinutes: Int = 0, val tagline: String = "", val plot: String = "",
         val mpaa: String = "", val age: String = "", val ageLevel: String = "", val top250: Int = 0,
-        val mine: Int = 0, val credits: Credits = Credits(),
+        val mine: Int = 0, val credits: Credits = Credits(), val awards: List<DemoAward> = emptyList(),
     )
+
+    /** One of the big awards a title won or was nominated for, as the add-on sends it. */
+    private class DemoAward(val award: String, val won: List<String>, val nominated: Int)
 
     /** Who made a title: its directors, cast and studios. */
     private class Credits(
@@ -176,7 +186,7 @@ object DemoServer {
         Film(
             1, "Dune: Part Two", 2024, 166, 8.5, "Science Fiction", resumeMinutes = 71, tagline = DUNE_TAGLINE,
             plot = DUNE_PLOT, mpaa = DUNE_MPAA, age = DUNE_AGE, ageLevel = DUNE_AGE_LEVEL, top250 = DUNE_TOP250,
-            mine = DUNE_MINE, credits = DUNE_CREDITS,
+            mine = DUNE_MINE, credits = DUNE_CREDITS, awards = DUNE_AWARDS,
         ),
         // A slogan and a plot for the first two only: the rest play without
         // them, the way a file the library knows little about does.
@@ -194,6 +204,18 @@ object DemoServer {
                     "Casey Affleck",
                 ),
                 studios = listOf("Syncopy", "Atlas Entertainment"),
+            ),
+            awards = listOf(
+                DemoAward(
+                    "oscar",
+                    listOf(
+                        "Best Picture (2024)", "Actor in a Leading Role (2024)", "Actor in a Supporting Role (2024)",
+                        "Cinematography (2024)", "Directing (2024)", "Film Editing (2024)", "Music (Original Score) (2024)",
+                    ),
+                    6,
+                ),
+                DemoAward("globe", listOf("Best Motion Picture – Drama (2024)", "Best Director – Motion Picture (2024)"), 2),
+                DemoAward("bafta", listOf("Best Film (2024)", "Best Director (2024)"), 0),
             ),
         ),
         Film(3, "Blade Runner 2049", 2017, 164, 8.0, "Science Fiction", resumeMinutes = 132),
@@ -272,6 +294,7 @@ object DemoServer {
     private var playingAge = DUNE_AGE
     private var playingAgeLevel = DUNE_AGE_LEVEL
     private var playingTop250 = DUNE_TOP250
+    private var playingAwards = DUNE_AWARDS
     private var playingMine = DUNE_MINE
     private var playingCredits = DUNE_CREDITS
     private var playingShow = ""
@@ -487,6 +510,17 @@ object DemoServer {
                 put("age_level", playingAgeLevel)
                 put("userrating", playingMine)
                 put("top250", playingTop250)
+                putJsonArray("awards") {
+                    playingAwards.forEach { award ->
+                        add(
+                            buildJsonObject {
+                                put("award", award.award)
+                                putJsonArray("won") { award.won.forEach { add(it) } }
+                                put("nominated", award.nominated)
+                            },
+                        )
+                    }
+                }
                 // Who made it, as the add-on sends it: every director and the
                 // whole cast, the studio the first alone.
                 putJsonArray("directors") { playingCredits.directors.forEach { add(it) } }
@@ -688,7 +722,7 @@ object DemoServer {
                     playingTitle = f.title; playingTag = "movie-${f.id}"; playingYear = f.year; playingGenre = f.genre
                     playingTagline = f.tagline; playingPlot = f.plot
                     playingRatings = filmRatings(f); playingMpaa = f.mpaa; playingAge = f.age; playingAgeLevel = f.ageLevel
-                    playingTop250 = f.top250; playingMine = f.mine; playingCredits = f.credits
+                    playingTop250 = f.top250; playingMine = f.mine; playingCredits = f.credits; playingAwards = f.awards
                     playingShow = ""; playingSeason = ""; playingEpisode = ""
                     durationSeconds = f.minutes * 60
                     positionSeconds = if (fromStart || filmWatched(f)) 0.0 else f.resumeMinutes * 60.0
@@ -705,6 +739,7 @@ object DemoServer {
                     // Rated on its own, with no count, and its show's age rating.
                     playingRatings = listOf(Triple("tvdb", show.rating, 0))
                     playingMpaa = "TV-MA"; playingAge = "tv_ma"; playingAgeLevel = "MA"; playingTop250 = 0; playingMine = 0
+                    playingAwards = emptyList()
                     // Its show's studio, its own director, and its guests
                     // before the show's cast.
                     playingCredits = Credits(

@@ -25,6 +25,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ApplicationProvider
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.ArtTags
+import com.jamal2367.tinyppimobile.data.model.Award
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
 import com.jamal2367.tinyppimobile.data.model.Metrics
 import com.jamal2367.tinyppimobile.data.model.PlayerControls
@@ -316,7 +317,7 @@ class LiveCardsTest {
             "${str(R.string.live_rating_mine)} 9", str(R.string.live_rating_top250, 27),
         ).map { rule.onNodeWithContentDescription(it).fetchSemanticsNode().boundsInRoot.height }
         assertEquals(heights.map { heights.first() }, heights)
-        assertEquals(26f * context.resources.displayMetrics.density, heights.first(), 0.5f)
+        assertEquals(24f * context.resources.displayMetrics.density, heights.first(), 0.5f)
         assertEquals(false, seen("8.5"))
         // A tap on one shows over it the house a mark is from, and not
         // what it gave: that stands on the shield already.
@@ -332,11 +333,11 @@ class LiveCardsTest {
         val plot = rule.onNodeWithText("Paul joins the Fremen.", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         val imdb = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot
         val age = rule.onNodeWithContentDescription("FSK 12").fetchSemanticsNode().boundsInRoot
+        val slogan = rule.onNodeWithText("Long live the fighters.", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         assertEquals(true, age.top >= plot.bottom)
         // The slogan and the plot centred: a line alone stands in the middle
         // of the card, which is the middle of the screen.
         val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
-        val slogan = rule.onNodeWithText("Long live the fighters.", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         assertEquals(screen.center.x, slogan.center.x, 1f)
         assertEquals(screen.center.x, plot.center.x, 1f)
         // Right over the plot, a few dp over it: the two read as one text.
@@ -356,17 +357,26 @@ class LiveCardsTest {
 
         // Ratings without a plot: the card for them alone, and no slogan.
         // From an add-on too old to send the level beside its mark, the
-        // board's plate stands alone, the whole height of a shield and as
-        // wide as it is drawn (30 by 22).
+        // board's plate stands alone, 2 dp in from the shield's edge all
+        // round and as wide as it is drawn (30 by 22, at 20 dp tall) - in a
+        // shield no narrower than 32 dp.
         fake.playing(told.copy(media = MediaInfo(tagline = "Only this.", mpaa = "FSK 16", age = "fsk16")))
         rule.until { rule.onAllNodesWithContentDescription("FSK 16").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(true, seen(str(R.string.live_plot)))
         val alone = rule.onNodeWithContentDescription("FSK 16").fetchSemanticsNode().boundsInRoot
-        assertEquals(30f / 22f, alone.width / alone.height, 0.05f)
+        assertEquals(32f / 24f, alone.width / alone.height, 0.05f)
         // Centred: a badge alone stands in the middle of the card, which is
         // the middle of the screen.
         assertEquals(screen.center.x, alone.center.x, 1f)
         assertEquals(false, seen("Only this."))
+        // Without a plot but with credits, the ratings under them.
+        fake.playing(told.copy(media = MediaInfo(cast = listOf("Somebody"), mpaa = "FSK 16", age = "fsk16")))
+        rule.until { seen("${str(R.string.live_credit_cast)}\nSomebody") }
+        assertEquals(
+            true,
+            rule.onNodeWithContentDescription("FSK 16").fetchSemanticsNode().boundsInRoot.top >=
+                bounds("${str(R.string.live_credit_cast)}\nSomebody").bottom,
+        )
 
         // With its level, the age rating is a shield like the scores': the
         // board's plate on the left, the level written beside it.
@@ -376,14 +386,52 @@ class LiveCardsTest {
             letOut()
             rule.until { rule.onAllNodesWithContentDescription(said).fetchSemanticsNodes().isNotEmpty() }
             val shield = rule.onNodeWithContentDescription(said).fetchSemanticsNode().boundsInRoot
-            assertEquals(26f * density, shield.height, 0.5f)
+            assertEquals(24f * density, shield.height, 0.5f)
             // The plate, edge to edge, and the figure's own room beside it.
-            assertEquals(true, shield.width > (26f * plateWidth / 22f + 14f) * density)
+            assertEquals(true, shield.width > (20f * plateWidth / 22f + 14f) * density)
         }
         shieldOf("FSK 12", "fsk12", "12", 30f)
         shieldOf("Rated PG-13", "mpa_pg13", "PG-13", 32f)
         shieldOf("TV-MA", "tv_ma", "MA", 24f)
         shieldOf("15", "bbfc_15", "15", 38f)
+    }
+
+    @Test
+    fun `the big awards stand last, as plates of what was won or else nominated for`() {
+        fake.playing(
+            told.copy(
+                media = MediaInfo(
+                    plot = "Plot.",
+                    awards = listOf(
+                        Award("oscar", listOf("Visual Effects (2015)"), 4),
+                        Award("globe", emptyList(), 1),
+                        Award("bafta", listOf("Film (2015)", "Score (2015)"), 0),
+                        Award("emmy", emptyList(), 2),
+                        // One there is no plate of is left out.
+                        Award("cesar", listOf("Best Film (2015)"), 0),
+                    ),
+                ),
+            ),
+        )
+        showLive()
+        val won = { n: Int -> context.getString(R.string.live_award_won, n) }
+        val nominated = { n: Int -> context.getString(R.string.live_award_nominated, n) }
+        val said = listOf("Oscar ${won(1)}", "Golden Globe ${nominated(1)}", "BAFTA ${won(2)}", "Emmy ${nominated(2)}")
+        rule.until { said.all { rule.onAllNodesWithContentDescription(it).fetchSemanticsNodes().isNotEmpty() } }
+        // As tall as every other badge, in the order they are sent.
+        val shields = said.map { rule.onNodeWithContentDescription(it).fetchSemanticsNode().boundsInRoot }
+        shields.forEach { assertEquals(24f * context.resources.displayMetrics.density, it.height, 0.5f) }
+        assertEquals(shields.sortedBy { it.top * 10_000 + it.left }, shields)
+        assertEquals(true, rule.onAllNodesWithContentDescription("cesar", substring = true).fetchSemanticsNodes().isEmpty())
+        // A tap says what it won it for, and how many more it was nominated for.
+        rule.onNodeWithContentDescription("Oscar ${won(1)}").performClick()
+        rule.until { seen("Oscar: Visual Effects (2015) · ${nominated(4)}") }
+        rule.mainClock.advanceTimeBy(5_000)
+        rule.onNodeWithContentDescription("BAFTA ${won(2)}").performClick()
+        rule.until { seen("BAFTA: Film (2015), Score (2015)") }
+        rule.mainClock.advanceTimeBy(5_000)
+        rule.onNodeWithContentDescription("Golden Globe ${nominated(1)}").performClick()
+        rule.until { seen("Golden Globe · ${nominated(1)}") }
     }
 
     @Test
@@ -400,7 +448,7 @@ class LiveCardsTest {
             rule.onNodeWithContentDescription("$name 7.5").fetchSemanticsNode().boundsInRoot.height
         }
         // As tall as every other badge.
-        heights.forEach { assertEquals(26f * context.resources.displayMetrics.density, it, 0.5f) }
+        heights.forEach { assertEquals(24f * context.resources.displayMetrics.density, it, 0.5f) }
     }
 
     @Test
@@ -433,12 +481,11 @@ class LiveCardsTest {
             .fetchSemanticsNode().boundsInRoot
         assertEquals(true, director.top >= plot.bottom)
         assertEquals(true, cast.top >= director.bottom)
-        // Then the ratings, under a heading of their own, centred like the rest.
-        val heading = rule.onNodeWithText(str(R.string.live_ratings), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        assertEquals(true, heading.top >= cast.bottom)
-        assertEquals(true, imdb.top >= heading.bottom)
+        // Then the ratings, past a rule and with no heading of their own,
+        // centred like the rest.
+        assertEquals(true, imdb.top >= cast.bottom)
         val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
-        assertEquals(screen.center.x, heading.center.x, 1f)
+        assertEquals(screen.center.x, imdb.center.x, 1f)
         assertEquals(screen.center.x, cast.center.x, 1f)
         assertEquals(screen.center.x, director.center.x, 1f)
         // The genre, the studio and the director are said once: the first
@@ -569,7 +616,7 @@ class LiveCardsTest {
         rule.until { foldable(R.string.live_plot_less) }
 
         // Turned, or scrolled away and back: let out as it was, and still a
-        // plot that folds - no credits or ratings under it say so for it.
+        // plot that folds - no credits under it say so for it.
         restoring.emulateSavedInstanceStateRestore()
         rule.until { foldable(R.string.live_plot_less) }
         rule.onNode(folds(R.string.live_plot_less)).performClick()
@@ -597,22 +644,25 @@ class LiveCardsTest {
         rule.onNode(folds(R.string.live_plot_more)).assertIsDisplayed()
         assertEquals(false, seen(credit))
         assertEquals(false, seen(director))
-        assertEquals(false, seen(str(R.string.live_ratings)))
+        // The ratings are never folded away: they stand under the plot.
+        val imdb = { rule.onNodeWithContentDescription("IMDb 8.5", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot }
+        assertEquals(true, imdb().top >= bounds(long).bottom)
 
         // Let out: under the whole plot, the director over the cast, and the
         // ratings last; a tap on a shield is the shield's, and one on the
-        // credits folds it all again, as one on the plot does.
+        // credits folds them away again, as one on the plot does.
         rule.onNode(folds(R.string.live_plot_more)).performClick()
-        rule.until { seen(credit) && seen(director) && seen(str(R.string.live_ratings)) }
+        rule.until { seen(credit) && seen(director) }
         assertEquals(true, bounds(director).top >= bounds(long).bottom)
         assertEquals(true, bounds(credit).top >= bounds(director).bottom)
-        assertEquals(true, bounds(str(R.string.live_ratings)).top >= bounds(credit).bottom)
+        assertEquals(true, imdb().top >= bounds(credit).bottom)
         rule.onNodeWithContentDescription("IMDb 8.5", useUnmergedTree = true).performClick()
         rule.mainClock.advanceTimeBy(5_000)
         rule.waitForIdle()
         assertEquals(true, seen(credit))
         rule.onNodeWithText(credit, useUnmergedTree = true).performClick()
-        rule.until { !seen(credit) && !seen(str(R.string.live_ratings)) }
+        rule.until { !seen(credit) }
+        assertEquals(true, imdb().top >= bounds(long).bottom)
 
         // Under a plot that fits they fold all the same: there is more to
         // show than its lines.
@@ -621,9 +671,9 @@ class LiveCardsTest {
         assertEquals(false, seen(credit))
         rule.onNode(folds(R.string.live_plot_more)).performClick()
         rule.until { seen(credit) }
-        // A plot that fits with nothing under it is no button.
-        fake.playing(told.copy(media = told.media.copy(cast = emptyList(), directors = emptyList(), ratings = emptyList(),
-            userRating = 0, top250 = 0, mpaa = "")))
+        // A plot that fits with nothing under it is no button, ratings over
+        // it or not.
+        fake.playing(told.copy(media = told.media.copy(cast = emptyList(), directors = emptyList())))
         rule.until { !foldable(R.string.live_plot_more) && !foldable(R.string.live_plot_less) }
     }
 

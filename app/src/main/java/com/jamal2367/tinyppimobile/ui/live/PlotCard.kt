@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
@@ -42,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -61,6 +63,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
+import com.jamal2367.tinyppimobile.data.model.Award
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
 import com.jamal2367.tinyppimobile.data.model.SourceRating
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
@@ -81,27 +84,25 @@ import java.util.Locale
  * own it says too little, and above a plot it is left out where there is
  * none, which is most episodes.
  *
- * Everything in it centred. The slogan first, right over the plot so the two
- * read as one text, set like a credit's heading, and the plot in the quieter
- * colour the year and genre are set in, since it is the one paragraph on the
- * screen and the readings below it should not have to shout over it. Under
- * the plot, the director and the cast as plain lines, and last, under a
- * heading of their own, the ratings as a row of their own: short facts about
- * the film, taken in at a glance. All of them under the plot are folded away
- * until a tap on it lets them out.
+ * Everything in it centred. The slogan first, right over the plot so the
+ * two read as one text, set like a credit's heading, and the plot in the
+ * quieter colour the year and genre are set in, since it is the one
+ * paragraph on the screen. Under the plot, the director and the cast as
+ * plain lines, folded away until a tap on the plot lets them out. And last,
+ * past a thin rule and never folded away, the ratings as a row of their
+ * own: short facts about the film, taken in at a glance, and needing no
+ * heading, since the houses' marks say what they are.
  */
 @Composable
 internal fun PlotCard(media: MediaInfo, title: String) {
     SectionCard(title = stringResource(R.string.live_plot), foldId = FOLD_PLOT) {
         if (media.hasPlot) {
             // The card starts folded: the plot cut to a few lines, and the
-            // credits and the ratings hanging on its end hidden under it. A
-            // tap on it lets all of it out, and another folds it again. It
-            // folds wherever there is more than those lines to show - a plot
-            // that runs past them, or credits or ratings under it - and a new
-            // plot starts folded again. To a screen reader it is a button
-            // that says what a tap does; a tap on a rating's shield is the
-            // shield's.
+            // credits hanging on its end hidden under it. A tap on it lets
+            // all of it out, and another folds it again. It folds wherever
+            // there is more than those lines to show - a plot that runs past
+            // them, or credits under it - and a new plot starts folded again.
+            // To a screen reader it is a button that says what a tap does.
             //
             // Folded again for every new title - [title] says which this is -
             // and every new plot. What was let out is kept with them: a card
@@ -116,7 +117,7 @@ internal fun PlotCard(media: MediaInfo, title: String) {
             // back open - turned, or scrolled away and back - would
             // otherwise forget that it folds and could not be folded again.
             var cut by rememberSaveable(title, media.plot) { mutableStateOf(false) }
-            val folds = cut || media.hasCredits || media.hasRatings
+            val folds = cut || media.hasCredits
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -162,38 +163,20 @@ internal fun PlotCard(media: MediaInfo, title: String) {
                     // lines, but is still one that folds.
                     onTextLayout = { if (!open) cut = it.hasVisualOverflow },
                 )
-                if (open) {
-                    if (media.hasCredits) Credits(media, Modifier.padding(top = 12.dp))
-                    if (media.hasRatings) Ratings(media, Modifier.padding(top = 16.dp))
-                }
+                if (open && media.hasCredits) Credits(media, Modifier.padding(top = 12.dp))
             }
-        } else {
-            // Without a plot, the credits and the ratings on their own.
-            if (media.hasCredits) Credits(media, Modifier.align(Alignment.CenterHorizontally))
-            if (media.hasRatings) Ratings(media, Modifier.padding(top = RATINGS_GAP))
+        } else if (media.hasCredits) {
+            // Without a plot, the credits on their own.
+            Credits(media, Modifier.align(Alignment.CenterHorizontally))
         }
-    }
-}
-
-/**
- * The ratings, last, under a heading of their own like a credit's, as far
- * under the cast as the cast is under the director.
- */
-@Composable
-private fun Ratings(media: MediaInfo, modifier: Modifier) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.live_ratings),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-        )
-        RatingRow(media)
+        if (media.hasRatings) {
+            // A rule between them and whatever stands over them; alone in
+            // the card, they need none.
+            if (media.hasPlot || media.hasCredits) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
+            }
+            RatingRow(media)
+        }
     }
 }
 
@@ -250,8 +233,8 @@ private fun creditLine(label: String, names: String, colors: ColorScheme): Annot
  * order the add-on sends them, the reader's own and the place in the IMDb
  * Top 250.
  *
- * Each is a small shield wearing its house's mark on a ground of its house's
- * colour rather than its name - the same marks the add-on's dashboard
+ * Each is a small shield wearing its house's mark on a plate of its house's
+ * colour rather than its name, the whole shield washed and edged in it - the same marks the add-on's dashboard
  * serves: the houses' own logos where there is one, the rest drawn by
  * `tools/gen_rating_marks.py` in script.tinyppi - and
  * says in words what it shows, since a screen reader can say nothing of a
@@ -267,11 +250,7 @@ private fun RatingRow(media: MediaInfo) {
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(6.dp),
         itemVerticalAlignment = Alignment.CenterVertically,
-        // A little more air over them than between the lines of the plot:
-        // they are a row of their own, not its last line.
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 2.dp),
+        modifier = Modifier.fillMaxWidth(),
     ) {
         if (media.mpaa.isNotBlank()) {
             // One the add-on could place - FSK, MPA, TV Parental Guidelines,
@@ -280,17 +259,26 @@ private fun RatingRow(media: MediaInfo) {
             // beside it ("FSK" | "12"). Any other is written as the scraper
             // wrote it.
             val said = media.mpaa.trim()
-            val drawing = AGE_MARKS[media.age]
-            if (drawing != null) {
+            val plate = AGE_MARKS[media.age]
+            if (plate != null) {
                 RatingShield(
                     spoken = said,
                     named = boardOf(media.age),
                     value = media.ageLevel.trim(),
                     tall = tall,
+                    ground = plate.ground,
+                    hue = plate.hue,
                     inset = 0.dp,
-                ) { BoardPlate(drawing) }
+                ) { BoardPlate(plate.drawing) }
             } else {
-                RatingShield(spoken = said, named = said, value = said, tall = tall)
+                RatingShield(
+                    spoken = said,
+                    named = said,
+                    value = said,
+                    tall = tall,
+                    ground = colours.surfaceContainerHigh,
+                    hue = colours.surfaceContainerHigh,
+                )
             }
         }
         media.ratings.forEach { entry ->
@@ -306,6 +294,7 @@ private fun RatingRow(media: MediaInfo) {
                 value = value,
                 tall = tall,
                 ground = mark?.ground ?: colours.surfaceContainerHigh,
+                hue = mark?.hue ?: colours.surfaceContainerHigh,
             ) {
                 if (mark != null) DrawnMark(mark.drawing, sealed = certificate != null) else LetterMark(name.take(1))
             }
@@ -320,6 +309,7 @@ private fun RatingRow(media: MediaInfo) {
                 value = value,
                 tall = tall,
                 ground = colours.primary,
+                hue = colours.primary,
             ) { HeartMark() }
         }
         if (media.top250 > 0) {
@@ -329,21 +319,55 @@ private fun RatingRow(media: MediaInfo) {
                 value = "#${media.top250}",
                 tall = tall,
                 ground = TOP250.ground,
+                hue = TOP250.hue,
             ) { DrawnMark(TOP250.drawing) }
         }
+        media.awards.forEach { award -> AwardShield(award, tall) }
     }
 }
 
-/** A house's mark, and the colour of the ground it is drawn on. */
-private class HouseMark(val drawing: Int, val ground: Color)
+/**
+ * One of the big awards: a drawing of what it hands out on its own ground,
+ * like a house's mark, and beside it how many it won - or, where it won
+ * none, how many it was nominated for, on a quieter shield: the line's
+ * wash, and the mark dimmed. A tap shows what it won it for. One there is
+ * no drawing of is left out.
+ */
+@Composable
+private fun AwardShield(award: Award, tall: Dp) {
+    val mark = AWARD_MARKS[award.award] ?: return
+    val name = AWARD_NAMES.getValue(award.award)
+    val won = award.won.size
+    val more = if (award.nominated > 0) stringResource(R.string.live_award_nominated, award.nominated) else ""
+    val line = MaterialTheme.colorScheme.surfaceContainerHigh
+    RatingShield(
+        spoken = "$name ${if (won > 0) stringResource(R.string.live_award_won, won) else more}",
+        named = if (won > 0) {
+            listOf("$name: ${award.won.joinToString(", ")}", more).filter { it.isNotEmpty() }.joinToString(" · ")
+        } else {
+            "$name · $more"
+        },
+        value = (if (won > 0) won else award.nominated).toString(),
+        tall = tall,
+        ground = if (won > 0) mark.ground else mark.ground.copy(alpha = NOMINEE_ALPHA),
+        hue = if (won > 0) mark.hue else line,
+    ) { DrawnMark(mark.drawing, alpha = if (won > 0) 1f else NOMINEE_ALPHA) }
+}
+
+/**
+ * A house's mark, the colour of the ground it is drawn on, and the one its
+ * shield is washed and edged in: the ground's, or for a house whose ground is
+ * all but black - which would not show on a dark card - its mark's.
+ */
+private class HouseMark(val drawing: Int, val ground: Color, val hue: Color = ground)
 
 /** The houses there is a drawing of, by the name the add-on gives them. */
 private val RATING_MARKS = mapOf(
-    "imdb" to HouseMark(R.drawable.rating_imdb, Color(0xFF121212)),
-    "tmdb" to HouseMark(R.drawable.rating_tmdb, Color(0xFF0D253F)),
+    "imdb" to HouseMark(R.drawable.rating_imdb, Color(0xFF121212), Color(0xFFF5C518)),
+    "tmdb" to HouseMark(R.drawable.rating_tmdb, Color(0xFF0D253F), Color(0xFF01B4E4)),
     "trakt" to HouseMark(R.drawable.rating_trakt, Color(0xFF9F42C6)),
     "tvdb" to HouseMark(R.drawable.rating_tvdb, Color(0xFF555555)),
-    "letterboxd" to HouseMark(R.drawable.rating_letterboxd, Color(0xFF202830)),
+    "letterboxd" to HouseMark(R.drawable.rating_letterboxd, Color(0xFF202830), Color(0xFF00E054)),
     "metacritic" to HouseMark(R.drawable.rating_metacritic, Color(0xFF66CC33)),
     "metacriticuser" to HouseMark(R.drawable.rating_metacriticuser, Color(0xFF66CC33)),
     "rottentomatoes" to HouseMark(R.drawable.rating_rottentomatoes, Color(0xFFF9D320)),
@@ -354,6 +378,24 @@ private val RATING_MARKS = mapOf(
 )
 
 private val TOP250 = HouseMark(R.drawable.rating_top250, Color(0xFFF5C518))
+
+/**
+ * The big awards' drawings, by the name the add-on gives them, each on its
+ * own ground; the two on a near-black or a deep one are washed and edged in
+ * their drawing's gold.
+ */
+private val AWARD_MARKS = mapOf(
+    "oscar" to HouseMark(R.drawable.rating_award_oscar, Color(0xFFE2B33C)),
+    "globe" to HouseMark(R.drawable.rating_award_globe, Color(0xFF9C6B1E)),
+    "bafta" to HouseMark(R.drawable.rating_award_bafta, Color(0xFF141414), Color(0xFFE2B33C)),
+    "emmy" to HouseMark(R.drawable.rating_award_emmy, Color(0xFF3B2A6B), Color(0xFFE2B33C)),
+)
+
+/** What the awards are called, untranslated. */
+private val AWARD_NAMES = mapOf("oscar" to "Oscar", "globe" to "Golden Globe", "bafta" to "BAFTA", "emmy" to "Emmy")
+
+/** How far the mark of an award it was only nominated for is dimmed. */
+private const val NOMINEE_ALPHA = 0.6f
 
 /** What Rotten Tomatoes calls a rating it certified: its critics' and its audience's. Untranslated. */
 private val CERTIFICATES = mapOf("rottentomatoes" to "Certified Fresh", "popcorn" to "Verified Hot")
@@ -370,32 +412,33 @@ private fun boardOf(age: String): String = when {
  * The age ratings there is a drawing of, by the name the add-on gives the
  * mark (see `age_rating` in its `web/ratings.py`): the plate of the FSK's,
  * the MPA's and the TV Parental Guidelines' - both in the FSK's colours - and
- * the BBFC's levels, each the board's name on the level's colour.
+ * the BBFC's levels, each the board's name on the level's colour, which is
+ * the colour the shield is washed in.
  */
 private val AGE_MARKS = mapOf(
-    "fsk0" to R.drawable.rating_fsk0,
-    "fsk6" to R.drawable.rating_fsk6,
-    "fsk12" to R.drawable.rating_fsk12,
-    "fsk16" to R.drawable.rating_fsk16,
-    "fsk18" to R.drawable.rating_fsk18,
-    "mpa_g" to R.drawable.rating_mpa_g,
-    "mpa_pg" to R.drawable.rating_mpa_pg,
-    "mpa_pg13" to R.drawable.rating_mpa_pg13,
-    "mpa_r" to R.drawable.rating_mpa_r,
-    "mpa_nc17" to R.drawable.rating_mpa_nc17,
-    "tv_y" to R.drawable.rating_tv_y,
-    "tv_y7" to R.drawable.rating_tv_y7,
-    "tv_g" to R.drawable.rating_tv_g,
-    "tv_pg" to R.drawable.rating_tv_pg,
-    "tv_14" to R.drawable.rating_tv_14,
-    "tv_ma" to R.drawable.rating_tv_ma,
-    "bbfc_u" to R.drawable.rating_bbfc_u,
-    "bbfc_pg" to R.drawable.rating_bbfc_pg,
-    "bbfc_12a" to R.drawable.rating_bbfc_12a,
-    "bbfc_12" to R.drawable.rating_bbfc_12,
-    "bbfc_15" to R.drawable.rating_bbfc_15,
-    "bbfc_18" to R.drawable.rating_bbfc_18,
-    "bbfc_r18" to R.drawable.rating_bbfc_r18,
+    "fsk0" to HouseMark(R.drawable.rating_fsk0, Color(0xFFFFFFFF)),
+    "fsk6" to HouseMark(R.drawable.rating_fsk6, Color(0xFFFFD500)),
+    "fsk12" to HouseMark(R.drawable.rating_fsk12, Color(0xFF00A651)),
+    "fsk16" to HouseMark(R.drawable.rating_fsk16, Color(0xFF00A0E3)),
+    "fsk18" to HouseMark(R.drawable.rating_fsk18, Color(0xFFE30613)),
+    "mpa_g" to HouseMark(R.drawable.rating_mpa_g, Color(0xFF00A651)),
+    "mpa_pg" to HouseMark(R.drawable.rating_mpa_pg, Color(0xFFFFD500)),
+    "mpa_pg13" to HouseMark(R.drawable.rating_mpa_pg13, Color(0xFFF7941D)),
+    "mpa_r" to HouseMark(R.drawable.rating_mpa_r, Color(0xFFE30613)),
+    "mpa_nc17" to HouseMark(R.drawable.rating_mpa_nc17, Color(0xFF2E3192)),
+    "tv_y" to HouseMark(R.drawable.rating_tv_y, Color(0xFF00A651)),
+    "tv_y7" to HouseMark(R.drawable.rating_tv_y7, Color(0xFF00A651)),
+    "tv_g" to HouseMark(R.drawable.rating_tv_g, Color(0xFF00A651)),
+    "tv_pg" to HouseMark(R.drawable.rating_tv_pg, Color(0xFFFFD500)),
+    "tv_14" to HouseMark(R.drawable.rating_tv_14, Color(0xFFF7941D)),
+    "tv_ma" to HouseMark(R.drawable.rating_tv_ma, Color(0xFFE30613)),
+    "bbfc_u" to HouseMark(R.drawable.rating_bbfc_u, Color(0xFF00A651)),
+    "bbfc_pg" to HouseMark(R.drawable.rating_bbfc_pg, Color(0xFFFBB800)),
+    "bbfc_12a" to HouseMark(R.drawable.rating_bbfc_12a, Color(0xFFF58220)),
+    "bbfc_12" to HouseMark(R.drawable.rating_bbfc_12, Color(0xFFF58220)),
+    "bbfc_15" to HouseMark(R.drawable.rating_bbfc_15, Color(0xFFE5007E)),
+    "bbfc_18" to HouseMark(R.drawable.rating_bbfc_18, Color(0xFFE30613)),
+    "bbfc_r18" to HouseMark(R.drawable.rating_bbfc_r18, Color(0xFF1D1D6B)),
 )
 
 /**
@@ -407,10 +450,12 @@ private fun sourceName(entry: SourceRating): String =
     RATING_NAMES[entry.source] ?: entry.source.replaceFirstChar { it.titlecase(Locale.ROOT) }
 
 /**
- * One rating as a shield: [side] on the left, on [ground] - a house's own
- * colour, so its mark runs into it and the left reads as one plate - [inset]
- * from its edges, and on the right the figure in bold.
- * Square-cornered like a plaque rather than round like a button. Without a
+ * One rating as a shield: [side] on the left, on a plate of [ground] - a
+ * house's own colour, so its mark runs into it - [inset] from the plate's
+ * edges, and on the right the figure in bold. The whole shield is washed in
+ * [hue] - the ground's colour unless the house says otherwise - and edged in it, so a row of them reads as the houses' colours
+ * before a word of it is; one with no colour of its own is washed in the
+ * card's line colour. Squarish like a plaque rather than round like a button. Without a
  * figure - an age rating from an add-on too old to send its level - the
  * side stands alone.
  *
@@ -425,8 +470,9 @@ private fun RatingShield(
     named: String,
     value: String,
     tall: Dp,
-    ground: Color = Color.Transparent,
-    inset: Dp = 2.dp,
+    ground: Color,
+    hue: Color,
+    inset: Dp = 3.dp,
     side: (@Composable () -> Unit)? = null,
 ) {
     val told = rememberTooltipState()
@@ -436,7 +482,7 @@ private fun RatingShield(
         tooltip = { PlainTooltip { Text(named) } },
         state = told,
     ) {
-        Shield(spoken, value, tall, ground, inset, side) { scope.launch { told.show() } }
+        Shield(spoken, value, tall, ground, hue, inset, side) { scope.launch { told.show() } }
     }
 }
 
@@ -447,6 +493,7 @@ private fun Shield(
     value: String,
     tall: Dp,
     ground: Color,
+    hue: Color,
     inset: Dp,
     side: (@Composable () -> Unit)?,
     onTap: () -> Unit,
@@ -456,15 +503,20 @@ private fun Shield(
             .heardAs(spoken)
             .clickable(onClick = onTap)
             .height(tall)
+            .widthIn(min = SHIELD_WIDTH)
             .clip(SHIELD)
-            .border(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh, SHIELD)
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+            .border(1.dp, hue.copy(alpha = EDGE), SHIELD)
+            .background(hue.copy(alpha = WASH).compositeOver(MaterialTheme.colorScheme.surfaceContainerHighest)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (side != null) {
+            // The plate set a little in from the shield's edge, so the wash
+            // shows round it.
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
+                    .padding(2.dp)
+                    .clip(PLATE)
                     .background(ground)
                     .padding(horizontal = inset),
                 contentAlignment = Alignment.Center,
@@ -475,7 +527,7 @@ private fun Shield(
         if (value.isNotEmpty()) {
             Text(
                 text = value,
-                modifier = Modifier.padding(horizontal = 7.dp),
+                modifier = Modifier.padding(start = if (side != null) 4.dp else 8.dp, end = 8.dp),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -498,15 +550,16 @@ private fun Modifier.heardAs(spoken: String): Modifier =
 /**
  * A house's drawing, as tall as a line of the shield and as wide as it is
  * drawn; [sealed], with Rotten Tomatoes' seal on its corner - the same one
- * the dashboard draws, from `tools/gen_rating_marks.py`.
+ * the dashboard draws, from `tools/gen_rating_marks.py`; [alpha] dims it.
  */
 @Composable
-private fun DrawnMark(drawing: Int, sealed: Boolean = false) {
+private fun DrawnMark(drawing: Int, sealed: Boolean = false, alpha: Float = 1f) {
     val painter = painterResource(drawing)
     Box {
         Image(
             painter = painter,
             contentDescription = null,
+            alpha = alpha,
             modifier = Modifier
                 .height(MARK)
                 .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),
@@ -573,9 +626,6 @@ private fun HeartMark() {
 /** How many of the cast are named, as the add-on cuts them; "…" says there are more. */
 private const val CAST_LIMIT = 20
 
-/** The air over the ratings' heading, besides the card's own between its rows. */
-private val RATINGS_GAP = 6.dp
-
 /** The air between the slogan and the plot under it. */
 private val SLOGAN_GAP = 4.dp
 
@@ -585,10 +635,18 @@ private val FOLD_SHAPE = RoundedCornerShape(8.dp)
 /** How many lines of a plot are shown until the reader asks for the rest. */
 private const val PLOT_LINES = 5
 
-/** How tall a mark stands on its plate, and the corners of a shield. */
-private val MARK = 20.dp
-private val SEAL = 10.dp
-private val SHIELD = RoundedCornerShape(6.dp)
+/** How tall a mark stands on its plate, and the corners of a shield and of its plate. */
+private val MARK = 16.dp
+private val SEAL = 9.dp
+private val SHIELD = RoundedCornerShape(7.dp)
+
+/** How narrow a shield may be, so one with a short mark and figure is not a sliver. */
+private val SHIELD_WIDTH = 32.dp
+private val PLATE = RoundedCornerShape(5.dp)
+
+/** How much of its house's colour a shield is washed in, and edged in. */
+private const val WASH = 0.2f
+private const val EDGE = 0.55f
 
 /**
  * How tall every badge stands - a shield, a heart, an age rating's - so a
@@ -599,7 +657,7 @@ private val SHIELD = RoundedCornerShape(6.dp)
 @Composable
 private fun badgeHeight(): Dp = BADGE * LocalDensity.current.fontScale.coerceAtLeast(1f)
 
-private val BADGE = 26.dp
+private val BADGE = 24.dp
 
 /** A film's slogan, plot, ratings and cast, as the card draws them. */
 @PreviewLightDark

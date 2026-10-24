@@ -123,9 +123,10 @@
     <string name="live_plot">Overview</string>
     <string name="live_plot_more">Show more</string>
     <string name="live_plot_less">Show less</string>
-    <string name="live_ratings">Ratings</string>
     <string name="live_rating_mine">My rating</string>
     <string name="live_rating_top250">Top 250 · #%1$d</string>
+    <string name="live_award_won">%1$d won</string>
+    <string name="live_award_nominated">%1$d nominated</string>
     <string name="live_credit_director">Director</string>
     <string name="live_credit_cast">Cast</string>
 
