@@ -327,13 +327,13 @@ class LiveCardsTest {
         // And only for a moment.
         rule.mainClock.advanceTimeBy(5_000)
         rule.until { !seen("Filmaffinity") }
-        // The ratings stand over the slogan and the plot, the age rating
-        // first: on the first line, before the first score.
+        // The ratings stand under the plot, the age rating first: on the
+        // first line, before the first score.
         val plot = rule.onNodeWithText("Paul joins the Fremen.", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         val imdb = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot
         val age = rule.onNodeWithContentDescription("FSK 12").fetchSemanticsNode().boundsInRoot
         val slogan = rule.onNodeWithText("Long live the fighters.", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        assertEquals(true, age.bottom <= slogan.top)
+        assertEquals(true, age.top >= plot.bottom)
         // The slogan and the plot centred: a line alone stands in the middle
         // of the card, which is the middle of the screen.
         val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
@@ -367,6 +367,14 @@ class LiveCardsTest {
         // the middle of the screen.
         assertEquals(screen.center.x, alone.center.x, 1f)
         assertEquals(false, seen("Only this."))
+        // Without a plot but with credits, the ratings under them.
+        fake.playing(told.copy(media = MediaInfo(cast = listOf("Somebody"), mpaa = "FSK 16", age = "fsk16")))
+        rule.until { seen("${str(R.string.live_credit_cast)}\nSomebody") }
+        assertEquals(
+            true,
+            rule.onNodeWithContentDescription("FSK 16").fetchSemanticsNode().boundsInRoot.top >=
+                bounds("${str(R.string.live_credit_cast)}\nSomebody").bottom,
+        )
 
         // With its level, the age rating is a shield like the scores': the
         // board's plate on the left, the level written beside it.
@@ -404,7 +412,7 @@ class LiveCardsTest {
     }
 
     @Test
-    fun `the overview card has the ratings over the plot and the director and the cast under it, centred lines`() {
+    fun `the overview card has the director and the cast over the ratings, centred lines`() {
         fake.playing(
             told.copy(
                 media = told.media.copy(
@@ -419,7 +427,8 @@ class LiveCardsTest {
         )
         showLive()
         letOut()
-        // Under the plot, cut with an ellipsis, and centred: it stands in the middle of the card, which is the middle
+        // Under the plot and over the ratings, cut with an ellipsis, and
+        // centred: it stands in the middle of the card, which is the middle
         // of the screen.
         val cast = rule.onNodeWithText(
             "${str(R.string.live_credit_cast)}\nTimothée Chalamet, Zendaya, Rebecca Ferguson, Javier Bardem, Josh Brolin, …",
@@ -432,8 +441,9 @@ class LiveCardsTest {
             .fetchSemanticsNode().boundsInRoot
         assertEquals(true, director.top >= plot.bottom)
         assertEquals(true, cast.top >= director.bottom)
-        // The ratings over all of it, with no heading of their own, centred like the rest.
-        assertEquals(true, imdb.bottom <= plot.top)
+        // Then the ratings, past a rule and with no heading of their own,
+        // centred like the rest.
+        assertEquals(true, imdb.top >= cast.bottom)
         val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
         assertEquals(screen.center.x, imdb.center.x, 1f)
         assertEquals(screen.center.x, cast.center.x, 1f)
@@ -594,24 +604,25 @@ class LiveCardsTest {
         rule.onNode(folds(R.string.live_plot_more)).assertIsDisplayed()
         assertEquals(false, seen(credit))
         assertEquals(false, seen(director))
-        // The ratings are never folded away: they stand over the plot.
+        // The ratings are never folded away: they stand under the plot.
         val imdb = { rule.onNodeWithContentDescription("IMDb 8.5", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot }
-        assertEquals(true, imdb().bottom <= bounds(long).top)
+        assertEquals(true, imdb().top >= bounds(long).bottom)
 
-        // Let out: under the whole plot, the director over the cast; a tap
-        // on a shield is the shield's, and one on the credits folds them
-        // away again, as one on the plot does.
+        // Let out: under the whole plot, the director over the cast, and the
+        // ratings last; a tap on a shield is the shield's, and one on the
+        // credits folds them away again, as one on the plot does.
         rule.onNode(folds(R.string.live_plot_more)).performClick()
         rule.until { seen(credit) && seen(director) }
         assertEquals(true, bounds(director).top >= bounds(long).bottom)
         assertEquals(true, bounds(credit).top >= bounds(director).bottom)
+        assertEquals(true, imdb().top >= bounds(credit).bottom)
         rule.onNodeWithContentDescription("IMDb 8.5", useUnmergedTree = true).performClick()
         rule.mainClock.advanceTimeBy(5_000)
         rule.waitForIdle()
         assertEquals(true, seen(credit))
         rule.onNodeWithText(credit, useUnmergedTree = true).performClick()
         rule.until { !seen(credit) }
-        assertEquals(true, imdb().bottom <= bounds(long).top)
+        assertEquals(true, imdb().top >= bounds(long).bottom)
 
         // Under a plot that fits they fold all the same: there is more to
         // show than its lines.

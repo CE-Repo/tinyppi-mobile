@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
@@ -82,19 +83,18 @@ import java.util.Locale
  * own it says too little, and above a plot it is left out where there is
  * none, which is most episodes.
  *
- * Everything in it centred. The ratings first, as a row of their own and
- * never folded away: short facts about the film, taken in at a glance before
- * a word of the plot is read, and needing no heading, since the houses' marks
- * say what they are. Then the slogan, right over the plot so the two read as
- * one text, set like a credit's heading, and the plot in the quieter colour
- * the year and genre are set in, since it is the one paragraph on the
- * screen. Under the plot, the director and the cast as plain lines, folded
- * away until a tap on the plot lets them out.
+ * Everything in it centred. The slogan first, right over the plot so the
+ * two read as one text, set like a credit's heading, and the plot in the
+ * quieter colour the year and genre are set in, since it is the one
+ * paragraph on the screen. Under the plot, the director and the cast as
+ * plain lines, folded away until a tap on the plot lets them out. And last,
+ * past a thin rule and never folded away, the ratings as a row of their
+ * own: short facts about the film, taken in at a glance, and needing no
+ * heading, since the houses' marks say what they are.
  */
 @Composable
 internal fun PlotCard(media: MediaInfo, title: String) {
     SectionCard(title = stringResource(R.string.live_plot), foldId = FOLD_PLOT) {
-        if (media.hasRatings) RatingRow(media)
         if (media.hasPlot) {
             // The card starts folded: the plot cut to a few lines, and the
             // credits hanging on its end hidden under it. A tap on it lets
@@ -165,8 +165,16 @@ internal fun PlotCard(media: MediaInfo, title: String) {
                 if (open && media.hasCredits) Credits(media, Modifier.padding(top = 12.dp))
             }
         } else if (media.hasCredits) {
-            // Without a plot, the credits on their own under the ratings.
+            // Without a plot, the credits on their own.
             Credits(media, Modifier.align(Alignment.CenterHorizontally))
+        }
+        if (media.hasRatings) {
+            // A rule between them and whatever stands over them; alone in
+            // the card, they need none.
+            if (media.hasPlot || media.hasCredits) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceContainerHigh)
+            }
+            RatingRow(media)
         }
     }
 }
@@ -241,11 +249,7 @@ private fun RatingRow(media: MediaInfo) {
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(6.dp),
         itemVerticalAlignment = Alignment.CenterVertically,
-        // A little more air under them than between the card's rows: they
-        // are a row of their own over the plot, not its first line.
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 4.dp),
+        modifier = Modifier.fillMaxWidth(),
     ) {
         if (media.mpaa.isNotBlank()) {
             // One the add-on could place - FSK, MPA, TV Parental Guidelines,
