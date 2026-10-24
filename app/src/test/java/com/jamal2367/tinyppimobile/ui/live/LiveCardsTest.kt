@@ -278,8 +278,10 @@ class LiveCardsTest {
                     ratings = listOf(
                         SourceRating("imdb", 8.5, 612_345),
                         SourceRating("tmdb", 8.2, 1),
-                        SourceRating("rottentomatoes", 9.2, 0),
-                        SourceRating("filmaffinity", 8.9, 3),
+                        SourceRating("rottentomatoes", 9.2, 0, certified = true),
+                        SourceRating("popcorn", 8.8, 0),
+                        // Only Rotten Tomatoes certifies.
+                        SourceRating("filmaffinity", 8.9, 3, certified = true),
                     ),
                     userRating = 9,
                     top250 = 27,
@@ -297,7 +299,9 @@ class LiveCardsTest {
             // How many voted is neither shown nor heard.
             "IMDb 8.5",
             "TMDb 8.2",
-            "Rotten Tomatoes 9.2",
+            // Certified Fresh is heard; Verified Hot is not, where it was not given.
+            "Rotten Tomatoes · Certified Fresh 9.2",
+            "Rotten Tomatoes Popcornmeter 8.8",
             "Filmaffinity 8.9",
             "${str(R.string.live_rating_mine)} 9",
             str(R.string.live_rating_top250, 27),
