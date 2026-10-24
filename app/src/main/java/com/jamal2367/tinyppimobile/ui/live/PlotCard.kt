@@ -34,7 +34,6 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -111,7 +110,11 @@ internal fun PlotCard(media: MediaInfo, title: String) {
             val shown = "$title\n${media.plot.hashCode()}"
             var openFor by rememberSaveable { mutableStateOf<String?>(null) }
             val open = openFor == shown
-            var cut by remember(title, media.plot) { mutableStateOf(false) }
+            // Whether the plot runs past its lines is kept as long as what
+            // was let out: it is only measured folded, so a card brought
+            // back open - turned, or scrolled away and back - would
+            // otherwise forget that it folds and could not be folded again.
+            var cut by rememberSaveable(title, media.plot) { mutableStateOf(false) }
             val folds = cut || media.hasCredits || media.hasRatings
             Column(
                 modifier = Modifier

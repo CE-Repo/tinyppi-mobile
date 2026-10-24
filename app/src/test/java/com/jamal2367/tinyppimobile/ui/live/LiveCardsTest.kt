@@ -11,6 +11,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -41,6 +42,7 @@ import com.jamal2367.tinyppimobile.testing.Screens.until
 import com.jamal2367.tinyppimobile.ui.components.CardLayout
 import com.jamal2367.tinyppimobile.ui.components.CardScreens
 import com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme
+import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -547,6 +549,26 @@ class LiveCardsTest {
         rule.until { seen("Paul joins the Fremen.") }
         assertEquals(false, foldable(R.string.live_plot_more))
         assertEquals(false, foldable(R.string.live_plot_less))
+    }
+
+    // Drawn for real: how many lines a plot takes is measured.
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `a long plot let out still folds once it is brought back, with nothing under it`() {
+        val long = List(40) { "Paul joins the Fremen and walks the desert." }.joinToString(" ")
+        val restoring = StateRestorationTester(rule)
+        restoring.setContent {
+            TinyPpiTheme { CardState().Provide { PlotCard(MediaInfo(plot = long), "Dune: Part Two") } }
+        }
+        rule.onNode(folds(R.string.live_plot_more)).performClick()
+        rule.until { foldable(R.string.live_plot_less) }
+
+        // Turned, or scrolled away and back: let out as it was, and still a
+        // plot that folds - no credits or ratings under it say so for it.
+        restoring.emulateSavedInstanceStateRestore()
+        rule.until { foldable(R.string.live_plot_less) }
+        rule.onNode(folds(R.string.live_plot_less)).performClick()
+        rule.until { foldable(R.string.live_plot_more) }
     }
 
     // Drawn for real: whether the plot is cut is measured.
