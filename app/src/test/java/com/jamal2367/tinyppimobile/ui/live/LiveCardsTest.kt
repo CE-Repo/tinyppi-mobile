@@ -25,6 +25,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ApplicationProvider
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.ArtTags
+import com.jamal2367.tinyppimobile.data.model.Award
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
 import com.jamal2367.tinyppimobile.data.model.Metrics
 import com.jamal2367.tinyppimobile.data.model.PlayerControls
@@ -393,6 +394,44 @@ class LiveCardsTest {
         shieldOf("Rated PG-13", "mpa_pg13", "PG-13", 32f)
         shieldOf("TV-MA", "tv_ma", "MA", 24f)
         shieldOf("15", "bbfc_15", "15", 38f)
+    }
+
+    @Test
+    fun `the big awards stand last, as plates of what was won or else nominated for`() {
+        fake.playing(
+            told.copy(
+                media = MediaInfo(
+                    plot = "Plot.",
+                    awards = listOf(
+                        Award("oscar", listOf("Visual Effects (2015)"), 4),
+                        Award("globe", emptyList(), 1),
+                        Award("bafta", listOf("Film (2015)", "Score (2015)"), 0),
+                        Award("emmy", emptyList(), 2),
+                        // One there is no plate of is left out.
+                        Award("cesar", listOf("Best Film (2015)"), 0),
+                    ),
+                ),
+            ),
+        )
+        showLive()
+        val won = { n: Int -> context.getString(R.string.live_award_won, n) }
+        val nominated = { n: Int -> context.getString(R.string.live_award_nominated, n) }
+        val said = listOf("Oscar ${won(1)}", "Golden Globe ${nominated(1)}", "BAFTA ${won(2)}", "Emmy ${nominated(2)}")
+        rule.until { said.all { rule.onAllNodesWithContentDescription(it).fetchSemanticsNodes().isNotEmpty() } }
+        // As tall as every other badge, in the order they are sent.
+        val shields = said.map { rule.onNodeWithContentDescription(it).fetchSemanticsNode().boundsInRoot }
+        shields.forEach { assertEquals(24f * context.resources.displayMetrics.density, it.height, 0.5f) }
+        assertEquals(shields.sortedBy { it.top * 10_000 + it.left }, shields)
+        assertEquals(true, rule.onAllNodesWithContentDescription("cesar", substring = true).fetchSemanticsNodes().isEmpty())
+        // A tap says what it won it for, and how many more it was nominated for.
+        rule.onNodeWithContentDescription("Oscar ${won(1)}").performClick()
+        rule.until { seen("Oscar: Visual Effects (2015) · ${nominated(4)}") }
+        rule.mainClock.advanceTimeBy(5_000)
+        rule.onNodeWithContentDescription("BAFTA ${won(2)}").performClick()
+        rule.until { seen("BAFTA: Film (2015), Score (2015)") }
+        rule.mainClock.advanceTimeBy(5_000)
+        rule.onNodeWithContentDescription("Golden Globe ${nominated(1)}").performClick()
+        rule.until { seen("Golden Globe · ${nominated(1)}") }
     }
 
     @Test

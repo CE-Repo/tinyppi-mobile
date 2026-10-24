@@ -63,6 +63,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
+import com.jamal2367.tinyppimobile.data.model.Award
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
 import com.jamal2367.tinyppimobile.data.model.SourceRating
 import com.jamal2367.tinyppimobile.ui.components.SectionCard
@@ -268,7 +269,7 @@ private fun RatingRow(media: MediaInfo) {
                     ground = plate.ground,
                     hue = plate.hue,
                     inset = 0.dp,
-                ) { BoardPlate(plate.drawing) }
+                ) { BoardPlate(plate.drawing, 1f) }
             } else {
                 RatingShield(
                     spoken = said,
@@ -321,7 +322,37 @@ private fun RatingRow(media: MediaInfo) {
                 hue = TOP250.hue,
             ) { DrawnMark(TOP250.drawing) }
         }
+        media.awards.forEach { award -> AwardShield(award, tall) }
     }
+}
+
+/**
+ * One of the big awards, as a plate like an age rating's: its name on its
+ * own ground, and beside it how many it won - or, where it won none, how
+ * many it was nominated for, on a quieter shield: the line's wash, and the
+ * plate dimmed. A tap shows what it won it for. One there is no plate of
+ * is left out.
+ */
+@Composable
+private fun AwardShield(award: Award, tall: Dp) {
+    val mark = AWARD_MARKS[award.award] ?: return
+    val name = AWARD_NAMES.getValue(award.award)
+    val won = award.won.size
+    val more = if (award.nominated > 0) stringResource(R.string.live_award_nominated, award.nominated) else ""
+    val line = MaterialTheme.colorScheme.surfaceContainerHigh
+    RatingShield(
+        spoken = "$name ${if (won > 0) stringResource(R.string.live_award_won, won) else more}",
+        named = if (won > 0) {
+            listOf("$name: ${award.won.joinToString(", ")}", more).filter { it.isNotEmpty() }.joinToString(" · ")
+        } else {
+            "$name · $more"
+        },
+        value = (if (won > 0) won else award.nominated).toString(),
+        tall = tall,
+        ground = if (won > 0) mark.ground else Color.Transparent,
+        hue = if (won > 0) mark.hue else line,
+        inset = 0.dp,
+    ) { BoardPlate(mark.drawing, if (won > 0) 1f else NOMINEE_ALPHA) }
 }
 
 /**
@@ -348,6 +379,24 @@ private val RATING_MARKS = mapOf(
 )
 
 private val TOP250 = HouseMark(R.drawable.rating_top250, Color(0xFFF5C518))
+
+/**
+ * The big awards' plates, by the name the add-on gives them, each on its own
+ * ground; the two on a near-black one are washed and edged in their
+ * lettering's gold.
+ */
+private val AWARD_MARKS = mapOf(
+    "oscar" to HouseMark(R.drawable.rating_award_oscar, Color(0xFFE2B33C)),
+    "globe" to HouseMark(R.drawable.rating_award_globe, Color(0xFF9C6B1E)),
+    "bafta" to HouseMark(R.drawable.rating_award_bafta, Color(0xFF141414), Color(0xFFE2B33C)),
+    "emmy" to HouseMark(R.drawable.rating_award_emmy, Color(0xFF3B2A6B), Color(0xFFE2B33C)),
+)
+
+/** What the awards are called, untranslated. */
+private val AWARD_NAMES = mapOf("oscar" to "Oscar", "globe" to "Golden Globe", "bafta" to "BAFTA", "emmy" to "Emmy")
+
+/** How far an award it was only nominated for is dimmed. */
+private const val NOMINEE_ALPHA = 0.6f
 
 /** What Rotten Tomatoes calls a rating it certified: its critics' and its audience's. Untranslated. */
 private val CERTIFICATES = mapOf("rottentomatoes" to "Certified Fresh", "popcorn" to "Verified Hot")
@@ -529,17 +578,18 @@ private fun DrawnMark(drawing: Int, sealed: Boolean = false) {
 }
 
 /**
- * An age rating board's plate: its name on the level's colour, the whole
- * height of the shield and as wide as it is drawn, so the colour runs to the
- * shield's edges as a house's ground does.
+ * An age rating board's plate, or an award's: its name on its colour, the
+ * whole height of the shield and as wide as it is drawn, so the colour runs
+ * to the shield's edges as a house's ground does; [alpha] dims it.
  */
 @Composable
-private fun BoardPlate(drawing: Int) {
+private fun BoardPlate(drawing: Int, alpha: Float) {
     val painter = painterResource(drawing)
     Image(
         painter = painter,
         contentDescription = null,
         contentScale = ContentScale.FillBounds,
+        alpha = alpha,
         modifier = Modifier
             .fillMaxHeight()
             .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),

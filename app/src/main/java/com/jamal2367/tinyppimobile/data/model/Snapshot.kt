@@ -306,6 +306,12 @@ data class MediaInfo(
     /** The place in the IMDb Top 250; 0 for none. */
     val top250: Int = 0,
     /**
+     * The big awards it won or was nominated for - the Academy Awards, the
+     * Golden Globes, the BAFTAs, the Primetime Emmys - in the order they are
+     * shown (see `web/awards.py` in the add-on). An episode's are its show's.
+     */
+    val awards: List<Award> = emptyList(),
+    /**
      * Who made it, as the add-on splits Kodi's readings into names: every
      * director, the first studio alone, and the cast's first twenty in
      * billing order with whether there are more. The studio stands in
@@ -327,7 +333,7 @@ data class MediaInfo(
 
     /** Whether the library rated the title in any of the ways it can. */
     val hasRatings: Boolean
-        get() = ratings.isNotEmpty() || userRating > 0 || top250 > 0 || mpaa.isNotBlank()
+        get() = ratings.isNotEmpty() || userRating > 0 || top250 > 0 || mpaa.isNotBlank() || awards.isNotEmpty()
 
     /** Whether Kodi says who directed or is in the title: the plot card's credits. */
     val hasCredits: Boolean
@@ -345,6 +351,18 @@ data class MediaInfo(
             return String.format(Locale.ROOT, "S%02dE%02d", s, e)
         }
 }
+
+/**
+ * One of the big awards the playing title won or was nominated for: `oscar`,
+ * `globe`, `bafta` or `emmy`, what it won by category and year
+ * (`Visual Effects (2015)`), and how many more it was nominated for.
+ */
+@Serializable
+data class Award(
+    val award: String = "",
+    val won: List<String> = emptyList(),
+    val nominated: Int = 0,
+)
 
 /**
  * One source's rating of the playing title, out of ten: `imdb`, `tmdb`,
