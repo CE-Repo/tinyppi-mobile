@@ -356,13 +356,13 @@ class LiveCardsTest {
 
         // Ratings without a plot: the card for them alone, and no slogan.
         // From an add-on too old to send the level beside its mark, the
-        // board's plate stands alone, the whole height of a shield and as
-        // wide as it is drawn (30 by 22).
+        // board's plate stands alone, 2 dp in from the shield's edge all
+        // round and as wide as it is drawn (30 by 22): 34 by 26.
         fake.playing(told.copy(media = MediaInfo(tagline = "Only this.", mpaa = "FSK 16", age = "fsk16")))
         rule.until { rule.onAllNodesWithContentDescription("FSK 16").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(true, seen(str(R.string.live_plot)))
         val alone = rule.onNodeWithContentDescription("FSK 16").fetchSemanticsNode().boundsInRoot
-        assertEquals(30f / 22f, alone.width / alone.height, 0.05f)
+        assertEquals(34f / 26f, alone.width / alone.height, 0.05f)
         // Centred: a badge alone stands in the middle of the card, which is
         // the middle of the screen.
         assertEquals(screen.center.x, alone.center.x, 1f)

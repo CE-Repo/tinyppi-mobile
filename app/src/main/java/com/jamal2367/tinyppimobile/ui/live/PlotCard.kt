@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -250,8 +251,8 @@ private fun creditLine(label: String, names: String, colors: ColorScheme): Annot
  * order the add-on sends them, the reader's own and the place in the IMDb
  * Top 250.
  *
- * Each is a small shield wearing its house's mark on a ground of its house's
- * colour rather than its name - the same marks the add-on's dashboard
+ * Each is a small shield wearing its house's mark on a plate of its house's
+ * colour rather than its name, the whole shield washed and edged in it - the same marks the add-on's dashboard
  * serves: the houses' own logos where there is one, the rest drawn by
  * `tools/gen_rating_marks.py` in script.tinyppi - and
  * says in words what it shows, since a screen reader can say nothing of a
@@ -280,15 +281,16 @@ private fun RatingRow(media: MediaInfo) {
             // beside it ("FSK" | "12"). Any other is written as the scraper
             // wrote it.
             val said = media.mpaa.trim()
-            val drawing = AGE_MARKS[media.age]
-            if (drawing != null) {
+            val plate = AGE_MARKS[media.age]
+            if (plate != null) {
                 RatingShield(
                     spoken = said,
                     named = boardOf(media.age),
                     value = media.ageLevel.trim(),
                     tall = tall,
+                    ground = plate.ground,
                     inset = 0.dp,
-                ) { BoardPlate(drawing) }
+                ) { BoardPlate(plate.drawing) }
             } else {
                 RatingShield(spoken = said, named = said, value = said, tall = tall)
             }
@@ -306,6 +308,7 @@ private fun RatingRow(media: MediaInfo) {
                 value = value,
                 tall = tall,
                 ground = mark?.ground ?: colours.surfaceContainerHigh,
+                hue = mark?.hue ?: colours.surfaceContainerHigh,
             ) {
                 if (mark != null) DrawnMark(mark.drawing, sealed = certificate != null) else LetterMark(name.take(1))
             }
@@ -334,16 +337,20 @@ private fun RatingRow(media: MediaInfo) {
     }
 }
 
-/** A house's mark, and the colour of the ground it is drawn on. */
-private class HouseMark(val drawing: Int, val ground: Color)
+/**
+ * A house's mark, the colour of the ground it is drawn on, and the one its
+ * shield is washed and edged in: the ground's, or for a house whose ground is
+ * all but black - which would not show on a dark card - its mark's.
+ */
+private class HouseMark(val drawing: Int, val ground: Color, val hue: Color = ground)
 
 /** The houses there is a drawing of, by the name the add-on gives them. */
 private val RATING_MARKS = mapOf(
-    "imdb" to HouseMark(R.drawable.rating_imdb, Color(0xFF121212)),
-    "tmdb" to HouseMark(R.drawable.rating_tmdb, Color(0xFF0D253F)),
+    "imdb" to HouseMark(R.drawable.rating_imdb, Color(0xFF121212), Color(0xFFF5C518)),
+    "tmdb" to HouseMark(R.drawable.rating_tmdb, Color(0xFF0D253F), Color(0xFF01B4E4)),
     "trakt" to HouseMark(R.drawable.rating_trakt, Color(0xFF9F42C6)),
     "tvdb" to HouseMark(R.drawable.rating_tvdb, Color(0xFF555555)),
-    "letterboxd" to HouseMark(R.drawable.rating_letterboxd, Color(0xFF202830)),
+    "letterboxd" to HouseMark(R.drawable.rating_letterboxd, Color(0xFF202830), Color(0xFF00E054)),
     "metacritic" to HouseMark(R.drawable.rating_metacritic, Color(0xFF66CC33)),
     "metacriticuser" to HouseMark(R.drawable.rating_metacriticuser, Color(0xFF66CC33)),
     "rottentomatoes" to HouseMark(R.drawable.rating_rottentomatoes, Color(0xFFF9D320)),
@@ -370,32 +377,33 @@ private fun boardOf(age: String): String = when {
  * The age ratings there is a drawing of, by the name the add-on gives the
  * mark (see `age_rating` in its `web/ratings.py`): the plate of the FSK's,
  * the MPA's and the TV Parental Guidelines' - both in the FSK's colours - and
- * the BBFC's levels, each the board's name on the level's colour.
+ * the BBFC's levels, each the board's name on the level's colour, which is
+ * the colour the shield is washed in.
  */
 private val AGE_MARKS = mapOf(
-    "fsk0" to R.drawable.rating_fsk0,
-    "fsk6" to R.drawable.rating_fsk6,
-    "fsk12" to R.drawable.rating_fsk12,
-    "fsk16" to R.drawable.rating_fsk16,
-    "fsk18" to R.drawable.rating_fsk18,
-    "mpa_g" to R.drawable.rating_mpa_g,
-    "mpa_pg" to R.drawable.rating_mpa_pg,
-    "mpa_pg13" to R.drawable.rating_mpa_pg13,
-    "mpa_r" to R.drawable.rating_mpa_r,
-    "mpa_nc17" to R.drawable.rating_mpa_nc17,
-    "tv_y" to R.drawable.rating_tv_y,
-    "tv_y7" to R.drawable.rating_tv_y7,
-    "tv_g" to R.drawable.rating_tv_g,
-    "tv_pg" to R.drawable.rating_tv_pg,
-    "tv_14" to R.drawable.rating_tv_14,
-    "tv_ma" to R.drawable.rating_tv_ma,
-    "bbfc_u" to R.drawable.rating_bbfc_u,
-    "bbfc_pg" to R.drawable.rating_bbfc_pg,
-    "bbfc_12a" to R.drawable.rating_bbfc_12a,
-    "bbfc_12" to R.drawable.rating_bbfc_12,
-    "bbfc_15" to R.drawable.rating_bbfc_15,
-    "bbfc_18" to R.drawable.rating_bbfc_18,
-    "bbfc_r18" to R.drawable.rating_bbfc_r18,
+    "fsk0" to HouseMark(R.drawable.rating_fsk0, Color(0xFFFFFFFF)),
+    "fsk6" to HouseMark(R.drawable.rating_fsk6, Color(0xFFFFD500)),
+    "fsk12" to HouseMark(R.drawable.rating_fsk12, Color(0xFF00A651)),
+    "fsk16" to HouseMark(R.drawable.rating_fsk16, Color(0xFF00A0E3)),
+    "fsk18" to HouseMark(R.drawable.rating_fsk18, Color(0xFFE30613)),
+    "mpa_g" to HouseMark(R.drawable.rating_mpa_g, Color(0xFF00A651)),
+    "mpa_pg" to HouseMark(R.drawable.rating_mpa_pg, Color(0xFFFFD500)),
+    "mpa_pg13" to HouseMark(R.drawable.rating_mpa_pg13, Color(0xFFF7941D)),
+    "mpa_r" to HouseMark(R.drawable.rating_mpa_r, Color(0xFFE30613)),
+    "mpa_nc17" to HouseMark(R.drawable.rating_mpa_nc17, Color(0xFF2E3192)),
+    "tv_y" to HouseMark(R.drawable.rating_tv_y, Color(0xFF00A651)),
+    "tv_y7" to HouseMark(R.drawable.rating_tv_y7, Color(0xFF00A651)),
+    "tv_g" to HouseMark(R.drawable.rating_tv_g, Color(0xFF00A651)),
+    "tv_pg" to HouseMark(R.drawable.rating_tv_pg, Color(0xFFFFD500)),
+    "tv_14" to HouseMark(R.drawable.rating_tv_14, Color(0xFFF7941D)),
+    "tv_ma" to HouseMark(R.drawable.rating_tv_ma, Color(0xFFE30613)),
+    "bbfc_u" to HouseMark(R.drawable.rating_bbfc_u, Color(0xFF00A651)),
+    "bbfc_pg" to HouseMark(R.drawable.rating_bbfc_pg, Color(0xFFFBB800)),
+    "bbfc_12a" to HouseMark(R.drawable.rating_bbfc_12a, Color(0xFFF58220)),
+    "bbfc_12" to HouseMark(R.drawable.rating_bbfc_12, Color(0xFFF58220)),
+    "bbfc_15" to HouseMark(R.drawable.rating_bbfc_15, Color(0xFFE5007E)),
+    "bbfc_18" to HouseMark(R.drawable.rating_bbfc_18, Color(0xFFE30613)),
+    "bbfc_r18" to HouseMark(R.drawable.rating_bbfc_r18, Color(0xFF1D1D6B)),
 )
 
 /**
@@ -407,10 +415,12 @@ private fun sourceName(entry: SourceRating): String =
     RATING_NAMES[entry.source] ?: entry.source.replaceFirstChar { it.titlecase(Locale.ROOT) }
 
 /**
- * One rating as a shield: [side] on the left, on [ground] - a house's own
- * colour, so its mark runs into it and the left reads as one plate - [inset]
- * from its edges, and on the right the figure in bold.
- * Square-cornered like a plaque rather than round like a button. Without a
+ * One rating as a shield: [side] on the left, on a plate of [ground] - a
+ * house's own colour, so its mark runs into it - [inset] from the plate's
+ * edges, and on the right the figure in bold. The whole shield is washed in
+ * [hue] - the ground's colour unless the house says otherwise - and edged in it, so a row of them reads as the houses' colours
+ * before a word of it is; one with no colour of its own is washed in the
+ * card's line colour. Squarish like a plaque rather than round like a button. Without a
  * figure - an age rating from an add-on too old to send its level - the
  * side stands alone.
  *
@@ -425,8 +435,9 @@ private fun RatingShield(
     named: String,
     value: String,
     tall: Dp,
-    ground: Color = Color.Transparent,
-    inset: Dp = 2.dp,
+    ground: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    hue: Color = ground,
+    inset: Dp = 3.dp,
     side: (@Composable () -> Unit)? = null,
 ) {
     val told = rememberTooltipState()
@@ -436,7 +447,7 @@ private fun RatingShield(
         tooltip = { PlainTooltip { Text(named) } },
         state = told,
     ) {
-        Shield(spoken, value, tall, ground, inset, side) { scope.launch { told.show() } }
+        Shield(spoken, value, tall, ground, hue, inset, side) { scope.launch { told.show() } }
     }
 }
 
@@ -447,6 +458,7 @@ private fun Shield(
     value: String,
     tall: Dp,
     ground: Color,
+    hue: Color,
     inset: Dp,
     side: (@Composable () -> Unit)?,
     onTap: () -> Unit,
@@ -457,14 +469,18 @@ private fun Shield(
             .clickable(onClick = onTap)
             .height(tall)
             .clip(SHIELD)
-            .border(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh, SHIELD)
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+            .border(1.dp, hue.copy(alpha = EDGE), SHIELD)
+            .background(hue.copy(alpha = WASH).compositeOver(MaterialTheme.colorScheme.surfaceContainerHighest)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (side != null) {
+            // The plate set a little in from the shield's edge, so the wash
+            // shows round it.
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
+                    .padding(2.dp)
+                    .clip(PLATE)
                     .background(ground)
                     .padding(horizontal = inset),
                 contentAlignment = Alignment.Center,
@@ -475,7 +491,7 @@ private fun Shield(
         if (value.isNotEmpty()) {
             Text(
                 text = value,
-                modifier = Modifier.padding(horizontal = 7.dp),
+                modifier = Modifier.padding(start = if (side != null) 4.dp else 8.dp, end = 8.dp),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -585,10 +601,15 @@ private val FOLD_SHAPE = RoundedCornerShape(8.dp)
 /** How many lines of a plot are shown until the reader asks for the rest. */
 private const val PLOT_LINES = 5
 
-/** How tall a mark stands on its plate, and the corners of a shield. */
-private val MARK = 20.dp
+/** How tall a mark stands on its plate, and the corners of a shield and of its plate. */
+private val MARK = 18.dp
 private val SEAL = 10.dp
-private val SHIELD = RoundedCornerShape(6.dp)
+private val SHIELD = RoundedCornerShape(7.dp)
+private val PLATE = RoundedCornerShape(5.dp)
+
+/** How much of its house's colour a shield is washed in, and edged in. */
+private const val WASH = 0.2f
+private const val EDGE = 0.55f
 
 /**
  * How tall every badge stands - a shield, a heart, an age rating's - so a
