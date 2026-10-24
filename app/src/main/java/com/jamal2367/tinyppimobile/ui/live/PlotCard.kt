@@ -492,7 +492,7 @@ private fun Shield(
             Text(
                 text = value,
                 modifier = Modifier.padding(start = if (side != null) 4.dp else 8.dp, end = 8.dp),
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
@@ -563,7 +563,7 @@ private fun BoardPlate(drawing: Int) {
 private fun LetterMark(letter: String) {
     Text(
         text = letter,
-        style = MaterialTheme.typography.labelSmall,
+        style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.ExtraBold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
@@ -582,7 +582,7 @@ private fun HeartMark() {
         tint = MaterialTheme.colorScheme.onPrimary,
         modifier = Modifier
             .padding(horizontal = 4.dp)
-            .size(11.dp),
+            .size(13.dp),
     )
 }
 
@@ -602,8 +602,8 @@ private val FOLD_SHAPE = RoundedCornerShape(8.dp)
 private const val PLOT_LINES = 5
 
 /** How tall a mark stands on its plate, and the corners of a shield and of its plate. */
-private val MARK = 18.dp
-private val SEAL = 10.dp
+private val MARK = 22.dp
+private val SEAL = 12.dp
 private val SHIELD = RoundedCornerShape(7.dp)
 private val PLATE = RoundedCornerShape(5.dp)
 
@@ -620,7 +620,7 @@ private const val EDGE = 0.55f
 @Composable
 private fun badgeHeight(): Dp = BADGE * LocalDensity.current.fontScale.coerceAtLeast(1f)
 
-private val BADGE = 26.dp
+private val BADGE = 30.dp
 
 /** A film's slogan, plot, ratings and cast, as the card draws them. */
 @PreviewLightDark

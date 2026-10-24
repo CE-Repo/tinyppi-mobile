@@ -316,7 +316,7 @@ class LiveCardsTest {
             "${str(R.string.live_rating_mine)} 9", str(R.string.live_rating_top250, 27),
         ).map { rule.onNodeWithContentDescription(it).fetchSemanticsNode().boundsInRoot.height }
         assertEquals(heights.map { heights.first() }, heights)
-        assertEquals(26f * context.resources.displayMetrics.density, heights.first(), 0.5f)
+        assertEquals(30f * context.resources.displayMetrics.density, heights.first(), 0.5f)
         assertEquals(false, seen("8.5"))
         // A tap on one shows over it the house a mark is from, and not
         // what it gave: that stands on the shield already.
@@ -357,12 +357,12 @@ class LiveCardsTest {
         // Ratings without a plot: the card for them alone, and no slogan.
         // From an add-on too old to send the level beside its mark, the
         // board's plate stands alone, 2 dp in from the shield's edge all
-        // round and as wide as it is drawn (30 by 22): 34 by 26.
+        // round and as wide as it is drawn (30 by 22, at 26 dp tall).
         fake.playing(told.copy(media = MediaInfo(tagline = "Only this.", mpaa = "FSK 16", age = "fsk16")))
         rule.until { rule.onAllNodesWithContentDescription("FSK 16").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(true, seen(str(R.string.live_plot)))
         val alone = rule.onNodeWithContentDescription("FSK 16").fetchSemanticsNode().boundsInRoot
-        assertEquals(34f / 26f, alone.width / alone.height, 0.05f)
+        assertEquals((26f * 30f / 22f + 4f) / 30f, alone.width / alone.height, 0.05f)
         // Centred: a badge alone stands in the middle of the card, which is
         // the middle of the screen.
         assertEquals(screen.center.x, alone.center.x, 1f)
@@ -376,7 +376,7 @@ class LiveCardsTest {
             letOut()
             rule.until { rule.onAllNodesWithContentDescription(said).fetchSemanticsNodes().isNotEmpty() }
             val shield = rule.onNodeWithContentDescription(said).fetchSemanticsNode().boundsInRoot
-            assertEquals(26f * density, shield.height, 0.5f)
+            assertEquals(30f * density, shield.height, 0.5f)
             // The plate, edge to edge, and the figure's own room beside it.
             assertEquals(true, shield.width > (26f * plateWidth / 22f + 14f) * density)
         }
@@ -400,7 +400,7 @@ class LiveCardsTest {
             rule.onNodeWithContentDescription("$name 7.5").fetchSemanticsNode().boundsInRoot.height
         }
         // As tall as every other badge.
-        heights.forEach { assertEquals(26f * context.resources.displayMetrics.density, it, 0.5f) }
+        heights.forEach { assertEquals(30f * context.resources.displayMetrics.density, it, 0.5f) }
     }
 
     @Test
