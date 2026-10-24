@@ -350,6 +350,7 @@ private val RATING_MARKS = mapOf(
     "popcorn" to HouseMark(R.drawable.rating_popcorn, Color(0xFF1E88E5)),
     "rogerebert" to HouseMark(R.drawable.rating_rogerebert, Color(0xFFC8102E)),
     "myanimelist" to HouseMark(R.drawable.rating_myanimelist, Color(0xFF2E51A2)),
+    "mdblist" to HouseMark(R.drawable.rating_mdblist, Color(0xFF4284CA)),
 )
 
 private val TOP250 = HouseMark(R.drawable.rating_top250, Color(0xFFF5C518))

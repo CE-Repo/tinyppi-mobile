@@ -391,6 +391,7 @@ class LiveCardsTest {
         val sources = listOf(
             "letterboxd" to "Letterboxd", "metacriticuser" to "Metacritic User Score",
             "popcorn" to "Rotten Tomatoes Popcornmeter", "rogerebert" to "Roger Ebert", "myanimelist" to "MyAnimeList",
+            "mdblist" to "MDBList",
         )
         fake.playing(told.copy(media = told.media.copy(ratings = sources.map { (source, _) -> SourceRating(source, 7.5) })))
         showLive()
