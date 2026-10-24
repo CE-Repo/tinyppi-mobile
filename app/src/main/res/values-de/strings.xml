@@ -118,7 +118,6 @@
     <string name="live_plot">Überblick</string>
     <string name="live_plot_more">Mehr anzeigen</string>
     <string name="live_plot_less">Weniger anzeigen</string>
-    <string name="live_ratings">Bewertungen</string>
     <string name="live_rating_mine">Eigene Bewertung</string>
     <string name="live_rating_top250">Top 250 · Platz %1$d</string>
     <string name="live_credit_director">Regisseur</string>

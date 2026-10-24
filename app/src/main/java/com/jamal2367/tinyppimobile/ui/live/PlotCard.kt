@@ -82,27 +82,26 @@ import java.util.Locale
  * own it says too little, and above a plot it is left out where there is
  * none, which is most episodes.
  *
- * Everything in it centred. The slogan first, right over the plot so the two
- * read as one text, set like a credit's heading, and the plot in the quieter
- * colour the year and genre are set in, since it is the one paragraph on the
- * screen and the readings below it should not have to shout over it. Under
- * the plot, the director and the cast as plain lines, and last, under a
- * heading of their own, the ratings as a row of their own: short facts about
- * the film, taken in at a glance. All of them under the plot are folded away
- * until a tap on it lets them out.
+ * Everything in it centred. The ratings first, as a row of their own and
+ * never folded away: short facts about the film, taken in at a glance before
+ * a word of the plot is read, and needing no heading, since the houses' marks
+ * say what they are. Then the slogan, right over the plot so the two read as
+ * one text, set like a credit's heading, and the plot in the quieter colour
+ * the year and genre are set in, since it is the one paragraph on the
+ * screen. Under the plot, the director and the cast as plain lines, folded
+ * away until a tap on the plot lets them out.
  */
 @Composable
 internal fun PlotCard(media: MediaInfo, title: String) {
     SectionCard(title = stringResource(R.string.live_plot), foldId = FOLD_PLOT) {
+        if (media.hasRatings) RatingRow(media)
         if (media.hasPlot) {
             // The card starts folded: the plot cut to a few lines, and the
-            // credits and the ratings hanging on its end hidden under it. A
-            // tap on it lets all of it out, and another folds it again. It
-            // folds wherever there is more than those lines to show - a plot
-            // that runs past them, or credits or ratings under it - and a new
-            // plot starts folded again. To a screen reader it is a button
-            // that says what a tap does; a tap on a rating's shield is the
-            // shield's.
+            // credits hanging on its end hidden under it. A tap on it lets
+            // all of it out, and another folds it again. It folds wherever
+            // there is more than those lines to show - a plot that runs past
+            // them, or credits under it - and a new plot starts folded again.
+            // To a screen reader it is a button that says what a tap does.
             //
             // Folded again for every new title - [title] says which this is -
             // and every new plot. What was let out is kept with them: a card
@@ -117,7 +116,7 @@ internal fun PlotCard(media: MediaInfo, title: String) {
             // back open - turned, or scrolled away and back - would
             // otherwise forget that it folds and could not be folded again.
             var cut by rememberSaveable(title, media.plot) { mutableStateOf(false) }
-            val folds = cut || media.hasCredits || media.hasRatings
+            val folds = cut || media.hasCredits
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -163,38 +162,12 @@ internal fun PlotCard(media: MediaInfo, title: String) {
                     // lines, but is still one that folds.
                     onTextLayout = { if (!open) cut = it.hasVisualOverflow },
                 )
-                if (open) {
-                    if (media.hasCredits) Credits(media, Modifier.padding(top = 12.dp))
-                    if (media.hasRatings) Ratings(media, Modifier.padding(top = 16.dp))
-                }
+                if (open && media.hasCredits) Credits(media, Modifier.padding(top = 12.dp))
             }
-        } else {
-            // Without a plot, the credits and the ratings on their own.
-            if (media.hasCredits) Credits(media, Modifier.align(Alignment.CenterHorizontally))
-            if (media.hasRatings) Ratings(media, Modifier.padding(top = RATINGS_GAP))
+        } else if (media.hasCredits) {
+            // Without a plot, the credits on their own under the ratings.
+            Credits(media, Modifier.align(Alignment.CenterHorizontally))
         }
-    }
-}
-
-/**
- * The ratings, last, under a heading of their own like a credit's, as far
- * under the cast as the cast is under the director.
- */
-@Composable
-private fun Ratings(media: MediaInfo, modifier: Modifier) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.live_ratings),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-        )
-        RatingRow(media)
     }
 }
 
@@ -268,11 +241,11 @@ private fun RatingRow(media: MediaInfo) {
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(6.dp),
         itemVerticalAlignment = Alignment.CenterVertically,
-        // A little more air over them than between the lines of the plot:
-        // they are a row of their own, not its last line.
+        // A little more air under them than between the card's rows: they
+        // are a row of their own over the plot, not its first line.
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 2.dp),
+            .padding(bottom = 4.dp),
     ) {
         if (media.mpaa.isNotBlank()) {
             // One the add-on could place - FSK, MPA, TV Parental Guidelines,
@@ -289,10 +262,18 @@ private fun RatingRow(media: MediaInfo) {
                     value = media.ageLevel.trim(),
                     tall = tall,
                     ground = plate.ground,
+                    hue = plate.hue,
                     inset = 0.dp,
                 ) { BoardPlate(plate.drawing) }
             } else {
-                RatingShield(spoken = said, named = said, value = said, tall = tall)
+                RatingShield(
+                    spoken = said,
+                    named = said,
+                    value = said,
+                    tall = tall,
+                    ground = colours.surfaceContainerHigh,
+                    hue = colours.surfaceContainerHigh,
+                )
             }
         }
         media.ratings.forEach { entry ->
@@ -323,6 +304,7 @@ private fun RatingRow(media: MediaInfo) {
                 value = value,
                 tall = tall,
                 ground = colours.primary,
+                hue = colours.primary,
             ) { HeartMark() }
         }
         if (media.top250 > 0) {
@@ -332,6 +314,7 @@ private fun RatingRow(media: MediaInfo) {
                 value = "#${media.top250}",
                 tall = tall,
                 ground = TOP250.ground,
+                hue = TOP250.hue,
             ) { DrawnMark(TOP250.drawing) }
         }
     }
@@ -435,8 +418,8 @@ private fun RatingShield(
     named: String,
     value: String,
     tall: Dp,
-    ground: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
-    hue: Color = ground,
+    ground: Color,
+    hue: Color,
     inset: Dp = 3.dp,
     side: (@Composable () -> Unit)? = null,
 ) {
@@ -588,9 +571,6 @@ private fun HeartMark() {
 
 /** How many of the cast are named, as the add-on cuts them; "…" says there are more. */
 private const val CAST_LIMIT = 20
-
-/** The air over the ratings' heading, besides the card's own between its rows. */
-private val RATINGS_GAP = 6.dp
 
 /** The air between the slogan and the plot under it. */
 private val SLOGAN_GAP = 4.dp
