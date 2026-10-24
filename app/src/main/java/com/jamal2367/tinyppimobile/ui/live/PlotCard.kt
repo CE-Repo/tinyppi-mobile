@@ -62,6 +62,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.Award
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
@@ -70,6 +71,7 @@ import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import com.jamal2367.tinyppimobile.util.Formatters
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
 
 /**
@@ -247,8 +249,8 @@ private fun RatingRow(media: MediaInfo) {
     val colours = MaterialTheme.colorScheme
     FlowRow(
         // Every line of them centred, the last one too.
-        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(7.dp),
         itemVerticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
     ) {
@@ -472,17 +474,24 @@ private fun RatingShield(
     tall: Dp,
     ground: Color,
     hue: Color,
-    inset: Dp = 3.dp,
+    inset: Dp = 3.5.dp,
     side: (@Composable () -> Unit)? = null,
 ) {
-    val told = rememberTooltipState()
+    // Kept up by hand rather than for the library's moment and a half, so
+    // a tap leaves time to read whose it is.
+    val told = rememberTooltipState(isPersistent = true)
     val scope = rememberCoroutineScope()
     TooltipBox(
         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
         tooltip = { PlainTooltip { Text(named) } },
         state = told,
     ) {
-        Shield(spoken, value, tall, ground, hue, inset, side) { scope.launch { told.show() } }
+        Shield(spoken, value, tall, ground, hue, inset, side) {
+            scope.launch {
+                withTimeoutOrNull(TIP_TIME) { told.show() }
+                told.dismiss()
+            }
+        }
     }
 }
 
@@ -527,8 +536,9 @@ private fun Shield(
         if (value.isNotEmpty()) {
             Text(
                 text = value,
-                modifier = Modifier.padding(start = if (side != null) 4.dp else 8.dp, end = 8.dp),
+                modifier = Modifier.padding(start = if (side != null) 4.5.dp else 8.5.dp, end = 8.5.dp),
                 style = MaterialTheme.typography.labelMedium,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
@@ -601,12 +611,13 @@ private fun LetterMark(letter: String) {
     Text(
         text = letter,
         style = MaterialTheme.typography.labelSmall,
+        fontSize = 11.5.sp,
         fontWeight = FontWeight.ExtraBold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
         modifier = Modifier
-            .padding(horizontal = 4.dp)
-            .widthIn(min = 12.dp),
+            .padding(horizontal = 4.5.dp)
+            .widthIn(min = 13.dp),
     )
 }
 
@@ -618,8 +629,8 @@ private fun HeartMark() {
         contentDescription = null,
         tint = MaterialTheme.colorScheme.onPrimary,
         modifier = Modifier
-            .padding(horizontal = 4.dp)
-            .size(11.dp),
+            .padding(horizontal = 4.5.dp)
+            .size(12.dp),
     )
 }
 
@@ -636,13 +647,13 @@ private val FOLD_SHAPE = RoundedCornerShape(8.dp)
 private const val PLOT_LINES = 5
 
 /** How tall a mark stands on its plate, and the corners of a shield and of its plate. */
-private val MARK = 16.dp
-private val SEAL = 9.dp
-private val SHIELD = RoundedCornerShape(7.dp)
+private val MARK = 17.5.dp
+private val SEAL = 10.dp
+private val SHIELD = RoundedCornerShape(7.5.dp)
 
 /** How narrow a shield may be, so one with a short mark and figure is not a sliver. */
-private val SHIELD_WIDTH = 32.dp
-private val PLATE = RoundedCornerShape(5.dp)
+private val SHIELD_WIDTH = 35.dp
+private val PLATE = RoundedCornerShape(5.5.dp)
 
 /** How much of its house's colour a shield is washed in, and edged in. */
 private const val WASH = 0.2f
@@ -657,7 +668,10 @@ private const val EDGE = 0.55f
 @Composable
 private fun badgeHeight(): Dp = BADGE * LocalDensity.current.fontScale.coerceAtLeast(1f)
 
-private val BADGE = 24.dp
+private val BADGE = 26.dp
+
+/** How long a shield's words stay over it after a tap, in milliseconds. */
+private const val TIP_TIME = 4000L
 
 /** A film's slogan, plot, ratings and cast, as the card draws them. */
 @PreviewLightDark
