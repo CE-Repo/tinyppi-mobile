@@ -269,7 +269,7 @@ private fun RatingRow(media: MediaInfo) {
                     ground = plate.ground,
                     hue = plate.hue,
                     inset = 0.dp,
-                ) { BoardPlate(plate.drawing, 1f) }
+                ) { BoardPlate(plate.drawing) }
             } else {
                 RatingShield(
                     spoken = said,
@@ -327,11 +327,11 @@ private fun RatingRow(media: MediaInfo) {
 }
 
 /**
- * One of the big awards, as a plate like an age rating's: its name on its
- * own ground, and beside it how many it won - or, where it won none, how
- * many it was nominated for, on a quieter shield: the line's wash, and the
- * plate dimmed. A tap shows what it won it for. One there is no plate of
- * is left out.
+ * One of the big awards: a drawing of what it hands out on its own ground,
+ * like a house's mark, and beside it how many it won - or, where it won
+ * none, how many it was nominated for, on a quieter shield: the line's
+ * wash, and the mark dimmed. A tap shows what it won it for. One there is
+ * no drawing of is left out.
  */
 @Composable
 private fun AwardShield(award: Award, tall: Dp) {
@@ -349,10 +349,9 @@ private fun AwardShield(award: Award, tall: Dp) {
         },
         value = (if (won > 0) won else award.nominated).toString(),
         tall = tall,
-        ground = if (won > 0) mark.ground else Color.Transparent,
+        ground = if (won > 0) mark.ground else mark.ground.copy(alpha = NOMINEE_ALPHA),
         hue = if (won > 0) mark.hue else line,
-        inset = 0.dp,
-    ) { BoardPlate(mark.drawing, if (won > 0) 1f else NOMINEE_ALPHA) }
+    ) { DrawnMark(mark.drawing, alpha = if (won > 0) 1f else NOMINEE_ALPHA) }
 }
 
 /**
@@ -381,9 +380,9 @@ private val RATING_MARKS = mapOf(
 private val TOP250 = HouseMark(R.drawable.rating_top250, Color(0xFFF5C518))
 
 /**
- * The big awards' plates, by the name the add-on gives them, each on its own
- * ground; the two on a near-black one are washed and edged in their
- * lettering's gold.
+ * The big awards' drawings, by the name the add-on gives them, each on its
+ * own ground; the two on a near-black or a deep one are washed and edged in
+ * their drawing's gold.
  */
 private val AWARD_MARKS = mapOf(
     "oscar" to HouseMark(R.drawable.rating_award_oscar, Color(0xFFE2B33C)),
@@ -395,7 +394,7 @@ private val AWARD_MARKS = mapOf(
 /** What the awards are called, untranslated. */
 private val AWARD_NAMES = mapOf("oscar" to "Oscar", "globe" to "Golden Globe", "bafta" to "BAFTA", "emmy" to "Emmy")
 
-/** How far an award it was only nominated for is dimmed. */
+/** How far the mark of an award it was only nominated for is dimmed. */
 private const val NOMINEE_ALPHA = 0.6f
 
 /** What Rotten Tomatoes calls a rating it certified: its critics' and its audience's. Untranslated. */
@@ -551,15 +550,16 @@ private fun Modifier.heardAs(spoken: String): Modifier =
 /**
  * A house's drawing, as tall as a line of the shield and as wide as it is
  * drawn; [sealed], with Rotten Tomatoes' seal on its corner - the same one
- * the dashboard draws, from `tools/gen_rating_marks.py`.
+ * the dashboard draws, from `tools/gen_rating_marks.py`; [alpha] dims it.
  */
 @Composable
-private fun DrawnMark(drawing: Int, sealed: Boolean = false) {
+private fun DrawnMark(drawing: Int, sealed: Boolean = false, alpha: Float = 1f) {
     val painter = painterResource(drawing)
     Box {
         Image(
             painter = painter,
             contentDescription = null,
+            alpha = alpha,
             modifier = Modifier
                 .height(MARK)
                 .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),
@@ -578,18 +578,17 @@ private fun DrawnMark(drawing: Int, sealed: Boolean = false) {
 }
 
 /**
- * An age rating board's plate, or an award's: its name on its colour, the
- * whole height of the shield and as wide as it is drawn, so the colour runs
- * to the shield's edges as a house's ground does; [alpha] dims it.
+ * An age rating board's plate: its name on the level's colour, the whole
+ * height of the shield and as wide as it is drawn, so the colour runs to the
+ * shield's edges as a house's ground does.
  */
 @Composable
-private fun BoardPlate(drawing: Int, alpha: Float) {
+private fun BoardPlate(drawing: Int) {
     val painter = painterResource(drawing)
     Image(
         painter = painter,
         contentDescription = null,
         contentScale = ContentScale.FillBounds,
-        alpha = alpha,
         modifier = Modifier
             .fillMaxHeight()
             .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),
