@@ -165,7 +165,7 @@ fun TinyPpiApp(container: AppContainer, hiddenTabs: Set<String>) {
     // Whatever was just started is shown on the live tab, so a press on play
     // or resume goes there rather than leaving the shelf it was pressed on.
     LaunchedEffect(liveViewModel) {
-        liveViewModel.started.collect { open(TopLevelDestination.LIVE) }
+        liveViewModel.started.onEach { open(TopLevelDestination.LIVE) }.launchIn(this)
     }
 
     // What the bar lights up. The page under the middle of the screen, so the

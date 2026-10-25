@@ -57,7 +57,7 @@ internal fun LazyListScope.continueCard(
     expanded: Boolean,
     onToggle: () -> Unit,
     onPlay: (ContinueItem) -> Unit,
-    onDetails: (ContinueItem) -> Unit = onPlay,
+    onDetails: (ContinueItem) -> Unit,
 ) {
     posterRowCard(
         key = key,
@@ -172,7 +172,7 @@ private fun ContinueTile(
     starting: Boolean,
     enabled: Boolean,
     onPlay: () -> Unit,
-    onDetails: () -> Unit = onPlay,
+    onDetails: () -> Unit,
     modifier: Modifier,
 ) {
     Column(

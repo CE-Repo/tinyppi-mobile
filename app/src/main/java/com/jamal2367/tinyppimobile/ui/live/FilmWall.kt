@@ -58,7 +58,7 @@ internal fun LazyListScope.filmWall(
     expanded: Boolean,
     onToggle: () -> Unit,
     onPlay: (LibraryFilm) -> Unit,
-    onDetails: (LibraryFilm) -> Unit = onPlay,
+    onDetails: (LibraryFilm) -> Unit,
 ) {
     val key = "film-wall"
     shelfCard(
@@ -108,7 +108,7 @@ internal fun FilmTile(
     starting: Boolean,
     enabled: Boolean,
     onPlay: () -> Unit,
-    onDetails: () -> Unit = onPlay,
+    onDetails: () -> Unit,
     modifier: Modifier,
 ) {
     Column(

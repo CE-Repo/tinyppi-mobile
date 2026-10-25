@@ -21,6 +21,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.foundation.background
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -187,8 +188,8 @@ internal fun DetailsDialog(
         // The page slides in and out itself (see [visible]); the window's own
         // animation, a zoom from the middle of the screen, would be a second
         // one on top of it.
-        val window = (LocalView.current.parent as? DialogWindowProvider)?.window
-        SideEffect { window?.setWindowAnimations(0) }
+        val window = (LocalView.current.parent as DialogWindowProvider).window
+        SideEffect { window.setWindowAnimations(0) }
         MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
             ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
                 AnimatedVisibility(
@@ -233,14 +234,13 @@ private fun DetailsPages(
         },
         label = "details-over",
     ) { covered ->
-        val page = leaving.content
-        if (covered && page != null) page() else DetailsPage(state, pictures, actions, onDismiss)
+        if (covered) leaving.content() else DetailsPage(state, pictures, actions, onDismiss)
     }
 }
 
 /** What a details window last had over it, held for as long as it slides out. */
 private class OverPage {
-    var content: (@Composable () -> Unit)? = null
+    lateinit var content: @Composable () -> Unit
 }
 
 @Composable
@@ -288,10 +288,11 @@ private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: D
  */
 @Composable
 internal fun rememberDismissSwipe(onDismiss: () -> Unit): NestedScrollConnection {
-    val threshold = with(LocalDensity.current) { 100.dp.toPx() }
-    return remember(onDismiss, threshold) {
+    val threshold by rememberUpdatedState(with(LocalDensity.current) { 100.dp.toPx() })
+    val dismiss by rememberUpdatedState(onDismiss)
+    return remember {
         object : NestedScrollConnection {
-            var pulled = 0f
+            private var pulled = 0f
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
                 if (source == NestedScrollSource.UserInput) {
                     pulled = (pulled + available.y).coerceAtLeast(0f)
@@ -300,7 +301,7 @@ internal fun rememberDismissSwipe(onDismiss: () -> Unit): NestedScrollConnection
                 return Offset.Zero
             }
             override suspend fun onPreFling(available: Velocity): Velocity {
-                if (pulled >= threshold) onDismiss()
+                if (pulled >= threshold) dismiss()
                 pulled = 0f
                 return Velocity.Zero
             }
@@ -571,12 +572,12 @@ private fun Fact(heading: String, names: String) {
 }
 
 /**
- * The cast as a row of cards that scrolls sideways: a circle with the
- * initial, the name and who they played - in billing order, with an
+ * The cast as a row of cards that scrolls sideways: a portrait with an
+ * initial as its fallback, the name and who they played - in billing order, with an
  * ellipsis at the end where the library holds more.
  */
 @Composable
-private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server: ServerConfig? = null, sizing: List<CastMember> = cast) {
+private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server: ServerConfig? = null, sizing: List<CastMember>) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
     val nameStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
@@ -587,14 +588,15 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server:
     val heights = remember(sizing, measurer, nameStyle, roleStyle, textWidth) {
         val constraints = Constraints(maxWidth = textWidth)
         val nameMinimum = measurer.measure("A\nA", nameStyle, constraints = constraints).size.height
-        val nameHeight = sizing.maxOf {
-            measurer.measure(it.name, nameStyle, constraints = constraints).size.height
+        val nameHeight = sizing.fold(0) { height, person ->
+            maxOf(height, measurer.measure(person.name, nameStyle, constraints = constraints).size.height)
         }.coerceAtLeast(nameMinimum)
         val roles = sizing.map { it.role }.filter { it.isNotEmpty() }
         val roleHeight = if (roles.isEmpty()) 0 else {
             val roleMinimum = measurer.measure("A\nA", roleStyle, constraints = constraints).size.height
-            roles.maxOf { measurer.measure(it, roleStyle, constraints = constraints).size.height }
-                .coerceAtLeast(roleMinimum)
+            roles.fold(0) { height, role ->
+                maxOf(height, measurer.measure(role, roleStyle, constraints = constraints).size.height)
+            }.coerceAtLeast(roleMinimum)
         }
         nameHeight to roleHeight
     }
@@ -630,7 +632,7 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server:
  * [edge] wider on either side than the column it stands in, out over the
  * column's own margin. Left alone where the column has no width to go by.
  */
-private fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
+internal fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
     if (!constraints.hasBoundedWidth) {
         val placeable = measurable.measure(constraints)
         return@layout layout(placeable.width, placeable.height) { placeable.place(0, 0) }
@@ -643,7 +645,7 @@ private fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
 }
 
 @Composable
-private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server: ServerConfig? = null) {
+private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server: ServerConfig?) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
@@ -749,7 +751,7 @@ internal fun DetailsPage(
     val visible = remember { MutableTransitionState(false) }
     visible.targetState = shown != null
     val page = held.state ?: return
-    if (!visible.targetState && visible.isIdle && !visible.currentState) {
+    if (visible.isIdle && !visible.currentState) {
         held.state = null
         return
     }

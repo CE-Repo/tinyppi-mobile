@@ -3,6 +3,8 @@ package com.jamal2367.tinyppimobile.ui.library
 import android.content.Context
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
@@ -677,6 +679,10 @@ class LibraryScreensTest {
         assertTrue(!said(str(R.string.series_back)))
         assertTrue(has("1986."))
         assertEquals(1, fake.api.count("details"))
+        rule.onAllNodesWithText(str(R.string.title_open)).onLast().performClick()
+        rule.waitUntil { said(str(R.string.series_back)) }
+        fake.viewModel.closeShow()
+        rule.waitUntil { has("1986.") && !said(str(R.string.series_back)) }
     }
 
     @Test
@@ -700,4 +706,94 @@ class LibraryScreensTest {
         assertTrue(!said(str(R.string.series_back)))
         assertEquals(null, fake.viewModel.series.value.open)
     }
+    @Test
+    fun `a restored open show has a seasons window without a details page`() {
+        fake.viewModel.openShow(shows[1])
+        var current by mutableStateOf(false)
+        rule.show {
+            CompositionLocalProvider(com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage provides current) {
+                com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme(androidx.compose.ui.graphics.Color.Red) {
+                    SeriesScreen(onOpenSettings = {}, viewModel = fake.viewModel)
+                }
+            }
+        }
+        rule.waitForIdle()
+        assertTrue(!said(str(R.string.series_back)))
+        current = true
+        rule.waitUntil { said(str(R.string.series_back)) }
+        rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
+        rule.waitUntil { has("Secrets") }
+        rule.onNodeWithText("Secrets").performClick()
+        rule.waitUntil { fake.viewModel.details.value?.target?.id == 71 }
+        fake.viewModel.closeDetails()
+        rule.waitForIdle()
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        rule.waitUntil { fake.viewModel.series.value.open == null }
+        assertTrue(!said(str(R.string.series_back)))
+    }
+
+    @Test
+    fun `a continue entry with no resume point offers play`() {
+        fake.api.continuing = { ContinueList(items = listOf(ContinueItem("movie", 99, "No resume"))) }
+        showFilms()
+        rule.waitUntil { has("No resume") }
+        text("No resume").performClick()
+        rule.waitUntil { has(str(R.string.title_play)) }
+        assertTrue(!said(str(R.string.title_restart)))
+    }
+
+    @Test
+    fun `a non episode in next up has no way to a show with the same id`() {
+        fake.api.continuing = { ContinueList(next = listOf(ContinueItem("movie", 99, "Unexpected film", tvshowid = 7))) }
+        showSeries()
+        rule.waitUntil { has("Unexpected film") }
+        text("Unexpected film").performClick()
+        rule.waitUntil { has(str(R.string.title_play)) }
+        assertTrue(!said(str(R.string.title_show)))
+    }
+
+    @Test
+    fun `a show absent from the shelf keeps details while its episodes load`() {
+        val gate = CompletableDeferred<EpisodeList>()
+        fake.api.episodes = { gate.await() }
+        showSeries()
+        rule.waitUntil { has("Chernobyl") }
+        fake.viewModel.openDetails(com.jamal2367.tinyppimobile.data.model.MarkTarget(
+            com.jamal2367.tinyppimobile.data.model.MarkTarget.Kind.SHOW, 99, "Missing show"))
+        rule.waitUntil { fake.viewModel.details.value?.details != null }
+        fake.viewModel.openShow(LibraryShow(99, "Missing show"))
+        rule.waitForIdle()
+        assertTrue(!said(str(R.string.series_back)))
+        gate.complete(EpisodeList(episodes = listOf(LibraryEpisode(99, "Found episode", season = 1))))
+        rule.waitUntil { said(str(R.string.series_back)) }
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        rule.waitUntil { fake.viewModel.series.value.open == null }
+    }
+
+    @Test
+    fun `an unrelated opening keeps details then a later direct opening gets its own window`() {
+        val gate = CompletableDeferred<EpisodeList>()
+        fake.api.episodes = { gate.await() }
+        showSeries()
+        rule.waitUntil { has("Chernobyl") }
+        fake.viewModel.openDetails(com.jamal2367.tinyppimobile.data.model.MarkTarget(
+            com.jamal2367.tinyppimobile.data.model.MarkTarget.Kind.SHOW, 99, "Other show"))
+        rule.waitUntil { fake.viewModel.details.value?.details != null }
+        fake.viewModel.openShow(shows.first())
+        rule.waitUntil { fake.viewModel.series.value.opening == shows.first().id }
+        rule.waitForIdle()
+        assertTrue(has("Other show"))
+        assertTrue(!said(str(R.string.series_back)))
+        fake.viewModel.closeShow()
+        fake.viewModel.closeDetails()
+        rule.waitForIdle()
+        fake.api.episodes = { EpisodeList(episodes = episodes) }
+        fake.viewModel.openShow(shows[1])
+        rule.waitUntil { said(str(R.string.series_back)) }
+        rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
+        rule.waitUntil { has("Secrets") }
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        rule.waitUntil { fake.viewModel.series.value.open == null }
+    }
+
 }

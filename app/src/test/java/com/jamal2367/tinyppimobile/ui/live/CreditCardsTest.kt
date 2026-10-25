@@ -6,12 +6,16 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.jamal2367.tinyppimobile.data.model.CastMember
 import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.testing.Screens.show
@@ -48,6 +52,55 @@ class CreditCardsTest {
         rule.onNodeWithText("Actor").assertExists()
         rule.onNodeWithText("Character").assertExists()
         rule.onNodeWithText("A").assertExists()
+    }
+
+    @Test
+    fun `cast without roles keeps its portrait and follows new names and server settings`() {
+        var details by mutableStateOf(TitleDetails(cast = listOf(CastMember("Ana", ""))))
+        var server by mutableStateOf<com.jamal2367.tinyppimobile.data.prefs.ServerConfig?>(null)
+        rule.show { DetailsBody(details, server) }
+        rule.onNodeWithText("Ana").assertExists()
+        rule.onNodeWithText("A").assertExists()
+        server = com.jamal2367.tinyppimobile.testing.Screens.box
+        rule.waitForIdle()
+        rule.onNodeWithText("Ana").assertExists()
+        details = TitleDetails(cast = listOf(CastMember("Bea", "", "portrait")))
+        rule.waitForIdle()
+        rule.onNodeWithText("Bea").assertExists()
+        rule.onNodeWithText("B").assertExists()
+        server = null
+        rule.waitForIdle()
+        rule.onNodeWithText("Bea").assertExists()
+    }
+
+    @Test
+    fun `cast measurements follow typography and density changes`() {
+        var nameSize by mutableStateOf(14)
+        var roleSize by mutableStateOf(12)
+        var scale by mutableStateOf(1f)
+        rule.show {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density * scale)) {
+                val typography = androidx.compose.material3.MaterialTheme.typography
+                androidx.compose.material3.MaterialTheme(typography = typography.copy(
+                    labelLarge = typography.labelLarge.copy(fontSize = nameSize.sp, lineHeight = (nameSize + 6).sp),
+                    labelMedium = typography.labelMedium.copy(fontSize = roleSize.sp, lineHeight = (roleSize + 4).sp),
+                )) {
+                    DetailsBody(TitleDetails(cast = listOf(CastMember("Name", "Role"))))
+                }
+            }
+        }
+        val before = rule.onAllNodesWithTag("credit-card").fetchSemanticsNodes().single().boundsInRoot.height
+        nameSize = 24
+        rule.waitForIdle()
+        roleSize = 20
+        rule.waitForIdle()
+        val after = rule.onAllNodesWithTag("credit-card").fetchSemanticsNodes().single().boundsInRoot.height
+        assertTrue(after > before)
+        scale = 0.9f
+        rule.waitForIdle()
+        rule.onNodeWithText("Name").assertExists()
+        rule.onNodeWithText("Role").assertExists()
     }
 
     private fun checkCards(fontScale: Float) {

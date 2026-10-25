@@ -61,6 +61,7 @@
     <string name="details_failed">A részleteket nem sikerült beolvasni.</string>
     <string name="details_close">Bezárás</string>
     <string name="details_genre">Műfaj</string>
+    <string name="details_crew">Stáb</string>
     <string name="details_writer">Forgatókönyv</string>
     <string name="details_studio">Stúdió</string>
     <string name="details_ratings">Értékelések</string>

@@ -79,7 +79,7 @@ internal fun LazyListScope.seriesWall(
     expanded: Boolean,
     onToggle: () -> Unit,
     onOpen: (LibraryShow) -> Unit,
-    onDetails: (LibraryShow) -> Unit = onOpen,
+    onDetails: (LibraryShow) -> Unit,
 ) {
     val key = "series-wall"
     shelfCard(
@@ -123,7 +123,7 @@ internal fun ShowTile(
     opening: Boolean,
     enabled: Boolean,
     onOpen: () -> Unit,
-    onDetails: () -> Unit = onOpen,
+    onDetails: () -> Unit,
     modifier: Modifier,
 ) {
     Column(
@@ -404,7 +404,7 @@ private fun SeasonHeading(
     expanded: Boolean,
     ruled: Boolean,
     onToggle: () -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     val press = remember { MutableInteractionSource() }
 
@@ -467,7 +467,7 @@ private fun EpisodeRow(
     enabled: Boolean,
     onPlay: () -> Unit,
     onDetails: () -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
 ) {
     Row(
         modifier = modifier
