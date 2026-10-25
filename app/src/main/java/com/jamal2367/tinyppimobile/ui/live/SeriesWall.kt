@@ -29,6 +29,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -188,75 +189,124 @@ internal fun SeasonsDialog(
     onPlay: (LibraryEpisode) -> Unit,
     onDetails: (LibraryEpisode) -> Unit,
 ) {
-    val pictures = if (showArtwork) server else null
-    val poster = show?.let { MediaUrls.showPoster(pictures, it) }
+    val poster = show?.let { MediaUrls.showPoster(if (showArtwork) server else null, it) }
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
             ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
-                    LazyColumn(
-                        contentPadding = PaddingValues(bottom = 32.dp),
-                        verticalArrangement = Arrangement.spacedBy(CardGap),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .nestedScroll(rememberDismissSwipe(onDismiss))
-                            .navigationBarsPadding(),
-                    ) {
-                        item(key = "seasons-hero") {
-                            Box {
-                                PageHero(
-                                    backdrop = MediaUrls.showFanart(pictures, open.id, open.fanart),
-                                    poster = poster,
-                                    title = open.title,
-                                    meta = listOfNotNull(
-                                        show?.year?.takeIf { it > 0 }?.toString(),
-                                        pluralStringResource(
-                                            R.plurals.series_episodes,
-                                            open.episodes.size,
-                                            open.episodes.size,
-                                        ),
-                                    ).joinToString(META_GAP),
-                                    // Room for the arrow over a heading with
-                                    // no backdrop behind it.
-                                    bareTop = 64.dp,
+                SeasonsPage(
+                    open = open,
+                    show = show,
+                    server = server,
+                    showArtwork = showArtwork,
+                    loading = false,
+                    starting = starting,
+                    openSeasons = openSeasons,
+                    onDismiss = onDismiss,
+                    onSeason = onSeason,
+                    onPlay = onPlay,
+                    onDetails = onDetails,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The page itself, for a window of its own ([SeasonsDialog]) or for the
+ * show's details page to turn into (see DetailsDialog's `over`), where it
+ * slides in over the details as the seasons are opened and back out as they
+ * are left. While the episodes are still being read ([loading]) it already
+ * stands there, with the show's head and a line saying it is coming.
+ */
+@Composable
+internal fun SeasonsPage(
+    open: OpenShow,
+    show: LibraryShow?,
+    server: ServerConfig?,
+    showArtwork: Boolean,
+    loading: Boolean,
+    starting: Int?,
+    openSeasons: Set<Int>,
+    onDismiss: () -> Unit,
+    onSeason: (Int) -> Unit,
+    onPlay: (LibraryEpisode) -> Unit,
+    onDetails: (LibraryEpisode) -> Unit,
+) {
+    val pictures = if (showArtwork) server else null
+    val poster = show?.let { MediaUrls.showPoster(pictures, it) }
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+        LazyColumn(
+            contentPadding = PaddingValues(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(CardGap),
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(rememberDismissSwipe(onDismiss))
+                .navigationBarsPadding(),
+        ) {
+            item(key = "seasons-hero") {
+                Box {
+                    PageHero(
+                        backdrop = MediaUrls.showFanart(pictures, open.id, open.fanart),
+                        poster = poster,
+                        title = open.title,
+                        meta = listOfNotNull(
+                            show?.year?.takeIf { it > 0 }?.toString(),
+                            if (loading) {
+                                null
+                            } else {
+                                pluralStringResource(
+                                    R.plurals.series_episodes,
+                                    open.episodes.size,
+                                    open.episodes.size,
                                 )
-                                // The way back, on the backdrop where the eye
-                                // already is, round and on a scrim of its own
-                                // so it reads on any picture.
-                                IconButton(
-                                    onClick = onDismiss,
-                                    colors = IconButtonDefaults.iconButtonColors(
-                                        containerColor = Color.Black.copy(alpha = 0.45f),
-                                        contentColor = Color.White,
-                                    ),
-                                    modifier = Modifier
-                                        .align(Alignment.TopStart)
-                                        .statusBarsPadding()
-                                        .padding(8.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                        contentDescription = stringResource(R.string.series_back),
-                                    )
-                                }
-                            }
-                        }
-                        episodeList(
-                            open = open,
-                            server = pictures,
-                            showArtwork = showArtwork,
-                            starting = starting,
-                            openSeasons = openSeasons,
-                            edge = PAGE_EDGE,
-                            onSeason = onSeason,
-                            onPlay = onPlay,
-                            onDetails = onDetails,
+                            },
+                        ).joinToString(META_GAP),
+                        // Room for the arrow over a heading with no backdrop
+                        // behind it.
+                        bareTop = 64.dp,
+                    )
+                    // The way back, on the backdrop where the eye already is,
+                    // round and on a scrim of its own so it reads on any
+                    // picture.
+                    IconButton(
+                        onClick = onDismiss,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.Black.copy(alpha = 0.45f),
+                            contentColor = Color.White,
+                        ),
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .statusBarsPadding()
+                            .padding(8.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = stringResource(R.string.series_back),
                         )
                     }
                 }
+            }
+            if (loading) {
+                item(key = "seasons-loading") {
+                    Box(modifier = Modifier.fillMaxWidth().padding(top = 24.dp), contentAlignment = Alignment.Center) {
+                        LoadingIndicator()
+                    }
+                }
+            } else {
+                episodeList(
+                    open = open,
+                    server = pictures,
+                    showArtwork = showArtwork,
+                    starting = starting,
+                    openSeasons = openSeasons,
+                    edge = PAGE_EDGE,
+                    onSeason = onSeason,
+                    onPlay = onPlay,
+                    onDetails = onDetails,
+                )
             }
         }
     }

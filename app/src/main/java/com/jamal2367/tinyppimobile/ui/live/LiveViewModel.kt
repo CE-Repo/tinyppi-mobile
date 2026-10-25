@@ -329,6 +329,9 @@ class LiveViewModel(
 
     private var detailsRead: Job? = null
 
+    /** The read of the episodes of a show being opened, while it is out. */
+    private var opening: Job? = null
+
     /**
      * Read everything the library holds about one title, for the dialog that
      * shows it. A failure is the dialog's to show rather than a line along
@@ -573,7 +576,7 @@ class LiveViewModel(
         if (current.opening != null || current.starting != null) return
 
         _series.value = current.copy(opening = show.id)
-        viewModelScope.launch {
+        opening = viewModelScope.launch {
             try {
                 val answer = repository.episodes(show.id)
                 // The show's own details, where they are what it was opened
@@ -627,6 +630,9 @@ class LiveViewModel(
 
     /** Back out of a show, to the wall it was opened from. */
     fun closeShow() {
+        // A show left while its episodes are still being read stays left:
+        // its seasons do not come up a moment later over the shelf.
+        opening?.cancel()
         if (_series.value.open != null || _series.value.opening != null) {
             _series.value = _series.value.copy(
                 open = null,

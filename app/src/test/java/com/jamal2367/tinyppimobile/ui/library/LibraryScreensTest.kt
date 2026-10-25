@@ -310,9 +310,9 @@ class LibraryScreensTest {
         text("Dark").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_open)).performClick()
         rule.waitUntil { said(str(R.string.series_back)) }
-        // The seasons are a page of their own over the show's details, which
-        // stay open under them, and the shelf under both.
-        assertEquals(3, rule.onAllNodes(isRoot()).fetchSemanticsNodes().size)
+        // The seasons are the show's details page turned over, in the same
+        // window over the shelf: no window closes and none opens for them.
+        assertEquals(2, rule.onAllNodes(isRoot()).fetchSemanticsNodes().size)
         assertEquals(1, fake.api.count("details"))
         rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
 
@@ -643,6 +643,23 @@ class LibraryScreensTest {
     }
 
     @Test
+    fun `a details page slides out when it is closed rather than vanishing`() {
+        fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, plot = "Sliding.") }
+        showFilms()
+        rule.waitUntil { has("Heat") }
+        text("Heat").performClick()
+        rule.waitUntil { has("Sliding.") }
+        rule.mainClock.autoAdvance = false
+        fake.viewModel.closeDetails()
+        rule.mainClock.advanceTimeBy(48)
+        // Still on the way out.
+        assertTrue(has("Sliding."))
+        rule.mainClock.autoAdvance = true
+        rule.waitUntil { !has("Sliding.") }
+        assertEquals(1, rule.onAllNodes(isRoot()).fetchSemanticsNodes().size)
+    }
+
+    @Test
     fun `a series' details page opens it, and stays under its seasons until they are left`() {
         fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, title = "Chernobyl", plot = "1986.") }
         showSeries()
@@ -651,13 +668,36 @@ class LibraryScreensTest {
         rule.waitUntil { has("1986.") }
         rule.onAllNodesWithText(str(R.string.title_open)).onLast().performClick()
         rule.waitUntil { said(str(R.string.series_back)) }
-        // Not closed and opened again: the same page, under the seasons.
-        assertTrue(has("1986."))
-        assertEquals(1, fake.api.count("details"))
+        // The page has slid over to the seasons, in the same window.
+        assertTrue(!has("1986."))
+        assertEquals(2, rule.onAllNodes(isRoot()).fetchSemanticsNodes().size)
         rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
         rule.waitForIdle()
+        // And back to the very page it came from, read once and only once.
         assertTrue(!said(str(R.string.series_back)))
         assertTrue(has("1986."))
         assertEquals(1, fake.api.count("details"))
+    }
+
+    @Test
+    fun `the seasons slide in while their episodes are read, and leaving then opens nothing later`() {
+        val gate = CompletableDeferred<EpisodeList>()
+        fake.api.episodes = { gate.await() }
+        fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, title = "Chernobyl", plot = "1986.") }
+        showSeries()
+        rule.waitUntil { has("Chernobyl") }
+        text("Chernobyl").performClick()
+        rule.waitUntil { has("1986.") }
+        rule.onAllNodesWithText(str(R.string.title_open)).onLast().performClick()
+        // Already there, waiting for its episodes.
+        rule.waitUntil { said(str(R.string.series_back)) }
+        assertTrue(!has("1986."))
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        rule.waitUntil { has("1986.") }
+        // The read that was still out comes to nothing.
+        gate.complete(EpisodeList(episodes = episodes))
+        rule.waitForIdle()
+        assertTrue(!said(str(R.string.series_back)))
+        assertEquals(null, fake.viewModel.series.value.open)
     }
 }

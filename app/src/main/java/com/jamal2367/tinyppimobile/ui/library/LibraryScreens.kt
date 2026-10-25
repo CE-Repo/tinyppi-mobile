@@ -82,6 +82,8 @@ import com.jamal2367.tinyppimobile.ui.live.videoChoices
 import com.jamal2367.tinyppimobile.ui.components.LocalCardFolds
 import com.jamal2367.tinyppimobile.ui.live.dismissSearch
 import com.jamal2367.tinyppimobile.ui.live.SeasonsDialog
+import com.jamal2367.tinyppimobile.ui.live.OpenShow
+import com.jamal2367.tinyppimobile.ui.live.SeasonsPage
 import com.jamal2367.tinyppimobile.ui.live.filmColumns
 import com.jamal2367.tinyppimobile.ui.live.filmWall
 import com.jamal2367.tinyppimobile.ui.live.matching
@@ -493,8 +495,41 @@ fun SeriesScreen(
     // on the tab in front, for the reason the details give (see DetailsShown):
     // it stays open behind the live tab an episode was started for, and is
     // there again on coming back to choose the next one.
-    showPage?.let { DetailsPage(viewModel, it, showActions) }
-    if (open != null && LocalIsCurrentPage.current) {
+    // The show the seasons are for: the one that is open, or - while its
+    // episodes are still being read - the one being opened from its page,
+    // whose seasons already slide in over it and wait for the episodes there.
+    val seasonsOf = open ?: showPage?.target?.id?.takeIf { it == series.opening }
+        ?.let { id -> series.shows.firstOrNull { it.id == id } }
+        ?.let { OpenShow(it.id, it.title, it.fanart) }
+    val seasons: (@Composable () -> Unit)? = seasonsOf?.let { shown ->
+        {
+            SeasonsPage(
+                open = shown,
+                // Its poster and year are the shelf's, which the show is on.
+                show = series.shows.firstOrNull { it.id == shown.id },
+                server = state.live.server,
+                showArtwork = state.settings.showArtwork,
+                loading = open == null,
+                starting = series.starting,
+                openSeasons = series.openSeasons,
+                onDismiss = leaveShow,
+                onSeason = viewModel::toggleSeason,
+                onPlay = detailsEpisode,
+                onDetails = detailsEpisode,
+            )
+        }
+    }
+    // The seasons are the show's page turned over, in the same window: they
+    // slide in over its details and back out to them (see DetailsDialog).
+    DetailsPage(
+        viewModel,
+        showPage,
+        showActions,
+        over = seasons,
+        onDismiss = if (seasons != null) leaveShow else viewModel::closeDetails,
+    )
+    // A show open with no page of its own under it has a window of its own.
+    if (open != null && showPage == null && LocalIsCurrentPage.current) {
         SeasonsDialog(
             open = open,
             // Its poster and year are the shelf's, which the open show is on.
