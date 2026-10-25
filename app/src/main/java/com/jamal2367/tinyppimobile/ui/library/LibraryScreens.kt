@@ -21,6 +21,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.runtime.DontMemoize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -541,7 +542,9 @@ fun SeriesScreen(
             starting = series.starting,
             openSeasons = series.openSeasons,
             onDismiss = leaveShow,
-            onSeason = { viewModel.toggleSeason(it) },
+            // This optional window needs only the current receiver; a cached
+            // callback adds compiler-generated branches without useful work.
+            onSeason = @DontMemoize { viewModel.toggleSeason(it) },
             onPlay = detailsEpisode,
             onDetails = detailsEpisode,
         )
