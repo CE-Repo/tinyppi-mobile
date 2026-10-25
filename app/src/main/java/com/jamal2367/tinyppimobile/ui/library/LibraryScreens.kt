@@ -209,6 +209,7 @@ fun FilmsScreen(
             film.markTarget(),
             if (film.resume > 0) R.string.title_resume else R.string.title_play,
             resumable = film.resume > 0,
+            watched = film.watched,
         ) { fromStart -> viewModel.playFilm(film, fromStart) })
     }
 
@@ -446,13 +447,14 @@ fun SeriesScreen(
         viewModel.openDetails(question.target)
     }
     val detailsShow: (LibraryShow) -> Unit = { show ->
-        openDetails(TitleQuestion(show.markTarget(), R.string.title_open) { viewModel.openShow(show) })
+        openDetails(TitleQuestion(show.markTarget(), R.string.title_open, watched = show.watched) { viewModel.openShow(show) })
     }
     val detailsEpisode: (LibraryEpisode) -> Unit = { episode ->
         openDetails(TitleQuestion(
             episode.markTarget(),
             if (episode.resume > 0) R.string.title_resume else R.string.title_play,
             resumable = episode.resume > 0,
+            watched = episode.watched,
         ) { fromStart -> viewModel.playEpisode(episode, fromStart) })
     }
 
@@ -640,20 +642,19 @@ fun SeriesScreen(
     }
 }
 
-/** Every library action closes the details before updating Kodi and the shelves. */
+/** Only the primary action closes the page; state changes update it in place. */
 private fun TitleQuestion.detailsActions(viewModel: LiveViewModel) = DetailsActions(
     play = play,
     resumable = resumable,
+    watched = watched,
     onMark = { watched ->
-        viewModel.closeDetails()
         viewModel.setWatched(target, watched)
     },
     onClearResume = {
-        viewModel.closeDetails()
         viewModel.clearResume(target)
     },
 ) { fromStart ->
-    viewModel.closeDetails()
+    if (!fromStart) viewModel.closeDetails()
     onPlay(fromStart)
 }
 

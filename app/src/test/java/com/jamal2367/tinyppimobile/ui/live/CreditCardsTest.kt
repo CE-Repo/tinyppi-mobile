@@ -37,6 +37,7 @@ class CreditCardsTest {
 
     private fun checkCards(fontScale: Float) {
         val names = listOf("Stephen Norrington", "David S. Goyer", "Wesley Snipes", "An Actor With A Very Long Name")
+        val crewRoles = listOf("Director", "Writer")
         val roles = listOf("Blade", "A character with a complete and unusually long name")
         rule.show {
             val density = LocalDensity.current
@@ -54,17 +55,17 @@ class CreditCardsTest {
         val cards = rule.onAllNodesWithTag("credit-card").fetchSemanticsNodes().map { it.boundsInRoot }
         assertEquals(4, cards.size)
         assertEquals(1, cards.map { it.width }.distinct().size)
+        assertEquals(cards[0].height, cards[1].height, 0f)
         assertEquals(cards[2].height, cards[3].height, 0f)
-        assertTrue("crew does not reserve an empty role slot", cards[0].height < cards[2].height)
         for ((index, name) in names.withIndex()) {
             val card = cards[index]
             val initial = rule.onNodeWithText(name.take(1)).fetchSemanticsNode().boundsInRoot
-            val lastText = if (index < 2) name else roles[index - 2]
+            val lastText = if (index < 2) crewRoles[index] else roles[index - 2]
             val last = rule.onNodeWithText(lastText).fetchSemanticsNode().boundsInRoot
             val contentTop = initial.center.y - card.width * 22f / 136f
             assertEquals("centred content: $name", card.center.y, (contentTop + last.bottom) / 2, 1f)
         }
-        for (text in names + roles) {
+        for (text in names + crewRoles + roles) {
             val layouts = mutableListOf<TextLayoutResult>()
             rule.onNodeWithText(text).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
             assertTrue(text, layouts.isNotEmpty())

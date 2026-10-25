@@ -11,6 +11,7 @@ import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
+import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
@@ -724,25 +725,30 @@ class LiveViewModel(
      * A failure is said out loud, because this one was asked for.
      */
     fun setWatched(target: MarkTarget, watched: Boolean) =
-        write { repository.setWatched(target, watched) }
+        write(target, { it.copy(watched = watched) }) { repository.setWatched(target, watched) }
 
     /**
      * Forget where a film or an episode got to, leaving it seen or unseen as
      * it was: it leaves the continue-watching row, and its bar leaves the wall.
      */
-    fun clearResume(target: MarkTarget) = write { repository.clearResume(target) }
+    fun clearResume(target: MarkTarget) =
+        write(target, { it.copy(resume = 0) }) { repository.clearResume(target) }
 
     /** One write to the library, and every shelf read again after it. */
-    private fun write(block: suspend () -> Unit) {
+    private fun write(target: MarkTarget, update: (TitleDetails) -> TitleDetails, block: suspend () -> Unit) {
+        if (_details.value?.busy == true) return
+        changeDetails(target) { it.copy(busy = true, actionError = null) }
         viewModelScope.launch {
             try {
                 block()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Throwable) {
+                changeDetails(target) { it.copy(busy = false, actionError = describe(failure)) }
                 report(failure)
                 return@launch
             }
+            changeDetails(target) { it.copy(details = update(it.details ?: TitleDetails()), busy = false) }
             _library.value = _library.value.copy(read = false)
             _series.value = _series.value.copy(read = false)
             _continuing.value = _continuing.value.copy(read = false)
@@ -753,6 +759,11 @@ class LiveViewModel(
             refreshSeries()
             refreshContinuing()
         }
+    }
+
+    private fun changeDetails(target: MarkTarget, change: (DetailsUiState) -> DetailsUiState) {
+        val current = _details.value
+        if (current?.target == target) _details.value = change(current)
     }
 
     private fun command(block: suspend () -> Unit) {

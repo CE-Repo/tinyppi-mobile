@@ -21,6 +21,7 @@ internal class TitleQuestion(
     val target: MarkTarget,
     @StringRes val play: Int,
     val resumable: Boolean = false,
+    val watched: Boolean = false,
     val onPlay: (fromStart: Boolean) -> Unit,
 )
 

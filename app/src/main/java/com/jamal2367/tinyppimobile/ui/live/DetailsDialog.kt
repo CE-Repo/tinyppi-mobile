@@ -98,6 +98,8 @@ data class DetailsUiState(
     val target: MarkTarget,
     val details: TitleDetails? = null,
     val failed: Boolean = false,
+    val busy: Boolean = false,
+    val actionError: String? = null,
 )
 
 /**
@@ -108,6 +110,7 @@ data class DetailsUiState(
 internal class DetailsActions(
     @param:StringRes val play: Int,
     val resumable: Boolean,
+    val watched: Boolean = false,
     val onMark: ((Boolean) -> Unit)? = null,
     val onClearResume: (() -> Unit)? = null,
     onPlay: (fromStart: Boolean) -> Unit,
@@ -195,7 +198,13 @@ private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: D
                     .padding(start = PAGE_EDGE, end = PAGE_EDGE, top = 18.dp, bottom = 32.dp)
                     .navigationBarsPadding(),
             ) {
-                if (actions != null) Actions(actions)
+                if (actions != null) Actions(
+                    actions,
+                    watched = details?.watched ?: actions.watched,
+                    resumable = details?.resume?.let { it > 0 } ?: actions.resumable,
+                    busy = state.busy || (details == null && !state.failed),
+                )
+                state.actionError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 if (details != null) {
                     DetailsBody(details)
                 } else if (state.failed) {
@@ -262,7 +271,7 @@ private fun Hero(target: MarkTarget, details: TitleDetails, server: ServerConfig
  * row, and beside it starting over, for a title with a point to resume from.
  */
 @Composable
-private fun Actions(actions: DetailsActions) {
+private fun Actions(actions: DetailsActions, watched: Boolean, resumable: Boolean, busy: Boolean) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -270,6 +279,7 @@ private fun Actions(actions: DetailsActions) {
     ) {
         Button(
             onClick = withKeyTick(actions.onFirst),
+            enabled = !busy,
             modifier = Modifier.weight(1f).heightIn(min = ACTION_HEIGHT),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
         ) {
@@ -278,21 +288,25 @@ private fun Actions(actions: DetailsActions) {
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
             )
-            Text(stringResource(actions.play), textAlign = TextAlign.Center, modifier = Modifier.weight(1f).padding(start = 6.dp))
+            Text(stringResource(if (actions.play == R.string.title_resume && !resumable) R.string.title_play else actions.play), textAlign = TextAlign.Center, modifier = Modifier.weight(1f).padding(start = 6.dp))
         }
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (actions.resumable) {
-                DetailAction(Icons.Rounded.Replay, R.string.title_restart, actions.onRestart)
+            if (resumable) {
+                DetailAction(Icons.Rounded.Replay, R.string.title_restart, actions.onRestart, !busy)
                 actions.onClearResume?.let { clear ->
-                    DetailAction(Icons.Rounded.BookmarkRemove, R.string.resume_clear, clear)
+                    DetailAction(Icons.Rounded.BookmarkRemove, R.string.resume_clear, clear, !busy)
                 }
             }
             actions.onMark?.let { mark ->
-                DetailAction(Icons.Rounded.Visibility, R.string.mark_watched, { mark(true) })
-                DetailAction(Icons.Rounded.VisibilityOff, R.string.mark_unwatched, { mark(false) })
+                DetailAction(
+                    if (watched) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
+                    if (watched) R.string.mark_unwatched else R.string.mark_watched,
+                    { mark(!watched) },
+                    !busy,
+                )
             }
         }
     }
@@ -300,7 +314,7 @@ private fun Actions(actions: DetailsActions) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DetailAction(icon: ImageVector, @StringRes label: Int, onClick: () -> Unit) {
+private fun DetailAction(icon: ImageVector, @StringRes label: Int, onClick: () -> Unit, enabled: Boolean) {
     val name = stringResource(label)
     TooltipBox(
         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
@@ -309,6 +323,7 @@ private fun DetailAction(icon: ImageVector, @StringRes label: Int, onClick: () -
     ) {
         FilledTonalIconButton(
             onClick = withKeyTick(onClick),
+            enabled = enabled,
             modifier = Modifier.size(48.dp),
             shape = CircleShape,
             colors = IconButtonDefaults.filledTonalIconButtonColors(
@@ -412,8 +427,11 @@ internal fun DetailsBody(details: TitleDetails) {
             for ((heading, names) in facts) Fact(heading, names.joinToString(", "))
         }
     }
-    if (details.directors.isNotEmpty()) Cast(details.directors.map { CastMember(name = it) }, false, stringResource(R.string.live_credit_director))
-    if (details.writers.isNotEmpty()) Cast(details.writers.map { CastMember(name = it) }, false, stringResource(R.string.details_writer))
+    val directorRole = stringResource(R.string.live_credit_director)
+    val writerRole = stringResource(R.string.details_writer)
+    val crew = details.directors.map { CastMember(it, directorRole) } +
+        details.writers.map { CastMember(it, writerRole) }
+    if (crew.isNotEmpty()) Cast(crew, false, stringResource(R.string.details_crew))
     if (details.cast.isNotEmpty()) Cast(details.cast, details.castMore, stringResource(R.string.live_credit_cast))
 }
 

@@ -342,6 +342,8 @@ data class TitleDetails(
     val kind: String = "",
     val id: Int = 0,
     val title: String = "",
+    val watched: Boolean? = null,
+    val resume: Int? = null,
     /**
      * The ratings the overview card would show for the title - the
      * library's, MDBList's and Rotten Tomatoes' with their certificates - the

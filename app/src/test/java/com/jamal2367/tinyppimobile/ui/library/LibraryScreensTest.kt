@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -151,22 +152,26 @@ class LibraryScreensTest {
         // Every action stays in one row beside the primary playback button.
         text("Dune").performTouchInput { longClick() }
         val playBounds = rule.onNodeWithText(str(R.string.title_resume)).fetchSemanticsNode().boundsInRoot
-        for (label in listOf(R.string.title_restart, R.string.resume_clear, R.string.mark_watched, R.string.mark_unwatched)) {
+        for (label in listOf(R.string.title_restart, R.string.resume_clear, R.string.mark_watched)) {
             val toolBounds = rule.onNodeWithContentDescription(str(label)).fetchSemanticsNode().boundsInRoot
             assertTrue("action is beside playback", toolBounds.left >= playBounds.right)
             assertEquals(playBounds.center.y, toolBounds.center.y, 1f)
         }
         rule.onNodeWithContentDescription(str(R.string.title_restart)).performClick()
         settle()
-        text("Dune").performTouchInput { longClick() }
+        assertTrue(said(str(R.string.mark_watched)))
         rule.onNodeWithText(str(R.string.title_resume)).performClick()
         settle()
         text("Dune").performTouchInput { longClick() }
         rule.onNodeWithContentDescription(str(R.string.mark_watched)).performClick()
-        text("Dune").performTouchInput { longClick() }
+        rule.waitUntil { said(str(R.string.mark_unwatched)) }
+        assertTrue(!said(str(R.string.mark_watched)))
         rule.onNodeWithContentDescription(str(R.string.mark_unwatched)).performClick()
-        text("Dune").performTouchInput { longClick() }
+        rule.waitUntil { said(str(R.string.mark_watched)) }
         rule.onNodeWithContentDescription(str(R.string.resume_clear)).performClick()
+        rule.waitUntil { !said(str(R.string.resume_clear)) }
+        assertTrue(has(str(R.string.title_play)))
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
         text("Heat").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_play)).assertIsDisplayed()
         rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
@@ -257,6 +262,7 @@ class LibraryScreensTest {
         text("S01E02").performTouchInput { longClick() }
         rule.onNodeWithContentDescription(str(R.string.title_restart)).performClick()
         settle()
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
         text("Loose").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_play)).performClick()
         rule.waitForIdle()
@@ -269,6 +275,8 @@ class LibraryScreensTest {
         rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
         text("Dark").performTouchInput { longClick() }
         rule.onNodeWithContentDescription(str(R.string.mark_watched)).performClick()
+        rule.waitUntil { said(str(R.string.mark_unwatched)) }
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
         rule.onNode(hasSetTextAction()).performTextInput("zzz")
         rule.onNodeWithText(str(R.string.series_no_match)).assertIsDisplayed()
         rule.onNodeWithContentDescription(str(R.string.library_search_clear)).performClick()
@@ -529,9 +537,7 @@ class LibraryScreensTest {
         rule.waitUntil { has("Spice.") }
         rule.onAllNodesWithContentDescription(str(R.string.title_restart)).onLast().performClick()
         settle()
-        assertTrue(!has("Spice."))
-        text("Dune").performClick()
-        rule.waitUntil { has("Spice.") }
+        assertTrue(has("Spice."))
         rule.onAllNodesWithText(str(R.string.title_resume)).onLast().performClick()
         settle()
         assertEquals(listOf(false, null), fake.api.plays.map { it.resume })
@@ -542,6 +548,44 @@ class LibraryScreensTest {
         rule.onAllNodesWithText(str(R.string.title_play)).onLast().performClick()
         settle()
         assertEquals(3, fake.api.plays.size)
+    }
+
+    @Test
+    fun `status changes keep details open and only switch the mark after success`() {
+        fake.api.details = { kind, id ->
+            TitleDetails(kind = kind, id = id, title = "Dune", watched = false, resume = 600)
+        }
+        val gate = CompletableDeferred<Unit>()
+        fake.api.setWatched = {
+            gate.await()
+            com.jamal2367.tinyppimobile.data.model.CommandAck(ok = true)
+        }
+        showFilms()
+        rule.waitUntil { has("Dune") }
+        text("Dune").performClick()
+        rule.waitUntil { fake.viewModel.details.value?.details != null }
+        rule.onNodeWithContentDescription(str(R.string.mark_watched)).performClick()
+        rule.waitUntil { fake.viewModel.details.value?.busy == true }
+        rule.onNodeWithContentDescription(str(R.string.mark_watched)).assertIsNotEnabled()
+        fake.viewModel.setWatched(fake.viewModel.details.value!!.target, true)
+        gate.complete(Unit)
+        rule.waitUntil { said(str(R.string.mark_unwatched)) }
+        assertEquals(1, fake.api.count("setWatched"))
+        assertTrue(!said(str(R.string.mark_watched)))
+
+        fake.api.setWatched = { throw ApiFailure.Api(500, "mark failed") }
+        rule.onNodeWithContentDescription(str(R.string.mark_unwatched)).performClick()
+        rule.waitUntil { has("mark failed") }
+        assertTrue(said(str(R.string.mark_unwatched)))
+        assertEquals(true, fake.viewModel.details.value?.details?.watched)
+
+        rule.onNodeWithContentDescription(str(R.string.resume_clear)).performClick()
+        rule.waitUntil { !said(str(R.string.resume_clear)) }
+        assertTrue(has(str(R.string.title_play)))
+        assertEquals(null, fake.viewModel.details.value?.actionError)
+        assertEquals(0, fake.viewModel.details.value?.details?.resume)
+        rule.onNodeWithText(str(R.string.title_play)).performClick()
+        rule.waitUntil { fake.viewModel.details.value == null }
     }
 
     @Test
