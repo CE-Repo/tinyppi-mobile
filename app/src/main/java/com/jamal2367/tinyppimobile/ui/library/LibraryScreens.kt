@@ -498,8 +498,8 @@ fun SeriesScreen(
     // The show the seasons are for: the one that is open, or - while its
     // episodes are still being read - the one being opened from its page,
     // whose seasons already slide in over it and wait for the episodes there.
-    val seasonsOf = open ?: showPage?.target?.id?.takeIf { it == series.opening }
-        ?.let { id -> series.shows.firstOrNull { it.id == id } }
+    val seasonsOf = open ?: showPage?.takeIf { it.target.id == series.opening }
+        ?.let { page -> series.shows.firstOrNull { it.id == page.target.id } }
         ?.let { OpenShow(it.id, it.title, it.fanart) }
     val seasons: (@Composable () -> Unit)? = seasonsOf?.let { shown ->
         {
@@ -541,7 +541,7 @@ fun SeriesScreen(
             starting = series.starting,
             openSeasons = series.openSeasons,
             onDismiss = leaveShow,
-            onSeason = viewModel::toggleSeason,
+            onSeason = { viewModel.toggleSeason(it) },
             onPlay = detailsEpisode,
             onDetails = detailsEpisode,
         )

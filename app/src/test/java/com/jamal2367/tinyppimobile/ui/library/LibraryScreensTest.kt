@@ -708,7 +708,7 @@ class LibraryScreensTest {
     }
     @Test
     fun `a restored open show has a seasons window without a details page`() {
-        fake.viewModel.openShow(shows.first())
+        fake.viewModel.openShow(shows[1])
         var current by mutableStateOf(false)
         rule.show {
             CompositionLocalProvider(com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage provides current) {
