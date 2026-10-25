@@ -61,6 +61,11 @@ object DemoServer {
 
     /** What the film the box starts on says about itself. */
     private const val DUNE_TAGLINE = "Long live the fighters."
+
+    /** The formats the made-up films are cut in, and the genres of the made-up shows, handed out by id. */
+    private val FILM_VIDEO = listOf("dv", "hdr10", "hdr10plus", "sdr")
+    private val FILM_AUDIO = listOf("truehd", "eac3", "dtshd_ma", "ac3")
+    private val SHOW_GENRES = listOf("Drama", "Science Fiction", "Crime", "Mystery")
     private const val DUNE_PLOT = "Paul Atreides lives among the Fremen now, learning the desert at Chani's side " +
         "while the Harkonnens tighten their grip on Arrakis. As the prophecy the Fremen believe in closes " +
         "around him, he has to decide how much of himself to give up to bring down the men who destroyed " +
@@ -309,6 +314,9 @@ object DemoServer {
     private var audioCurrent = 0
     private var subtitleCurrent = 1
     private var subtitleOn = true
+    private var audioDelay = 0.0
+    private var subtitleDelay = 0.0
+    private var tempo = 1.0
     private var vs10Output = ""
     private var seq = 0L
     private var switches = 2
@@ -545,6 +553,10 @@ object DemoServer {
                 put("volume", volume)
                 put("muted", muted)
                 put("chapters", chapterCount)
+                put("audio_delay", audioDelay)
+                put("subtitle_delay", subtitleDelay)
+                // A pause reports no tempo, as Kodi's own reading does.
+                if (!paused) put("tempo", tempo)
             }
             put("chapters", chapters())
             put("chapter", chapterNow())
@@ -614,6 +626,10 @@ object DemoServer {
                     put("rating", f.rating); put("rating_from", "imdb")
                     put("watched", filmWatched(f)); put("resume", if (filmWatched(f) || f.id in cleared) 0 else f.resumeMinutes * 60)
                     put("added", addedDaysAgo((f.id * 7) % films.size, f.id))
+                    putJsonArray("genres") { add(f.genre) }
+                    put("video", FILM_VIDEO[f.id % FILM_VIDEO.size])
+                    put("resolution", if (f.id % 3 == 0) "1080p" else "2160p")
+                    put("audio", FILM_AUDIO[f.id % FILM_AUDIO.size])
                 })
             }
         }
@@ -648,6 +664,7 @@ object DemoServer {
                     put("rating", s.rating); put("rating_from", "imdb")
                     put("watched", unseen == 0)
                     put("added", addedDaysAgo(((s.id - 100) * 4) % shows.size, s.id))
+                    putJsonArray("genres") { add(SHOW_GENRES[s.id % SHOW_GENRES.size]) }
                 })
             }
         }
@@ -702,12 +719,68 @@ object DemoServer {
                 })
             }
         }
+        // The episode after the one each show was stopped in: what comes next.
+        putJsonArray("next") {
+            shows.filter { it.seenUpTo + 1 < it.episodes.size }.take(6).forEach { s ->
+                val (season, episode) = s.episodes[s.seenUpTo + 1]
+                add(buildJsonObject {
+                    put("kind", "episode"); put("id", episodeId(s, season, episode))
+                    put("title", episodeTitle(season, episode)); put("poster", "show-${s.id}")
+                    put("duration", 52 * 60); put("show", s.title); put("season", season); put("episode", episode)
+                    put("rating", s.rating); put("rating_from", "imdb")
+                })
+            }
+        }
         put(
             "count",
             films.count { it.resumesAt } +
                 shows.count { it.inProgress }.coerceAtMost(6),
         )
         put("tag", "demo-$libraryRevision")
+    }
+
+    /** One title's details, as `/api/details` answers them; null for a title the box does not have. */
+    private fun details(query: Map<String, String>): JsonObject? {
+        query["movieid"]?.toIntOrNull()?.let { id -> return films.firstOrNull { it.id == id }?.let(::filmDetails) }
+        query["tvshowid"]?.toIntOrNull()?.let { id ->
+            val show = shows.firstOrNull { it.id == id } ?: return null
+            return buildJsonObject {
+                put("kind", "tvshow"); put("id", show.id); put("title", show.title); put("year", show.year)
+                put("season", show.seasons)
+                putJsonArray("genres") { add(SHOW_GENRES[show.id % SHOW_GENRES.size]) }
+                putJsonArray("ratings") { add(rating("imdb", show.rating, (show.rating * 40_000).toInt())) }
+            }
+        }
+        val id = query["episodeid"]?.toIntOrNull() ?: return null
+        val show = showOfEpisode(id) ?: return null
+        val season = id % 1000 / 100
+        val episode = id % 100
+        return buildJsonObject {
+            put("kind", "episode"); put("id", id); put("title", episodeTitle(season, episode))
+            put("show", show.title); put("tvshowid", show.id); put("season", season); put("episode", episode)
+            put("duration", 52 * 60)
+            putJsonArray("ratings") { add(rating("imdb", show.rating, 0)) }
+        }
+    }
+
+    private fun filmDetails(film: Film) = buildJsonObject {
+        put("kind", "movie"); put("id", film.id); put("title", film.title); put("year", film.year)
+        put("duration", film.minutes * 60); put("plot", film.plot); put("tagline", film.tagline)
+        put("mpaa", film.mpaa); put("userrating", film.mine); put("top250", film.top250)
+        putJsonArray("genres") { add(film.genre) }
+        putJsonArray("directors") { film.credits.directors.forEach { add(it) } }
+        putJsonArray("studios") { film.credits.studios.forEach { add(it) } }
+        putJsonArray("cast") {
+            film.credits.cast.forEach { name -> add(buildJsonObject { put("name", name); put("role", "") }) }
+        }
+        putJsonArray("ratings") { filmRatings(film).forEach { (source, value, votes) -> add(rating(source, value, votes)) } }
+        put("video", FILM_VIDEO[film.id % FILM_VIDEO.size])
+        put("resolution", if (film.id % 3 == 0) "1080p" else "2160p")
+        put("audio", FILM_AUDIO[film.id % FILM_AUDIO.size])
+    }
+
+    private fun rating(source: String, value: Double, votes: Int) = buildJsonObject {
+        put("source", source); put("rating", value); put("votes", votes)
     }
 
     /* --- Commands --------------------------------------------------------- */
@@ -793,6 +866,9 @@ object DemoServer {
                         subtitleOn = index >= 0
                         if (index >= 0) subtitleCurrent = index
                     }
+                    "audio_delay" -> audioDelay = value ?: 0.0
+                    "subtitle_delay" -> subtitleDelay = value ?: 0.0
+                    "tempo" -> tempo = value ?: 1.0
                 }
             }
         }
@@ -898,6 +974,8 @@ object DemoServer {
                     path == "/api/series" -> respondJson(out, series())
                     path == "/api/episodes" -> respondJson(out, episodes(query["tvshowid"]?.toIntOrNull() ?: 0))
                     path == "/api/continue" -> respondJson(out, continuing())
+                    path == "/api/details" -> details(query)?.let { respondJson(out, it) }
+                        ?: respond(out, 404, "application/json", """{"error":"no such title"}""".toByteArray())
                     else -> respond(out, 404, "application/json", """{"error":"not found"}""".toByteArray())
                 }
             } catch (_: IOException) {

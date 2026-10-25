@@ -74,6 +74,32 @@ class PlayerRepositoryTest {
     }
 
     @Test
+    fun `the fine adjustments send their values within Kodi's ranges`() = runBlocking {
+        repository.setAudioDelay(0.05)
+        repository.setAudioDelay(-25.0)
+        repository.setSubtitleDelay(1.5)
+        repository.setSubtitleDelay(99.0)
+        repository.setTempo(1.2)
+        assertEquals(
+            listOf(
+                CommandBody("audio_delay", 0.05), CommandBody("audio_delay", -10.0),
+                CommandBody("subtitle_delay", 1.5), CommandBody("subtitle_delay", 60.0),
+                CommandBody("tempo", 1.2),
+            ),
+            sent,
+        )
+    }
+
+    @Test
+    fun `details name the title by the id its kind goes by`() = runBlocking {
+        val movie = repository.details(MarkTarget(MarkTarget.Kind.MOVIE, 1, "a"))
+        val show = repository.details(MarkTarget(MarkTarget.Kind.SHOW, 2, "b"))
+        val episode = repository.details(MarkTarget(MarkTarget.Kind.EPISODE, 3, "c"))
+        assertEquals(listOf("movie" to 1, "tvshow" to 2, "episode" to 3),
+                     listOf(movie, show, episode).map { it.kind to it.id })
+    }
+
+    @Test
     fun `the shelves and the library calls go to their endpoints`() = runBlocking {
         val bodies = mutableListOf<Any>()
         api.setWatched = { bodies += it; CommandAck(ok = true) }

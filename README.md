@@ -58,8 +58,11 @@ command endpoints.
   that was lost. A phone that opens halfway through a film gets the whole
   picture, not the part it was connected for.
 - **The player**, on a box that allows it: play, stop, seek, volume, mute,
-  audio and subtitle tracks, and the VS10 conversions the source can be put
-  through.
+  audio and subtitle tracks, the audio and subtitle offsets and the tempo,
+  and the VS10 conversions the source can be put through.
+- **The library**, sorted and filtered by genre and by what the files are -
+  Dolby Vision, HDR10, 4K, TrueHD and the rest - with the next episode of
+  every show being watched, and the details of any title a tap away.
 
 ---
 
@@ -78,7 +81,7 @@ Nothing here works until it is.
 
 ## 3. Setting It Up
 
-1. In Kodi: **Add-ons → TinyPPI → Settings → Web**. Switch the server on. It
+1. In Kodi: **Add-ons → TinyPPI → Settings → Dashboard**. Switch the server on. It
    shows the address it is listening on and an eight-character token.
 2. In the app: **Settings → Local address**. Type the host and the port (the
    add-on's default is **8099**), then the token.
@@ -186,6 +189,16 @@ there, or simply tap the dot, and the box jumps to the start of that chapter.
 The dots are a reading and come with control switched off too; *Chapter
 markers* under *Appearance* in the settings takes them off the bar.
 
+Under the track pickers sit the **fine adjustments**: the audio offset, for
+lip sync, in steps of 50 ms; the subtitle offset, in Kodi's own 100 ms steps,
+while subtitles are on; and the tempo, from 0.8× to 1.5× with the sound kept.
+A tap on an offset's value puts it back to nothing. The value pressed is shown
+at once and held for a moment against the readings, so the next one, read
+before the press, does not put the old number back under the thumb. Kodi has
+no remote call for the subtitle offset, so the box moves it the way a remote
+does, a step at a time - and Kodi shows its own slider on the television while
+it does. A box whose add-on is older than these (2.20.0) shows none of them.
+
 While something is playing on such a box, the phone's own volume buttons turn
 the box up and down instead of the phone; a switch under *Readings* in the
 settings hands them back. Every key that acts on the box gives a short tick
@@ -285,8 +298,8 @@ is remembered like the others, and is not there at all once everything has
 been seen, or while a search finds nothing unwatched.
 
 **A tap on** a film, a series, an episode or a Continue watching tile opens a
-dialog with three options: **Play** (**Resume** where the box has a point to
-resume from), **Mark as watched** and **Mark as unwatched**. A series cannot be
+dialog with four options: **Play** (**Resume** where the box has a point to
+resume from), **Mark as watched**, **Mark as unwatched** and **Details**. A series cannot be
 played, so its first option is **Open**, which shows its episodes. Marking is
 written into Kodi's own library — a series marked either way is every episode
 of it — and every shelf is read again at once, so the tick and the unwatched
@@ -296,6 +309,28 @@ A film or an episode that was stopped part-way through gets two more options:
 **Play from the beginning**, which starts it from the top instead of resuming,
 and **Clear resume point**, which forgets where it got to — taking it off
 Continue watching — while leaving it watched or unwatched as it was.
+
+**Details** reads everything the library holds about the title when it is
+asked for - the year, the running time and the age rating, the formats of the
+file, the slogan and the plot, the genres, the director, the writers, the
+studio, the library's ratings and the cast - and shows it in a dialog of its
+own. A box that cannot answer says so in the dialog.
+
+**Under the search box**, a row of chips puts the shelf in order - by title,
+the box's own order, or by year, rating, date added or, for films, running
+time; a title without the value goes last - and narrows it by genre, and for
+films by the grade (Dolby Vision, HDR10+, HDR10, HLG, SDR), the resolution (4K,
+1080p, 720p, SD) and the sound of the first audio track (Dolby TrueHD, DTS-HD
+MA, Dolby Digital Plus, ...). A chip offers only what the shelf holds, and a
+filter with nothing to choose between is not drawn. The filters narrow every
+card on the screen the way the search does, and are kept with it across a turn
+of the phone. Kodi does not record Atmos or DTS:X in its library, so the sound
+is filtered by the codec it rides on.
+
+**Next up**, on the series screen, holds the next unwatched episode of each
+show being watched - its first unseen one in episode order, specials left out
+- the show watched last first. An episode already on Continue watching is not
+repeated, and a tap starts it from the beginning.
 
 **Pulling either shelf down** reads it again anyway. It is the answer when the
 box was off while the app was looking at it, or when its library was switched
@@ -378,9 +413,10 @@ All of it.
 | `GET /api/library` | The films the box has, for the wall shown while nothing is playing. |
 | `GET /api/series` | The series it has, for the wall under them. |
 | `GET /api/episodes` | The episodes of one series, read when it is opened. |
-| `GET /api/continue` | The films and episodes left half-watched, for the row at the top of both shelves. |
+| `GET /api/continue` | The films and episodes left half-watched, for the row at the top of both shelves, and the next-up row. |
+| `GET /api/details` | Everything the library holds about one title, for its details. |
 | `POST /api/mode` | The VS10 buttons. |
-| `POST /api/command` | Play/pause, stop, previous/next chapter, jump to a chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track. |
+| `POST /api/command` | Play/pause, stop, previous/next chapter, jump to a chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track, audio offset, subtitle offset, tempo. |
 | `POST /api/play` | Starting one of the library's films, or one episode of a series — resumed, or from the beginning. |
 | `POST /api/watched` | Marking a film, a series or an episode as watched or unwatched. |
 | `POST /api/resume` | Clearing the resume point of a film or an episode. |

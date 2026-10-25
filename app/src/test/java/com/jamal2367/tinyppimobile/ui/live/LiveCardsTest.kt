@@ -26,6 +26,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.ArtTags
 import com.jamal2367.tinyppimobile.data.model.Award
+import com.jamal2367.tinyppimobile.data.model.CommandAck
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
 import com.jamal2367.tinyppimobile.data.model.Metrics
 import com.jamal2367.tinyppimobile.data.model.PlayerControls
@@ -132,6 +133,106 @@ class LiveCardsTest {
 
         fake.playing(Screens.film.copy(controls = PlayerControls()))
         rule.waitForIdle()
+    }
+
+    @Test
+    fun `the fine adjustments step from the reported offsets, reset, and keep the tempo through a pause`() {
+        val sent = mutableListOf<Pair<String, Double?>>()
+        fake.api.command = {
+            sent += it.action to it.value
+            CommandAck(ok = true)
+        }
+        fun audioAt(seconds: Double) = fake.playing(
+            Screens.film.copy(controls = PlayerControls(volume = 40, audioDelay = seconds, tempo = 1.2)),
+        )
+        fake.playing(
+            Screens.film.copy(
+                controls = PlayerControls(volume = 40, audioDelay = -0.05, subtitleDelay = 0.3, subtitleOn = false, tempo = 1.2),
+            ),
+        )
+        showLive()
+        val audio = str(R.string.live_audio_offset)
+        val subtitles = str(R.string.live_subtitle_offset)
+        // The value is said as the key's state: "Audio offset, −50 ms".
+        fun shows(label: String, value: String) = rule.onAllNodes(
+            SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "$label $value"),
+        ).fetchSemanticsNodes().isNotEmpty()
+        rule.until { shows(audio, "\u221250 ms") }
+        // No subtitles shown, nothing to move.
+        assertEquals(false, seen(subtitles))
+        rule.onNodeWithContentDescription("$audio +").performClick()
+        rule.waitForIdle()
+        audioAt(0.0)
+        rule.until { shows(audio, "0 ms") }
+        // A reset with nothing to reset still says so to the box.
+        rule.onNodeWithContentDescription(str(R.string.live_offset_reset)).performClick()
+        rule.waitForIdle()
+        sent.removeAt(sent.lastIndex)
+        rule.onNodeWithContentDescription("$audio \u2212").performClick()
+        rule.waitForIdle()
+        audioAt(-0.05)
+        rule.until { shows(audio, "\u221250 ms") }
+        rule.onNodeWithContentDescription(str(R.string.live_offset_reset)).performClick()
+        rule.waitForIdle()
+        assertEquals(listOf("audio_delay" to 0.0, "audio_delay" to -0.05, "audio_delay" to 0.0), sent)
+
+        // Subtitles on bring their own offset; a pause reports no tempo and
+        // the picker keeps the one last played at.
+        fake.playing(
+            Screens.film.copy(
+                controls = PlayerControls(volume = 40, audioDelay = 0.0, subtitleDelay = 1.5, subtitleOn = true, tempo = null),
+            ),
+        )
+        rule.until { shows(subtitles, "+1.50 s") }
+        // The rest of the player moving leaves the offsets where they are.
+        fake.playing(
+            Screens.film.copy(
+                controls = PlayerControls(volume = 41, audioDelay = 0.0, subtitleDelay = 1.5, subtitleOn = true, tempo = null),
+            ),
+        )
+        rule.waitForIdle()
+        rule.onNode(
+            SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "1.2\u00d7"),
+        ).performClick()
+        rule.onNodeWithText("1.5\u00d7").performClick()
+        rule.waitForIdle()
+        rule.onNodeWithContentDescription("$subtitles +").performClick()
+        rule.waitForIdle()
+        assertEquals(listOf("tempo" to 1.5, "subtitle_delay" to 1.6), sent.drop(3))
+
+        // The offsets stop at Kodi's ranges.
+        fake.playing(Screens.film.copy(controls = PlayerControls(volume = 40, audioDelay = 9.98)))
+        rule.until { shows(audio, "+9.98 s") }
+        rule.onNodeWithContentDescription("$audio +").performClick()
+        rule.waitForIdle()
+        assertEquals("audio_delay" to 10.0, sent.last())
+    }
+
+    @Test
+    fun `each fine adjustment comes on its own`() {
+        // The captions are said as part of their keys, so the keys are what is looked for.
+        fun has(description: String) = rule.onAllNodesWithContentDescription(description).fetchSemanticsNodes().isNotEmpty()
+        val audio = "${str(R.string.live_audio_offset)} +"
+        val subtitles = "${str(R.string.live_subtitle_offset)} +"
+        val tempo = str(R.string.live_tempo)
+        fake.playing(Screens.film.copy(controls = PlayerControls(volume = 40, subtitleDelay = 0.2, subtitleOn = true)))
+        showLive()
+        rule.until { has(subtitles) }
+        assertEquals(false, has(audio))
+        assertEquals(false, has(tempo))
+        fake.playing(Screens.film.copy(controls = PlayerControls(volume = 40, tempo = 1.0)))
+        rule.until { has(tempo) }
+        assertEquals(false, has(subtitles))
+    }
+
+    @Test
+    fun `offsets and tempos are written the way the stepper shows them`() {
+        assertEquals("0 ms", offsetText(0.0004))
+        assertEquals("+25 ms", offsetText(0.025))
+        assertEquals("\u2212999 ms", offsetText(-0.999))
+        assertEquals("+1.00 s", offsetText(1.0))
+        assertEquals("\u221212.35 s", offsetText(-12.345))
+        assertEquals("0.8\u00d7", tempoText(0.8))
     }
 
     private fun badgesFor(snapshot: Snapshot) {

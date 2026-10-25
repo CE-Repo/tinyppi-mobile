@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  *
  * A fixed set, checked on the far side before anything reaches Kodi: the
  * request names an action, never a JSON-RPC method, so a client can only ever
- * do these thirteen things (see `_COMMANDS` in the add-on's `snapshot.py`).
+ * do these sixteen things (see `_COMMANDS` in the add-on's `snapshot.py`).
  */
 enum class PlayerAction(val id: String) {
     PLAY_PAUSE("playpause"),
@@ -62,11 +62,35 @@ enum class PlayerAction(val id: String) {
      * Pick a subtitle stream by its index, or [SUBTITLES_OFF] to switch them
      * off. One control on the screen, so one action here.
      */
-    SUBTITLE("subtitle");
+    SUBTITLE("subtitle"),
+
+    /**
+     * Set the audio offset, in seconds, within [AUDIO_DELAY_LIMIT] either way.
+     * The box rounds it to Kodi's own 25 ms steps.
+     */
+    AUDIO_DELAY("audio_delay"),
+
+    /**
+     * Set the subtitle offset, in seconds, within [SUBTITLE_DELAY_LIMIT] either
+     * way. Kodi has no JSON-RPC method for it, so the box moves it with the key
+     * a remote sends, a 100 ms step at a time - and Kodi shows its own slider
+     * on the television while it does.
+     */
+    SUBTITLE_DELAY("subtitle_delay"),
+
+    /** Play at one of [TEMPOS], with the sound kept. */
+    TEMPO("tempo");
 
     companion object {
         /** The value that turns subtitles off rather than picking a track. */
         const val SUBTITLES_OFF = -1.0
+
+        /** How far each offset may go either way, in seconds: Kodi's own ranges. */
+        const val AUDIO_DELAY_LIMIT = 10.0
+        const val SUBTITLE_DELAY_LIMIT = 60.0
+
+        /** The tempos the box takes (`TEMPOS` in the add-on's `player.py`). */
+        val TEMPOS = listOf(0.8, 0.9, 1.0, 1.1, 1.2, 1.5)
 
         /** How far a seek may jump, in seconds - the add-on refuses anything wider. */
         const val SEEK_LIMIT_SECONDS = 3600.0

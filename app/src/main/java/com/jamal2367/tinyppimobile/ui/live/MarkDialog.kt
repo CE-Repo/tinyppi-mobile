@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.RestartAlt
@@ -54,7 +55,7 @@ internal class TitleQuestion(
 
 /**
  * The question a press on a film, a series or an episode asks: play it (open
- * it, for a series), or count it as seen or as unseen.
+ * it, for a series), count it as seen or as unseen, or show its details.
  *
  * Both marks are always offered, whatever the title is now: somebody who
  * presses a film already ticked may be asking to take the tick off, and one
@@ -69,6 +70,7 @@ internal fun TitleDialog(
     onPlay: (fromStart: Boolean) -> Unit,
     onMark: (watched: Boolean) -> Unit,
     onClearResume: () -> Unit,
+    onDetails: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -114,6 +116,11 @@ internal fun TitleDialog(
                         onClick = onClearResume,
                     )
                 }
+                TitleOption(
+                    icon = Icons.Rounded.Info,
+                    label = stringResource(R.string.title_details),
+                    onClick = onDetails,
+                )
             }
         },
         confirmButton = {},

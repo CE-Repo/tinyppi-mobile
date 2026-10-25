@@ -30,6 +30,9 @@ import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
 import com.jamal2367.tinyppimobile.data.model.Snapshot
+import com.jamal2367.tinyppimobile.data.model.CastMember
+import com.jamal2367.tinyppimobile.data.model.SourceRating
+import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
 import com.jamal2367.tinyppimobile.data.repository.LiveState
@@ -274,7 +277,7 @@ class LibraryScreensTest {
         rule.onNodeWithText(str(R.string.recent_title)).performTouchInput { longClick() }
         assertEquals("series", cards.editing)
         rule.onNodeWithText(str(R.string.cards_done)).performClick()
-        cards.hidden = setOf("series/shelf.series.continue", "series/shelf.series.recent", "series/shelf.series.unseen", "series/shelf.series")
+        cards.hidden = setOf("series/shelf.series.continue", "series/shelf.series.next", "series/shelf.series.recent", "series/shelf.series.unseen", "series/shelf.series")
         rule.onNodeWithText(str(R.string.cards_all_hidden)).assertIsDisplayed()
         cards.hidden = emptySet()
         rule.onAllNodes(hasScrollToIndexAction()).onFirst().performTouchInput { swipeDown() }
@@ -296,5 +299,130 @@ class LibraryScreensTest {
         fake.live.value = LiveState(connection = LiveState.Connection.Streaming, snapshot = Snapshot(control = false), server = null)
         showSeries()
         rule.onNodeWithText(str(R.string.library_empty_title)).assertIsDisplayed()
+    }
+
+    private fun has(value: String) = rule.onAllNodesWithText(value).fetchSemanticsNodes().isNotEmpty()
+
+    @Test
+    fun `the film shelf sorts and filters by what the films carry`() {
+        fake.api.continuing = { ContinueList() }
+        fake.api.library = {
+            Library(
+                movies = listOf(
+                    LibraryFilm(1, "Dune", 2024, genres = listOf("Sci-Fi"), video = "dv", resolution = "2160p", audio = "truehd"),
+                    LibraryFilm(2, "Heat", 1995, genres = listOf("Crime"), video = "sdr", resolution = "1080p", audio = "dts"),
+                    LibraryFilm(3, "Alien", 1979, genres = listOf("Sci-Fi", "Horror"), video = "dv", resolution = "2160p", audio = "weird"),
+                ),
+            )
+        }
+        showFilms()
+        rule.waitUntil { has("Heat") }
+        text(str(R.string.shelf_sort, str(R.string.sort_title))).performClick()
+        text(str(R.string.sort_year)).performClick()
+        rule.waitUntil { has(str(R.string.shelf_sort, str(R.string.sort_year))) }
+
+        text(str(R.string.filter_genre_all)).performClick()
+        text("Crime").performClick()
+        rule.waitUntil { !has("Dune") }
+        assertTrue(has("Heat"))
+        text("Crime").performClick()
+        text(str(R.string.filter_genre_all)).performClick()
+        rule.waitUntil { has("Dune") }
+
+        text(str(R.string.filter_video_all)).performClick()
+        text("SDR").performClick()
+        rule.waitUntil { !has("Alien") }
+        text("SDR").performClick()
+        text(str(R.string.filter_video_all)).performClick()
+        text(str(R.string.filter_resolution_all)).performClick()
+        text("4K").performClick()
+        rule.waitUntil { !has("Heat") }
+        text("4K").performClick()
+        text(str(R.string.filter_resolution_all)).performClick()
+        // Only the sound the app has a name for counts as a choice; one choice is no filter.
+        text(str(R.string.filter_audio_all)).performClick()
+        text("DTS").performClick()
+        rule.waitUntil { !has("Dune") && has("Heat") }
+    }
+
+    @Test
+    fun `the series shelf sorts and filters by genre, and offers what comes next`() {
+        fake.api.series = {
+            SeriesLibrary(shows = shows.mapIndexed { index, show -> show.copy(genres = listOf(listOf("Drama", "History", "Sci-Fi")[index])) })
+        }
+        fake.api.continuing = {
+            ContinueList(next = listOf(ContinueItem("episode", 76, "Ghosts", poster = "s7", duration = 3000, show = "Dark", season = 2, episode = 1)))
+        }
+        showSeries()
+        rule.waitUntil { has("Chernobyl") }
+        text(str(R.string.shelf_sort, str(R.string.sort_title))).performClick()
+        // A series has no running time to be put in order by.
+        assertTrue(!has(str(R.string.sort_runtime)))
+        text(str(R.string.sort_rating)).performClick()
+        text(str(R.string.filter_genre_all)).performClick()
+        text("History").performClick()
+        rule.waitUntil { !has("Silo") }
+
+        rule.onNodeWithText(str(R.string.next_up_count, 1)).assertIsDisplayed()
+        // The show's tile on the next-up row, ahead of its poster among what arrived last.
+        rule.onAllNodesWithText("Dark").onFirst().performClick()
+        // Nothing of it has been seen: play, without the two resume answers.
+        assertTrue(!has(str(R.string.title_restart)))
+        rule.onNodeWithText(str(R.string.title_play)).performClick()
+        rule.waitForIdle()
+        assertEquals(1, fake.api.count("playEpisode"))
+        settle()
+        rule.onAllNodesWithText("Dark").onFirst().performClick()
+        rule.onNodeWithText(str(R.string.title_details)).performClick()
+        rule.waitForIdle()
+        fake.playing(Snapshot(control = true, playing = false, libraryRevision = 3, title = "Something else"))
+        rule.waitForIdle()
+        rule.onNodeWithText(str(R.string.details_close)).performClick()
+        text(str(R.string.next_up_count, 1)).performClick()
+        text(str(R.string.next_up_count, 1)).performClick()
+        text("Chernobyl").performClick()
+        rule.onNodeWithText(str(R.string.title_details)).performClick()
+        rule.waitForIdle()
+        rule.onNodeWithText(str(R.string.details_close)).performClick()
+        assertEquals(2, fake.api.count("details"))
+    }
+
+    @Test
+    fun `a title's details are read when asked for, and a failure says so`() {
+        fake.api.details = { kind, id ->
+            TitleDetails(
+                kind = kind, id = id, title = "Heat", plot = "A heist.", tagline = "A Los Angeles crime saga",
+                year = 1995, duration = 10200, mpaa = "Rated R", genres = listOf("Crime"),
+                directors = listOf("Michael Mann"), writers = listOf("M. Mann"), studios = listOf("Warner"),
+                cast = listOf(CastMember("Al Pacino", "Vincent"), CastMember("Val Kilmer", "")), castMore = true,
+                ratings = listOf(SourceRating("imdb", 8.3), SourceRating("kinopoisk", 8.0)), userrating = 9, top250 = 120,
+                video = "dv", resolution = "2160p", audio = "weird",
+            )
+        }
+        showFilms()
+        rule.waitUntil { has("Heat") }
+        text("Heat").performClick()
+        rule.onNodeWithText(str(R.string.title_details)).performClick()
+        rule.waitUntil { has("A heist.") }
+        // The screen moving under the open dialog leaves it as it is.
+        fake.playing(Snapshot(control = true, playing = false, libraryRevision = 3, title = "Something else"))
+        rule.waitForIdle()
+        for (shown in listOf(
+            "1995 · 2 h 50 min · Rated R", "Dolby Vision", "4K", "weird", "A Los Angeles crime saga",
+            "Crime", "Michael Mann", "M. Mann", "Warner", "Al Pacino (Vincent), Val Kilmer, …",
+            "IMDb 8.3, kinopoisk 8.0, ${str(R.string.live_rating_mine)} 9, ${str(R.string.live_rating_top250, 120)}",
+        )) {
+            assertTrue(shown, has(shown))
+        }
+        rule.onNodeWithText(str(R.string.details_close)).performClick()
+
+        fake.api.details = { _, _ -> throw ApiFailure.Api(404, "no such title") }
+        text("Gravity").performClick()
+        rule.onNodeWithText(str(R.string.title_details)).performClick()
+        rule.waitUntil { has(str(R.string.details_failed)) }
+        rule.onNodeWithText(str(R.string.details_close)).performClick()
+        rule.waitForIdle()
+        assertTrue(!has(str(R.string.details_failed)))
+
     }
 }

@@ -74,6 +74,17 @@ data class LibraryFilm(
      * and ordering the row of what arrived last is all it is used for.
      */
     val added: String = "",
+    /** Up to four of its genres, as the library names them; empty for none. */
+    val genres: List<String> = emptyList(),
+    /**
+     * Its file's formats, where Kodi has read the file: the grade (`dv`,
+     * `hdr10plus`, `hdr10`, `hlg`, `sdr`), the resolution (`2160p`, `1080p`,
+     * `720p`, `sd`) and the first audio track's codec family (`truehd`,
+     * `dtshd_ma`, `eac3`, ...). Empty where it has not, or for an older add-on.
+     */
+    val video: String = "",
+    val resolution: String = "",
+    val audio: String = "",
 ) {
     /** How far through it the box got, 0 to 1, or null for one to start fresh. */
     val progress: Float?
@@ -152,6 +163,8 @@ data class LibraryShow(
      * last night at the front of the row of what arrived last.
      */
     val added: String = "",
+    /** Up to four of its genres, as the library names them; empty for none. */
+    val genres: List<String> = emptyList(),
 )
 
 /** The episodes of one show, as `/api/episodes?tvshowid=` answers them. */
@@ -243,6 +256,13 @@ data class WatchedBody(
 @Serializable
 data class ContinueList(
     val items: List<ContinueItem> = emptyList(),
+    /**
+     * The next unwatched episode of each show being watched, the show watched
+     * last first: the "next up" row on the series screen. The same shape as
+     * the row above it, without a point to resume from. Empty for an add-on
+     * older than the row, and where the series shelf is not offered.
+     */
+    val next: List<ContinueItem> = emptyList(),
     val count: Int = 0,
     val tag: String = "",
 )
@@ -303,6 +323,58 @@ data class ContinueItem(
             if (episode >= 0) append("E%02d".format(episode))
         }
 }
+
+/**
+ * Everything the library holds about one title, as `/api/details` answers
+ * it - read when its details are asked for, for the dialog that shows them.
+ *
+ * Every field but the first four is there only where the library has it; a
+ * missing one is its default here and is left off the dialog.
+ */
+@Serializable
+data class TitleDetails(
+    /** `movie`, `tvshow` or `episode`. */
+    val kind: String = "",
+    val id: Int = 0,
+    val title: String = "",
+    /** The library's own ratings, the known sources first. */
+    val ratings: List<SourceRating> = emptyList(),
+    val plot: String = "",
+    val tagline: String = "",
+    /** An episode's show. */
+    val show: String = "",
+    /** When it came out, or an episode first aired, as Kodi writes it. */
+    val premiered: String = "",
+    /** The age rating as the scraper wrote it. */
+    val mpaa: String = "",
+    val year: Int = 0,
+    /** Seconds; 0 where the library does not know. */
+    val duration: Int = 0,
+    /** An episode's season and number; a series' count of seasons. */
+    val season: Int = -1,
+    val episode: Int = -1,
+    /** The reader's own, 1 to 10; 0 for none. */
+    val userrating: Int = 0,
+    /** The place in the IMDb Top 250; 0 for none. */
+    val top250: Int = 0,
+    val genres: List<String> = emptyList(),
+    val directors: List<String> = emptyList(),
+    val writers: List<String> = emptyList(),
+    val studios: List<String> = emptyList(),
+    val countries: List<String> = emptyList(),
+    /** The first twenty in billing order. */
+    val cast: List<CastMember> = emptyList(),
+    /** Whether the cast goes on past those twenty. */
+    @SerialName("cast_more") val castMore: Boolean = false,
+    /** The file's formats, as on a film's tile. */
+    val video: String = "",
+    val resolution: String = "",
+    val audio: String = "",
+)
+
+/** One of the cast, and who they played; [role] is empty where none is known. */
+@Serializable
+data class CastMember(val name: String = "", val role: String = "")
 
 /**
  * Something in the library that was pressed, to be marked seen or unseen:
