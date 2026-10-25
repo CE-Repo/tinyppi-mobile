@@ -162,6 +162,12 @@ fun TinyPpiApp(container: AppContainer, hiddenTabs: Set<String>) {
         scope.launch { pagerState.animateScrollToPage(page) }
     }
 
+    // Whatever was just started is shown on the live tab, so a press on play
+    // or resume goes there rather than leaving the shelf it was pressed on.
+    LaunchedEffect(liveViewModel) {
+        liveViewModel.started.collect { open(TopLevelDestination.LIVE) }
+    }
+
     // What the bar lights up. The page under the middle of the screen, so the
     // pill moves across as soon as a swipe is past half-way rather than when
     // it has finished.

@@ -20,6 +20,7 @@ import com.jamal2367.tinyppimobile.data.repository.PlayerRepository
 import com.jamal2367.tinyppimobile.util.toUserMessage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -184,6 +186,15 @@ class LiveViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = LiveUiState(),
         )
+
+    private val _started = Channel<Unit>(Channel.CONFLATED)
+
+    /**
+     * Once for every title the box has agreed to play, from a wall, the
+     * episode list or the row of half-watched ones: the shell takes it as the
+     * word to go to the live tab, where what was just started is shown.
+     */
+    val started: Flow<Unit> = _started.receiveAsFlow()
 
     private val _library = MutableStateFlow(LibraryUiState())
 
@@ -440,6 +451,7 @@ class LiveViewModel(
                 // list is worth reading again the next time nothing is on.
                 _library.value = _library.value.copy(read = false)
                 _continuing.value = _continuing.value.copy(read = false)
+                _started.trySend(Unit)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Throwable) {
@@ -617,6 +629,7 @@ class LiveViewModel(
                 // on the count its show's tile wears.
                 _series.value = _series.value.copy(read = false)
                 _continuing.value = _continuing.value.copy(read = false)
+                _started.trySend(Unit)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Throwable) {
@@ -698,6 +711,7 @@ class LiveViewModel(
                     _library.value = _library.value.copy(read = false)
                 }
                 _continuing.value = _continuing.value.copy(read = false)
+                _started.trySend(Unit)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Throwable) {

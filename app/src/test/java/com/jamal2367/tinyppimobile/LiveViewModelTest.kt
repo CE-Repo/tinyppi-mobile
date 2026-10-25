@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -336,6 +337,36 @@ class LiveViewModelTest {
         assertEquals(1, api.count("playEpisode"))
         assertEquals(0, api.count("play"))
         assertFalse("the row is worth reading again", vm.continuing.value.read)
+    }
+
+    @Test
+    fun `every title that starts sends the shell to the live tab`() = runTest(dispatcher) {
+        val vm = viewModel()
+        var sent = 0
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.started.collect { sent++ } }
+
+        vm.playFilm(blade)
+        advanceUntilIdle()
+        assertEquals("a film", 1, sent)
+        vm.playEpisode(LibraryEpisode(id = 50))
+        advanceUntilIdle()
+        assertEquals("an episode", 2, sent)
+        vm.playContinuing(ContinueItem(kind = "movie", id = 2, title = "Heat"))
+        advanceUntilIdle()
+        assertEquals("a title from the row", 3, sent)
+    }
+
+    @Test
+    fun `a title that will not start leaves the shell where it is`() = runTest(dispatcher) {
+        api.play = { throw ApiFailure.Api(409, "busy") }
+        val vm = viewModel()
+        var sent = 0
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.started.collect { sent++ } }
+
+        vm.playFilm(blade)
+        advanceUntilIdle()
+
+        assertEquals(0, sent)
     }
 
     @Test
