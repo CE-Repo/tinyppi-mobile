@@ -181,9 +181,6 @@ class PlayerRepository(
         seconds.coerceIn(-PlayerAction.SUBTITLE_DELAY_LIMIT, PlayerAction.SUBTITLE_DELAY_LIMIT),
     )
 
-    /** Play at [tempo], one of [PlayerAction.TEMPOS]. */
-    suspend fun setTempo(tempo: Double) = command(PlayerAction.TEMPO, tempo)
-
     private suspend fun <T> call(block: suspend () -> T): T = try {
         block()
     } catch (cancelled: CancellationException) {

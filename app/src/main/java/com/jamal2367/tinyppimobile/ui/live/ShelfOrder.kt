@@ -13,7 +13,9 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Sort
+import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowDropDown
+import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.FilterAltOff
@@ -30,6 +32,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,17 +61,65 @@ import com.jamal2367.tinyppimobile.ui.theme.PillShape
 
 /**
  * The orders a shelf can be put in. Title is the box's own order - Kodi's
- * sort title, articles ignored - so it is the list as it came; the others
- * run from the newest, the best and the most recently added, and the running
- * time from the shortest. A title without the value goes last either way.
+ * sort title, articles ignored - so it is the list as it came, A to Z.
+ * [descending] is the way an order starts when it is picked: the newest, the
+ * best and the most recently added first, the titles and the running time
+ * from the start. A title without the value goes last either way.
  */
-enum class ShelfSort(@param:StringRes val label: Int) {
-    TITLE(R.string.sort_title),
-    YEAR(R.string.sort_year),
-    RATING(R.string.sort_rating),
-    ADDED(R.string.sort_added),
-    RUNTIME(R.string.sort_runtime),
+enum class ShelfSort(@param:StringRes val label: Int, val descending: Boolean) {
+    TITLE(R.string.sort_title, false),
+    YEAR(R.string.sort_year, true),
+    RATING(R.string.sort_rating, true),
+    ADDED(R.string.sort_added, true),
+    RUNTIME(R.string.sort_runtime, false),
 }
+
+/**
+ * The order a shelf is in: what it is sorted by and which way, kept between
+ * launches (see [ShelfOrders]) as `TITLE` or `YEAR:down`.
+ */
+@Immutable
+data class ShelfOrder(val sort: ShelfSort = ShelfSort.TITLE, val descending: Boolean = false) {
+    /** As it is kept. */
+    fun encoded(): String = if (descending) "${sort.name}$DOWN" else sort.name
+
+    /** Sorted by [by] instead, the way that order starts. */
+    fun by(by: ShelfSort) = ShelfOrder(by, by.descending)
+
+    /** The other way round. */
+    fun flipped() = copy(descending = !descending)
+
+    companion object {
+        private const val DOWN = ":down"
+
+        /** The order kept as [kept], or the box's own for none or one this build does not know. */
+        fun decoded(kept: String?): ShelfOrder {
+            val held = kept.orEmpty()
+            val sort = runCatching { ShelfSort.valueOf(held.removeSuffix(DOWN)) }.getOrNull() ?: return ShelfOrder()
+            return ShelfOrder(sort, held.endsWith(DOWN))
+        }
+    }
+}
+
+/**
+ * The order each shelf is in, by shelf, and how to put one in another.
+ *
+ * Reached through a composition local, as the card folds are: what it is
+ * kept in is the app's settings, which the screens' view model does not
+ * write. A shelf no order was kept for is in the box's own.
+ */
+@Immutable
+class ShelfOrders(
+    private val kept: Map<String, String> = emptyMap(),
+    private val onChange: (shelf: String, order: String) -> Unit = { _, _ -> },
+) {
+    fun of(shelf: String): ShelfOrder = ShelfOrder.decoded(kept[shelf])
+
+    fun set(shelf: String, order: ShelfOrder) = onChange(shelf, order.encoded())
+}
+
+/** The orders in force here: the box's own and nothing kept, until the app's root says otherwise. */
+val LocalShelfOrders = staticCompositionLocalOf { ShelfOrders() }
 
 /**
  * What a shelf is narrowed to: a genre, and for films the file's grade -
@@ -115,34 +167,40 @@ object FormatNames {
     const val PROFILE = "dv/"
 }
 
-/** The films that pass [filter], in [sort]'s order. */
-internal fun List<LibraryFilm>.arranged(sort: ShelfSort, filter: ShelfFilter): List<LibraryFilm> =
+/** The films that pass [filter], in [order]. */
+internal fun List<LibraryFilm>.arranged(order: ShelfOrder, filter: ShelfFilter): List<LibraryFilm> =
     filter { film ->
         (filter.genre.isEmpty() || filter.genre in film.genres) &&
             (filter.video.isEmpty() || film.video == filter.video ||
                 (film.video == "dv" && filter.video == FormatNames.PROFILE + film.dvProfile)) &&
             (filter.resolution.isEmpty() || film.resolution == filter.resolution) &&
             (filter.audio.isEmpty() || film.audio == filter.audio)
-    }.ordered(sort, { it.year }, { it.rating }, { it.added }, { it.duration })
+    }.ordered(order, { it.year }, { it.rating }, { it.added }, { it.duration })
 
-/** The shows of [genre] (all for none), in [sort]'s order; they have no running time. */
-internal fun List<LibraryShow>.arranged(sort: ShelfSort, genre: String): List<LibraryShow> =
+/** The shows of [genre] (all for none), in [order]; they have no running time. */
+internal fun List<LibraryShow>.arranged(order: ShelfOrder, genre: String): List<LibraryShow> =
     filter { genre.isEmpty() || genre in it.genres }
-        .ordered(sort, { it.year }, { it.rating }, { it.added }, { 0 })
+        .ordered(order, { it.year }, { it.rating }, { it.added }, { 0 })
 
 private fun <T> List<T>.ordered(
-    sort: ShelfSort,
+    order: ShelfOrder,
     year: (T) -> Int,
     rating: (T) -> Double,
     added: (T) -> String,
     duration: (T) -> Int,
-): List<T> = when (sort) {
-    ShelfSort.TITLE -> this
-    ShelfSort.YEAR -> sortedWith(lastWithout({ year(it) > 0 }, compareByDescending(year)))
-    ShelfSort.RATING -> sortedWith(lastWithout({ rating(it) > 0 }, compareByDescending(rating)))
-    ShelfSort.ADDED -> sortedWith(lastWithout({ added(it).isNotEmpty() }, compareByDescending(added)))
-    ShelfSort.RUNTIME -> sortedWith(lastWithout({ duration(it) > 0 }, compareBy(duration)))
+): List<T> {
+    val down = order.descending
+    return when (order.sort) {
+        ShelfSort.TITLE -> if (down) asReversed() else this
+        ShelfSort.YEAR -> sortedWith(lastWithout({ year(it) > 0 }, compareBy(year).directed(down)))
+        ShelfSort.RATING -> sortedWith(lastWithout({ rating(it) > 0 }, compareBy(rating).directed(down)))
+        ShelfSort.ADDED -> sortedWith(lastWithout({ added(it).isNotEmpty() }, compareBy(added).directed(down)))
+        ShelfSort.RUNTIME -> sortedWith(lastWithout({ duration(it) > 0 }, compareBy(duration).directed(down)))
+    }
 }
+
+/** This order, or the other way round where [descending]. */
+private fun <T> Comparator<T>.directed(descending: Boolean): Comparator<T> = if (descending) reversed() else this
 
 /** [order] among those that [has] the value, and every one that has not after them. */
 private fun <T> lastWithout(has: (T) -> Boolean, order: Comparator<T>): Comparator<T> =
@@ -192,8 +250,8 @@ internal fun formatsOf(values: List<String>, names: Map<String, String>): List<S
 internal fun LazyListScope.shelfTools(
     key: String,
     sorts: List<ShelfSort>,
-    sort: ShelfSort,
-    onSort: (ShelfSort) -> Unit,
+    order: ShelfOrder,
+    onOrder: (ShelfOrder) -> Unit,
     filters: List<ShelfChoice>,
     onReset: () -> Unit,
 ) {
@@ -242,13 +300,14 @@ internal fun LazyListScope.shelfTools(
                     val sortNames = sorts.map { stringResource(it.label) }
                     ChoiceChip(
                         icon = Icons.AutoMirrored.Rounded.Sort,
-                        label = stringResource(sort.label),
-                        description = stringResource(R.string.shelf_sort, stringResource(sort.label)),
+                        label = stringResource(order.sort.label),
+                        description = stringResource(R.string.shelf_sort, stringResource(order.sort.label)),
                         selected = false,
                         options = sortNames,
-                        chosen = sorts.indexOf(sort),
-                        onPick = { onSort(sorts[it]) },
+                        chosen = sorts.indexOf(order.sort),
+                        onPick = { onOrder(order.by(sorts[it])) },
                     )
+                    DirectionChip(order.descending) { onOrder(order.flipped()) }
                     for (filter in shown) {
                         val all = stringResource(filter.kind.all)
                         val label = if (filter.current.isEmpty()) stringResource(filter.kind.label) else filter.name(filter.current)
@@ -366,6 +425,33 @@ private fun ChoiceChip(
             }
         }
     }
+}
+
+/**
+ * Which way the shelf runs, beside its order: an arrow and its name, a press
+ * turning it round.
+ */
+@Composable
+private fun DirectionChip(descending: Boolean, onFlip: () -> Unit) {
+    val name = stringResource(if (descending) R.string.sort_descending else R.string.sort_ascending)
+    AssistChip(
+        onClick = withKeyTick(onFlip),
+        label = { Text(name, maxLines = 1) },
+        leadingIcon = {
+            Icon(
+                if (descending) Icons.Rounded.ArrowDownward else Icons.Rounded.ArrowUpward,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+        },
+        shape = PillShape,
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            leadingIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh),
+        modifier = Modifier.height(CHIP_HEIGHT),
+    )
 }
 
 /** How far in from a side the row fades out where it goes on past it. */

@@ -297,9 +297,6 @@ class LiveViewModel(
     /** Set the subtitle offset, in seconds. */
     fun setSubtitleDelay(seconds: Double) = command { repository.setSubtitleDelay(seconds) }
 
-    /** Play at one of the tempos the box takes. */
-    fun setTempo(tempo: Double) = command { repository.setTempo(tempo) }
-
     /** Put the driver into one of the VS10 modes this snapshot offered. */
     fun setMode(mode: String) = command { repository.setMode(mode) }
 

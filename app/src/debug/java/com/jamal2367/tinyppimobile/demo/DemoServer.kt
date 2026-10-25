@@ -317,7 +317,6 @@ object DemoServer {
     private var subtitleOn = true
     private var audioDelay = 0.0
     private var subtitleDelay = 0.0
-    private var tempo = 1.0
     private var vs10Output = ""
     private var seq = 0L
     private var switches = 2
@@ -519,17 +518,7 @@ object DemoServer {
                 put("age_level", playingAgeLevel)
                 put("userrating", playingMine)
                 put("top250", playingTop250)
-                putJsonArray("awards") {
-                    playingAwards.forEach { award ->
-                        add(
-                            buildJsonObject {
-                                put("award", award.award)
-                                putJsonArray("won") { award.won.forEach { add(it) } }
-                                put("nominated", award.nominated)
-                            },
-                        )
-                    }
-                }
+                put("awards", awardsJson(playingAwards))
                 // Who made it, as the add-on sends it: every director and the
                 // whole cast, the studio the first alone.
                 putJsonArray("directors") { playingCredits.directors.forEach { add(it) } }
@@ -556,8 +545,6 @@ object DemoServer {
                 put("chapters", chapterCount)
                 put("audio_delay", audioDelay)
                 put("subtitle_delay", subtitleDelay)
-                // A pause reports no tempo, as Kodi's own reading does.
-                if (!paused) put("tempo", tempo)
             }
             put("chapters", chapters())
             put("chapter", chapterNow())
@@ -771,6 +758,8 @@ object DemoServer {
         put("duration", film.minutes * 60); put("plot", film.plot); put("tagline", film.tagline)
         put("mpaa", film.mpaa); put("userrating", film.mine); put("top250", film.top250)
         put("age", film.age); put("age_level", film.ageLevel)
+        // The same awards the overview card shows for the film.
+        put("awards", awardsJson(film.awards))
         put("poster", "movie-${film.id}"); put("fanart", "fanart-${film.id}")
         putJsonArray("genres") { add(film.genre) }
         putJsonArray("directors") { film.credits.directors.forEach { add(it) } }
@@ -783,6 +772,18 @@ object DemoServer {
         if (film.id % FILM_VIDEO.size == 0) put("dv_profile", DV_PROFILES[film.id % DV_PROFILES.size])
         put("resolution", if (film.id % 3 == 0) "1080p" else "2160p")
         put("audio", FILM_AUDIO[film.id % FILM_AUDIO.size])
+    }
+
+    private fun awardsJson(awards: List<DemoAward>) = buildJsonArray {
+        awards.forEach { award ->
+            add(
+                buildJsonObject {
+                    put("award", award.award)
+                    putJsonArray("won") { award.won.forEach { add(it) } }
+                    put("nominated", award.nominated)
+                },
+            )
+        }
     }
 
     private fun rating(source: String, value: Double, votes: Int) = buildJsonObject {
@@ -874,7 +875,6 @@ object DemoServer {
                     }
                     "audio_delay" -> audioDelay = value ?: 0.0
                     "subtitle_delay" -> subtitleDelay = value ?: 0.0
-                    "tempo" -> tempo = value ?: 1.0
                 }
             }
         }

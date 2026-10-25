@@ -320,13 +320,19 @@ class LibraryScreensTest {
                 ),
             )
         }
-        showFilms()
+        val cards = CardState()
+        showFilms(cards)
         rule.waitUntil { has("Heat") }
         rule.onNodeWithContentDescription(str(R.string.shelf_sort, str(R.string.sort_title))).performClick()
         text(str(R.string.sort_year)).performClick()
         rule.waitUntil {
             rule.onAllNodesWithContentDescription(str(R.string.shelf_sort, str(R.string.sort_year))).fetchSemanticsNodes().isNotEmpty()
         }
+        // The newest first, and kept for the next launch; a press turns it round.
+        assertEquals("YEAR:down", cards.shelfOrders["films"])
+        text(str(R.string.sort_descending)).performClick()
+        rule.waitUntil { has(str(R.string.sort_ascending)) }
+        assertEquals("YEAR", cards.shelfOrders["films"])
 
         text(str(R.string.filter_genre)).performClick()
         text("Crime").performClick()
@@ -345,13 +351,13 @@ class LibraryScreensTest {
         rule.waitUntil { has("Alien") && !has("Dune") }
         text("Dolby Vision P5").performClick()
         text(str(R.string.filter_video_all)).performClick()
-        text(str(R.string.filter_resolution)).performClick()
+        text(str(R.string.filter_resolution)).performScrollTo().performClick()
         text("4K").performClick()
         rule.waitUntil { !has("Heat") }
         text("4K").performClick()
         text(str(R.string.filter_resolution_all)).performClick()
         // Only the sound the app has a name for counts as a choice; one choice is no filter.
-        text(str(R.string.filter_audio)).performClick()
+        text(str(R.string.filter_audio)).performScrollTo().performClick()
         text("DTS").performClick()
         rule.waitUntil { !has("Dune") && has("Heat") }
         // One press puts every filter back.
@@ -367,8 +373,10 @@ class LibraryScreensTest {
         fake.api.continuing = {
             ContinueList(next = listOf(ContinueItem("episode", 76, "Ghosts", poster = "s7", duration = 3000, show = "Dark", season = 2, episode = 1)))
         }
-        showSeries()
+        // An order a series cannot be put in, kept by some other build, is the shelf's own.
+        showSeries(CardState().apply { shelfOrders = mapOf("series" to "RUNTIME:down") })
         rule.waitUntil { has("Chernobyl") }
+        assertTrue(has(str(R.string.sort_ascending)))
         rule.onNodeWithContentDescription(str(R.string.shelf_sort, str(R.string.sort_title))).performClick()
         // A series has no running time to be put in order by.
         assertTrue(!has(str(R.string.sort_runtime)))

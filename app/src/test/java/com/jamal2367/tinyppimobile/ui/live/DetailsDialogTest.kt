@@ -69,6 +69,9 @@ class DetailsDialogTest {
             "FSK 12" to TitleDetails(mpaa = "FSK 12"),
             context.getString(R.string.live_rating_mine) + " 7" to TitleDetails(userrating = 7),
             context.getString(R.string.live_rating_top250, 3) to TitleDetails(top250 = 3),
+            "Emmy " + context.getString(R.string.live_award_won, 1) to TitleDetails(
+                awards = listOf(com.jamal2367.tinyppimobile.data.model.Award("emmy", listOf("Drama"))),
+            ),
         )) {
             state = DetailsUiState(film, details = rated)
             rule.waitUntil { rule.onAllNodesWithContentDescription(said).fetchSemanticsNodes().isNotEmpty() }

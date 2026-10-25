@@ -394,13 +394,11 @@ data class PlayerControls(
     /** How many chapters the playing file has; 0 when it has none. */
     val chapters: Int = 0,
     /**
-     * The audio and the subtitle offsets in force, in seconds, and the tempo
-     * (1.0 for normal). Null where the box reports none: an add-on older than
-     * the fine adjustments, and the tempo while paused or fast-forwarding.
+     * The audio and the subtitle offsets in force, in seconds. Null where the
+     * box reports none: an add-on older than the fine adjustments.
      */
     @SerialName("audio_delay") val audioDelay: Double? = null,
     @SerialName("subtitle_delay") val subtitleDelay: Double? = null,
-    val tempo: Double? = null,
 ) {
     val isEmpty: Boolean
         get() = audio.isEmpty() && subtitle.isEmpty() && volume == null

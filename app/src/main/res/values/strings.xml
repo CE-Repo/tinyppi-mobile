@@ -74,6 +74,8 @@
     <string name="sort_rating">Rating</string>
     <string name="sort_added">Date added</string>
     <string name="sort_runtime">Runtime</string>
+    <string name="sort_ascending">Ascending</string>
+    <string name="sort_descending">Descending</string>
         <string name="filter_genre">Genre</string>
     <string name="filter_video">Picture</string>
     <string name="filter_resolution">Resolution</string>
@@ -144,7 +146,6 @@
     <string name="live_track_unknown">Unknown</string>
     <string name="live_audio_offset">Audio offset</string>
     <string name="live_subtitle_offset">Subtitle offset</string>
-    <string name="live_tempo">Tempo</string>
     <string name="live_offset_reset">Reset to 0</string>
 
     <string name="live_plot">Overview</string>

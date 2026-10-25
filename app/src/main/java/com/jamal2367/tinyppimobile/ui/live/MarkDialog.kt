@@ -54,8 +54,8 @@ internal class TitleQuestion(
 )
 
 /**
- * The question a press on a film, a series or an episode asks: play it (open
- * it, for a series), count it as seen or as unseen, or show its details.
+ * The question a press on a film, a series or an episode asks: show its
+ * details, play it (open it, for a series), or count it as seen or as unseen.
  *
  * Both marks are always offered, whatever the title is now: somebody who
  * presses a film already ticked may be asking to take the tick off, and one
@@ -83,6 +83,12 @@ internal fun TitleDialog(
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                // What it is comes first, then what to do with it.
+                TitleOption(
+                    icon = Icons.Rounded.Info,
+                    label = stringResource(R.string.title_details),
+                    onClick = onDetails,
+                )
                 TitleOption(
                     icon = if (question.play == R.string.title_open) {
                         Icons.AutoMirrored.Rounded.OpenInNew
@@ -116,11 +122,6 @@ internal fun TitleDialog(
                         onClick = onClearResume,
                     )
                 }
-                TitleOption(
-                    icon = Icons.Rounded.Info,
-                    label = stringResource(R.string.title_details),
-                    onClick = onDetails,
-                )
             }
         },
         confirmButton = {},

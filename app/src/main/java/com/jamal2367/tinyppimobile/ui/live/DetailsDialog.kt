@@ -283,8 +283,10 @@ private fun DetailsBody(details: TitleDetails) {
         ageLevel = details.ageLevel,
         userRating = details.userrating,
         top250 = details.top250,
+        awards = details.awards,
     )
-    if (rated.ratings.isNotEmpty() || rated.mpaa.isNotEmpty() || rated.userRating > 0 || rated.top250 > 0) {
+    val anyRating = rated.ratings.isNotEmpty() || rated.mpaa.isNotEmpty() || rated.userRating > 0
+    if (anyRating || rated.top250 > 0 || rated.awards.isNotEmpty()) {
         RatingRow(rated)
     }
     if (details.tagline.isNotEmpty() || details.plot.isNotEmpty()) {

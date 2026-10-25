@@ -69,6 +69,8 @@
     <string name="sort_rating">Bewertung</string>
     <string name="sort_added">Hinzugefügt</string>
     <string name="sort_runtime">Laufzeit</string>
+    <string name="sort_ascending">Aufsteigend</string>
+    <string name="sort_descending">Absteigend</string>
         <string name="filter_genre">Genre</string>
     <string name="filter_video">Bild</string>
     <string name="filter_resolution">Auflösung</string>
@@ -139,7 +141,6 @@
     <string name="live_track_unknown">Unbekannt</string>
     <string name="live_audio_offset">Audioversatz</string>
     <string name="live_subtitle_offset">Untertitelversatz</string>
-    <string name="live_tempo">Tempo</string>
     <string name="live_offset_reset">Auf 0 zurücksetzen</string>
 
     <string name="live_plot">Überblick</string>

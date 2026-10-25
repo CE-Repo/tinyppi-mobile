@@ -79,12 +79,10 @@ class PlayerRepositoryTest {
         repository.setAudioDelay(-25.0)
         repository.setSubtitleDelay(1.5)
         repository.setSubtitleDelay(99.0)
-        repository.setTempo(1.2)
         assertEquals(
             listOf(
                 CommandBody("audio_delay", 0.05), CommandBody("audio_delay", -10.0),
                 CommandBody("subtitle_delay", 1.5), CommandBody("subtitle_delay", 60.0),
-                CommandBody("tempo", 1.2),
             ),
             sent,
         )

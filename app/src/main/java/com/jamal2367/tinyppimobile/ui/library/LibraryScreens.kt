@@ -71,6 +71,8 @@ import com.jamal2367.tinyppimobile.ui.live.FormatNames
 import com.jamal2367.tinyppimobile.ui.live.ShelfChoice
 import com.jamal2367.tinyppimobile.ui.live.ShelfFilter
 import com.jamal2367.tinyppimobile.ui.live.ShelfFilterKind
+import com.jamal2367.tinyppimobile.ui.live.LocalShelfOrders
+import com.jamal2367.tinyppimobile.ui.live.ShelfOrder
 import com.jamal2367.tinyppimobile.ui.live.ShelfSort
 import com.jamal2367.tinyppimobile.ui.live.arranged
 import com.jamal2367.tinyppimobile.ui.live.formatsOf
@@ -147,16 +149,18 @@ fun FilmsScreen(
     }
 
     var search by rememberSaveable { mutableStateOf("") }
-    // The order and the filters, kept with the search across a turn of the
-    // phone; the filters narrow every card on the screen the search does.
-    var sort by rememberSaveable { mutableStateOf(ShelfSort.TITLE) }
+    // The filters, kept with the search across a turn of the phone, narrow
+    // every card on the screen the search does; the order is kept between
+    // launches.
+    val orders = LocalShelfOrders.current
+    val order = orders.of(SHELF_FILMS)
     var genre by rememberSaveable { mutableStateOf("") }
     var video by rememberSaveable { mutableStateOf("") }
     var resolution by rememberSaveable { mutableStateOf("") }
     var audio by rememberSaveable { mutableStateOf("") }
     val filter = ShelfFilter(genre, video, resolution, audio)
-    val shown = remember(library.films, search, sort, filter) {
-        matching(library.films, search).arranged(sort, filter)
+    val shown = remember(library.films, search, order, filter) {
+        matching(library.films, search).arranged(order, filter)
     }
     val choices = remember(library.films) {
         FilmChoices(
@@ -239,8 +243,8 @@ fun FilmsScreen(
         shelfTools(
             key = "films",
             sorts = ShelfSort.entries,
-            sort = sort,
-            onSort = { sort = it },
+            order = order,
+            onOrder = { orders.set(SHELF_FILMS, it) },
             filters = listOf(
                 ShelfChoice(ShelfFilterKind.GENRE, choices.genres, genre) { genre = it },
                 ShelfChoice(ShelfFilterKind.VIDEO, choices.video, video, FormatNames::video) { video = it },
@@ -396,10 +400,11 @@ fun SeriesScreen(
     }
 
     var search by rememberSaveable { mutableStateOf("") }
-    var sort by rememberSaveable { mutableStateOf(ShelfSort.TITLE) }
+    val orders = LocalShelfOrders.current
+    val order = orders.of(SHELF_SERIES).takeIf { it.sort in SERIES_SORTS } ?: ShelfOrder()
     var genre by rememberSaveable { mutableStateOf("") }
-    val shown = remember(series.shows, search, sort, genre) {
-        matching(series.shows, search, { it.title }, { it.year }).arranged(sort, genre)
+    val shown = remember(series.shows, search, order, genre) {
+        matching(series.shows, search, { it.title }, { it.year }).arranged(order, genre)
     }
     val genres = remember(series.shows) { genresOf(series.shows.map { it.genres }) }
     val resumable = remember(continuing.items) { continuing.items.filter { it.isEpisode } }
@@ -507,8 +512,8 @@ fun SeriesScreen(
         shelfTools(
             key = "series",
             sorts = SERIES_SORTS,
-            sort = sort,
-            onSort = { sort = it },
+            order = order,
+            onOrder = { orders.set(SHELF_SERIES, it) },
             filters = listOf(ShelfChoice(ShelfFilterKind.GENRE, genres, genre) { genre = it }),
             onReset = { genre = "" },
         )
@@ -887,6 +892,10 @@ private const val FOLD_SERIES_RECENT = "shelf.series.recent"
 
 /** A series has no running time to be put in order by. */
 private val SERIES_SORTS = ShelfSort.entries - ShelfSort.RUNTIME
+
+/** What each shelf's order is kept under. */
+private const val SHELF_FILMS = "films"
+private const val SHELF_SERIES = "series"
 
 /** The values each film filter offers, read off the shelf. */
 private class FilmChoices(

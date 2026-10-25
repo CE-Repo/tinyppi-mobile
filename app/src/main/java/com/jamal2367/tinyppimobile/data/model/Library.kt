@@ -342,7 +342,11 @@ data class TitleDetails(
     val kind: String = "",
     val id: Int = 0,
     val title: String = "",
-    /** The library's own ratings, the known sources first. */
+    /**
+     * The ratings the overview card would show for the title - the
+     * library's, MDBList's and Rotten Tomatoes' with their certificates - the
+     * known sources first.
+     */
     val ratings: List<SourceRating> = emptyList(),
     val plot: String = "",
     val tagline: String = "",
@@ -364,6 +368,8 @@ data class TitleDetails(
     val userrating: Int = 0,
     /** The place in the IMDb Top 250; 0 for none. */
     val top250: Int = 0,
+    /** The big awards it - or an episode's show - won or was nominated for. */
+    val awards: List<Award> = emptyList(),
     val genres: List<String> = emptyList(),
     val directors: List<String> = emptyList(),
     val writers: List<String> = emptyList(),

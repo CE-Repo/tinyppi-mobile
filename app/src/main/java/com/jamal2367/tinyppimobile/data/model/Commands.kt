@@ -76,10 +76,7 @@ enum class PlayerAction(val id: String) {
      * a remote sends, a 100 ms step at a time - and Kodi shows its own slider
      * on the television while it does.
      */
-    SUBTITLE_DELAY("subtitle_delay"),
-
-    /** Play at one of [TEMPOS], with the sound kept. */
-    TEMPO("tempo");
+    SUBTITLE_DELAY("subtitle_delay");
 
     companion object {
         /** The value that turns subtitles off rather than picking a track. */
@@ -88,9 +85,6 @@ enum class PlayerAction(val id: String) {
         /** How far each offset may go either way, in seconds: Kodi's own ranges. */
         const val AUDIO_DELAY_LIMIT = 10.0
         const val SUBTITLE_DELAY_LIMIT = 60.0
-
-        /** The tempos the box takes (`TEMPOS` in the add-on's `player.py`). */
-        val TEMPOS = listOf(0.8, 0.9, 1.0, 1.1, 1.2, 1.5)
 
         /** How far a seek may jump, in seconds - the add-on refuses anything wider. */
         const val SEEK_LIMIT_SECONDS = 3600.0

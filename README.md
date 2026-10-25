@@ -58,8 +58,8 @@ command endpoints.
   that was lost. A phone that opens halfway through a film gets the whole
   picture, not the part it was connected for.
 - **The player**, on a box that allows it: play, stop, seek, volume, mute,
-  audio and subtitle tracks, the audio and subtitle offsets and the tempo,
-  and the VS10 conversions the source can be put through.
+  audio and subtitle tracks, the audio and subtitle offsets, and the VS10
+  conversions the source can be put through.
 - **The library**, sorted and filtered by genre and by what the files are -
   Dolby Vision, HDR10, 4K, TrueHD and the rest - with the next episode of
   every show being watched.
@@ -190,8 +190,8 @@ The dots are a reading and come with control switched off too; *Chapter
 markers* under *Appearance* in the settings takes them off the bar.
 
 Under the track pickers sit the **fine adjustments**: the audio offset, for
-lip sync, in steps of 50 ms; the subtitle offset, in Kodi's own 100 ms steps,
-while subtitles are on; and the tempo, from 0.8× to 1.5× with the sound kept.
+lip sync, in steps of 50 ms; and the subtitle offset, in Kodi's own 100 ms
+steps, while subtitles are on.
 A tap on an offset's value puts it back to nothing. The value pressed is shown
 at once and held for a moment against the readings, so the next one, read
 before the press, does not put the old number back under the thumb. Kodi has
@@ -298,8 +298,9 @@ is remembered like the others, and is not there at all once everything has
 been seen, or while a search finds nothing unwatched.
 
 **A tap on** a film, a series, an episode or a Continue watching tile opens a
-dialog with four options: **Play** (**Resume** where the box has a point to
-resume from), **Mark as watched**, **Mark as unwatched** and **Details**.
+dialog with four options: **Details** first, then **Play** (**Resume** where
+the box has a point to resume from), **Mark as watched** and **Mark as
+unwatched**.
 
 **Details** opens a page of its own over the shelf, read from the library when
 it is asked for: the title's backdrop across the top (a film's or a series'
@@ -324,7 +325,11 @@ Continue watching — while leaving it watched or unwatched as it was.
 **Under the search box**, a card holding one row of chips that scrolls sideways puts the
 shelf in order - by title,
 the box's own order, or by year, rating, date added or, for films, running
-time; a title without the value goes last - and narrows it by genre, and for
+time; a title without the value goes last. The arrow chip beside it turns
+the order round, ascending or descending; a new order starts the way it
+reads best (the newest, the best and the latest added first, titles and
+running time from the start), and both are kept, so the shelf is in the same
+order the next time the app opens - and narrows it by genre, and for
 films by the grade (Dolby Vision, HDR10+, HDR10, HLG, SDR - and under Dolby
 Vision each profile the shelf holds, such as P5, P7 FEL or P8.1, where it holds
 more than one), the resolution (4K,
@@ -426,7 +431,7 @@ All of it.
 | `GET /api/continue` | The films and episodes left half-watched, for the row at the top of both shelves, and the next-up row. |
 | `GET /api/details` | Everything the library holds about one title, for its details page. |
 | `POST /api/mode` | The VS10 buttons. |
-| `POST /api/command` | Play/pause, stop, previous/next chapter, jump to a chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track, audio offset, subtitle offset, tempo. |
+| `POST /api/command` | Play/pause, stop, previous/next chapter, jump to a chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track, audio offset, subtitle offset. |
 | `POST /api/play` | Starting one of the library's films, or one episode of a series — resumed, or from the beginning. |
 | `POST /api/watched` | Marking a film, a series or an episode as watched or unwatched. |
 | `POST /api/resume` | Clearing the resume point of a film or an episode. |

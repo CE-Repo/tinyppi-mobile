@@ -706,24 +706,17 @@ private fun TrackPicker(
 private class TrackOff(val label: String, val onPick: () -> Unit)
 
 /**
- * The fine adjustments, under the track pickers: the audio offset, the
- * subtitle offset while there are subtitles to move, and the tempo.
+ * The fine adjustments, under the track pickers: the audio offset, and the
+ * subtitle offset while there are subtitles to move.
  *
  * Each only where the box reports it - an add-on older than them reports
- * none, and the card is as it was. The tempo picker goes on showing the
- * tempo last played at while a pause reports none, rather than vanishing
- * every time the film is held.
+ * none, and the card is as it was.
  */
 @Composable
 private fun FineSection(controls: PlayerControls, viewModel: LiveViewModel) {
-    var lastTempo by remember { mutableStateOf<Double?>(null) }
-    LaunchedEffect(controls.tempo) {
-        if (controls.tempo != null) lastTempo = controls.tempo
-    }
-    val tempo = controls.tempo ?: lastTempo
     val audio = controls.audioDelay
     val subtitles = controls.subtitleDelay?.takeIf { controls.subtitleOn }
-    if (audio == null && subtitles == null && tempo == null) return
+    if (audio == null && subtitles == null) return
 
     Column(
         verticalArrangement = Arrangement.spacedBy(TRANSPORT_GAP),
@@ -747,18 +740,6 @@ private fun FineSection(controls: PlayerControls, viewModel: LiveViewModel) {
                 step = SUBTITLE_OFFSET_STEP,
                 limit = PlayerAction.SUBTITLE_DELAY_LIMIT,
                 onSet = viewModel::setSubtitleDelay,
-            )
-        }
-        if (tempo != null) {
-            // The tempo picker is a track picker over the tempos: one of a
-            // short list, named on its button, picked from a menu.
-            TrackPicker(
-                label = stringResource(R.string.live_tempo),
-                tracks = PlayerAction.TEMPOS.mapIndexed { index, value -> Track(index, tempoText(value)) },
-                selected = PlayerAction.TEMPOS.indexOfFirst { abs(it - tempo) < TEMPO_TOLERANCE },
-                off = null,
-                onSelect = { index -> viewModel.setTempo(PlayerAction.TEMPOS[index]) },
-                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
@@ -879,9 +860,6 @@ internal fun offsetText(seconds: Double): String {
     return sign + if (size < 1000) "$size ms" else String.format(Locale.ROOT, "%.2f s", size / 1000.0)
 }
 
-/** A tempo as its picker names it: "1.0×". */
-internal fun tempoText(tempo: Double): String = String.format(Locale.ROOT, "%.1f\u00d7", tempo)
-
 /**
  * How far a press moves each offset: Kodi's own step for the subtitles, and
  * two of its 25 ms steps for the sound, which would otherwise take forty
@@ -892,6 +870,3 @@ private const val SUBTITLE_OFFSET_STEP = 0.1
 
 /** How long a pressed offset stands against the snapshots. */
 private const val OFFSET_HOLD_MS = 2000L
-
-/** How near a reported tempo has to be to one on the list to be that one. */
-private const val TEMPO_TOLERANCE = 0.001

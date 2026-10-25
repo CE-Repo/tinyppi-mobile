@@ -32,6 +32,8 @@ import com.jamal2367.tinyppimobile.ui.components.CardLayout
 import com.jamal2367.tinyppimobile.ui.components.LocalCardFolds
 import com.jamal2367.tinyppimobile.ui.components.LocalCardLayout
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
+import com.jamal2367.tinyppimobile.ui.live.LocalShelfOrders
+import com.jamal2367.tinyppimobile.ui.live.ShelfOrders
 import com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import com.jamal2367.tinyppimobile.ui.theme.isDarkTheme
@@ -87,6 +89,18 @@ private fun rememberCardFolds(container: AppContainer, settings: AppSettings): C
     return remember(settings.cardFolds) {
         CardFolds(settings.cardFolds) { id, moved ->
             scope.launch { container.settingsRepository.setCardFold(id, moved) }
+        }
+    }
+}
+
+/** The order each shelf is in, wired to where that is remembered. */
+@Composable
+private fun rememberShelfOrders(container: AppContainer, settings: AppSettings): ShelfOrders {
+    val scope = rememberCoroutineScope()
+
+    return remember(settings.shelfOrders) {
+        ShelfOrders(settings.shelfOrders) { shelf, order ->
+            scope.launch { container.settingsRepository.setShelfOrder(shelf, order) }
         }
     }
 }
@@ -219,6 +233,7 @@ class MainActivity : ComponentActivity() {
                         CompositionLocalProvider(
                             LocalCardFolds provides rememberCardFolds(container, settings),
                             LocalCardLayout provides rememberCardLayout(container, settings),
+                            LocalShelfOrders provides rememberShelfOrders(container, settings),
                         ) {
                             TinyPpiApp(container = container, hiddenTabs = settings.hiddenTabs)
                         }

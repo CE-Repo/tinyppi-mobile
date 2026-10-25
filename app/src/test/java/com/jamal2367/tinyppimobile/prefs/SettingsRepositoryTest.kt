@@ -67,6 +67,9 @@ class SettingsRepositoryTest {
         repository.setTabHidden("films", true)
         repository.setTabHidden("series", true)
         repository.setTabHidden("series", false)
+        repository.setShelfOrder("films", "YEAR:down")
+        repository.setShelfOrder("series", "TITLE")
+        repository.setShelfOrder("series", "RATING")
 
         val written = repository.settings.first()
         assertEquals(ServerConfig(enabled = false, useHttps = true, host = "box", port = 9000, token = "AB12"), written.primary)
@@ -86,6 +89,7 @@ class SettingsRepositoryTest {
         assertEquals(mapOf("live" to listOf("b", "a")), written.cardOrders)
         assertEquals(setOf("live/a", "history/c"), written.cardHidden)
         assertEquals(setOf("films"), written.hiddenTabs)
+        assertEquals(mapOf("films" to "YEAR:down", "series" to "RATING"), written.shelfOrders)
 
         repository.resetCards("live")
         repository.settings.first().let {
