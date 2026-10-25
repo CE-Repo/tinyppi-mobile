@@ -3,8 +3,10 @@ package com.jamal2367.tinyppimobile.ui.app
 import android.content.Intent
 import android.view.KeyEvent
 import android.view.WindowManager
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText

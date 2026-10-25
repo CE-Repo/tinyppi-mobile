@@ -570,8 +570,8 @@ private fun Fact(heading: String, names: String) {
 }
 
 /**
- * The cast as a row of cards that scrolls sideways: a circle with the
- * initial, the name and who they played - in billing order, with an
+ * The cast as a row of cards that scrolls sideways: a portrait with an
+ * initial as its fallback, the name and who they played - in billing order, with an
  * ellipsis at the end where the library holds more.
  */
 @Composable
@@ -586,14 +586,15 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server:
     val heights = remember(sizing, measurer, nameStyle, roleStyle, textWidth) {
         val constraints = Constraints(maxWidth = textWidth)
         val nameMinimum = measurer.measure("A\nA", nameStyle, constraints = constraints).size.height
-        val nameHeight = sizing.maxOf {
-            measurer.measure(it.name, nameStyle, constraints = constraints).size.height
+        val nameHeight = sizing.fold(0) { height, person ->
+            maxOf(height, measurer.measure(person.name, nameStyle, constraints = constraints).size.height)
         }.coerceAtLeast(nameMinimum)
         val roles = sizing.map { it.role }.filter { it.isNotEmpty() }
         val roleHeight = if (roles.isEmpty()) 0 else {
             val roleMinimum = measurer.measure("A\nA", roleStyle, constraints = constraints).size.height
-            roles.maxOf { measurer.measure(it, roleStyle, constraints = constraints).size.height }
-                .coerceAtLeast(roleMinimum)
+            roles.fold(0) { height, role ->
+                maxOf(height, measurer.measure(role, roleStyle, constraints = constraints).size.height)
+            }.coerceAtLeast(roleMinimum)
         }
         nameHeight to roleHeight
     }

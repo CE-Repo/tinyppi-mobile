@@ -716,4 +716,24 @@ class LibraryScreensTest {
         assertTrue(!said(str(R.string.series_back)))
     }
 
+    @Test
+    fun `a continue entry with no resume point offers play`() {
+        fake.api.continuing = { ContinueList(items = listOf(ContinueItem("movie", 99, "No resume"))) }
+        showFilms()
+        rule.waitUntil { has("No resume") }
+        text("No resume").performClick()
+        rule.waitUntil { has(str(R.string.title_play)) }
+        assertTrue(!said(str(R.string.title_restart)))
+    }
+
+    @Test
+    fun `a non episode in next up has no way to a show with the same id`() {
+        fake.api.continuing = { ContinueList(next = listOf(ContinueItem("movie", 99, "Unexpected film", tvshowid = 7))) }
+        showSeries()
+        rule.waitUntil { has("Unexpected film") }
+        text("Unexpected film").performClick()
+        rule.waitUntil { has(str(R.string.title_play)) }
+        assertTrue(!said(str(R.string.title_show)))
+    }
+
 }
