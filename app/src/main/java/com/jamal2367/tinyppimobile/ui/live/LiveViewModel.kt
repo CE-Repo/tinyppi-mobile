@@ -18,7 +18,6 @@ import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.data.repository.PlayerRepository
 import com.jamal2367.tinyppimobile.util.toUserMessage
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -302,38 +301,6 @@ class LiveViewModel(
 
     /** Put the driver into one of the VS10 modes this snapshot offered. */
     fun setMode(mode: String) = command { repository.setMode(mode) }
-
-    private val _details = MutableStateFlow<DetailsUiState?>(null)
-
-    /** The title whose details are open, and what has been read of them; null for none. */
-    val details: StateFlow<DetailsUiState?> = _details.asStateFlow()
-
-    private var detailsRead: Job? = null
-
-    /**
-     * Read everything the library holds about one title, for the dialog that
-     * shows it. A failure is the dialog's to show rather than a line along
-     * the bottom of the screen.
-     */
-    fun openDetails(target: MarkTarget) {
-        detailsRead?.cancel()
-        _details.value = DetailsUiState(target)
-        detailsRead = viewModelScope.launch {
-            _details.value = try {
-                DetailsUiState(target, details = repository.details(target))
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (_: Throwable) {
-                DetailsUiState(target, failed = true)
-            }
-        }
-    }
-
-    /** Close the details, letting go of a read still out. */
-    fun closeDetails() {
-        detailsRead?.cancel()
-        _details.value = null
-    }
 
     /**
      * Read the box's film library.

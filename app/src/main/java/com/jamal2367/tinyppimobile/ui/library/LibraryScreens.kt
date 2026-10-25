@@ -65,10 +65,10 @@ import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.ui.live.continueCard
-import com.jamal2367.tinyppimobile.ui.live.DetailsDialog
 import com.jamal2367.tinyppimobile.ui.live.FormatNames
 import com.jamal2367.tinyppimobile.ui.live.ShelfChoice
 import com.jamal2367.tinyppimobile.ui.live.ShelfFilter
+import com.jamal2367.tinyppimobile.ui.live.ShelfFilterKind
 import com.jamal2367.tinyppimobile.ui.live.ShelfSort
 import com.jamal2367.tinyppimobile.ui.live.arranged
 import com.jamal2367.tinyppimobile.ui.live.formatsOf
@@ -187,8 +187,7 @@ fun FilmsScreen(
     )
     ArrangeBackHandler(CardScreens.FILMS, layout)
     var asking by remember { mutableStateOf<TitleQuestion?>(null) }
-    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume, viewModel::openDetails)
-    DetailsShown(viewModel)
+    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume)
     // A press on a film asks first; playing it is the first answer.
     val askFilm: (LibraryFilm) -> Unit = { film ->
         asking = TitleQuestion(
@@ -234,20 +233,19 @@ fun FilmsScreen(
             sort = sort,
             onSort = { sort = it },
             filters = listOf(
-                ShelfChoice(choices.genres, genre, R.string.filter_genre_all) { genre = it },
-                ShelfChoice(choices.video, video, R.string.filter_video_all, FormatNames::video) {
-                    video = it
+                ShelfChoice(ShelfFilterKind.GENRE, choices.genres, genre) { genre = it },
+                ShelfChoice(ShelfFilterKind.VIDEO, choices.video, video, FormatNames::video) { video = it },
+                ShelfChoice(ShelfFilterKind.RESOLUTION, choices.resolution, resolution, { FormatNames.of(FormatNames.RESOLUTION, it) }) {
+                    resolution = it
                 },
-                ShelfChoice(
-                    choices.resolution,
-                    resolution,
-                    R.string.filter_resolution_all,
-                    { FormatNames.of(FormatNames.RESOLUTION, it) },
-                ) { resolution = it },
-                ShelfChoice(choices.audio, audio, R.string.filter_audio_all, { FormatNames.of(FormatNames.AUDIO, it) }) {
-                    audio = it
-                },
+                ShelfChoice(ShelfFilterKind.AUDIO, choices.audio, audio, { FormatNames.of(FormatNames.AUDIO, it) }) { audio = it },
             ),
+            onReset = {
+                genre = ""
+                video = ""
+                resolution = ""
+                audio = ""
+            },
         )
         val shownCards = layout.visible(CardScreens.FILMS, labels.map { it.id })
         if (shownCards.isEmpty()) allCardsHidden(CardScreens.FILMS, layout)
@@ -421,8 +419,7 @@ fun SeriesScreen(
     )
     ArrangeBackHandler(CardScreens.SERIES, layout)
     var asking by remember { mutableStateOf<TitleQuestion?>(null) }
-    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume, viewModel::openDetails)
-    DetailsShown(viewModel)
+    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume)
     // A series cannot be played, so its first answer opens it.
     val askShow: (LibraryShow) -> Unit = { show ->
         asking = TitleQuestion(show.markTarget(), R.string.title_open) { viewModel.openShow(show) }
@@ -496,7 +493,8 @@ fun SeriesScreen(
             sorts = SERIES_SORTS,
             sort = sort,
             onSort = { sort = it },
-            filters = listOf(ShelfChoice(genres, genre, R.string.filter_genre_all) { genre = it }),
+            filters = listOf(ShelfChoice(ShelfFilterKind.GENRE, genres, genre) { genre = it }),
+            onReset = { genre = "" },
         )
         val shownCards = layout.visible(CardScreens.SERIES, labels.map { it.id })
         if (shownCards.isEmpty()) allCardsHidden(CardScreens.SERIES, layout)
@@ -636,17 +634,15 @@ private fun TitleAsker(
     onDone: () -> Unit,
     onMark: (MarkTarget, Boolean) -> Unit,
     onClearResume: (MarkTarget) -> Unit,
-    onDetails: (MarkTarget) -> Unit,
 ) {
     val asked = question ?: return
-    val answers = asked.answers(onDone, onMark, onClearResume, onDetails)
+    val answers = asked.answers(onDone, onMark, onClearResume)
     TitleDialog(
         question = asked,
         onDismiss = onDone,
         onPlay = answers.onPlay,
         onMark = answers.onMark,
         onClearResume = answers.onClearResume,
-        onDetails = answers.onDetails,
     )
 }
 
@@ -655,7 +651,6 @@ private class TitleAnswers(
     val onPlay: (fromStart: Boolean) -> Unit,
     val onMark: (watched: Boolean) -> Unit,
     val onClearResume: () -> Unit,
-    val onDetails: () -> Unit,
 )
 
 /**
@@ -667,7 +662,6 @@ private fun TitleQuestion.answers(
     onDone: () -> Unit,
     onMark: (MarkTarget, Boolean) -> Unit,
     onClearResume: (MarkTarget) -> Unit,
-    onDetails: (MarkTarget) -> Unit,
 ) = TitleAnswers(
     onPlay = { fromStart ->
         onDone()
@@ -681,24 +675,7 @@ private fun TitleQuestion.answers(
         onDone()
         onClearResume(target)
     },
-    onDetails = {
-        onDone()
-        onDetails(target)
-    },
 )
-
-/**
- * The details of a title asked about, while they are open - on the page in
- * front only: the shelves are neighbouring pages, composed side by side, and
- * one question is one dialog.
- */
-@Composable
-private fun DetailsShown(viewModel: LiveViewModel) {
-    val details by viewModel.details.collectAsStateWithLifecycle()
-    val open = details ?: return
-    if (!LocalIsCurrentPage.current) return
-    DetailsDialog(open, viewModel::closeDetails)
-}
 
 /** Whether a show has an episode still to be seen. */
 private val LibraryShow.isWaiting: Boolean

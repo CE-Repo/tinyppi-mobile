@@ -62,7 +62,7 @@ command endpoints.
   and the VS10 conversions the source can be put through.
 - **The library**, sorted and filtered by genre and by what the files are -
   Dolby Vision, HDR10, 4K, TrueHD and the rest - with the next episode of
-  every show being watched, and the details of any title a tap away.
+  every show being watched.
 
 ---
 
@@ -298,8 +298,8 @@ is remembered like the others, and is not there at all once everything has
 been seen, or while a search finds nothing unwatched.
 
 **A tap on** a film, a series, an episode or a Continue watching tile opens a
-dialog with four options: **Play** (**Resume** where the box has a point to
-resume from), **Mark as watched**, **Mark as unwatched** and **Details**. A series cannot be
+dialog with three options: **Play** (**Resume** where the box has a point to
+resume from), **Mark as watched** and **Mark as unwatched**. A series cannot be
 played, so its first option is **Open**, which shows its episodes. Marking is
 written into Kodi's own library — a series marked either way is every episode
 of it — and every shelf is read again at once, so the tick and the unwatched
@@ -310,13 +310,8 @@ A film or an episode that was stopped part-way through gets two more options:
 and **Clear resume point**, which forgets where it got to — taking it off
 Continue watching — while leaving it watched or unwatched as it was.
 
-**Details** reads everything the library holds about the title when it is
-asked for - the year, the running time and the age rating, the formats of the
-file, the slogan and the plot, the genres, the director, the writers, the
-studio, the library's ratings and the cast - and shows it in a dialog of its
-own. A box that cannot answer says so in the dialog.
-
-**Under the search box**, a row of chips puts the shelf in order - by title,
+**Under the search box**, one row of chips that scrolls sideways puts the
+shelf in order - by title,
 the box's own order, or by year, rating, date added or, for films, running
 time; a title without the value goes last - and narrows it by genre, and for
 films by the grade (Dolby Vision, HDR10+, HDR10, HLG, SDR - and under Dolby
@@ -326,8 +321,10 @@ more than one), the resolution (4K,
 MA, Dolby Digital Plus, ...). A chip offers only what the shelf holds, and a
 filter with nothing to choose between is not drawn. The filters narrow every
 card on the screen the way the search does, and are kept with it across a turn
-of the phone. Kodi does not record Atmos or DTS:X in its library, so the sound
-is filtered by the codec it rides on.
+of the phone. A chip names what it is set to and takes the accent once a
+filter is chosen, and while any is, a last chip puts them all back. Kodi does
+not record Atmos or DTS:X in its library, so the sound is filtered by the
+codec it rides on.
 
 **Next up**, on the series screen, holds the next unwatched episode of each
 show being watched - its first unseen one in episode order, specials left out
@@ -416,7 +413,6 @@ All of it.
 | `GET /api/series` | The series it has, for the wall under them. |
 | `GET /api/episodes` | The episodes of one series, read when it is opened. |
 | `GET /api/continue` | The films and episodes left half-watched, for the row at the top of both shelves, and the next-up row. |
-| `GET /api/details` | Everything the library holds about one title, for its details. |
 | `POST /api/mode` | The VS10 buttons. |
 | `POST /api/command` | Play/pause, stop, previous/next chapter, jump to a chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track, audio offset, subtitle offset, tempo. |
 | `POST /api/play` | Starting one of the library's films, or one episode of a series — resumed, or from the beginning. |

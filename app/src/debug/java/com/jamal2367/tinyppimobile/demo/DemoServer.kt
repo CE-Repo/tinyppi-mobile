@@ -741,51 +741,6 @@ object DemoServer {
         put("tag", "demo-$libraryRevision")
     }
 
-    /** One title's details, as `/api/details` answers them; null for a title the box does not have. */
-    private fun details(query: Map<String, String>): JsonObject? {
-        query["movieid"]?.toIntOrNull()?.let { id -> return films.firstOrNull { it.id == id }?.let(::filmDetails) }
-        query["tvshowid"]?.toIntOrNull()?.let { id ->
-            val show = shows.firstOrNull { it.id == id } ?: return null
-            return buildJsonObject {
-                put("kind", "tvshow"); put("id", show.id); put("title", show.title); put("year", show.year)
-                put("season", show.seasons)
-                putJsonArray("genres") { add(SHOW_GENRES[show.id % SHOW_GENRES.size]) }
-                putJsonArray("ratings") { add(rating("imdb", show.rating, (show.rating * 40_000).toInt())) }
-            }
-        }
-        val id = query["episodeid"]?.toIntOrNull() ?: return null
-        val show = showOfEpisode(id) ?: return null
-        val season = id % 1000 / 100
-        val episode = id % 100
-        return buildJsonObject {
-            put("kind", "episode"); put("id", id); put("title", episodeTitle(season, episode))
-            put("show", show.title); put("tvshowid", show.id); put("season", season); put("episode", episode)
-            put("duration", 52 * 60)
-            putJsonArray("ratings") { add(rating("imdb", show.rating, 0)) }
-        }
-    }
-
-    private fun filmDetails(film: Film) = buildJsonObject {
-        put("kind", "movie"); put("id", film.id); put("title", film.title); put("year", film.year)
-        put("duration", film.minutes * 60); put("plot", film.plot); put("tagline", film.tagline)
-        put("mpaa", film.mpaa); put("userrating", film.mine); put("top250", film.top250)
-        putJsonArray("genres") { add(film.genre) }
-        putJsonArray("directors") { film.credits.directors.forEach { add(it) } }
-        putJsonArray("studios") { film.credits.studios.forEach { add(it) } }
-        putJsonArray("cast") {
-            film.credits.cast.forEach { name -> add(buildJsonObject { put("name", name); put("role", "") }) }
-        }
-        putJsonArray("ratings") { filmRatings(film).forEach { (source, value, votes) -> add(rating(source, value, votes)) } }
-        put("video", FILM_VIDEO[film.id % FILM_VIDEO.size])
-        if (film.id % FILM_VIDEO.size == 0) put("dv_profile", DV_PROFILES[film.id % DV_PROFILES.size])
-        put("resolution", if (film.id % 3 == 0) "1080p" else "2160p")
-        put("audio", FILM_AUDIO[film.id % FILM_AUDIO.size])
-    }
-
-    private fun rating(source: String, value: Double, votes: Int) = buildJsonObject {
-        put("source", source); put("rating", value); put("votes", votes)
-    }
-
     /* --- Commands --------------------------------------------------------- */
 
     private fun command(path: String, body: String): JsonObject = synchronized(lock) {
@@ -977,8 +932,6 @@ object DemoServer {
                     path == "/api/series" -> respondJson(out, series())
                     path == "/api/episodes" -> respondJson(out, episodes(query["tvshowid"]?.toIntOrNull() ?: 0))
                     path == "/api/continue" -> respondJson(out, continuing())
-                    path == "/api/details" -> details(query)?.let { respondJson(out, it) }
-                        ?: respond(out, 404, "application/json", """{"error":"no such title"}""".toByteArray())
                     else -> respond(out, 404, "application/json", """{"error":"not found"}""".toByteArray())
                 }
             } catch (_: IOException) {

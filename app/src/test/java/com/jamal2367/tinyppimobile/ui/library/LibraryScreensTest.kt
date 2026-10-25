@@ -1,6 +1,10 @@
 package com.jamal2367.tinyppimobile.ui.library
 
 import android.content.Context
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
@@ -14,6 +18,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
@@ -30,9 +35,6 @@ import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
 import com.jamal2367.tinyppimobile.data.model.Snapshot
-import com.jamal2367.tinyppimobile.data.model.CastMember
-import com.jamal2367.tinyppimobile.data.model.SourceRating
-import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
 import com.jamal2367.tinyppimobile.data.repository.LiveState
@@ -317,11 +319,13 @@ class LibraryScreensTest {
         }
         showFilms()
         rule.waitUntil { has("Heat") }
-        text(str(R.string.shelf_sort, str(R.string.sort_title))).performClick()
+        rule.onNodeWithContentDescription(str(R.string.shelf_sort, str(R.string.sort_title))).performClick()
         text(str(R.string.sort_year)).performClick()
-        rule.waitUntil { has(str(R.string.shelf_sort, str(R.string.sort_year))) }
+        rule.waitUntil {
+            rule.onAllNodesWithContentDescription(str(R.string.shelf_sort, str(R.string.sort_year))).fetchSemanticsNodes().isNotEmpty()
+        }
 
-        text(str(R.string.filter_genre_all)).performClick()
+        text(str(R.string.filter_genre)).performClick()
         text("Crime").performClick()
         rule.waitUntil { !has("Dune") }
         assertTrue(has("Heat"))
@@ -329,7 +333,7 @@ class LibraryScreensTest {
         text(str(R.string.filter_genre_all)).performClick()
         rule.waitUntil { has("Dune") }
 
-        text(str(R.string.filter_video_all)).performClick()
+        text(str(R.string.filter_video)).performClick()
         text("SDR").performClick()
         rule.waitUntil { !has("Alien") }
         // Each Dolby Vision profile on the shelf is a choice of its own.
@@ -338,15 +342,18 @@ class LibraryScreensTest {
         rule.waitUntil { has("Alien") && !has("Dune") }
         text("Dolby Vision P5").performClick()
         text(str(R.string.filter_video_all)).performClick()
-        text(str(R.string.filter_resolution_all)).performClick()
+        text(str(R.string.filter_resolution)).performClick()
         text("4K").performClick()
         rule.waitUntil { !has("Heat") }
         text("4K").performClick()
         text(str(R.string.filter_resolution_all)).performClick()
         // Only the sound the app has a name for counts as a choice; one choice is no filter.
-        text(str(R.string.filter_audio_all)).performClick()
+        text(str(R.string.filter_audio)).performClick()
         text("DTS").performClick()
         rule.waitUntil { !has("Dune") && has("Heat") }
+        // One press puts every filter back.
+        text(str(R.string.filter_reset)).performScrollTo().performClick()
+        rule.waitUntil { has("Dune") && has(str(R.string.filter_audio)) }
     }
 
     @Test
@@ -359,11 +366,16 @@ class LibraryScreensTest {
         }
         showSeries()
         rule.waitUntil { has("Chernobyl") }
-        text(str(R.string.shelf_sort, str(R.string.sort_title))).performClick()
+        rule.onNodeWithContentDescription(str(R.string.shelf_sort, str(R.string.sort_title))).performClick()
         // A series has no running time to be put in order by.
         assertTrue(!has(str(R.string.sort_runtime)))
         text(str(R.string.sort_rating)).performClick()
-        text(str(R.string.filter_genre_all)).performClick()
+        text(str(R.string.filter_genre)).performClick()
+        text("History").performClick()
+        rule.waitUntil { !has("Silo") }
+        text(str(R.string.filter_reset)).performScrollTo().performClick()
+        rule.waitUntil { has("Silo") }
+        text(str(R.string.filter_genre)).performClick()
         text("History").performClick()
         rule.waitUntil { !has("Silo") }
 
@@ -376,57 +388,21 @@ class LibraryScreensTest {
         rule.waitForIdle()
         assertEquals(1, fake.api.count("playEpisode"))
         settle()
-        rule.onAllNodesWithText("Dark").onFirst().performClick()
-        rule.onNodeWithText(str(R.string.title_details)).performClick()
-        rule.waitForIdle()
-        fake.playing(Snapshot(control = true, playing = false, libraryRevision = 3, title = "Something else"))
-        rule.waitForIdle()
-        rule.onNodeWithText(str(R.string.details_close)).performClick()
         text(str(R.string.next_up_count, 1)).performClick()
         text(str(R.string.next_up_count, 1)).performClick()
-        text("Chernobyl").performClick()
-        rule.onNodeWithText(str(R.string.title_details)).performClick()
-        rule.waitForIdle()
-        rule.onNodeWithText(str(R.string.details_close)).performClick()
-        assertEquals(2, fake.api.count("details"))
     }
 
     @Test
-    fun `a title's details are read when asked for, and a failure says so`() {
-        fake.api.details = { kind, id ->
-            TitleDetails(
-                kind = kind, id = id, title = "Heat", plot = "A heist.", tagline = "A Los Angeles crime saga",
-                year = 1995, duration = 10200, mpaa = "Rated R", genres = listOf("Crime"),
-                directors = listOf("Michael Mann"), writers = listOf("M. Mann"), studios = listOf("Warner"),
-                cast = listOf(CastMember("Al Pacino", "Vincent"), CastMember("Val Kilmer", "")), castMore = true,
-                ratings = listOf(SourceRating("imdb", 8.3), SourceRating("kinopoisk", 8.0)), userrating = 9, top250 = 120,
-                video = "dv", dvProfile = "7 FEL", resolution = "2160p", audio = "weird",
-            )
+    fun `the shelves keep still while what holds them is drawn again`() {
+        var pass by mutableIntStateOf(0)
+        rule.show(CardState()) {
+            // Read here, so a change runs the caller again with the same screens in it.
+            Text("pass $pass")
+            FilmsScreen(onOpenSettings = {}, viewModel = fake.viewModel)
+            SeriesScreen(onOpenSettings = {}, viewModel = fake.viewModel)
         }
-        showFilms()
-        rule.waitUntil { has("Heat") }
-        text("Heat").performClick()
-        rule.onNodeWithText(str(R.string.title_details)).performClick()
-        rule.waitUntil { has("A heist.") }
-        // The screen moving under the open dialog leaves it as it is.
-        fake.playing(Snapshot(control = true, playing = false, libraryRevision = 3, title = "Something else"))
         rule.waitForIdle()
-        for (shown in listOf(
-            "1995 · 2 h 50 min · Rated R", "Dolby Vision P7 FEL", "4K", "weird", "A Los Angeles crime saga",
-            "Crime", "Michael Mann", "M. Mann", "Warner", "Al Pacino (Vincent), Val Kilmer, …",
-            "IMDb 8.3, kinopoisk 8.0, ${str(R.string.live_rating_mine)} 9, ${str(R.string.live_rating_top250, 120)}",
-        )) {
-            assertTrue(shown, has(shown))
-        }
-        rule.onNodeWithText(str(R.string.details_close)).performClick()
-
-        fake.api.details = { _, _ -> throw ApiFailure.Api(404, "no such title") }
-        text("Gravity").performClick()
-        rule.onNodeWithText(str(R.string.title_details)).performClick()
-        rule.waitUntil { has(str(R.string.details_failed)) }
-        rule.onNodeWithText(str(R.string.details_close)).performClick()
-        rule.waitForIdle()
-        assertTrue(!has(str(R.string.details_failed)))
-
+        pass++
+        rule.waitUntil { has("pass 1") }
     }
 }

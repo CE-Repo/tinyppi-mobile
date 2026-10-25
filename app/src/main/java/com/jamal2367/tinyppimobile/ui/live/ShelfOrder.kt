@@ -1,31 +1,54 @@
 package com.jamal2367.tinyppimobile.ui.live
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.ArrowDropDown
+import androidx.compose.material.icons.rounded.AspectRatio
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.FilterAltOff
+import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.HdrOn
+import androidx.compose.material.icons.rounded.TheaterComedy
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.ui.components.withKeyTick
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
+import com.jamal2367.tinyppimobile.ui.theme.PillShape
+import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 
 /**
  * The orders a shelf can be put in. Title is the box's own order - Kodi's
@@ -149,10 +172,17 @@ internal fun formatsOf(values: List<String>, names: Map<String, String>): List<S
 }
 
 /**
- * The order and the filters, as a row of chips under the search box: each
- * names what it is set to and opens the choices under a press. A filter with
- * fewer than two to choose between has nothing to narrow and is not drawn,
- * which is also what an add-on too old to send them gets.
+ * The order and the filters, as one row of chips under the search box that
+ * scrolls sideways rather than piling up in lines: a shelf is for looking at
+ * posters, and three lines of controls over it were a third of a phone's
+ * screen spent before the first one.
+ *
+ * Each chip carries an icon and a short name - Genre, Picture, Resolution,
+ * Sound - and takes the colour of a chosen filter once one is set, naming
+ * what it is set to; the order says which it is. A filter with fewer than two
+ * to choose between has nothing to narrow and is not drawn, which is also
+ * what an add-on too old to send them gets. While any filter is set, a last
+ * chip puts them all back.
  */
 internal fun LazyListScope.shelfTools(
     key: String,
@@ -160,50 +190,104 @@ internal fun LazyListScope.shelfTools(
     sort: ShelfSort,
     onSort: (ShelfSort) -> Unit,
     filters: List<ShelfChoice>,
+    onReset: () -> Unit,
 ) {
     item(key = "$key-tools") {
-        FlowRow(
+        val shown = filters.filter { it.values.size > 1 }
+        Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(bottom = CardGap),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                // Out to the screen's edges, so the row is seen to go on
+                // under them rather than stop short at the cards' margin.
+                .layout { measurable, constraints ->
+                    val edge = ScreenEdge.roundToPx()
+                    val wide = measurable.measure(
+                        constraints.copy(minWidth = constraints.maxWidth + 2 * edge, maxWidth = constraints.maxWidth + 2 * edge),
+                    )
+                    layout(constraints.maxWidth, wide.height) { wide.place(-edge, 0) }
+                }
+                .horizontalScroll(rememberScrollState())
+                .padding(start = ScreenEdge, end = ScreenEdge, bottom = CardGap),
         ) {
+            val sortNames = sorts.map { stringResource(it.label) }
             ChoiceChip(
-                label = stringResource(R.string.shelf_sort, stringResource(sort.label)),
+                icon = Icons.AutoMirrored.Rounded.Sort,
+                label = stringResource(sort.label),
+                description = stringResource(R.string.shelf_sort, stringResource(sort.label)),
                 selected = false,
-                options = sorts.map { stringResource(it.label) },
+                options = sortNames,
+                chosen = sorts.indexOf(sort),
                 onPick = { onSort(sorts[it]) },
             )
-            for (filter in filters) {
-                if (filter.values.size < 2) continue
-                val all = stringResource(filter.all)
+            for (filter in shown) {
+                val all = stringResource(filter.kind.all)
+                val label = if (filter.current.isEmpty()) stringResource(filter.kind.label) else filter.name(filter.current)
                 ChoiceChip(
-                    label = if (filter.current.isEmpty()) all else filter.name(filter.current),
+                    icon = filter.kind.icon,
+                    label = label,
+                    description = if (filter.current.isEmpty()) all else label,
                     selected = filter.current.isNotEmpty(),
                     options = listOf(all) + filter.values.map(filter.name),
+                    chosen = filter.values.indexOf(filter.current) + 1,
                     onPick = { filter.onPick(if (it == 0) "" else filter.values[it - 1]) },
+                )
+            }
+            if (shown.any { it.current.isNotEmpty() }) {
+                AssistChip(
+                    onClick = withKeyTick(onReset),
+                    label = { Text(stringResource(R.string.filter_reset), maxLines = 1) },
+                    leadingIcon = { Icon(Icons.Rounded.FilterAltOff, contentDescription = null, Modifier.size(18.dp)) },
+                    shape = PillShape,
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh),
+                    modifier = Modifier.height(CHIP_HEIGHT),
                 )
             }
         }
     }
 }
 
+/** What a shelf can be filtered by: the chip's short name, its "all" choice and its icon. */
+enum class ShelfFilterKind(
+    @param:StringRes val label: Int,
+    @param:StringRes val all: Int,
+    val icon: ImageVector,
+) {
+    GENRE(R.string.filter_genre, R.string.filter_genre_all, Icons.Rounded.TheaterComedy),
+    VIDEO(R.string.filter_video, R.string.filter_video_all, Icons.Rounded.HdrOn),
+    RESOLUTION(R.string.filter_resolution, R.string.filter_resolution_all, Icons.Rounded.AspectRatio),
+    AUDIO(R.string.filter_audio, R.string.filter_audio_all, Icons.Rounded.GraphicEq),
+}
+
 /**
- * One filter: the values the shelf offers, the one chosen ("" for all), what
- * the "all" choice is called, what each value is called, and what picking one
- * does.
+ * One filter: which it is, the values the shelf offers, the one chosen (""
+ * for all), what each value is called, and what picking one does.
  */
 internal class ShelfChoice(
+    val kind: ShelfFilterKind,
     val values: List<String>,
     val current: String,
-    @param:StringRes val all: Int,
     val name: (String) -> String = { it },
     val onPick: (String) -> Unit,
 )
 
+/**
+ * One chip: an icon and what it is set to, on the search box's own ground and
+ * hairline so the head of the shelf reads as one piece; a chosen filter takes
+ * the tonal colour instead. A press opens the choices, the one in force
+ * ticked.
+ */
 @Composable
 private fun ChoiceChip(
+    icon: ImageVector,
     label: String,
+    description: String,
     selected: Boolean,
     options: List<String>,
+    chosen: Int,
     onPick: (Int) -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
@@ -213,12 +297,36 @@ private fun ChoiceChip(
             selected = selected,
             onClick = withKeyTick { open = true },
             label = { Text(label, maxLines = 1) },
-            trailingIcon = { Icon(Icons.Rounded.ArrowDropDown, contentDescription = null) },
+            leadingIcon = { Icon(icon, contentDescription = null, Modifier.size(18.dp)) },
+            trailingIcon = { Icon(Icons.Rounded.ArrowDropDown, contentDescription = null, Modifier.size(18.dp)) },
+            shape = PillShape,
+            colors = FilterChipDefaults.filterChipColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                selectedLeadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                selectedTrailingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            ),
+            border = FilterChipDefaults.filterChipBorder(
+                enabled = true,
+                selected = selected,
+                borderColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                selectedBorderColor = MaterialTheme.colorScheme.secondaryContainer,
+            ),
+            modifier = Modifier
+                .height(CHIP_HEIGHT)
+                .semantics { contentDescription = description },
         )
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             options.forEachIndexed { index, option ->
                 DropdownMenuItem(
                     text = { Text(option) },
+                    trailingIcon = if (index == chosen) {
+                        { Icon(Icons.Rounded.Check, contentDescription = null) }
+                    } else {
+                        null
+                    },
                     onClick = {
                         open = false
                         pick(index)
@@ -228,3 +336,6 @@ private fun ChoiceChip(
         }
     }
 }
+
+/** As tall as a finger needs, and no taller: the row is a head, not a keypad. */
+private val CHIP_HEIGHT = 40.dp

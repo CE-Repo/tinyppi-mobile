@@ -12,7 +12,6 @@ import com.jamal2367.tinyppimobile.data.model.PlayBody
 import com.jamal2367.tinyppimobile.data.model.PlayEpisodeBody
 import com.jamal2367.tinyppimobile.data.model.ResumeBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
-import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.model.WatchedBody
 import com.jamal2367.tinyppimobile.data.remote.TinyPpiApi
 import kotlinx.serialization.json.Json
@@ -41,8 +40,6 @@ class FakeApi : TinyPpiApi {
     var clearResume: suspend (ResumeBody) -> CommandAck = { CommandAck(ok = true) }
     var playEpisode: suspend (Int) -> CommandAck = { CommandAck(ok = true) }
     var setWatched: suspend (WatchedBody) -> CommandAck = { CommandAck(ok = true) }
-    /** A title's details, given which of the three ids was asked for ("movie", "tvshow", "episode"). */
-    var details: suspend (String, Int) -> TitleDetails = { kind, id -> TitleDetails(kind = kind, id = id) }
 
     val calls = mutableListOf<String>()
 
@@ -81,15 +78,6 @@ class FakeApi : TinyPpiApi {
     override suspend fun continuing(): ContinueList {
         calls += "continuing"
         return continuing.invoke()
-    }
-
-    override suspend fun details(movieId: Int?, showId: Int?, episodeId: Int?): TitleDetails {
-        calls += "details"
-        return when {
-            movieId != null -> details.invoke("movie", movieId)
-            showId != null -> details.invoke("tvshow", showId)
-            else -> details.invoke("episode", episodeId!!)
-        }
     }
 
     override suspend fun setMode(body: ModeBody): CommandAck {

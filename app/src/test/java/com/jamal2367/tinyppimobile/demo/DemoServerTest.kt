@@ -100,17 +100,10 @@ class DemoServerTest {
         assertTrue(json("/api/history")["events"]!!.jsonArray.size == 5)
         assertEquals(404, get("/api/nothing").first)
 
-        // The next-up row, the sorting fields, and a title's details of every kind.
+        // The next-up row and the sorting fields.
         assertTrue(continuing["next"]!!.jsonArray.isNotEmpty())
+        assertEquals("8.1", json("/api/library")["movies"]!!.jsonArray[7].jsonObject["dv_profile"]!!.jsonPrimitive.content)
         assertEquals("Science Fiction", json("/api/library")["movies"]!!.jsonArray.first().jsonObject["genres"]!!.jsonArray.first().jsonPrimitive.content)
-        assertEquals("Dune: Part Two", json("/api/details?movieid=1")["title"]!!.jsonPrimitive.content)
-        assertEquals("tvshow", json("/api/details?tvshowid=101")["kind"]!!.jsonPrimitive.content)
-        assertEquals("Severance", json("/api/details?episodeid=101102")["show"]!!.jsonPrimitive.content)
-        assertEquals("1080p", json("/api/details?movieid=3")["resolution"]!!.jsonPrimitive.content)
-        assertEquals("8.1", json("/api/details?movieid=8")["dv_profile"]!!.jsonPrimitive.content)
-        for (unknown in listOf("movieid=999", "movieid=x", "tvshowid=1", "tvshowid=x", "episodeid=5", "episodeid=x", "")) {
-            assertEquals(unknown, 404, get("/api/details?$unknown").first)
-        }
 
         // Pictures of every kind, drawn once and then served again.
         for (query in listOf(

@@ -91,15 +91,6 @@ class PlayerRepositoryTest {
     }
 
     @Test
-    fun `details name the title by the id its kind goes by`() = runBlocking {
-        val movie = repository.details(MarkTarget(MarkTarget.Kind.MOVIE, 1, "a"))
-        val show = repository.details(MarkTarget(MarkTarget.Kind.SHOW, 2, "b"))
-        val episode = repository.details(MarkTarget(MarkTarget.Kind.EPISODE, 3, "c"))
-        assertEquals(listOf("movie" to 1, "tvshow" to 2, "episode" to 3),
-                     listOf(movie, show, episode).map { it.kind to it.id })
-    }
-
-    @Test
     fun `the shelves and the library calls go to their endpoints`() = runBlocking {
         val bodies = mutableListOf<Any>()
         api.setWatched = { bodies += it; CommandAck(ok = true) }
