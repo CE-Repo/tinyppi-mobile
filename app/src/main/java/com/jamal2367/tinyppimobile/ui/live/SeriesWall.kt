@@ -162,6 +162,7 @@ internal fun LazyListScope.episodeList(
     onBack: () -> Unit,
     onSeason: (Int) -> Unit,
     onPlay: (LibraryEpisode) -> Unit,
+    onDetails: (LibraryEpisode) -> Unit,
 ) {
     item(key = "episode-heading") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -225,6 +226,7 @@ internal fun LazyListScope.episodeList(
                     starting = starting == episode.id,
                     enabled = starting == null,
                     onPlay = { onPlay(episode) },
+                    onDetails = { onDetails(episode) },
                 )
             }
         }
@@ -337,7 +339,7 @@ private fun SeasonHeading(
     }
 }
 
-/** One episode: its still, which one it is, its name, and a press that starts it. */
+/** One episode: tap for details, hold for playback and library actions. */
 @Composable
 private fun EpisodeRow(
     episode: LibraryEpisode,
@@ -345,11 +347,12 @@ private fun EpisodeRow(
     starting: Boolean,
     enabled: Boolean,
     onPlay: () -> Unit,
+    onDetails: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = enabled, onClick = onPlay),
+            .combinedClickable(enabled = enabled, onClick = onDetails, onLongClick = onPlay),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -248,10 +248,10 @@ class LibraryScreensTest {
         rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
         rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
         rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
-        text("S01E02").performClick()
+        text("S01E02").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_restart)).performClick()
         settle()
-        text("Loose").performClick()
+        text("Loose").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_play)).performClick()
         rule.waitForIdle()
         assertEquals(2, fake.api.count("playEpisode"))
@@ -276,6 +276,33 @@ class LibraryScreensTest {
         rule.onAllNodesWithText("Untitled").onFirst().performClick()
         rule.onNodeWithText(str(R.string.title_resume)).performClick()
         settle()
+    }
+
+    @Test
+    fun `an episode tap opens its details and playback closes them`() {
+        fake.api.details = { kind, id ->
+            assertEquals("episode", kind)
+            assertEquals(72, id)
+            TitleDetails(kind = kind, id = id, plot = "Episode details.")
+        }
+        showSeries()
+        rule.waitUntil { has("Dark") }
+        text("Dark").performTouchInput { longClick() }
+        rule.onNodeWithText(str(R.string.title_open)).performClick()
+        rule.waitUntil { has(str(R.string.series_back)) }
+        rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
+
+        text("S01E02").performClick()
+        rule.waitUntil { has("Episode details.") }
+        assertTrue(!has(str(R.string.mark_cancel)))
+        assertEquals(0, fake.api.count("playEpisode"))
+        rule.onNodeWithText(str(R.string.title_resume)).assertIsDisplayed()
+        rule.onNodeWithText(str(R.string.title_restart)).assertIsDisplayed()
+        rule.onNodeWithText(str(R.string.title_resume)).performClick()
+        settle()
+        assertTrue(!has("Episode details."))
+        assertTrue(has(str(R.string.series_back)))
+        assertEquals(1, fake.api.count("playEpisode"))
     }
 
     @Test

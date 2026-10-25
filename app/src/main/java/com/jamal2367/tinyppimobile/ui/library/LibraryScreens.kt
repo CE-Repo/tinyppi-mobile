@@ -488,6 +488,16 @@ fun SeriesScreen(
         ) { fromStart -> viewModel.playEpisode(episode, fromStart) }
     }
 
+    val detailsEpisode: (LibraryEpisode) -> Unit = { episode ->
+        val question = TitleQuestion(
+            episode.markTarget(),
+            if (episode.resume > 0) R.string.title_resume else R.string.title_play,
+            resumable = episode.resume > 0,
+        ) { fromStart -> viewModel.playEpisode(episode, fromStart) }
+        detailed = question.detailsActions(viewModel)
+        viewModel.openDetails(question.target)
+    }
+
     // The way out of a show is the way back, and on this screen the system's
     // own back gesture is the one nearest a thumb. Without this it would leave
     // the shelf altogether, which is a whole tab further than anybody pressing
@@ -526,6 +536,7 @@ fun SeriesScreen(
                 onBack = viewModel::closeShow,
                 onSeason = viewModel::toggleSeason,
                 onPlay = askEpisode,
+                onDetails = detailsEpisode,
             )
             return@Shelf
         }
