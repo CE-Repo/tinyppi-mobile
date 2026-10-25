@@ -8,6 +8,8 @@ package com.jamal2367.tinyppimobile.ui.live
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -718,29 +720,41 @@ private fun FineSection(controls: PlayerControls, viewModel: LiveViewModel) {
     val subtitles = controls.subtitleDelay?.takeIf { controls.subtitleOn }
     if (audio == null && subtitles == null) return
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(TRANSPORT_GAP),
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = TRACK_GAP),
     ) {
-        if (audio != null) {
-            OffsetStepper(
-                label = stringResource(R.string.live_audio_offset),
-                reported = audio,
-                step = AUDIO_OFFSET_STEP,
-                limit = PlayerAction.AUDIO_DELAY_LIMIT,
-                onSet = viewModel::setAudioDelay,
-            )
-        }
-        if (subtitles != null) {
-            OffsetStepper(
-                label = stringResource(R.string.live_subtitle_offset),
-                reported = subtitles,
-                step = SUBTITLE_OFFSET_STEP,
-                limit = PlayerAction.SUBTITLE_DELAY_LIMIT,
-                onSet = viewModel::setSubtitleDelay,
-            )
+        val density = LocalDensity.current
+        val minimum = 148.dp * maxOf(1f, density.fontScale)
+        val paired = audio != null && subtitles != null && maxWidth >= minimum * 2 + TRANSPORT_GAP
+        val stepperWidth = if (paired) with(density) {
+            ((constraints.maxWidth - TRANSPORT_GAP.roundToPx()) / 2).toDp()
+        } else maxWidth
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(TRANSPORT_GAP),
+            verticalArrangement = Arrangement.spacedBy(TRANSPORT_GAP),
+        ) {
+            if (audio != null) {
+                OffsetStepper(
+                    modifier = Modifier.width(stepperWidth),
+                    label = stringResource(R.string.live_audio_offset),
+                    reported = audio,
+                    step = AUDIO_OFFSET_STEP,
+                    limit = PlayerAction.AUDIO_DELAY_LIMIT,
+                    onSet = viewModel::setAudioDelay,
+                )
+            }
+            if (subtitles != null) {
+                OffsetStepper(
+                    modifier = Modifier.width(stepperWidth),
+                    label = stringResource(R.string.live_subtitle_offset),
+                    reported = subtitles,
+                    step = SUBTITLE_OFFSET_STEP,
+                    limit = PlayerAction.SUBTITLE_DELAY_LIMIT,
+                    onSet = viewModel::setSubtitleDelay,
+                )
+            }
         }
     }
 }
@@ -755,6 +769,7 @@ private fun FineSection(controls: PlayerControls, viewModel: LiveViewModel) {
  */
 @Composable
 private fun OffsetStepper(
+    modifier: Modifier = Modifier,
     label: String,
     reported: Double,
     step: Double,
@@ -775,7 +790,7 @@ private fun OffsetStepper(
     val shown = offsetText(offset.value)
     val reset = stringResource(R.string.live_offset_reset)
 
-    Column(verticalArrangement = Arrangement.spacedBy(TRACK_GAP)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(TRACK_GAP)) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
@@ -798,6 +813,7 @@ private fun OffsetStepper(
             )
             FilledTonalButton(
                 onClick = withKeyTick(offset::reset),
+                contentPadding = PaddingValues(horizontal = 4.dp),
                 shape = TRANSPORT_SHAPE,
                 colors = neutralTonalButtonColors(),
                 modifier = Modifier

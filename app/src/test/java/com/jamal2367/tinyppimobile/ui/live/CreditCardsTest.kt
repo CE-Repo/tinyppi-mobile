@@ -35,8 +35,23 @@ class CreditCardsTest {
     @Test
     fun `larger text grows every card without clipping`() = checkCards(1.5f)
 
+    @Test
+    fun `portrait cards keep names roles and a fallback visible`() {
+        rule.show {
+            DetailsBody(
+                TitleDetails(cast = listOf(CastMember("Actor", "Character", "1234abcd"))),
+                com.jamal2367.tinyppimobile.data.prefs.ServerConfig(host = "127.0.0.1", port = 1),
+            )
+        }
+        rule.waitForIdle()
+        assertEquals(1, rule.onAllNodesWithTag("credit-card").fetchSemanticsNodes().size)
+        rule.onNodeWithText("Actor").assertExists()
+        rule.onNodeWithText("Character").assertExists()
+        rule.onNodeWithText("A").assertExists()
+    }
+
     private fun checkCards(fontScale: Float) {
-        val names = listOf("Stephen Norrington", "David S. Goyer", "Wesley Snipes", "An Actor With A Very Long Name")
+        val names = listOf("Wesley Snipes", "An Actor With A Very Long Name", "Stephen Norrington", "David S. Goyer")
         val crewRoles = listOf("Director", "Writer")
         val roles = listOf("Blade", "A character with a complete and unusually long name")
         rule.show {
@@ -44,9 +59,9 @@ class CreditCardsTest {
             CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
                 Column(verticalArrangement = Arrangement.spacedBy(22.dp)) {
                     DetailsBody(TitleDetails(
-                        directors = listOf(names[0]),
-                        writers = listOf(names[1]),
-                        cast = listOf(CastMember(names[2], roles[0]), CastMember(names[3], roles[1])),
+                        directors = listOf(names[2]),
+                        writers = listOf(names[3]),
+                        cast = listOf(CastMember(names[0], roles[0]), CastMember(names[1], roles[1])),
                     ))
                 }
             }
@@ -56,14 +71,19 @@ class CreditCardsTest {
         assertEquals(4, cards.size)
         assertEquals(1, cards.map { it.width }.distinct().size)
         assertEquals(cards[0].height, cards[1].height, 0f)
-        assertEquals(cards[2].height, cards[3].height, 0f)
+        assertEquals(1, cards.map { it.height }.distinct().size)
         for ((index, name) in names.withIndex()) {
             val card = cards[index]
             val initial = rule.onNodeWithText(name.take(1)).fetchSemanticsNode().boundsInRoot
-            val lastText = if (index < 2) crewRoles[index] else roles[index - 2]
+            val lastText = if (index < 2) roles[index] else crewRoles[index - 2]
             val last = rule.onNodeWithText(lastText).fetchSemanticsNode().boundsInRoot
-            val contentTop = initial.center.y - card.width * 22f / 136f
-            assertEquals("centred content: $name", card.center.y, (contentTop + last.bottom) / 2, 1f)
+            val contentTop = initial.center.y - card.width * 72f / 136f
+            assertEquals("portrait at top: $name", card.top + card.width * 12f / 136f, contentTop, 1f)
+            val nameBox = rule.onNodeWithText(name).fetchSemanticsNode().boundsInRoot
+            val pictureBottom = initial.center.y + card.width * 72f / 136f
+            assertEquals("text centred below portrait: $name", (pictureBottom + card.bottom) / 2,
+                (nameBox.top + last.bottom) / 2, 1f)
+            assertTrue("role after name: $name", last.top >= nameBox.bottom)
         }
         for (text in names + crewRoles + roles) {
             val layouts = mutableListOf<TextLayoutResult>()

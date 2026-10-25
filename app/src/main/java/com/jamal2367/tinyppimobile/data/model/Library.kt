@@ -399,7 +399,7 @@ data class TitleDetails(
 
 /** One of the cast, and who they played; [role] is empty where none is known. */
 @Serializable
-data class CastMember(val name: String = "", val role: String = "")
+data class CastMember(val name: String = "", val role: String = "", val thumbnail: String = "")
 
 /**
  * Something in the library that was pressed, to be marked seen or unseen:

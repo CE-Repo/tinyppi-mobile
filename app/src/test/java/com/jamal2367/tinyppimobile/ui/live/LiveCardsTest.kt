@@ -214,6 +214,31 @@ class LiveCardsTest {
     }
 
     @Test
+    fun `offsets share one row on a phone`() = checkOffsetPlacement(stacked = false)
+
+    @Test
+    @Config(qualifiers = "w320dp-h2000dp")
+    fun `offsets stack when the phone is too narrow`() = checkOffsetPlacement(stacked = true)
+
+    private fun checkOffsetPlacement(stacked: Boolean) {
+        fake.playing(Screens.film.copy(controls = PlayerControls(
+            volume = 40, audioDelay = 0.0, subtitleDelay = 0.2, subtitleOn = true,
+        )))
+        showLive()
+        val audio = "${str(R.string.live_audio_offset)} +"
+        val subtitle = "${str(R.string.live_subtitle_offset)} +"
+        rule.until { rule.onAllNodesWithContentDescription(subtitle).fetchSemanticsNodes().isNotEmpty() }
+        val first = rule.onNodeWithContentDescription(audio).fetchSemanticsNode().boundsInRoot
+        val second = rule.onNodeWithContentDescription(subtitle).fetchSemanticsNode().boundsInRoot
+        if (stacked) {
+            org.junit.Assert.assertTrue(second.top > first.bottom)
+        } else {
+            assertEquals(first.top, second.top, 1f)
+            org.junit.Assert.assertTrue(second.left > first.right)
+        }
+    }
+
+    @Test
     fun `each fine adjustment comes on its own`() {
         // The captions are said as part of their keys, so the keys are what is looked for.
         fun has(description: String) = rule.onAllNodesWithContentDescription(description).fetchSemanticsNodes().isNotEmpty()

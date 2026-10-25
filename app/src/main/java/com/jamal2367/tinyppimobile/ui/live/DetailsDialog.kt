@@ -48,6 +48,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.annotation.StringRes
@@ -264,7 +265,7 @@ private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: D
                 )
                 state.actionError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 if (details != null) {
-                    DetailsBody(details)
+                    DetailsBody(details, server)
                 } else if (state.failed) {
                     Text(
                         text = stringResource(R.string.details_failed),
@@ -508,7 +509,7 @@ private fun Heading(
  * playing title says, in the same words and the same shapes.
  */
 @Composable
-internal fun DetailsBody(details: TitleDetails) {
+internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
     val rated = MediaInfo(
         ratings = details.ratings,
         mpaa = details.mpaa,
@@ -550,8 +551,9 @@ internal fun DetailsBody(details: TitleDetails) {
     val writerRole = stringResource(R.string.details_writer)
     val crew = details.directors.map { CastMember(it, directorRole) } +
         details.writers.map { CastMember(it, writerRole) }
-    if (crew.isNotEmpty()) Cast(crew, false, stringResource(R.string.details_crew))
-    if (details.cast.isNotEmpty()) Cast(details.cast, details.castMore, stringResource(R.string.live_credit_cast))
+    val people = crew + details.cast
+    if (details.cast.isNotEmpty()) Cast(details.cast, details.castMore, stringResource(R.string.live_credit_cast), server, people)
+    if (crew.isNotEmpty()) Cast(crew, false, stringResource(R.string.details_crew), sizing = people)
 }
 
 /** One fact: its name in the quieter colour over the names. */
@@ -574,7 +576,7 @@ private fun Fact(heading: String, names: String) {
  * ellipsis at the end where the library holds more.
  */
 @Composable
-private fun Cast(cast: List<CastMember>, more: Boolean, heading: String) {
+private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server: ServerConfig? = null, sizing: List<CastMember> = cast) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
     val nameStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
@@ -582,13 +584,13 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String) {
     val textWidth = with(density) { (CAST_WIDTH - 24.dp).roundToPx() }
     // Measure the whole row so scrolling to a longer name never changes its
     // height. The same slots keep names and roles aligned without truncation.
-    val heights = remember(cast, measurer, nameStyle, roleStyle, textWidth) {
+    val heights = remember(sizing, measurer, nameStyle, roleStyle, textWidth) {
         val constraints = Constraints(maxWidth = textWidth)
         val nameMinimum = measurer.measure("A\nA", nameStyle, constraints = constraints).size.height
-        val nameHeight = cast.maxOf {
+        val nameHeight = sizing.maxOf {
             measurer.measure(it.name, nameStyle, constraints = constraints).size.height
         }.coerceAtLeast(nameMinimum)
-        val roles = cast.map { it.role }.filter { it.isNotEmpty() }
+        val roles = sizing.map { it.role }.filter { it.isNotEmpty() }
         val roleHeight = if (roles.isEmpty()) 0 else {
             val roleMinimum = measurer.measure("A\nA", roleStyle, constraints = constraints).size.height
             roles.maxOf { measurer.measure(it, roleStyle, constraints = constraints).size.height }
@@ -616,7 +618,7 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String) {
                 .bleed(PAGE_EDGE)
                 .fadedEdges({ row.canScrollBackward }, { row.canScrollForward }, CAST_FADE),
         ) {
-            items(cast) { person -> CastCard(person, nameHeight, roleHeight) }
+            items(cast) { person -> CastCard(person, nameHeight, roleHeight, server) }
             if (more) {
                 item { Text("…", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 24.dp)) }
             }
@@ -641,23 +643,24 @@ private fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
 }
 
 @Composable
-private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp) {
+private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server: ServerConfig? = null) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+        verticalArrangement = Arrangement.Top,
         modifier = Modifier
             .width(CAST_WIDTH)
-            .height(24.dp + 44.dp + 6.dp + nameHeight + if (roleHeight > 0.dp) 6.dp + roleHeight else 0.dp)
+            .height(12.dp + 144.dp + 24.dp + nameHeight + if (roleHeight > 0.dp) 6.dp + roleHeight else 0.dp)
             .testTag("credit-card")
             .clip(MaterialTheme.shapes.medium)
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(12.dp),
+            .padding(start = 12.dp, top = 12.dp, end = 12.dp),
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
+                .width(112.dp)
+                .height(144.dp)
+                .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.secondaryContainer),
         ) {
             Text(
@@ -665,21 +668,35 @@ private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp) {
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
+            if (server != null && person.thumbnail.isNotBlank()) {
+                AsyncImage(
+                    model = "${server.baseUrl}/api/art?kind=thumb&portrait=${person.thumbnail}&v=${person.thumbnail}",
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize(),
+                )
+            }
         }
-        Text(
-            text = person.name,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        if (roleHeight > 0.dp) Text(
-            text = person.role,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+            modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 12.dp),
+        ) {
+            Text(
+                text = person.name,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (person.role.isNotEmpty()) Text(
+                text = person.role,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
