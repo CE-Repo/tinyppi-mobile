@@ -71,6 +71,35 @@ class LiveViewModelEdgeTest {
     }
 
     @Test
+    fun `opening another show leaves unrelated show details in place and closing twice is harmless`() = runTest(dispatcher) {
+        val vm = viewModel()
+        val other = MarkTarget(MarkTarget.Kind.SHOW, 99, "Other")
+        vm.openDetails(other)
+        advanceUntilIdle()
+        vm.openShow(show)
+        advanceUntilIdle()
+        assertEquals(other, vm.details.value?.target)
+        assertNull(vm.underDetails.value)
+        vm.closeShow()
+        vm.closeShow()
+        assertNull(vm.series.value.open)
+    }
+
+    @Test
+    fun `a successful mark while details are loading retains the new watched state`() = runTest(dispatcher) {
+        val vm = viewModel()
+        val target = MarkTarget(MarkTarget.Kind.MOVIE, 1, "Heat")
+        api.details = { _, _ -> awaitCancellation() }
+        vm.openDetails(target)
+        advanceUntilIdle()
+        vm.setWatched(target, true)
+        advanceUntilIdle()
+        assertEquals(true, vm.details.value?.details?.watched)
+        assertEquals(false, vm.details.value?.busy)
+        vm.closeDetails()
+    }
+
+    @Test
     fun `control needs a reading that allows it, and playback something playing`() {
         assertFalse(LiveUiState().canControl)
         assertFalse(LiveUiState(live = LiveState(snapshot = Snapshot(control = false))).canControl)

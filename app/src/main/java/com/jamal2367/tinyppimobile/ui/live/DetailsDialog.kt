@@ -187,8 +187,8 @@ internal fun DetailsDialog(
         // The page slides in and out itself (see [visible]); the window's own
         // animation, a zoom from the middle of the screen, would be a second
         // one on top of it.
-        val window = (LocalView.current.parent as? DialogWindowProvider)?.window
-        SideEffect { window?.setWindowAnimations(0) }
+        val window = (LocalView.current.parent as DialogWindowProvider).window
+        SideEffect { window.setWindowAnimations(0) }
         MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
             ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
                 AnimatedVisibility(
@@ -233,14 +233,13 @@ private fun DetailsPages(
         },
         label = "details-over",
     ) { covered ->
-        val page = leaving.content
-        if (covered && page != null) page() else DetailsPage(state, pictures, actions, onDismiss)
+        if (covered) leaving.content() else DetailsPage(state, pictures, actions, onDismiss)
     }
 }
 
 /** What a details window last had over it, held for as long as it slides out. */
 private class OverPage {
-    var content: (@Composable () -> Unit)? = null
+    lateinit var content: @Composable () -> Unit
 }
 
 @Composable
@@ -291,7 +290,7 @@ internal fun rememberDismissSwipe(onDismiss: () -> Unit): NestedScrollConnection
     val threshold = with(LocalDensity.current) { 100.dp.toPx() }
     return remember(onDismiss, threshold) {
         object : NestedScrollConnection {
-            var pulled = 0f
+            private var pulled = 0f
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
                 if (source == NestedScrollSource.UserInput) {
                     pulled = (pulled + available.y).coerceAtLeast(0f)
@@ -630,7 +629,7 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server:
  * [edge] wider on either side than the column it stands in, out over the
  * column's own margin. Left alone where the column has no width to go by.
  */
-private fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
+internal fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
     if (!constraints.hasBoundedWidth) {
         val placeable = measurable.measure(constraints)
         return@layout layout(placeable.width, placeable.height) { placeable.place(0, 0) }
@@ -749,7 +748,7 @@ internal fun DetailsPage(
     val visible = remember { MutableTransitionState(false) }
     visible.targetState = shown != null
     val page = held.state ?: return
-    if (!visible.targetState && visible.isIdle && !visible.currentState) {
+    if (visible.isIdle && !visible.currentState) {
         held.state = null
         return
     }

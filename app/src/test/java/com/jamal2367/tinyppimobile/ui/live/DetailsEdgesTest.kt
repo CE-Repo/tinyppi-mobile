@@ -99,4 +99,42 @@ class DetailsEdgesTest {
         rule.onRoot().captureToImage()
         rule.onNodeWithText("Actor 12").assertExists()
     }
+    @Test
+    fun `seasons window handles missing shelf data and artwork settings`() {
+        var show by mutableStateOf<LibraryShow?>(LibraryShow(7, "Dark", poster = "poster"))
+        var pictures by mutableStateOf(true)
+        var adaptive by mutableStateOf(true)
+        var closed = 0
+        rule.setContent {
+            SeasonsDialog(
+                open = OpenShow(7, "Dark", episodes = listOf(LibraryEpisode(70, "Pilot", season = 1))),
+                show = show, server = Screens.box, showArtwork = pictures, adaptive = adaptive,
+                intensity = 0.5f, starting = null, openSeasons = setOf(1),
+                onDismiss = { closed++ }, onSeason = {}, onPlay = {}, onDetails = {},
+            )
+        }
+        rule.onNodeWithText("Pilot").assertExists()
+        pictures = false
+        adaptive = false
+        rule.waitForIdle()
+        rule.onNodeWithText("Pilot").assertExists()
+        show = null
+        rule.waitForIdle()
+        rule.onNodeWithContentDescription(context.getString(R.string.series_back)).performClick()
+        assertEquals(1, closed)
+    }
+
+    @Test
+    fun `bleeding an unconstrained child keeps its measured size`() {
+        rule.show {
+            androidx.compose.ui.layout.Layout(content = { Text("Unbounded", Modifier.bleed(20.dp)) }) { children, _ ->
+                val child = children.single().measure(androidx.compose.ui.unit.Constraints())
+                layout(child.width, child.height) { child.place(0, 0) }
+            }
+        }
+        val bounds = rule.onNodeWithText("Unbounded").fetchSemanticsNode().boundsInRoot
+        assertTrue(bounds.width > 0f)
+        assertTrue(bounds.height > 0f)
+    }
+
 }
