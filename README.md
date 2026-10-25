@@ -310,7 +310,7 @@ A film or an episode that was stopped part-way through gets two more options:
 and **Clear resume point**, which forgets where it got to — taking it off
 Continue watching — while leaving it watched or unwatched as it was.
 
-**Under the search box**, one row of chips that scrolls sideways puts the
+**Under the search box**, a card holding one row of chips that scrolls sideways puts the
 shelf in order - by title,
 the box's own order, or by year, rating, date added or, for films, running
 time; a title without the value goes last - and narrows it by genre, and for

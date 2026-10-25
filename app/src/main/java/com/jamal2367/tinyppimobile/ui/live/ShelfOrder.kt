@@ -48,7 +48,6 @@ import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.ui.components.withKeyTick
 import com.jamal2367.tinyppimobile.ui.theme.CardGap
 import com.jamal2367.tinyppimobile.ui.theme.PillShape
-import com.jamal2367.tinyppimobile.ui.theme.ScreenEdge
 
 /**
  * The orders a shelf can be put in. Title is the box's own order - Kodi's
@@ -194,57 +193,64 @@ internal fun LazyListScope.shelfTools(
 ) {
     item(key = "$key-tools") {
         val shown = filters.filter { it.values.size > 1 }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                // Out to the screen's edges, so the row is seen to go on
-                // under them rather than stop short at the cards' margin.
-                .layout { measurable, constraints ->
-                    val edge = ScreenEdge.roundToPx()
-                    val wide = measurable.measure(
-                        constraints.copy(minWidth = constraints.maxWidth + 2 * edge, maxWidth = constraints.maxWidth + 2 * edge),
+        // A card of their own, the shelf's other cards' shape and colour: the
+        // controls read as one block under the search box rather than as
+        // loose pills over the posters.
+        Box(modifier = Modifier.padding(bottom = CardGap)) {
+            CardSegment(CardPart.WHOLE) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        // Out to the card's edges, so the row is seen to go on under
+                        // them rather than stop short at its padding.
+                        .layout { measurable, constraints ->
+                            val edge = CARD_PADDING.roundToPx()
+                            val wide = measurable.measure(
+                                constraints.copy(minWidth = constraints.maxWidth + 2 * edge, maxWidth = constraints.maxWidth + 2 * edge),
+                            )
+                            layout(constraints.maxWidth, wide.height) { wide.place(-edge, 0) }
+                        }
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = CARD_PADDING, vertical = 12.dp),
+                ) {
+                    val sortNames = sorts.map { stringResource(it.label) }
+                    ChoiceChip(
+                        icon = Icons.AutoMirrored.Rounded.Sort,
+                        label = stringResource(sort.label),
+                        description = stringResource(R.string.shelf_sort, stringResource(sort.label)),
+                        selected = false,
+                        options = sortNames,
+                        chosen = sorts.indexOf(sort),
+                        onPick = { onSort(sorts[it]) },
                     )
-                    layout(constraints.maxWidth, wide.height) { wide.place(-edge, 0) }
+                    for (filter in shown) {
+                        val all = stringResource(filter.kind.all)
+                        val label = if (filter.current.isEmpty()) stringResource(filter.kind.label) else filter.name(filter.current)
+                        ChoiceChip(
+                            icon = filter.kind.icon,
+                            label = label,
+                            description = if (filter.current.isEmpty()) all else label,
+                            selected = filter.current.isNotEmpty(),
+                            options = listOf(all) + filter.values.map(filter.name),
+                            chosen = filter.values.indexOf(filter.current) + 1,
+                            onPick = { filter.onPick(if (it == 0) "" else filter.values[it - 1]) },
+                        )
+                    }
+                    if (shown.any { it.current.isNotEmpty() }) {
+                        AssistChip(
+                            onClick = withKeyTick(onReset),
+                            label = { Text(stringResource(R.string.filter_reset), maxLines = 1) },
+                            leadingIcon = { Icon(Icons.Rounded.FilterAltOff, contentDescription = null, Modifier.size(18.dp)) },
+                            shape = PillShape,
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh),
+                            modifier = Modifier.height(CHIP_HEIGHT),
+                        )
+                    }
                 }
-                .horizontalScroll(rememberScrollState())
-                .padding(start = ScreenEdge, end = ScreenEdge, bottom = CardGap),
-        ) {
-            val sortNames = sorts.map { stringResource(it.label) }
-            ChoiceChip(
-                icon = Icons.AutoMirrored.Rounded.Sort,
-                label = stringResource(sort.label),
-                description = stringResource(R.string.shelf_sort, stringResource(sort.label)),
-                selected = false,
-                options = sortNames,
-                chosen = sorts.indexOf(sort),
-                onPick = { onSort(sorts[it]) },
-            )
-            for (filter in shown) {
-                val all = stringResource(filter.kind.all)
-                val label = if (filter.current.isEmpty()) stringResource(filter.kind.label) else filter.name(filter.current)
-                ChoiceChip(
-                    icon = filter.kind.icon,
-                    label = label,
-                    description = if (filter.current.isEmpty()) all else label,
-                    selected = filter.current.isNotEmpty(),
-                    options = listOf(all) + filter.values.map(filter.name),
-                    chosen = filter.values.indexOf(filter.current) + 1,
-                    onPick = { filter.onPick(if (it == 0) "" else filter.values[it - 1]) },
-                )
-            }
-            if (shown.any { it.current.isNotEmpty() }) {
-                AssistChip(
-                    onClick = withKeyTick(onReset),
-                    label = { Text(stringResource(R.string.filter_reset), maxLines = 1) },
-                    leadingIcon = { Icon(Icons.Rounded.FilterAltOff, contentDescription = null, Modifier.size(18.dp)) },
-                    shape = PillShape,
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh),
-                    modifier = Modifier.height(CHIP_HEIGHT),
-                )
             }
         }
     }
@@ -275,9 +281,9 @@ internal class ShelfChoice(
 )
 
 /**
- * One chip: an icon and what it is set to, on the search box's own ground and
- * hairline so the head of the shelf reads as one piece; a chosen filter takes
- * the tonal colour instead. A press opens the choices, the one in force
+ * One chip: an icon and what it is set to, a step up from the card it stands
+ * on and with the card's hairline; a chosen filter takes the tonal colour
+ * instead. A press opens the choices, the one in force
  * ticked.
  */
 @Composable
@@ -301,7 +307,7 @@ private fun ChoiceChip(
             trailingIcon = { Icon(Icons.Rounded.ArrowDropDown, contentDescription = null, Modifier.size(18.dp)) },
             shape = PillShape,
             colors = FilterChipDefaults.filterChipColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
                 iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                 selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
