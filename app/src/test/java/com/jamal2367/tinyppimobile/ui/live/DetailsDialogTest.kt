@@ -24,6 +24,7 @@ import com.jamal2367.tinyppimobile.testing.Screens.show
 import com.jamal2367.tinyppimobile.ui.library.FilmsScreen
 import com.jamal2367.tinyppimobile.ui.library.SeriesScreen
 import com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage
+import com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
@@ -109,6 +110,26 @@ class DetailsDialogTest {
         artwork = false
         rule.waitForIdle()
         assertTrue(has("With pictures"))
+    }
+
+    @Test
+    fun `under a poster's colour the page starts again from the app's own, and takes its title's`() {
+        rule.setContent {
+            TinyPpiTheme(themeMode = ThemeMode.DARK) {
+                ArtworkAccentTheme(accent = androidx.compose.ui.graphics.Color.Red) {
+                    DetailsDialog(
+                        DetailsUiState(film, TitleDetails(plot = "Painted", poster = "p")),
+                        com.jamal2367.tinyppimobile.testing.Screens.box,
+                        showArtwork = true,
+                        actions = DetailsActions(R.string.title_play, false) {},
+                        adaptive = true,
+                        intensity = 0.5f,
+                    ) {}
+                }
+            }
+        }
+        rule.waitUntil { has("Painted") }
+        rule.onNodeWithText(context.getString(R.string.title_play)).assertExists()
     }
 
     @Test

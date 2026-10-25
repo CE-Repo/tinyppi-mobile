@@ -93,6 +93,11 @@ object DemoServer {
             "Florence Pugh", "Dave Bautista", "Christopher Walken", "Léa Seydoux",
         ),
         studios = listOf("Legendary Pictures"),
+        writers = listOf("Denis Villeneuve", "Jon Spaihts"),
+        roles = listOf(
+            "Paul Atreides", "Chani", "Lady Jessica", "Stilgar", "Gurney Halleck", "Feyd-Rautha",
+            "Princess Irulan", "Rabban", "Emperor Shaddam IV", "Lady Margot Fenring",
+        ),
     )
 
     /** What a film's chapters are called on the pretend box. */
@@ -179,6 +184,8 @@ object DemoServer {
         val directors: List<String> = emptyList(),
         val cast: List<String> = emptyList(),
         val studios: List<String> = emptyList(),
+        val writers: List<String> = emptyList(),
+        val roles: List<String> = emptyList(),
     )
     private class Show(val id: Int, val title: String, val year: Int, val rating: Double, val seasons: Int, val perSeason: Int, val seenUpTo: Int) {
         /** Every episode as season and number, in the order they are watched. */
@@ -523,6 +530,9 @@ object DemoServer {
                 // whole cast, the studio the first alone.
                 putJsonArray("directors") { playingCredits.directors.forEach { add(it) } }
                 putJsonArray("cast") { playingCredits.cast.forEach { add(it) } }
+                putJsonArray("roles") { playingCredits.roles.forEach { add(it) } }
+                putJsonArray("writers") { playingCredits.writers.forEach { add(it) } }
+                putJsonArray("genres") { add(playingGenre) }
                 put("cast_more", false)
                 putJsonArray("studios") { playingCredits.studios.take(1).forEach { add(it) } }
             }
@@ -764,8 +774,11 @@ object DemoServer {
         putJsonArray("genres") { add(film.genre) }
         putJsonArray("directors") { film.credits.directors.forEach { add(it) } }
         putJsonArray("studios") { film.credits.studios.forEach { add(it) } }
+        putJsonArray("writers") { film.credits.writers.forEach { add(it) } }
         putJsonArray("cast") {
-            film.credits.cast.forEach { name -> add(buildJsonObject { put("name", name); put("role", "") }) }
+            film.credits.cast.forEachIndexed { index, name ->
+                add(buildJsonObject { put("name", name); put("role", film.credits.roles.getOrNull(index).orEmpty()) })
+            }
         }
         putJsonArray("ratings") { filmRatings(film).forEach { (source, value, votes) -> add(rating(source, value, votes)) } }
         put("video", FILM_VIDEO[film.id % FILM_VIDEO.size])

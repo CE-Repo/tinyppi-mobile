@@ -105,6 +105,10 @@ class DemoServerTest {
         assertEquals("Science Fiction", json("/api/library")["movies"]!!.jsonArray.first().jsonObject["genres"]!!.jsonArray.first().jsonPrimitive.content)
         assertEquals("Dune: Part Two", json("/api/details?movieid=1")["title"]!!.jsonPrimitive.content)
         assertEquals("fanart-1", json("/api/details?movieid=1")["fanart"]!!.jsonPrimitive.content)
+        // Who each played, where the pretend library knows, and nobody's role where it does not.
+        val role = { id: Int -> json("/api/details?movieid=$id")["cast"]!!.jsonArray.first().jsonObject["role"]!!.jsonPrimitive.content }
+        assertEquals("Paul Atreides", role(1))
+        assertEquals("", role(2))
         assertEquals("tvshow", json("/api/details?tvshowid=101")["kind"]!!.jsonPrimitive.content)
         assertEquals("Severance", json("/api/details?episodeid=101102")["show"]!!.jsonPrimitive.content)
         assertEquals("1080p", json("/api/details?movieid=3")["resolution"]!!.jsonPrimitive.content)
@@ -220,7 +224,9 @@ class DemoServerTest {
         assertEquals(false, rated["cast_more"]!!.jsonPrimitive.boolean)
         assertEquals("Legendary Pictures", rated["studios"]!!.jsonArray.single().jsonPrimitive.content)
         assertEquals(null, rated["studios_more"])
-        assertEquals(null, rated["genres"])
+        assertEquals("Science Fiction", rated["genres"]!!.jsonArray.single().jsonPrimitive.content)
+        assertEquals("Chani", rated["roles"]!!.jsonArray[1].jsonPrimitive.content)
+        assertEquals("Jon Spaihts", rated["writers"]!!.jsonArray[1].jsonPrimitive.content)
         assertEquals(9, rated["userrating"]!!.jsonPrimitive.int)
         assertEquals(27, rated["top250"]!!.jsonPrimitive.int)
         post("/api/play", """{"movieid":3,"resume":false}""")

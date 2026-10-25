@@ -717,7 +717,15 @@ private fun DetailsShown(viewModel: LiveViewModel, actions: DetailsActions?) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val open = details ?: return
     if (!LocalIsCurrentPage.current) return
-    DetailsDialog(open, state.live.server, state.settings.showArtwork, actions, viewModel::closeDetails)
+    DetailsDialog(
+        state = open,
+        server = state.live.server,
+        showArtwork = state.settings.showArtwork,
+        actions = actions,
+        adaptive = state.settings.adaptiveColor,
+        intensity = state.settings.adaptiveColorIntensity,
+        onDismiss = viewModel::closeDetails,
+    )
 }
 
 /** Play, resume or start over from the details page as from the question, the page closing first. */

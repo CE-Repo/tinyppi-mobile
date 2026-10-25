@@ -323,6 +323,14 @@ data class MediaInfo(
     val cast: List<String> = emptyList(),
     @SerialName("cast_more") val castMore: Boolean = false,
     val studios: List<String> = emptyList(),
+    /**
+     * Every genre, every writer and who each of [cast] played ("" for a role
+     * the library does not know), for the overview card's facts and cast
+     * cards. Empty from an add-on older than them.
+     */
+    val genres: List<String> = emptyList(),
+    val writers: List<String> = emptyList(),
+    val roles: List<String> = emptyList(),
 ) {
     /**
      * Whether there is a plot to print. A slogan goes only with one: on its
@@ -335,9 +343,9 @@ data class MediaInfo(
     val hasRatings: Boolean
         get() = ratings.isNotEmpty() || userRating > 0 || top250 > 0 || mpaa.isNotBlank() || awards.isNotEmpty()
 
-    /** Whether Kodi says who directed or is in the title: the plot card's credits. */
+    /** Whether Kodi says who directed, wrote or is in the title: the plot card's credits. */
     val hasCredits: Boolean
-        get() = directors.isNotEmpty() || cast.isNotEmpty()
+        get() = directors.isNotEmpty() || writers.isNotEmpty() || cast.isNotEmpty()
 
     /** Whether the plot card is drawn: for a plot, for ratings, for credits. */
     val showsPlotCard: Boolean

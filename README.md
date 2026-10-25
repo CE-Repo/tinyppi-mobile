@@ -145,20 +145,15 @@ source and output badges, the video and audio formats named in badges of
 their own, the progress, and — on a box that allows it — the transport row,
 the track pickers and the VS10 conversions.
 
-Under the card of what is playing, the **Overview** card, all of it centred:
-the plot, with the slogan right over it where there is one, upright and set
-like a credit's heading so the two read as one text — most
-episodes carry a plot and no slogan — and
-hanging on the plot's end the director, then the cast, each its heading in
-bold on a line of its own centred over the names (every director, and the
-cast's first twenty in billing order, ending in "…" where there are more),
-left out where Kodi has none. The genre and
-the studio stand in the card above. Last, under the heading Ratings, every
-rating Kodi's library holds for the title, as a row of small shields. The
-card starts folded, and folds again for every new title: the plot cut to five lines, and the credits and the
-ratings hidden under it. A tap on the plot lets all of it out, and another
-folds it again; only a plot that fits with nothing under it has nothing to
-fold. Each has its source's mark on the left, on a
+Under the card of what is playing, the **Overview** card, laid out exactly as
+a title's details page is: first every rating the title has, as a centred row
+of small shields; then the slogan in italics where there is one — most
+episodes carry a plot and no slogan — right over the whole plot; then the
+genres, the director, the writers and the studio, each its name small and
+quiet over the names; and last the cast under its heading as a row of cards
+that scrolls sideways — the initial in a circle, the name and who they played,
+every card the same height — the first twenty in billing order and "…" where
+there are more. Each shield has its source's mark on the left, on a
 ground of the source's colour, instead of its name, and what it gave on the
 right — the same marks and shields the add-on's dashboard draws: first the
 age rating, where the add-on could place it, as a shield like the others:
@@ -310,8 +305,11 @@ first options as keys - **Play** or **Resume**, **Play from the beginning**
 for a title with a point to resume from, **Open** for a series; then the ratings as the
 overview card's shields - the age rating, every score, your own and the Top
 250 place - the slogan and the plot, the genres, the director, the writers and
-the studio, and the cast as a row of cards with who each played. A box that
-cannot answer says so on the page. A series cannot be
+the studio, and the cast as a row of cards of one height with who each played,
+the same layout as the Overview card. The page runs the whole screen, top to
+bottom, and where the app takes its colour from what is playing, the page takes
+its own from the title's poster: its keys are in that title's colour. A box
+that cannot answer says so on the page. A series cannot be
 played, so its first option is **Open**, which shows its episodes. Marking is
 written into Kodi's own library — a series marked either way is every episode
 of it — and every shelf is read again at once, so the tick and the unwatched

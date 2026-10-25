@@ -3,6 +3,10 @@
 package com.jamal2367.tinyppimobile.ui.live
 
 import androidx.compose.foundation.background
+import com.jamal2367.tinyppimobile.ui.theme.rememberArtworkAccent
+import com.jamal2367.tinyppimobile.ui.theme.LocalBaseColorScheme
+import com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -100,6 +104,14 @@ internal class DetailsActions(
  * closed before it answers asks nothing more of the box, and one that fails
  * says so where it was asked for rather than along the bottom of the screen.
  * Pictures only where the reader has them on ([showArtwork]).
+ *
+ * Where the app takes its colour from what is playing ([adaptive]), the page
+ * takes its own from the title's poster instead - its keys are this title's,
+ * not the film on the television - at the reader's [intensity]; a title
+ * without a colour of its own wears the app's.
+ *
+ * The page runs under the system's bars at both ends, edge to edge as the
+ * screens under it do, and keeps its last line clear of the bar at the foot.
  */
 @Composable
 internal fun DetailsDialog(
@@ -107,29 +119,50 @@ internal fun DetailsDialog(
     server: ServerConfig?,
     showArtwork: Boolean,
     actions: DetailsActions?,
+    adaptive: Boolean = false,
+    intensity: Float = 1f,
     onDismiss: () -> Unit,
 ) {
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
-            val details = state.details
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                Hero(state.target, details ?: TitleDetails(), if (showArtwork) server else null, onDismiss)
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(22.dp),
-                    modifier = Modifier.padding(start = PAGE_EDGE, end = PAGE_EDGE, top = 18.dp, bottom = 32.dp),
-                ) {
-                    if (actions != null) Actions(actions)
-                    if (details != null) {
-                        DetailsBody(details)
-                    } else if (state.failed) {
-                        Text(
-                            text = stringResource(R.string.details_failed),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    } else {
-                        LoadingIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                    }
+    val pictures = if (showArtwork) server else null
+    val details = state.details
+    val poster = details?.let {
+        MediaUrls.details(pictures, state.target, if (it.poster.isNotEmpty()) "poster" else "thumb", it.poster.ifEmpty { it.thumb })
+    }
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+    ) {
+        MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
+            ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
+                DetailsPage(state, pictures, actions, onDismiss)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: DetailsActions?, onDismiss: () -> Unit) {
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+        val details = state.details
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+            Hero(state.target, details ?: TitleDetails(), server, onDismiss)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(22.dp),
+                modifier = Modifier
+                    .padding(start = PAGE_EDGE, end = PAGE_EDGE, top = 18.dp, bottom = 32.dp)
+                    .navigationBarsPadding(),
+            ) {
+                if (actions != null) Actions(actions)
+                if (details != null) {
+                    DetailsBody(details)
+                } else if (state.failed) {
+                    Text(
+                        text = stringResource(R.string.details_failed),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    LoadingIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
                 }
             }
         }
@@ -274,8 +307,13 @@ private fun Heading(target: MarkTarget, details: TitleDetails, poster: String?, 
     }
 }
 
+/**
+ * What a details page says under its heading - the ratings, the slogan and
+ * the plot, the facts and the cast - and what the overview card of the
+ * playing title says, in the same words and the same shapes.
+ */
 @Composable
-private fun DetailsBody(details: TitleDetails) {
+internal fun DetailsBody(details: TitleDetails) {
     val rated = MediaInfo(
         ratings = details.ratings,
         mpaa = details.mpaa,
@@ -378,24 +416,27 @@ private fun CastCard(person: CastMember) {
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
         }
+        // Two lines of name and one of role, held open where they are not
+        // filled - an empty text takes no line at all, so a role nobody
+        // named is a space - so every card in the row stands the same height.
         Text(
             text = person.name,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
+            minLines = 2,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
-        if (person.role.isNotEmpty()) {
-            Text(
-                text = person.role,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+        Text(
+            text = person.role.ifEmpty { "\u00A0" },
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            minLines = 1,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
