@@ -480,14 +480,14 @@ class LibraryScreensTest {
         for (spoken in listOf("Rated R", "IMDb 8.3", "${str(R.string.live_rating_mine)} 9", str(R.string.live_rating_top250, 120))) {
             assertTrue(spoken, said(spoken))
         }
-        rule.onNodeWithContentDescription(str(R.string.details_close)).performClick()
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
         rule.waitForIdle()
         assertTrue(!has("A heist."))
 
         fake.api.details = { _, _ -> throw ApiFailure.Api(404, "no such title") }
         text("Gravity").performClick()
         rule.waitUntil { has(str(R.string.details_failed)) }
-        rule.onNodeWithContentDescription(str(R.string.details_close)).performClick()
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
         rule.waitForIdle()
         assertTrue(!has(str(R.string.details_failed)))
     }
@@ -506,10 +506,10 @@ class LibraryScreensTest {
         text("Chernobyl").performClick()
         rule.waitForIdle()
         assertTrue(!has(str(R.string.details_genre)) && !has(str(R.string.live_credit_cast)))
-        rule.onNodeWithContentDescription(str(R.string.details_close)).performClick()
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
         rule.onAllNodesWithText("Dark").onFirst().performClick()
         rule.waitUntil { has("It begins.") }
-        rule.onNodeWithContentDescription(str(R.string.details_close)).performClick()
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
         assertEquals(2, fake.api.count("details"))
     }
 
@@ -545,6 +545,7 @@ class LibraryScreensTest {
         rule.waitUntil { has("Heat") }
         text("Heat").performClick()
         rule.waitUntil { has("Swipe details.") }
+        assertTrue(!said(str(R.string.details_close)))
         rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
         rule.waitUntil { !has("Swipe details.") }
     }

@@ -38,14 +38,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -55,9 +52,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -174,7 +174,7 @@ private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: D
             }
         }
         Column(modifier = Modifier.nestedScroll(dismissSwipe).verticalScroll(scroll)) {
-            Hero(state.target, details ?: TitleDetails(), server, onDismiss)
+            Hero(state.target, details ?: TitleDetails(), server)
             Column(
                 verticalArrangement = Arrangement.spacedBy(22.dp),
                 modifier = Modifier
@@ -200,11 +200,10 @@ private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: D
 
 /**
  * The head of the page: the backdrop, darkened towards the foot so the
- * heading on it reads, and the close key on a scrim of its own. Without a
- * backdrop the heading stands on the plain page under the key.
+ * heading on it reads. Without a backdrop the heading stands on the plain page.
  */
 @Composable
-private fun Hero(target: MarkTarget, details: TitleDetails, server: ServerConfig?, onDismiss: () -> Unit) {
+private fun Hero(target: MarkTarget, details: TitleDetails, server: ServerConfig?) {
     val backdrop = MediaUrls.details(
         server,
         target,
@@ -232,26 +231,14 @@ private fun Hero(target: MarkTarget, details: TitleDetails, server: ServerConfig
                     ),
             )
         }
-        FilledTonalIconButton(
-            onClick = onDismiss,
-            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                containerColor = Color.Black.copy(alpha = 0.45f),
-                contentColor = Color.White,
-            ),
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(10.dp),
-        ) {
-            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.details_close))
-        }
         Heading(
             target = target,
             details = details,
             poster = MediaUrls.details(server, target, "poster", details.poster),
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = PAGE_EDGE, end = PAGE_EDGE, top = if (backdrop != null) 0.dp else 64.dp),
+                .statusBarsPadding()
+                .padding(start = PAGE_EDGE, end = PAGE_EDGE, top = if (backdrop != null) 0.dp else 20.dp),
         )
     }
 }
@@ -406,6 +393,29 @@ private fun Fact(heading: String, names: String) {
  */
 @Composable
 private fun Cast(cast: List<CastMember>, more: Boolean, heading: String) {
+    val density = LocalDensity.current
+    val measurer = rememberTextMeasurer()
+    val nameStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+    val roleStyle = MaterialTheme.typography.labelMedium
+    val textWidth = with(density) { (CAST_WIDTH - 24.dp).roundToPx() }
+    // Measure the whole row so scrolling to a longer name never changes its
+    // height. The same slots keep names and roles aligned without truncation.
+    val heights = remember(cast, measurer, nameStyle, roleStyle, textWidth) {
+        val constraints = Constraints(maxWidth = textWidth)
+        val nameMinimum = measurer.measure("A\nA", nameStyle, constraints = constraints).size.height
+        val nameHeight = cast.maxOf {
+            measurer.measure(it.name, nameStyle, constraints = constraints).size.height
+        }.coerceAtLeast(nameMinimum)
+        val roles = cast.map { it.role }.filter { it.isNotEmpty() }
+        val roleHeight = if (roles.isEmpty()) 0 else {
+            val roleMinimum = measurer.measure("A\nA", roleStyle, constraints = constraints).size.height
+            roles.maxOf { measurer.measure(it, roleStyle, constraints = constraints).size.height }
+                .coerceAtLeast(roleMinimum)
+        }
+        nameHeight to roleHeight
+    }
+    val nameHeight = with(density) { heights.first.toDp() }
+    val roleHeight = with(density) { heights.second.toDp() }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
             text = heading,
@@ -413,7 +423,7 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String) {
             fontWeight = FontWeight.Bold,
         )
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(cast) { person -> CastCard(person) }
+            items(cast) { person -> CastCard(person, nameHeight, roleHeight) }
             if (more) {
                 item { Text("…", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 24.dp)) }
             }
@@ -422,20 +432,22 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String) {
 }
 
 @Composable
-private fun CastCard(person: CastMember) {
+private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
         modifier = Modifier
             .width(CAST_WIDTH)
+            .height(24.dp + 44.dp + 6.dp + nameHeight + if (roleHeight > 0.dp) 6.dp + roleHeight else 0.dp)
+            .testTag("credit-card")
             .clip(MaterialTheme.shapes.medium)
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(10.dp),
+            .padding(12.dp),
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(48.dp)
+                .size(44.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.secondaryContainer),
         ) {
@@ -450,14 +462,14 @@ private fun CastCard(person: CastMember) {
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
-            minLines = 2,
+            modifier = Modifier.fillMaxWidth(),
         )
-        Text(
-            text = person.role.ifEmpty { "\u00A0" },
+        if (roleHeight > 0.dp) Text(
+            text = person.role,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            minLines = 1,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -466,7 +478,7 @@ private fun CastCard(person: CastMember) {
 private val PAGE_EDGE = 20.dp
 private val HERO_HEIGHT = 300.dp
 private val POSTER_WIDTH = 104.dp
-private val CAST_WIDTH = 112.dp
+private val CAST_WIDTH = 136.dp
 private val ACTION_HEIGHT = 52.dp
 
 /**
