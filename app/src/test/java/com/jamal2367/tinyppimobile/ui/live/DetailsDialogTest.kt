@@ -55,7 +55,7 @@ class DetailsDialogTest {
         var state by mutableStateOf(DetailsUiState(film))
         var closed = 0
         rule.setContent {
-            TinyPpiTheme(themeMode = ThemeMode.LIGHT) { DetailsDialog(state, null, true) { closed++ } }
+            TinyPpiTheme(themeMode = ThemeMode.LIGHT) { DetailsDialog(state, null, true, null) { closed++ } }
         }
         rule.waitUntil { has("One") }
         state = DetailsUiState(film, failed = true)
@@ -99,13 +99,34 @@ class DetailsDialogTest {
         val details = TitleDetails(poster = "p", fanart = "f", plot = "With pictures")
         rule.setContent {
             TinyPpiTheme(themeMode = ThemeMode.DARK) {
-                DetailsDialog(DetailsUiState(film, details), com.jamal2367.tinyppimobile.testing.Screens.box, artwork) {}
+                DetailsDialog(DetailsUiState(film, details), com.jamal2367.tinyppimobile.testing.Screens.box, artwork, null) {}
             }
         }
         rule.waitUntil { has("With pictures") }
         artwork = false
         rule.waitForIdle()
         assertTrue(has("With pictures"))
+    }
+
+    @Test
+    fun `the keys follow the actions they are given`() {
+        val pressed = mutableListOf<String>()
+        var plot by mutableStateOf("Keys")
+        var actions by mutableStateOf(DetailsActions(R.string.title_resume, true) { pressed += "first $it" })
+        rule.setContent {
+            TinyPpiTheme(themeMode = ThemeMode.LIGHT) {
+                DetailsDialog(DetailsUiState(film, TitleDetails(plot = plot)), null, true, actions) {}
+            }
+        }
+        rule.waitUntil { has("Keys") }
+        // The page drawn again around the same actions keeps its keys.
+        plot = "Keys again"
+        rule.waitUntil { has("Keys again") }
+        actions = DetailsActions(R.string.title_resume, true) { pressed += "second $it" }
+        rule.waitForIdle()
+        rule.onNodeWithText(context.getString(R.string.title_resume)).performClick()
+        rule.onNodeWithText(context.getString(R.string.title_restart)).performClick()
+        assertEquals(listOf("second false", "second true"), pressed)
     }
 
     @Test

@@ -304,7 +304,9 @@ resume from), **Mark as watched**, **Mark as unwatched** and **Details**.
 **Details** opens a page of its own over the shelf, read from the library when
 it is asked for: the title's backdrop across the top (a film's or a series'
 fanart, an episode's still) with the poster standing on its lower edge beside
-the title, how long it runs and the file's formats; then the ratings as the
+the title, how long it runs and the file's formats; under it the dialog's
+first options as keys - **Play** or **Resume**, **Play from the beginning**
+for a title with a point to resume from, **Open** for a series; then the ratings as the
 overview card's shields - the age rating, every score, your own and the Top
 250 place - the slogan and the plot, the genres, the director, the writers and
 the studio, and the cast as a row of cards with who each played. A box that

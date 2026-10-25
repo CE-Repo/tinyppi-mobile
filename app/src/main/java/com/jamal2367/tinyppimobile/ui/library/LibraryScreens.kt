@@ -65,6 +65,7 @@ import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.ui.live.continueCard
+import com.jamal2367.tinyppimobile.ui.live.DetailsActions
 import com.jamal2367.tinyppimobile.ui.live.DetailsDialog
 import com.jamal2367.tinyppimobile.ui.live.FormatNames
 import com.jamal2367.tinyppimobile.ui.live.ShelfChoice
@@ -188,8 +189,14 @@ fun FilmsScreen(
     )
     ArrangeBackHandler(CardScreens.FILMS, layout)
     var asking by remember { mutableStateOf<TitleQuestion?>(null) }
-    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume, viewModel::openDetails)
-    DetailsShown(viewModel)
+    // The first answers of the question the details were opened from, which
+    // the details page offers too.
+    var detailed by remember { mutableStateOf<DetailsActions?>(null) }
+    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume) { question ->
+        detailed = question.detailsActions(viewModel)
+        viewModel.openDetails(question.target)
+    }
+    DetailsShown(viewModel, detailed)
     // A press on a film asks first; playing it is the first answer.
     val askFilm: (LibraryFilm) -> Unit = { film ->
         asking = TitleQuestion(
@@ -421,8 +428,14 @@ fun SeriesScreen(
     )
     ArrangeBackHandler(CardScreens.SERIES, layout)
     var asking by remember { mutableStateOf<TitleQuestion?>(null) }
-    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume, viewModel::openDetails)
-    DetailsShown(viewModel)
+    // The first answers of the question the details were opened from, which
+    // the details page offers too.
+    var detailed by remember { mutableStateOf<DetailsActions?>(null) }
+    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume) { question ->
+        detailed = question.detailsActions(viewModel)
+        viewModel.openDetails(question.target)
+    }
+    DetailsShown(viewModel, detailed)
     // A series cannot be played, so its first answer opens it.
     val askShow: (LibraryShow) -> Unit = { show ->
         asking = TitleQuestion(show.markTarget(), R.string.title_open) { viewModel.openShow(show) }
@@ -637,7 +650,7 @@ private fun TitleAsker(
     onDone: () -> Unit,
     onMark: (MarkTarget, Boolean) -> Unit,
     onClearResume: (MarkTarget) -> Unit,
-    onDetails: (MarkTarget) -> Unit,
+    onDetails: (TitleQuestion) -> Unit,
 ) {
     val asked = question ?: return
     val answers = asked.answers(onDone, onMark, onClearResume, onDetails)
@@ -668,7 +681,7 @@ private fun TitleQuestion.answers(
     onDone: () -> Unit,
     onMark: (MarkTarget, Boolean) -> Unit,
     onClearResume: (MarkTarget) -> Unit,
-    onDetails: (MarkTarget) -> Unit,
+    onDetails: (TitleQuestion) -> Unit,
 ) = TitleAnswers(
     onPlay = { fromStart ->
         onDone()
@@ -684,7 +697,7 @@ private fun TitleQuestion.answers(
     },
     onDetails = {
         onDone()
-        onDetails(target)
+        onDetails(this)
     },
 )
 
@@ -694,12 +707,18 @@ private fun TitleQuestion.answers(
  * one question is one dialog.
  */
 @Composable
-private fun DetailsShown(viewModel: LiveViewModel) {
+private fun DetailsShown(viewModel: LiveViewModel, actions: DetailsActions?) {
     val details by viewModel.details.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val open = details ?: return
     if (!LocalIsCurrentPage.current) return
-    DetailsDialog(open, state.live.server, state.settings.showArtwork, viewModel::closeDetails)
+    DetailsDialog(open, state.live.server, state.settings.showArtwork, actions, viewModel::closeDetails)
+}
+
+/** Play, resume or start over from the details page as from the question, the page closing first. */
+private fun TitleQuestion.detailsActions(viewModel: LiveViewModel) = DetailsActions(play, resumable) { fromStart ->
+    viewModel.closeDetails()
+    onPlay(fromStart)
 }
 
 /** Whether a show has an episode still to be seen. */

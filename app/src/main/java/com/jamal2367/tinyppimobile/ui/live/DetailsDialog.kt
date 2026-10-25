@@ -22,7 +22,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.annotation.StringRes
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Replay
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -54,6 +60,7 @@ import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
 import com.jamal2367.tinyppimobile.ui.components.PosterImage
+import com.jamal2367.tinyppimobile.ui.components.withKeyTick
 import com.jamal2367.tinyppimobile.util.MediaUrls
 
 /**
@@ -66,6 +73,20 @@ data class DetailsUiState(
     val details: TitleDetails? = null,
     val failed: Boolean = false,
 )
+
+/**
+ * What the details page offers to do with the title, as the question it was
+ * opened from does: [play] names the first answer - Play, Resume, or Open for
+ * a series - and [resumable] adds starting over; [onPlay] is told which (from [onFirst] or [onRestart]).
+ */
+internal class DetailsActions(
+    @param:StringRes val play: Int,
+    val resumable: Boolean,
+    onPlay: (fromStart: Boolean) -> Unit,
+) {
+    val onFirst: () -> Unit = { onPlay(false) }
+    val onRestart: () -> Unit = { onPlay(true) }
+}
 
 /**
  * Everything the library holds about one title, as a page of its own over
@@ -85,6 +106,7 @@ internal fun DetailsDialog(
     state: DetailsUiState,
     server: ServerConfig?,
     showArtwork: Boolean,
+    actions: DetailsActions?,
     onDismiss: () -> Unit,
 ) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -96,6 +118,7 @@ internal fun DetailsDialog(
                     verticalArrangement = Arrangement.spacedBy(22.dp),
                     modifier = Modifier.padding(start = PAGE_EDGE, end = PAGE_EDGE, top = 18.dp, bottom = 32.dp),
                 ) {
+                    if (actions != null) Actions(actions)
                     if (details != null) {
                         DetailsBody(details)
                     } else if (state.failed) {
@@ -168,6 +191,39 @@ private fun Hero(target: MarkTarget, details: TitleDetails, server: ServerConfig
                 .align(Alignment.BottomStart)
                 .padding(start = PAGE_EDGE, end = PAGE_EDGE, top = if (backdrop != null) 0.dp else 64.dp),
         )
+    }
+}
+
+/**
+ * The keys under the heading: the first answer in the accent, filling the
+ * row, and beside it starting over, for a title with a point to resume from.
+ */
+@Composable
+private fun Actions(actions: DetailsActions) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+        Button(onClick = withKeyTick(actions.onFirst), modifier = Modifier.weight(1f).height(ACTION_HEIGHT)) {
+            Icon(
+                imageVector = if (actions.play == R.string.title_open) {
+                    Icons.AutoMirrored.Rounded.OpenInNew
+                } else {
+                    Icons.Rounded.PlayArrow
+                },
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
+            Text(stringResource(actions.play), modifier = Modifier.padding(start = 8.dp), maxLines = 1)
+        }
+        if (actions.resumable) {
+            OutlinedButton(onClick = withKeyTick(actions.onRestart), modifier = Modifier.weight(1f).height(ACTION_HEIGHT)) {
+                Icon(Icons.Rounded.Replay, contentDescription = null, modifier = Modifier.size(20.dp))
+                Text(
+                    stringResource(R.string.title_restart),
+                    modifier = Modifier.padding(start = 8.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
 }
 
@@ -346,3 +402,4 @@ private val PAGE_EDGE = 20.dp
 private val HERO_HEIGHT = 300.dp
 private val POSTER_WIDTH = 104.dp
 private val CAST_WIDTH = 112.dp
+private val ACTION_HEIGHT = 52.dp

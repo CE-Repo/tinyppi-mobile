@@ -477,4 +477,45 @@ class LibraryScreensTest {
         rule.onNodeWithContentDescription(str(R.string.details_close)).performClick()
         assertEquals(2, fake.api.count("details"))
     }
+
+    @Test
+    fun `the details page plays, resumes or starts over, and opens a series`() {
+        fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, title = "Dune", plot = "Spice.") }
+        showFilms()
+        rule.waitUntil { has("Dune") }
+        // A film with a point to resume from: resume, or start over.
+        text("Dune").performClick()
+        rule.onNodeWithText(str(R.string.title_details)).performClick()
+        rule.waitUntil { has("Spice.") }
+        rule.onAllNodesWithText(str(R.string.title_restart)).onLast().performClick()
+        settle()
+        assertTrue(!has("Spice."))
+        text("Dune").performClick()
+        rule.onNodeWithText(str(R.string.title_details)).performClick()
+        rule.waitUntil { has("Spice.") }
+        rule.onAllNodesWithText(str(R.string.title_resume)).onLast().performClick()
+        settle()
+        assertEquals(listOf(false, null), fake.api.plays.map { it.resume })
+        // A film not begun: only play.
+        text("Heat").performClick()
+        rule.onNodeWithText(str(R.string.title_details)).performClick()
+        rule.waitUntil { has("Spice.") }
+        assertTrue(!has(str(R.string.title_restart)))
+        rule.onAllNodesWithText(str(R.string.title_play)).onLast().performClick()
+        settle()
+        assertEquals(3, fake.api.plays.size)
+    }
+
+    @Test
+    fun `a series' details page opens it`() {
+        fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, title = "Chernobyl", plot = "1986.") }
+        showSeries()
+        rule.waitUntil { has("Chernobyl") }
+        text("Chernobyl").performClick()
+        rule.onNodeWithText(str(R.string.title_details)).performClick()
+        rule.waitUntil { has("1986.") }
+        rule.onAllNodesWithText(str(R.string.title_open)).onLast().performClick()
+        rule.waitForIdle()
+        assertTrue(!has("1986."))
+    }
 }
