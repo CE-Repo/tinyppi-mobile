@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -45,6 +46,7 @@ import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material.icons.rounded.BookmarkRemove
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.rounded.Replay
+import androidx.compose.material.icons.rounded.Tv
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -113,6 +115,8 @@ internal class DetailsActions(
     val watched: Boolean = false,
     val onMark: ((Boolean) -> Unit)? = null,
     val onClearResume: (() -> Unit)? = null,
+    /** The way to the show an episode belongs to, where it can be gone to. */
+    val onShow: (() -> Unit)? = null,
     onPlay: (fromStart: Boolean) -> Unit,
 ) {
     val onFirst: () -> Unit = { onPlay(false) }
@@ -172,24 +176,7 @@ private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: D
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         val details = state.details
         val scroll = rememberScrollState()
-        val threshold = with(LocalDensity.current) { 100.dp.toPx() }
-        val dismissSwipe = remember(onDismiss, threshold) {
-            object : NestedScrollConnection {
-                var pulled = 0f
-                override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                    if (source == NestedScrollSource.UserInput) {
-                        pulled = (pulled + available.y).coerceAtLeast(0f)
-                        if (consumed.y < 0f) pulled = 0f
-                    }
-                    return Offset.Zero
-                }
-                override suspend fun onPreFling(available: Velocity): Velocity {
-                    if (pulled >= threshold) onDismiss()
-                    pulled = 0f
-                    return Velocity.Zero
-                }
-            }
-        }
+        val dismissSwipe = rememberDismissSwipe(onDismiss)
         Column(modifier = Modifier.nestedScroll(dismissSwipe).verticalScroll(scroll)) {
             Hero(state.target, details ?: TitleDetails(), server)
             Column(
@@ -222,9 +209,34 @@ private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: D
 }
 
 /**
- * The head of the page: the backdrop, darkened towards the foot so the
- * heading on it reads. Without a backdrop the heading stands on the plain page.
+ * A pull down past the top of a page that closes it, the way a sheet is
+ * flicked away: what the page's own scrolling leaves over at its top is
+ * added up, and a fling that comes after enough of it closes the page.
+ * Shared by the details and by a show's seasons (see SeasonsDialog).
  */
+@Composable
+internal fun rememberDismissSwipe(onDismiss: () -> Unit): NestedScrollConnection {
+    val threshold = with(LocalDensity.current) { 100.dp.toPx() }
+    return remember(onDismiss, threshold) {
+        object : NestedScrollConnection {
+            var pulled = 0f
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                if (source == NestedScrollSource.UserInput) {
+                    pulled = (pulled + available.y).coerceAtLeast(0f)
+                    if (consumed.y < 0f) pulled = 0f
+                }
+                return Offset.Zero
+            }
+            override suspend fun onPreFling(available: Velocity): Velocity {
+                if (pulled >= threshold) onDismiss()
+                pulled = 0f
+                return Velocity.Zero
+            }
+        }
+    }
+}
+
+/** The head of a title's details: its backdrop, poster, name, year, length and formats. */
 @Composable
 private fun Hero(target: MarkTarget, details: TitleDetails, server: ServerConfig?) {
     val backdrop = MediaUrls.details(
@@ -233,6 +245,48 @@ private fun Hero(target: MarkTarget, details: TitleDetails, server: ServerConfig
         if (details.fanart.isNotEmpty()) "fanart" else "thumb",
         details.fanart.ifEmpty { details.thumb },
     )
+    val meta = listOf(
+        if (details.year > 0) details.year.toString() else "",
+        runtimeLabel(details.duration).orEmpty(),
+    ).filter { it.isNotEmpty() }.joinToString(META_GAP)
+    PageHero(
+        backdrop = backdrop,
+        poster = MediaUrls.details(server, target, "poster", details.poster),
+        title = target.title,
+        meta = meta,
+    ) {
+        val formats = listOf(
+            FormatNames.video(if (details.dvProfile.isEmpty()) details.video else FormatNames.PROFILE + details.dvProfile),
+            FormatNames.of(FormatNames.RESOLUTION, details.resolution),
+            FormatNames.of(FormatNames.AUDIO, details.audio),
+        ).filter { it.isNotEmpty() }
+        if (formats.isNotEmpty()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                for (format in formats) FormatBadge(text = format)
+            }
+        }
+    }
+}
+
+/**
+ * The head of a page over the shelf - a title's details, a show's seasons:
+ * the backdrop, darkened towards the foot so the heading on it reads, and
+ * standing on its lower edge the poster beside the name, a line under it and
+ * whatever else the page puts there ([extra]). Without a backdrop the heading
+ * stands on the plain page, [bareTop] under its top.
+ */
+@Composable
+internal fun PageHero(
+    backdrop: String?,
+    poster: String?,
+    title: String,
+    meta: String,
+    bareTop: Dp = 20.dp,
+    extra: @Composable ColumnScope.() -> Unit = {},
+) {
     val surface = MaterialTheme.colorScheme.surface
     Box(modifier = Modifier.fillMaxWidth().heightIn(min = if (backdrop != null) HERO_HEIGHT else 0.dp)) {
         if (backdrop != null) {
@@ -255,13 +309,14 @@ private fun Hero(target: MarkTarget, details: TitleDetails, server: ServerConfig
             )
         }
         Heading(
-            target = target,
-            details = details,
-            poster = MediaUrls.details(server, target, "poster", details.poster),
+            title = title,
+            meta = meta,
+            poster = poster,
+            extra = extra,
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .statusBarsPadding()
-                .padding(start = PAGE_EDGE, end = PAGE_EDGE, top = if (backdrop != null) 0.dp else 20.dp),
+                .padding(start = PAGE_EDGE, end = PAGE_EDGE, top = if (backdrop != null) 0.dp else bareTop),
         )
     }
 }
@@ -299,6 +354,9 @@ private fun Actions(actions: DetailsActions, watched: Boolean, resumable: Boolea
                 actions.onClearResume?.let { clear ->
                     DetailAction(Icons.Rounded.BookmarkRemove, R.string.resume_clear, clear, !busy)
                 }
+            }
+            actions.onShow?.let { show ->
+                DetailAction(Icons.Rounded.Tv, R.string.title_show, show, !busy)
             }
             actions.onMark?.let { mark ->
                 DetailAction(
@@ -338,7 +396,13 @@ private fun DetailAction(icon: ImageVector, @StringRes label: Int, onClick: () -
 
 /** The poster, where the title has one, beside the title, the line under it and the formats. */
 @Composable
-private fun Heading(target: MarkTarget, details: TitleDetails, poster: String?, modifier: Modifier) {
+private fun Heading(
+    title: String,
+    meta: String,
+    poster: String?,
+    extra: @Composable ColumnScope.() -> Unit,
+    modifier: Modifier,
+) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.Bottom,
@@ -349,16 +413,12 @@ private fun Heading(target: MarkTarget, details: TitleDetails, poster: String?, 
         }
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = target.title,
+                text = title,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
-            val meta = listOf(
-                if (details.year > 0) details.year.toString() else "",
-                runtimeLabel(details.duration).orEmpty(),
-            ).filter { it.isNotEmpty() }.joinToString(META_GAP)
             if (meta.isNotEmpty()) {
                 Text(
                     text = meta,
@@ -366,19 +426,7 @@ private fun Heading(target: MarkTarget, details: TitleDetails, poster: String?, 
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            val formats = listOf(
-                FormatNames.video(if (details.dvProfile.isEmpty()) details.video else FormatNames.PROFILE + details.dvProfile),
-                FormatNames.of(FormatNames.RESOLUTION, details.resolution),
-                FormatNames.of(FormatNames.AUDIO, details.audio),
-            ).filter { it.isNotEmpty() }
-            if (formats.isNotEmpty()) {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    for (format in formats) FormatBadge(text = format)
-                }
-            }
+            extra()
         }
     }
 }
@@ -538,7 +586,7 @@ private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp) {
 }
 
 /** The page's side margin, the backdrop's height, a poster's and a cast card's width. */
-private val PAGE_EDGE = 20.dp
+internal val PAGE_EDGE = 20.dp
 private val HERO_HEIGHT = 300.dp
 private val POSTER_WIDTH = 104.dp
 private val CAST_WIDTH = 136.dp
@@ -551,10 +599,22 @@ private val ACTION_HEIGHT = 48.dp
  * question's first answers, where the page was opened from one.
  */
 @Composable
-internal fun DetailsShown(viewModel: LiveViewModel, actions: DetailsActions?) {
+internal fun DetailsShown(viewModel: LiveViewModel, actions: DetailsActions?, except: MarkTarget.Kind? = null) {
     val details by viewModel.details.collectAsStateWithLifecycle()
-    val state by viewModel.state.collectAsStateWithLifecycle()
     val open = details ?: return
+    // A kind the screen shows in a place of its own (see SeriesScreen).
+    if (open.target.kind == except) return
+    DetailsPage(viewModel, open, actions)
+}
+
+/**
+ * One details page, [open], on the page in front only. Where it is shown from
+ * is the caller's: the series screen keeps a show's page in a place of its
+ * own, under the show's seasons, so the same window stays as they come and go.
+ */
+@Composable
+internal fun DetailsPage(viewModel: LiveViewModel, open: DetailsUiState, actions: DetailsActions?) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     if (!LocalIsCurrentPage.current) return
     DetailsDialog(
         state = open,

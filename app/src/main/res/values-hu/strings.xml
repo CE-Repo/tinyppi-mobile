@@ -56,6 +56,7 @@
     <string name="title_resume">Folytatás</string>
     <string name="title_open">Megnyitás</string>
     <string name="title_restart">Lejátszás az elejéről</string>
+    <string name="title_show">Ugrás a sorozathoz</string>
     <string name="title_details">Részletek</string>
     <string name="details_failed">A részleteket nem sikerült beolvasni.</string>
     <string name="details_close">Bezárás</string>

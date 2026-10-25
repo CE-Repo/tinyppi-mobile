@@ -254,7 +254,7 @@ class LibraryScreensTest {
 
         text("Dark").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_open)).performClick()
-        rule.waitUntil { rule.onAllNodesWithText(str(R.string.series_back)).fetchSemanticsNodes().isNotEmpty() }
+        rule.waitUntil { said(str(R.string.series_back)) }
         rule.onNodeWithText(str(R.string.series_specials)).performClick()
         rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
         rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
@@ -267,7 +267,13 @@ class LibraryScreensTest {
         rule.onNodeWithText(str(R.string.title_play)).performClick()
         rule.waitForIdle()
         assertEquals(2, fake.api.count("playEpisode"))
-        rule.onNodeWithText(str(R.string.series_back)).performClick()
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        // Its way out goes back to the show's details it was opened over.
+        rule.waitUntil { has(str(R.string.title_open)) }
+        assertTrue(!said(str(R.string.series_back)))
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
+        rule.waitForIdle()
+        assertEquals(1, rule.onAllNodes(isRoot()).fetchSemanticsNodes().size)
 
         // A show from the unseen row, a search, and the continue row.
         rule.waitUntil { rule.onAllNodesWithText("Silo").fetchSemanticsNodes().isNotEmpty() }
@@ -303,7 +309,11 @@ class LibraryScreensTest {
         rule.waitUntil { has("Dark") }
         text("Dark").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_open)).performClick()
-        rule.waitUntil { has(str(R.string.series_back)) }
+        rule.waitUntil { said(str(R.string.series_back)) }
+        // The seasons are a page of their own over the show's details, which
+        // stay open under them, and the shelf under both.
+        assertEquals(3, rule.onAllNodes(isRoot()).fetchSemanticsNodes().size)
+        assertEquals(1, fake.api.count("details"))
         rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
 
         text("S01E02").performClick()
@@ -315,8 +325,16 @@ class LibraryScreensTest {
         rule.onNodeWithText(str(R.string.title_resume)).performClick()
         settle()
         assertTrue(!has("Episode details."))
-        assertTrue(has(str(R.string.series_back)))
+        assertTrue(said(str(R.string.series_back)))
         assertEquals(1, fake.api.count("playEpisode"))
+
+        // A pull down past the top of the seasons closes them, back to the
+        // show's details.
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
+        rule.waitUntil { has(str(R.string.title_open)) }
+        assertTrue(!said(str(R.string.series_back)))
+        // The show's page was there all along: nothing was read again for it.
+        assertEquals(2, fake.api.count("details"))
     }
 
     @Test
@@ -601,14 +619,45 @@ class LibraryScreensTest {
     }
 
     @Test
-    fun `a series' details page opens it`() {
+    fun `an episode to go on with offers the way to its show, and a film or a lost show none`() {
+        fake.api.continuing = {
+            ContinueList(items = listOf(
+                ContinueItem("episode", 72, "Lies", duration = 3120, resume = 600, show = "Dark", tvshowid = 7, season = 1, episode = 2),
+                ContinueItem("episode", 76, "Gone", duration = 3120, resume = 600, show = "Lost", tvshowid = 99, season = 4, episode = 8),
+            ))
+        }
+        showSeries()
+        rule.waitUntil { rule.onAllNodesWithText("S01E02", substring = true).fetchSemanticsNodes().isNotEmpty() }
+        rule.onAllNodesWithText("S01E02", substring = true).onFirst().performClick()
+        rule.waitUntil { said(str(R.string.title_show)) }
+        rule.onNodeWithContentDescription(str(R.string.title_show)).performClick()
+        // The episode's page gives way to the show's, where its seasons open.
+        rule.waitUntil { has(str(R.string.title_open)) }
+        assertTrue(!said(str(R.string.title_show)))
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
+        rule.waitForIdle()
+
+        rule.onAllNodesWithText("S04E08", substring = true).onFirst().performClick()
+        rule.waitUntil { has(str(R.string.title_resume)) }
+        assertTrue(!said(str(R.string.title_show)))
+    }
+
+    @Test
+    fun `a series' details page opens it, and stays under its seasons until they are left`() {
         fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, title = "Chernobyl", plot = "1986.") }
         showSeries()
         rule.waitUntil { has("Chernobyl") }
         text("Chernobyl").performClick()
         rule.waitUntil { has("1986.") }
         rule.onAllNodesWithText(str(R.string.title_open)).onLast().performClick()
+        rule.waitUntil { said(str(R.string.series_back)) }
+        // Not closed and opened again: the same page, under the seasons.
+        assertTrue(has("1986."))
+        assertEquals(1, fake.api.count("details"))
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
         rule.waitForIdle()
-        assertTrue(!has("1986."))
+        assertTrue(!said(str(R.string.series_back)))
+        assertTrue(has("1986."))
+        assertEquals(1, fake.api.count("details"))
     }
 }

@@ -293,6 +293,8 @@ data class ContinueItem(
     val resume: Int = 0,
     /** The show an episode belongs to, for the name under its poster. */
     val show: String = "",
+    /** Kodi's id for that show, which is how its page is found; 0 for a film or none. */
+    val tvshowid: Int = 0,
     val season: Int = -1,
     val episode: Int = -1,
     /** When it was last played, as Kodi writes it; the order the row is in. */

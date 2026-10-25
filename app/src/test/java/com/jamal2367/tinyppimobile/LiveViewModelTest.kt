@@ -13,6 +13,7 @@ import com.jamal2367.tinyppimobile.data.model.PlayBody
 import com.jamal2367.tinyppimobile.data.model.ResumeBody
 import com.jamal2367.tinyppimobile.data.model.WatchedBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
+import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
@@ -337,6 +338,44 @@ class LiveViewModelTest {
         assertEquals(1, api.count("playEpisode"))
         assertEquals(0, api.count("play"))
         assertFalse("the row is worth reading again", vm.continuing.value.read)
+    }
+
+    @Test
+    fun `a show's details stay under its seasons, and come back as they were`() = runTest(dispatcher) {
+        val show = LibraryShow(id = 5, title = "Severance")
+        val target = MarkTarget(MarkTarget.Kind.SHOW, 5, "Severance")
+        val read = CompletableDeferred<TitleDetails>()
+        api.details = { _, _ -> read.await() }
+        api.episodes = { EpisodeList(tvshowid = it, episodes = listOf(LibraryEpisode(id = 50))) }
+        val vm = viewModel()
+
+        vm.popDetails()
+        assertNull(vm.details.value)
+
+        vm.openDetails(target)
+        vm.openShow(show)
+        advanceUntilIdle()
+        assertNull("the page went under the seasons", vm.details.value)
+        assertEquals(target, vm.underDetails.value?.target)
+
+        // Read while it was under: the answer goes where the page is.
+        read.complete(TitleDetails(plot = "Lumon."))
+        advanceUntilIdle()
+        assertNull(vm.details.value)
+        assertEquals("Lumon.", vm.underDetails.value?.details?.plot)
+
+        vm.popDetails()
+        assertEquals("Lumon.", vm.details.value?.details?.plot)
+        assertNull(vm.underDetails.value)
+        assertEquals(1, api.count("details"))
+
+        // Another title's page does not go under a show it was not opened from.
+        vm.openDetails(MarkTarget(MarkTarget.Kind.MOVIE, 1, "Heat"))
+        vm.closeShow()
+        vm.openShow(show)
+        advanceUntilIdle()
+        assertEquals(MarkTarget.Kind.MOVIE, vm.details.value?.target?.kind)
+        assertNull(vm.underDetails.value)
     }
 
     @Test

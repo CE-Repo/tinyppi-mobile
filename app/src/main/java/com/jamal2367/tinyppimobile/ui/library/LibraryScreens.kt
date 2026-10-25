@@ -38,7 +38,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.activity.compose.BackHandler
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.ui.components.ArrangeBackHandler
 import com.jamal2367.tinyppimobile.ui.components.ArrangeableCard
@@ -66,6 +65,7 @@ import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.ui.live.continueCard
 import com.jamal2367.tinyppimobile.ui.live.DetailsActions
+import com.jamal2367.tinyppimobile.ui.live.DetailsPage
 import com.jamal2367.tinyppimobile.ui.live.DetailsShown
 import com.jamal2367.tinyppimobile.ui.live.FormatNames
 import com.jamal2367.tinyppimobile.ui.live.ShelfChoice
@@ -81,7 +81,7 @@ import com.jamal2367.tinyppimobile.ui.live.shelfTools
 import com.jamal2367.tinyppimobile.ui.live.videoChoices
 import com.jamal2367.tinyppimobile.ui.components.LocalCardFolds
 import com.jamal2367.tinyppimobile.ui.live.dismissSearch
-import com.jamal2367.tinyppimobile.ui.live.episodeList
+import com.jamal2367.tinyppimobile.ui.live.SeasonsDialog
 import com.jamal2367.tinyppimobile.ui.live.filmColumns
 import com.jamal2367.tinyppimobile.ui.live.filmWall
 import com.jamal2367.tinyppimobile.ui.live.matching
@@ -423,8 +423,7 @@ fun SeriesScreen(
     val unseenOpen = folds.isExpanded(FOLD_SERIES_UNSEEN)
     val open = series.open
     val layout = LocalCardLayout.current
-    // Inside a show there are episodes on the screen and no cards to move.
-    val editing = open == null && layout.isEditing(CardScreens.SERIES)
+    val editing = layout.isEditing(CardScreens.SERIES)
     val labels = listOf(
         ArrangeableCard(FOLD_SERIES_CONTINUE, stringResource(R.string.continue_count, resumable.size)),
         ArrangeableCard(FOLD_SERIES_NEXT, stringResource(R.string.next_up_count, nextUp.size)),
@@ -438,16 +437,47 @@ fun SeriesScreen(
         detailed = question.detailsActions(viewModel)
         viewModel.openDetails(question.target)
     }
-    DetailsShown(viewModel, detailed)
+    // A show's details have a place of their own, under the show's seasons:
+    // opening the show leaves them open there, and leaving the seasons finds
+    // them as they were - the same window throughout, so neither way is a
+    // page that closes, a shelf that flashes and a page that opens again.
+    var showActions by remember { mutableStateOf<DetailsActions?>(null) }
+    val detailsShow: (LibraryShow) -> Unit = { show ->
+        val question = TitleQuestion(show.markTarget(), R.string.title_open, watched = show.watched) {
+            viewModel.openShow(show)
+        }
+        showActions = question.detailsActions(viewModel, closes = false)
+        viewModel.openDetails(question.target)
+    }
+    val leaveShow: () -> Unit = {
+        viewModel.popDetails()
+        viewModel.closeShow()
+    }
+    // An episode on the rows of things to go on with offers the way to its
+    // show as well: the show's own page, where it is on the shelf.
     val detailsContinue: (ContinueItem) -> Unit = { item ->
         val question = TitleQuestion(item.markTarget(), if (item.resume > 0) R.string.title_resume else R.string.title_play, resumable = item.resume > 0) { fromStart ->
             viewModel.playContinuing(item, fromStart)
         }
-        detailed = question.detailsActions(viewModel)
+        val show = series.shows.firstOrNull { item.isEpisode && it.id == item.tvshowid }
+        detailed = question.detailsActions(
+            viewModel,
+            onShow = show?.let {
+                {
+                    viewModel.closeDetails()
+                    detailsShow(it)
+                }
+            },
+        )
         viewModel.openDetails(question.target)
     }
-    val detailsShow: (LibraryShow) -> Unit = { show ->
-        openDetails(TitleQuestion(show.markTarget(), R.string.title_open, watched = show.watched) { viewModel.openShow(show) })
+    val details by viewModel.details.collectAsStateWithLifecycle()
+    val underDetails by viewModel.underDetails.collectAsStateWithLifecycle()
+    val showPage = underDetails ?: details?.takeIf { it.target.kind == MarkTarget.Kind.SHOW }
+    // A show closed under its page some other way - scanned away from the
+    // shelf - brings the page it was opened over back to the front.
+    LaunchedEffect(open == null, underDetails) {
+        if (open == null && underDetails != null) viewModel.popDetails()
     }
     val detailsEpisode: (LibraryEpisode) -> Unit = { episode ->
         openDetails(TitleQuestion(
@@ -458,13 +488,31 @@ fun SeriesScreen(
         ) { fromStart -> viewModel.playEpisode(episode, fromStart) })
     }
 
-    // The way out of a show is the way back, and on this screen the system's
-    // own back gesture is the one nearest a thumb. Without this it would leave
-    // the shelf altogether, which is a whole tab further than anybody pressing
-    // it meant to go.
-    // Only on the tab in front: composed beside another one, it would take
-    // back away from a screen that has nothing to do with it.
-    BackHandler(enabled = open != null && LocalIsCurrentPage.current) { viewModel.closeShow() }
+    // The show that is open, as a page of its own over the shelf, its seasons
+    // folded away in it. Back closes it, as it does a title's details. Only
+    // on the tab in front, for the reason the details give (see DetailsShown):
+    // it stays open behind the live tab an episode was started for, and is
+    // there again on coming back to choose the next one.
+    showPage?.let { DetailsPage(viewModel, it, showActions) }
+    if (open != null && LocalIsCurrentPage.current) {
+        SeasonsDialog(
+            open = open,
+            // Its poster and year are the shelf's, which the open show is on.
+            show = series.shows.firstOrNull { it.id == open.id },
+            server = state.live.server,
+            showArtwork = state.settings.showArtwork,
+            adaptive = state.settings.adaptiveColor,
+            intensity = state.settings.adaptiveColorIntensity,
+            starting = series.starting,
+            openSeasons = series.openSeasons,
+            onDismiss = leaveShow,
+            onSeason = viewModel::toggleSeason,
+            onPlay = detailsEpisode,
+            onDetails = detailsEpisode,
+        )
+    }
+    // After the seasons, so an episode's details stand over them.
+    DetailsShown(viewModel, detailed, except = MarkTarget.Kind.SHOW)
 
     Shelf(
         configured = state.isConfigured,
@@ -474,32 +522,15 @@ fun SeriesScreen(
         empty = series.shows.isEmpty(),
         icon = Icons.Outlined.Tv,
         refreshing = series.refreshing,
-        // Inside a show this reads that show's episodes again as well as the
-        // shelf behind it, which is what somebody looking at an episode list
-        // is pulling for.
         onRefresh = viewModel::pullSeries,
         message = message,
         onMessageShown = viewModel::consumeMessage,
         onOpenSettings = onOpenSettings,
-        // The cards of the wall part themselves; an open show, and the
-        // arranging rows, are rows the list spaces out.
-        gap = if (open != null || editing) CardGap else 0.dp,
+        // The cards of the wall part themselves; the arranging rows are rows
+        // the list spaces out.
+        gap = if (editing) CardGap else 0.dp,
         screen = CardScreens.SERIES,
     ) {
-        if (open != null) {
-            episodeList(
-                open = open,
-                server = state.live.server,
-                showArtwork = state.settings.showArtwork,
-                starting = series.starting,
-                openSeasons = series.openSeasons,
-                onBack = viewModel::closeShow,
-                onSeason = viewModel::toggleSeason,
-                onPlay = detailsEpisode,
-                onDetails = detailsEpisode,
-            )
-            return@Shelf
-        }
         // The same head and the same cards as on the films screen: the
         // episodes left half-watched, whichever show they belong to, the shows
         // that gained an episode last, the shows with one still waiting, and
@@ -642,11 +673,19 @@ fun SeriesScreen(
     }
 }
 
-/** Only the primary action closes the page; state changes update it in place. */
-private fun TitleQuestion.detailsActions(viewModel: LiveViewModel) = DetailsActions(
+/**
+ * Only the primary action closes the page - unless it [closes] not, as a
+ * show's does, whose seasons open over it; state changes update it in place.
+ */
+private fun TitleQuestion.detailsActions(
+    viewModel: LiveViewModel,
+    closes: Boolean = true,
+    onShow: (() -> Unit)? = null,
+) = DetailsActions(
     play = play,
     resumable = resumable,
     watched = watched,
+    onShow = onShow,
     onMark = { watched ->
         viewModel.setWatched(target, watched)
     },
@@ -654,7 +693,7 @@ private fun TitleQuestion.detailsActions(viewModel: LiveViewModel) = DetailsActi
         viewModel.clearResume(target)
     },
 ) { fromStart ->
-    if (!fromStart) viewModel.closeDetails()
+    if (!fromStart && closes) viewModel.closeDetails()
     onPlay(fromStart)
 }
 

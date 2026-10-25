@@ -61,6 +61,7 @@
     <string name="title_resume">Resume</string>
     <string name="title_open">Open</string>
     <string name="title_restart">Play from the beginning</string>
+    <string name="title_show">Go to series</string>
     <string name="title_details">Details</string>
     <string name="details_failed">The details could not be read.</string>
     <string name="details_close">Close</string>

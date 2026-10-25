@@ -317,6 +317,16 @@ class LiveViewModel(
     /** The title whose details are open, and what has been read of them; null for none. */
     val details: StateFlow<DetailsUiState?> = _details.asStateFlow()
 
+    private val _underDetails = MutableStateFlow<DetailsUiState?>(null)
+
+    /**
+     * The details of the show whose seasons are open over them; null for
+     * none. Kept rather than closed when the seasons open, so leaving the
+     * seasons finds the page they were opened from exactly as it was, with
+     * nothing to read again (see [popDetails]).
+     */
+    val underDetails: StateFlow<DetailsUiState?> = _underDetails.asStateFlow()
+
     private var detailsRead: Job? = null
 
     /**
@@ -328,14 +338,27 @@ class LiveViewModel(
         detailsRead?.cancel()
         _details.value = DetailsUiState(target)
         detailsRead = viewModelScope.launch {
-            _details.value = try {
+            val read = try {
                 DetailsUiState(target, details = repository.details(target))
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Throwable) {
                 DetailsUiState(target, failed = true)
             }
+            // Into whichever page is showing the title by now: a show's page
+            // may have gone under its seasons while it was being read.
+            if (_underDetails.value?.target == target) _underDetails.value = read else _details.value = read
         }
+    }
+
+    /**
+     * The page under the seasons back in front, as the seasons are left.
+     * Nothing where there is none.
+     */
+    fun popDetails() {
+        val under = _underDetails.value ?: return
+        _details.value = under
+        _underDetails.value = null
     }
 
     /** Close the details, letting go of a read still out. */
@@ -553,6 +576,13 @@ class LiveViewModel(
         viewModelScope.launch {
             try {
                 val answer = repository.episodes(show.id)
+                // The show's own details, where they are what it was opened
+                // from, stay as they are under its seasons rather than close.
+                val page = _details.value
+                if (page != null && page.target.kind == MarkTarget.Kind.SHOW && page.target.id == show.id) {
+                    _underDetails.value = page
+                    _details.value = null
+                }
                 _series.value = _series.value.copy(
                     open = OpenShow(show.id, show.title, show.fanart, answer.episodes),
                     opening = null,
