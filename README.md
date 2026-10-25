@@ -145,15 +145,15 @@ source and output badges, the video and audio formats named in badges of
 their own, the progress, and — on a box that allows it — the transport row,
 the track pickers and the VS10 conversions.
 
-Under the card of what is playing, the **Overview** card, laid out exactly as
-a title's details page is: first every rating the title has, as a centred row
-of small shields; then the slogan in italics where there is one — most
-episodes carry a plot and no slogan — right over the whole plot; then the
-genres, the director, the writers and the studio, each its name small and
-quiet over the names; and last the cast under its heading as a row of cards
-that scrolls sideways — the initial in a circle, the name and who they played,
-every card the same height — the first twenty in billing order and "…" where
-there are more. Each shield has its source's mark on the left, on a
+Under the card of what is playing, the **Overview** card: its heading and an
+arrow, nothing more. A tap on it opens the playing title's details page (see
+the shelves below) - every rating the title has as a row of small shields, the
+slogan and the plot, the genres, the director, the writers and the studio, and
+the cast as a row of cards of one height - without the play keys, since it is
+playing already. It is drawn for a film or an episode the library holds; a
+file it does not know has no details, and no card. Like every card there it
+moves and comes off the screen, a long press on it opening the arranging. On
+the details page each shield has its source's mark on the left, on a
 ground of the source's colour, instead of its name, and what it gave on the
 right — the same marks and shields the add-on's dashboard draws: first the
 age rating, where the add-on could place it, as a shield like the others:

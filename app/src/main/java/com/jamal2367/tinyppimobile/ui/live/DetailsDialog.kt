@@ -3,6 +3,9 @@
 package com.jamal2367.tinyppimobile.ui.live
 
 import androidx.compose.foundation.background
+import androidx.compose.runtime.getValue
+import com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jamal2367.tinyppimobile.ui.theme.rememberArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.LocalBaseColorScheme
 import com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme
@@ -446,3 +449,26 @@ private val HERO_HEIGHT = 300.dp
 private val POSTER_WIDTH = 104.dp
 private val CAST_WIDTH = 112.dp
 private val ACTION_HEIGHT = 52.dp
+
+/**
+ * The details of a title asked about, while they are open - on the page in
+ * front only: the shelves and the live screen are neighbouring pages,
+ * composed side by side, and one question is one dialog. [actions] are the
+ * question's first answers, where the page was opened from one.
+ */
+@Composable
+internal fun DetailsShown(viewModel: LiveViewModel, actions: DetailsActions?) {
+    val details by viewModel.details.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val open = details ?: return
+    if (!LocalIsCurrentPage.current) return
+    DetailsDialog(
+        state = open,
+        server = state.live.server,
+        showArtwork = state.settings.showArtwork,
+        actions = actions,
+        adaptive = state.settings.adaptiveColor,
+        intensity = state.settings.adaptiveColorIntensity,
+        onDismiss = viewModel::closeDetails,
+    )
+}

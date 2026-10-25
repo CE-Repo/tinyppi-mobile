@@ -66,7 +66,7 @@ import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.ui.live.continueCard
 import com.jamal2367.tinyppimobile.ui.live.DetailsActions
-import com.jamal2367.tinyppimobile.ui.live.DetailsDialog
+import com.jamal2367.tinyppimobile.ui.live.DetailsShown
 import com.jamal2367.tinyppimobile.ui.live.FormatNames
 import com.jamal2367.tinyppimobile.ui.live.ShelfChoice
 import com.jamal2367.tinyppimobile.ui.live.ShelfFilter
@@ -705,28 +705,6 @@ private fun TitleQuestion.answers(
         onDetails(this)
     },
 )
-
-/**
- * The details of a title asked about, while they are open - on the page in
- * front only: the shelves are neighbouring pages, composed side by side, and
- * one question is one dialog.
- */
-@Composable
-private fun DetailsShown(viewModel: LiveViewModel, actions: DetailsActions?) {
-    val details by viewModel.details.collectAsStateWithLifecycle()
-    val state by viewModel.state.collectAsStateWithLifecycle()
-    val open = details ?: return
-    if (!LocalIsCurrentPage.current) return
-    DetailsDialog(
-        state = open,
-        server = state.live.server,
-        showArtwork = state.settings.showArtwork,
-        actions = actions,
-        adaptive = state.settings.adaptiveColor,
-        intensity = state.settings.adaptiveColorIntensity,
-        onDismiss = viewModel::closeDetails,
-    )
-}
 
 /** Play, resume or start over from the details page as from the question, the page closing first. */
 private fun TitleQuestion.detailsActions(viewModel: LiveViewModel) = DetailsActions(play, resumable) { fromStart ->

@@ -21,6 +21,18 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ApplicationProvider
 import com.jamal2367.tinyppimobile.R
+import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
+import com.jamal2367.tinyppimobile.data.model.TitleDetails
+import com.jamal2367.tinyppimobile.data.model.PlayingItem
+import androidx.compose.ui.test.longClick
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Column
 import com.jamal2367.tinyppimobile.data.model.ArtTags
 import com.jamal2367.tinyppimobile.data.model.Award
 import com.jamal2367.tinyppimobile.data.model.CommandAck
@@ -262,9 +274,7 @@ class LiveCardsTest {
             "Rotten Tomatoes 9.1" to Color(0xFFF9D320),
             str(R.string.live_rating_top250, 17) to Color(0xFFF5C518),
         )
-        fake.playing(
-            told.copy(
-                media = told.media.copy(
+        rated = MediaInfo(
                     ratings = listOf(
                         SourceRating("imdb", 8.5, 0),
                         SourceRating("metacritic", 7.4, 0),
@@ -278,10 +288,8 @@ class LiveCardsTest {
                     mpaa = "FSK 12",
                     age = "fsk12",
                     ageLevel = "12",
-                ),
-            ),
-        )
-        showLive()
+                )
+        showRatings()
         // Read once the screen has settled: a frame caught mid-draw can miss one.
         val expected = houses + mapOf(
             // IMDb's yellow is a thin line on a dark ground of its own.
@@ -332,38 +340,18 @@ class LiveCardsTest {
         media = Screens.film.media.copy(tagline = "Long live the fighters.", plot = "Paul joins the Fremen."),
     )
 
-    @Test
-    fun `the plot card says the plot, with its slogan where there is one`() {
-        fake.playing(told)
-        showLive()
-        rule.onNodeWithText(str(R.string.live_plot)).assertIsDisplayed()
-        rule.onNodeWithText("Long live the fighters.").assertIsDisplayed()
-        rule.onNodeWithText("Paul joins the Fremen.").assertIsDisplayed()
+    /** The ratings a title's details draw, as a row of shields on their own. */
+    private var rated by mutableStateOf(MediaInfo())
 
-        // An episode: a plot without a slogan.
-        fake.playing(told.copy(media = MediaInfo(plot = "An episode.")))
-        rule.until { seen("An episode.") }
-        assertEquals(false, seen("Long live the fighters."))
-
-        // A slogan without a plot: too little for a card.
-        fake.playing(told.copy(media = MediaInfo(tagline = "Only this.")))
-        rule.until { !seen(str(R.string.live_plot)) }
-        assertEquals(false, seen("Only this."))
-
-        // A plot again, and the card is back.
-        fake.playing(told)
-        rule.until { seen("Paul joins the Fremen.") }
-
-        // A file the library does not know: no card at all.
-        fake.playing(told.copy(media = MediaInfo()))
-        rule.until { !seen(str(R.string.live_plot)) }
+    private fun showRatings() = rule.setContent {
+        TinyPpiTheme {
+            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) { RatingRow(rated) }
+        }
     }
 
     @Test
-    fun `the overview card draws every rating as its mark and says it in words`() {
-        fake.playing(
-            told.copy(
-                media = told.media.copy(
+    fun `a title's ratings are drawn as their marks and said in words`() {
+        rated = MediaInfo(
                     ratings = listOf(
                         SourceRating("imdb", 8.5, 612_345),
                         SourceRating("tmdb", 8.2, 1),
@@ -377,11 +365,8 @@ class LiveCardsTest {
                     mpaa = "FSK 12",
                     age = "fsk12",
                     ageLevel = "12",
-                ),
-            ),
-        )
-        showLive()
-        rule.onNodeWithText(str(R.string.live_plot)).assertIsDisplayed()
+                )
+        showRatings()
         // Each pill is heard as one sentence; the drawing and the figures are not heard apart.
         for (said in listOf(
             // How many voted is neither shown nor heard.
@@ -415,62 +400,40 @@ class LiveCardsTest {
         // And only for a moment.
         rule.mainClock.advanceTimeBy(5_000)
         rule.until { !seen("Filmaffinity") }
-        // The ratings stand over the slogan and the plot, as on a details
-        // page, the age rating first: on the first line, before the first
-        // score.
-        val plot = rule.onNodeWithText("Paul joins the Fremen.", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        // The age rating first: on the first line, before the first score.
         val imdb = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot
         val age = rule.onNodeWithContentDescription("FSK 12").fetchSemanticsNode().boundsInRoot
-        val slogan = rule.onNodeWithText("Long live the fighters.", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        assertEquals(true, slogan.top >= age.bottom)
-        // The slogan and the plot from the card's left edge, and the slogan
-        // right over the plot: the two read as one text.
         val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
-        assertEquals(slogan.left, plot.left, 1f)
-        assertEquals(true, slogan.center.x < screen.center.x)
-        assertEquals(10f * context.resources.displayMetrics.density, plot.top - slogan.bottom, 0.5f)
         assertEquals(age.center.y, imdb.center.y, 1f)
         assertEquals(true, age.right <= imdb.left)
 
         // A score alone - no age rating, no own rating, no place - from a
         // source the library names nothing: a plain circle and its figure.
-        fake.playing(told.copy(media = told.media.copy(ratings = listOf(SourceRating("", 5.0)))))
+        rated = MediaInfo(ratings = listOf(SourceRating("", 5.0)))
         rule.until { rule.onAllNodesWithContentDescription("5.0").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(true, rule.onAllNodesWithContentDescription("FSK 12").fetchSemanticsNodes().isEmpty())
 
         // An age rating that names no FSK level is written out.
-        fake.playing(told.copy(media = told.media.copy(mpaa = "Rated PG-13")))
+        rated = MediaInfo(mpaa = "Rated PG-13")
         rule.until { rule.onAllNodesWithContentDescription("Rated PG-13").fetchSemanticsNodes().isNotEmpty() }
 
-        // Ratings without a plot: the card for them alone, and no slogan.
         // From an add-on too old to send the level beside its mark, the
         // board's plate stands alone, 2 dp in from the shield's edge all
         // round and as wide as it is drawn (30 by 22, at 22 dp tall) - in a
         // shield no narrower than 35 dp.
-        fake.playing(told.copy(media = MediaInfo(tagline = "Only this.", mpaa = "FSK 16", age = "fsk16")))
+        rated = MediaInfo(tagline = "Only this.", mpaa = "FSK 16", age = "fsk16")
         rule.until { rule.onAllNodesWithContentDescription("FSK 16").fetchSemanticsNodes().isNotEmpty() }
-        assertEquals(true, seen(str(R.string.live_plot)))
         val alone = rule.onNodeWithContentDescription("FSK 16").fetchSemanticsNode().boundsInRoot
         assertEquals(35f / 26f, alone.width / alone.height, 0.05f)
-        // Centred: a badge alone stands in the middle of the card, which is
+        // Centred: a badge alone stands in the middle of the row, which is
         // the middle of the screen.
         assertEquals(screen.center.x, alone.center.x, 1f)
-        assertEquals(false, seen("Only this."))
-        // Without a plot but with credits, the ratings over them, as on a
-        // details page.
-        fake.playing(told.copy(media = MediaInfo(cast = listOf("Somebody"), mpaa = "FSK 16", age = "fsk16")))
-        rule.until { seen("Somebody") }
-        assertEquals(
-            true,
-            rule.onNodeWithContentDescription("FSK 16").fetchSemanticsNode().boundsInRoot.bottom <=
-                bounds(str(R.string.live_credit_cast)).top,
-        )
 
         // With its level, the age rating is a shield like the scores': the
         // board's plate on the left, the level written beside it.
         val density = context.resources.displayMetrics.density
         fun shieldOf(said: String, age: String, level: String, plateWidth: Float) {
-            fake.playing(told.copy(media = MediaInfo(plot = "Plot.", mpaa = said, age = age, ageLevel = level)))
+            rated = MediaInfo(plot = "Plot.", mpaa = said, age = age, ageLevel = level)
             rule.until { rule.onAllNodesWithContentDescription(said).fetchSemanticsNodes().isNotEmpty() }
             val shield = rule.onNodeWithContentDescription(said).fetchSemanticsNode().boundsInRoot
             assertEquals(26f * density, shield.height, 0.5f)
@@ -485,9 +448,7 @@ class LiveCardsTest {
 
     @Test
     fun `the big awards stand last, as plates of what was won or else nominated for`() {
-        fake.playing(
-            told.copy(
-                media = MediaInfo(
+        rated = MediaInfo(
                     plot = "Plot.",
                     awards = listOf(
                         Award("oscar", listOf("Visual Effects (2015)"), 4),
@@ -497,10 +458,8 @@ class LiveCardsTest {
                         // One there is no plate of is left out.
                         Award("cesar", listOf("Best Film (2015)"), 0),
                     ),
-                ),
-            ),
-        )
-        showLive()
+                )
+        showRatings()
         val won = { n: Int -> context.getString(R.string.live_award_won, n) }
         val nominated = { n: Int -> context.getString(R.string.live_award_nominated, n) }
         val said = listOf("Oscar ${won(1)}", "Golden Globe ${nominated(1)}", "BAFTA ${won(2)}", "Emmy ${nominated(2)}")
@@ -528,8 +487,8 @@ class LiveCardsTest {
             "popcorn" to "Rotten Tomatoes Popcornmeter", "rogerebert" to "Roger Ebert", "myanimelist" to "MyAnimeList",
             "mdblist" to "MDBList",
         )
-        fake.playing(told.copy(media = told.media.copy(ratings = sources.map { (source, _) -> SourceRating(source, 7.5) })))
-        showLive()
+        rated = MediaInfo(ratings = sources.map { (source, _) -> SourceRating(source, 7.5) })
+        showRatings()
         val heights = sources.map { (_, name) ->
             rule.onNodeWithContentDescription("$name 7.5").fetchSemanticsNode().boundsInRoot.height
         }
@@ -538,80 +497,52 @@ class LiveCardsTest {
     }
 
     @Test
-    fun `the overview card draws the facts and the cast as a details page does`() {
-        fake.playing(
-            told.copy(
-                media = told.media.copy(
-                    ratings = listOf(SourceRating("imdb", 8.5, 0)),
-                    genre = "Science Fiction",
-                    genres = listOf("Science Fiction", "Adventure"),
-                    directors = listOf("Denis Villeneuve"),
-                    writers = listOf("Jon Spaihts"),
-                    cast = listOf("Timothée Chalamet", "Zendaya", "Rebecca Ferguson"),
-                    roles = listOf("Paul Atreides", "Chani"),
-                    castMore = true,
-                    studios = listOf("Legendary Pictures"),
-                ),
-            ),
-        )
+    fun `the overview is a key that opens the playing title's details, with nothing to play`() {
+        val asked = mutableListOf<Pair<String, Int>>()
+        fake.api.details = { kind, id ->
+            asked += kind to id
+            TitleDetails(kind = kind, id = id, plot = "Paul joins the Fremen.")
+        }
+        fake.playing(told.copy(media = told.media.copy(item = PlayingItem("movie", 1))))
         showLive()
-        // The ratings first, then the plot, the facts each a name over the
-        // names, and the cast under its heading as a row of cards.
-        val imdb = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot
-        val plot = bounds("Paul joins the Fremen.")
-        assertEquals(true, plot.top >= imdb.bottom)
-        // The studio is the card above's too: here the one under its fact.
-        fun studio() = rule.onAllNodesWithText("Legendary Pictures", useUnmergedTree = true)
-            .fetchSemanticsNodes().maxBy { it.boundsInRoot.top }.boundsInRoot
-        for ((heading, names) in listOf(
-            R.string.details_genre to "Science Fiction, Adventure",
-            R.string.live_credit_director to "Denis Villeneuve",
-            R.string.details_writer to "Jon Spaihts",
-        )) {
-            assertEquals(true, bounds(str(heading)).top >= plot.bottom)
-            assertEquals(true, bounds(names).top >= bounds(str(heading)).bottom)
-        }
-        assertEquals(true, studio().top >= bounds(str(R.string.details_studio)).bottom)
-        rule.onNodeWithText(str(R.string.live_credit_cast)).performScrollTo()
-        assertEquals(true, bounds(str(R.string.live_credit_cast)).top >= studio().bottom)
-        // Every card the same height, a role or none, a long name or not.
-        val heights = listOf("Timothée Chalamet", "Zendaya", "Rebecca Ferguson").map { name ->
-            rule.onNodeWithText(name, useUnmergedTree = true).fetchSemanticsNode().parent!!.boundsInRoot.height
-        }
-        assertEquals(heights.toString(), 1, heights.distinct().size)
-        assertEquals(true, seen("Paul Atreides") && seen("Chani"))
-
-        // An add-on older than the list of genres and the roles: the card
-        // above's two, and nobody's role.
-        fake.playing(told.copy(media = MediaInfo(plot = "Plot.", genre = "Drama / Crime", cast = listOf("Somebody"))))
-        rule.until { seen("Drama, Crime") && seen("Somebody") }
-
-        // What kind of film and its studio alone are no overview.
-        fake.playing(told.copy(media = MediaInfo(studios = listOf("A24"), genre = "Drama")))
-        rule.until { !seen(str(R.string.live_plot)) }
-        // Somebody credited is one: a writer alone, or a cast alone.
-        fake.playing(told.copy(media = MediaInfo(writers = listOf("Joel Coen", "Ethan Coen"))))
-        rule.until { seen("Joel Coen, Ethan Coen") }
-        assertEquals(false, seen(str(R.string.live_credit_cast)))
-        fake.playing(told.copy(media = MediaInfo(cast = listOf("Somebody"))))
-        rule.until { seen("Somebody") && seen(str(R.string.live_plot)) }
+        // Its heading alone: nothing of the title in it.
+        rule.onNodeWithText(str(R.string.live_plot)).assertIsDisplayed()
         assertEquals(false, seen("Paul joins the Fremen."))
+        rule.onNodeWithText(str(R.string.live_plot)).performClick()
+        rule.until { seen("Paul joins the Fremen.") }
+        assertEquals(listOf("movie" to 1), asked)
+        // The playing title's: no keys to play it with.
+        assertEquals(false, seen(str(R.string.title_play)))
+        rule.onNodeWithContentDescription(str(R.string.details_close)).performClick()
+        rule.until { !seen("Paul joins the Fremen.") }
+
+        // An episode opens as one.
+        fake.playing(told.copy(title = "Ghosts", media = MediaInfo(item = PlayingItem("episode", 76))))
+        rule.until { seen("Ghosts") }
+        rule.onNodeWithText(str(R.string.live_plot)).performClick()
+        rule.until { asked.size == 2 }
+        assertEquals("episode" to 76, asked.last())
+        rule.onNodeWithContentDescription(str(R.string.details_close)).performClick()
+
+        // A file the library does not know has no card.
+        fake.playing(told.copy(media = MediaInfo(plot = "A plot.")))
+        rule.until { !seen(str(R.string.live_plot)) }
     }
 
-    /** Where [text] is drawn, on its own. */
-    private fun bounds(text: String) = rule.onNodeWithText(text, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+    @Test
+    fun `a long press on the overview opens the arranging, as one on a heading does`() {
+        val cards = CardState()
+        fake.playing(told.copy(media = told.media.copy(item = PlayingItem("movie", 1))))
+        rule.show(cards) { LiveScreen(onOpenSettings = {}, viewModel = fake.viewModel) }
+        rule.onNodeWithText(str(R.string.live_plot)).performTouchInput { longClick() }
+        rule.until { cards.editing == CardScreens.LIVE }
+    }
 
     @Test
-    fun `the plot card folds, moves and comes off the screen like the others`() {
+    fun `the overview moves and comes off the screen like the others`() {
         val cards = CardState().apply { folds = setOf(FOLD_CONTROLS) }
-        fake.playing(told)
+        fake.playing(told.copy(media = told.media.copy(item = PlayingItem("movie", 1))))
         rule.show(cards) { LiveScreen(onOpenSettings = {}, viewModel = fake.viewModel) }
-
-        // Folded from its heading, and open again from it.
-        rule.onNodeWithText(str(R.string.live_plot)).performClick()
-        rule.until { FOLD_PLOT in cards.folds && !seen("Paul joins the Fremen.") }
-        rule.onNodeWithText(str(R.string.live_plot)).performClick()
-        rule.until { FOLD_PLOT !in cards.folds && seen("Paul joins the Fremen.") }
 
         // First among the cards that can be arranged, under the playing one.
         cards.editing = CardScreens.LIVE
@@ -623,7 +554,7 @@ class LiveCardsTest {
         rule.onAllNodesWithContentDescription(str(R.string.cards_hide))[1].performClick()
         rule.until { CardLayout.hiddenKey(CardScreens.LIVE, FOLD_PLOT) in cards.hidden }
         rule.onNodeWithText(str(R.string.cards_done)).performClick()
-        rule.until { cards.editing == null && !seen("Paul joins the Fremen.") }
+        rule.until { cards.editing == null && !seen(str(R.string.live_plot)) }
     }
 
     @Test

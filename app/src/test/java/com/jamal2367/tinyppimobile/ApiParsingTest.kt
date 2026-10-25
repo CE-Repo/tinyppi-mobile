@@ -178,7 +178,8 @@ class ApiParsingTest {
         // An add-on older than the plot card sends none of its fields.
         assertEquals("", snapshot.media.tagline)
         assertEquals("", snapshot.media.plot)
-        assertFalse(snapshot.media.hasRatings)
+        assertTrue(snapshot.media.ratings.isEmpty())
+        assertFalse(snapshot.media.item.opensDetails)
     }
 
     @Test

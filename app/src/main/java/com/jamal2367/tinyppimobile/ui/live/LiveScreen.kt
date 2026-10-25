@@ -67,6 +67,9 @@ fun LiveScreen(
         viewModel.consumeMessage()
     }
 
+    // The playing title's details, opened from the overview card.
+    DetailsShown(viewModel, actions = null)
+
     val poster = state.snapshot
         ?.takeIf { state.settings.showArtwork }
         ?.let { MediaUrls.art(state.live.server, it.art, MediaUrls.ArtKind.POSTER) }
@@ -197,7 +200,7 @@ private fun LiveContent(
         // (see CardLayout).
         val groups = snapshot.groups.associateBy { "$GROUP_PREFIX${it.id}" }
         val present = buildList {
-            if (snapshot.media.showsPlotCard) add(FOLD_PLOT)
+            if (snapshot.media.item.opensDetails) add(FOLD_PLOT)
             if (canControl) add(FOLD_CONTROLS)
             if (snapshot.vs10.options.isNotEmpty()) add(FOLD_VS10)
             addAll(groups.keys)
@@ -230,7 +233,9 @@ private fun LiveContent(
         // and its fold as the box adds and drops panels mid-film.
         for (id in shown) {
             when (id) {
-                FOLD_PLOT -> item(key = id) { PlotCard(snapshot.media) }
+                FOLD_PLOT -> item(key = id) {
+                    PlotCard { viewModel.openDetails(snapshot.media.item.target(snapshot.title)) }
+                }
 
                 FOLD_CONTROLS -> item(key = id) {
                     ControlsCard(

@@ -256,6 +256,22 @@ data class Vs10Option(val mode: String = "", val label: String = "")
 data class Logos(val video: String = "", val audio: String = "")
 
 /**
+ * Which library title is playing - `movie` or `episode` and its id - as the
+ * add-on says; empty for a file the library does not know, and from an
+ * add-on older than the field.
+ */
+@Serializable
+data class PlayingItem(val kind: String = "", val id: Int = 0) {
+    /** Whether there are details to open: a film or an episode the library holds. */
+    val opensDetails: Boolean
+        get() = id > 0 && (kind == "movie" || kind == "episode")
+
+    /** The title as its details page is asked for, under [title]. */
+    fun target(title: String) =
+        MarkTarget(if (kind == "episode") MarkTarget.Kind.EPISODE else MarkTarget.Kind.MOVIE, id, title)
+}
+
+/**
  * A short tag per artwork kind, changing only when the picture does.
  *
  * Hung on the image's address so a poster is fetched once per film rather than
@@ -323,34 +339,9 @@ data class MediaInfo(
     val cast: List<String> = emptyList(),
     @SerialName("cast_more") val castMore: Boolean = false,
     val studios: List<String> = emptyList(),
-    /**
-     * Every genre, every writer and who each of [cast] played ("" for a role
-     * the library does not know), for the overview card's facts and cast
-     * cards. Empty from an add-on older than them.
-     */
-    val genres: List<String> = emptyList(),
-    val writers: List<String> = emptyList(),
-    val roles: List<String> = emptyList(),
+    /** Which library title is playing, for the overview card to open its details. */
+    val item: PlayingItem = PlayingItem(),
 ) {
-    /**
-     * Whether there is a plot to print. A slogan goes only with one: on its
-     * own it says too little.
-     */
-    val hasPlot: Boolean
-        get() = plot.isNotBlank()
-
-    /** Whether the library rated the title in any of the ways it can. */
-    val hasRatings: Boolean
-        get() = ratings.isNotEmpty() || userRating > 0 || top250 > 0 || mpaa.isNotBlank() || awards.isNotEmpty()
-
-    /** Whether Kodi says who directed, wrote or is in the title: the plot card's credits. */
-    val hasCredits: Boolean
-        get() = directors.isNotEmpty() || writers.isNotEmpty() || cast.isNotEmpty()
-
-    /** Whether the plot card is drawn: for a plot, for ratings, for credits. */
-    val showsPlotCard: Boolean
-        get() = hasPlot || hasRatings || hasCredits
-
     /** `S02E07`, when this is an episode of something. */
     val episodeLabel: String?
         get() {

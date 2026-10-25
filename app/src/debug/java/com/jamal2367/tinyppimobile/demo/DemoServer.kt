@@ -137,6 +137,7 @@ object DemoServer {
     internal fun reset() = synchronized(lock) {
         playingTitle = "Dune: Part Two"
         playingTag = "movie-1"
+        playingItem = "movie" to 1
         playingYear = 2024
         playingGenre = "Science Fiction"
         playingTagline = DUNE_TAGLINE
@@ -298,6 +299,9 @@ object DemoServer {
 
     private var playingTitle: String? = "Dune: Part Two"
     private var playingTag = "movie-1"
+
+    /** Which library title is playing, as kind and id, for its details. */
+    private var playingItem = "movie" to 1
     private var playingYear = 2024
     private var playingGenre = "Science Fiction"
     private var playingTagline = DUNE_TAGLINE
@@ -526,6 +530,7 @@ object DemoServer {
                 put("userrating", playingMine)
                 put("top250", playingTop250)
                 put("awards", awardsJson(playingAwards))
+                putJsonObject("item") { put("kind", playingItem.first); put("id", playingItem.second) }
                 // Who made it, as the add-on sends it: every director and the
                 // whole cast, the studio the first alone.
                 putJsonArray("directors") { playingCredits.directors.forEach { add(it) } }
@@ -813,6 +818,7 @@ object DemoServer {
             "/api/play" -> {
                 payload["movieid"]?.jsonPrimitive?.int?.let { id -> films.firstOrNull { it.id == id } }?.let { f ->
                     playingTitle = f.title; playingTag = "movie-${f.id}"; playingYear = f.year; playingGenre = f.genre
+                    playingItem = "movie" to f.id
                     playingTagline = f.tagline; playingPlot = f.plot
                     playingRatings = filmRatings(f); playingMpaa = f.mpaa; playingAge = f.age; playingAgeLevel = f.ageLevel
                     playingTop250 = f.top250; playingMine = f.mine; playingCredits = f.credits; playingAwards = f.awards
@@ -825,6 +831,7 @@ object DemoServer {
                     val season = id / 100 % 10
                     val episode = id % 100
                     playingTitle = episodeTitle(season, episode); playingTag = "show-${show.id}"; playingYear = show.year
+                    playingItem = "episode" to id
                     playingGenre = "Drama"; playingShow = show.title; playingSeason = "$season"; playingEpisode = "$episode"
                     // An episode has a plot and, as most do, no slogan.
                     playingTagline = ""

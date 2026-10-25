@@ -1,9 +1,12 @@
 package com.jamal2367.tinyppimobile.ui.live
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +23,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +38,7 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -39,10 +46,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -55,60 +65,76 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.Award
-import com.jamal2367.tinyppimobile.data.model.CastMember
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
 import com.jamal2367.tinyppimobile.data.model.SourceRating
-import com.jamal2367.tinyppimobile.data.model.TitleDetails
-import com.jamal2367.tinyppimobile.ui.components.SectionCard
+import com.jamal2367.tinyppimobile.ui.components.LocalCardLayout
+import com.jamal2367.tinyppimobile.ui.components.LocalCardScreen
+import com.jamal2367.tinyppimobile.ui.components.SectionHeading
+import com.jamal2367.tinyppimobile.ui.components.withKeyTick
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import com.jamal2367.tinyppimobile.util.Formatters
+import java.util.Locale
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import java.util.Locale
 
 /**
- * What the title is about, what it has been given and who is in it, drawn
- * the way a title's details page draws them (see [DetailsBody]): the ratings,
- * the slogan and the plot, what kind of film it is and who made it, and the
- * cast as a row of cards with who each played.
+ * The overview: a card that is its heading and nothing else, and a key - a
+ * tap opens the playing title's details page (see [DetailsDialog]), where
+ * what it is about, who is in it and how it is rated stand.
  *
  * Under the card of what is playing until the reader moves it, and like every
- * other card there it folds, comes off the screen and goes back on (see
- * CardLayout). Drawn for a title with a plot, ratings or credits (see
- * [MediaInfo.showsPlotCard]), and left out for one with none of them - a
- * file the library does not know.
+ * other card there it moves and comes off the screen (see CardLayout): a long
+ * press on it opens the arranging, as one on a heading does. Drawn for a title
+ * the library holds (see [PlayingItem.opensDetails]).
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun PlotCard(media: MediaInfo) {
-    SectionCard(title = stringResource(R.string.live_plot), foldId = FOLD_PLOT) {
-        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            DetailsBody(media.asDetails())
+internal fun PlotCard(onOpen: () -> Unit) {
+    val screen = LocalCardScreen.current
+    val layout = LocalCardLayout.current
+    val haptics = LocalHapticFeedback.current
+    val shape = MaterialTheme.shapes.medium
+    Card(
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .combinedClickable(
+                role = Role.Button,
+                onClickLabel = stringResource(R.string.title_details),
+                onClick = withKeyTick(onOpen),
+                onLongClickLabel = stringResource(R.string.cards_edit),
+                onLongClick = screen?.let {
+                    {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        layout.edit(it)
+                    }
+                },
+            ),
+    ) {
+        // The heading a card wears, with an arrow where a fold's chevron
+        // would be; its own presses are the card's, so it is drawn as on no
+        // screen that could be arranged.
+        Box(modifier = Modifier.padding(16.dp)) {
+            CompositionLocalProvider(LocalCardScreen provides null) {
+                SectionHeading(
+                    title = stringResource(R.string.live_plot),
+                    expanded = false,
+                    onToggle = null,
+                    trailing = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                )
+            }
         }
     }
 }
-
-/**
- * The playing title as a details page would hold it. An add-on older than
- * the full list of genres has the card above's first two, and one older
- * than the roles names nobody's.
- */
-internal fun MediaInfo.asDetails() = TitleDetails(
-    ratings = ratings,
-    plot = plot.trim(),
-    tagline = if (hasPlot) tagline.trim() else "",
-    mpaa = mpaa,
-    age = age,
-    ageLevel = ageLevel,
-    userrating = userRating,
-    top250 = top250,
-    awards = awards,
-    genres = genres.ifEmpty { genre.split(" / ").filter { it.isNotBlank() } },
-    directors = directors,
-    writers = writers,
-    studios = studios,
-    cast = List(cast.size) { index -> CastMember(cast[index], roles.getOrNull(index).orEmpty()) },
-    castMore = castMore,
-)
 
 /**
  * Every rating the library holds: the age rating first - who the film is for
@@ -542,32 +568,13 @@ private val BADGE = 26.dp
 /** How long a shield's words stay over it after a tap, in milliseconds. */
 private const val TIP_TIME = 4000L
 
-/** A film's slogan, plot, ratings and cast, as the card draws them. */
+/** The overview card, as a key. */
 @PreviewLightDark
 @Composable
 internal fun PlotCardPreview() {
     TinyPpiTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                PlotCard(
-                    MediaInfo(
-                        tagline = "Long live the fighters.",
-                        plot = "Paul joins the Fremen and walks the desert as one of them.",
-                        ratings = listOf(SourceRating("imdb", 8.5, 612_345), SourceRating("tmdb", 8.2, 6_120)),
-                        mpaa = "FSK 12",
-                        age = "fsk12",
-                        ageLevel = "12",
-                        userRating = 9,
-                        top250 = 27,
-                        genres = listOf("Science Fiction", "Adventure"),
-                        directors = listOf("Denis Villeneuve"),
-                        writers = listOf("Jon Spaihts"),
-                        cast = listOf("Timothée Chalamet", "Zendaya", "Rebecca Ferguson", "Javier Bardem", "Josh Brolin"),
-                        roles = listOf("Paul Atreides", "Chani", "Jessica", "Stilgar", "Gurney Halleck"),
-                        castMore = true,
-                    ),
-                )
-            }
+            Column(modifier = Modifier.padding(16.dp)) { PlotCard {} }
         }
     }
 }
