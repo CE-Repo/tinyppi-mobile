@@ -17,6 +17,7 @@ import com.jamal2367.tinyppimobile.ui.theme.rememberArtworkAccent
 import com.jamal2367.tinyppimobile.ui.theme.LocalBaseColorScheme
 import com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,11 +42,18 @@ import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
-import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material.icons.rounded.BookmarkRemove
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.rememberTooltipState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
@@ -255,39 +263,61 @@ private fun Hero(target: MarkTarget, details: TitleDetails, server: ServerConfig
  */
 @Composable
 private fun Actions(actions: DetailsActions) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Button(onClick = withKeyTick(actions.onFirst), modifier = Modifier.fillMaxWidth().heightIn(min = ACTION_HEIGHT)) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Button(
+            onClick = withKeyTick(actions.onFirst),
+            modifier = Modifier.weight(1f).heightIn(min = ACTION_HEIGHT),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+        ) {
             Icon(
                 imageVector = if (actions.play == R.string.title_open) Icons.AutoMirrored.Rounded.OpenInNew else Icons.Rounded.PlayArrow,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
             )
-            Text(stringResource(actions.play), modifier = Modifier.padding(start = 8.dp))
+            Text(stringResource(actions.play), textAlign = TextAlign.Center, modifier = Modifier.weight(1f).padding(start = 6.dp))
         }
-        FlowRow(
-            maxItemsInEachRow = 2,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             if (actions.resumable) {
-                DetailAction(Icons.Rounded.Replay, R.string.title_restart, actions.onRestart, Modifier.weight(1f))
+                DetailAction(Icons.Rounded.Replay, R.string.title_restart, actions.onRestart)
                 actions.onClearResume?.let { clear ->
-                    DetailAction(Icons.Rounded.RestartAlt, R.string.resume_clear, clear, Modifier.weight(1f))
+                    DetailAction(Icons.Rounded.BookmarkRemove, R.string.resume_clear, clear)
                 }
             }
             actions.onMark?.let { mark ->
-                DetailAction(Icons.Rounded.Visibility, R.string.mark_watched, { mark(true) }, Modifier.weight(1f))
-                DetailAction(Icons.Rounded.VisibilityOff, R.string.mark_unwatched, { mark(false) }, Modifier.weight(1f))
+                DetailAction(Icons.Rounded.Visibility, R.string.mark_watched, { mark(true) })
+                DetailAction(Icons.Rounded.VisibilityOff, R.string.mark_unwatched, { mark(false) })
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DetailAction(icon: ImageVector, @StringRes label: Int, onClick: () -> Unit, modifier: Modifier) {
-    OutlinedButton(onClick = withKeyTick(onClick), modifier = modifier.heightIn(min = ACTION_HEIGHT)) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
-        Text(stringResource(label), textAlign = TextAlign.Center, modifier = Modifier.weight(1f).padding(start = 8.dp))
+private fun DetailAction(icon: ImageVector, @StringRes label: Int, onClick: () -> Unit) {
+    val name = stringResource(label)
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+        tooltip = { PlainTooltip { Text(name) } },
+        state = rememberTooltipState(),
+    ) {
+        FilledTonalIconButton(
+            onClick = withKeyTick(onClick),
+            modifier = Modifier.size(48.dp),
+            shape = CircleShape,
+            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
+        ) {
+            Icon(icon, contentDescription = name, modifier = Modifier.size(22.dp))
+        }
     }
 }
 
@@ -494,7 +524,7 @@ private val PAGE_EDGE = 20.dp
 private val HERO_HEIGHT = 300.dp
 private val POSTER_WIDTH = 104.dp
 private val CAST_WIDTH = 136.dp
-private val ACTION_HEIGHT = 52.dp
+private val ACTION_HEIGHT = 48.dp
 
 /**
  * The details of a title asked about, while they are open - on the page in

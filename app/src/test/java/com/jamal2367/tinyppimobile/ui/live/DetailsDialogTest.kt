@@ -153,7 +153,7 @@ class DetailsDialogTest {
         actions = DetailsActions(R.string.title_resume, true) { pressed += "second $it" }
         rule.waitForIdle()
         rule.onNodeWithText(context.getString(R.string.title_resume)).performClick()
-        rule.onNodeWithText(context.getString(R.string.title_restart)).performClick()
+        rule.onNodeWithContentDescription(context.getString(R.string.title_restart)).performClick()
         assertEquals(listOf("second false", "second true"), pressed)
     }
 

@@ -148,19 +148,25 @@ class LibraryScreensTest {
         rule.onNodeWithText(str(R.string.continue_count, 2)).assertIsDisplayed()
         rule.onNodeWithText(str(R.string.recent_title)).assertIsDisplayed()
 
-        // A film from the wall, resumable: every option of the dialog.
+        // Every action stays in one row beside the primary playback button.
         text("Dune").performTouchInput { longClick() }
-        rule.onNodeWithText(str(R.string.title_restart)).performClick()
+        val playBounds = rule.onNodeWithText(str(R.string.title_resume)).fetchSemanticsNode().boundsInRoot
+        for (label in listOf(R.string.title_restart, R.string.resume_clear, R.string.mark_watched, R.string.mark_unwatched)) {
+            val toolBounds = rule.onNodeWithContentDescription(str(label)).fetchSemanticsNode().boundsInRoot
+            assertTrue("action is beside playback", toolBounds.left >= playBounds.right)
+            assertEquals(playBounds.center.y, toolBounds.center.y, 1f)
+        }
+        rule.onNodeWithContentDescription(str(R.string.title_restart)).performClick()
         settle()
         text("Dune").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_resume)).performClick()
         settle()
         text("Dune").performTouchInput { longClick() }
-        rule.onNodeWithText(str(R.string.mark_watched)).performClick()
+        rule.onNodeWithContentDescription(str(R.string.mark_watched)).performClick()
         text("Dune").performTouchInput { longClick() }
-        rule.onNodeWithText(str(R.string.mark_unwatched)).performClick()
+        rule.onNodeWithContentDescription(str(R.string.mark_unwatched)).performClick()
         text("Dune").performTouchInput { longClick() }
-        rule.onNodeWithText(str(R.string.resume_clear)).performClick()
+        rule.onNodeWithContentDescription(str(R.string.resume_clear)).performClick()
         text("Heat").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_play)).assertIsDisplayed()
         rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
@@ -249,7 +255,7 @@ class LibraryScreensTest {
         rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
         rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
         text("S01E02").performTouchInput { longClick() }
-        rule.onNodeWithText(str(R.string.title_restart)).performClick()
+        rule.onNodeWithContentDescription(str(R.string.title_restart)).performClick()
         settle()
         text("Loose").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_play)).performClick()
@@ -262,7 +268,7 @@ class LibraryScreensTest {
         text("Silo").performTouchInput { longClick() }
         rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
         text("Dark").performTouchInput { longClick() }
-        rule.onNodeWithText(str(R.string.mark_watched)).performClick()
+        rule.onNodeWithContentDescription(str(R.string.mark_watched)).performClick()
         rule.onNode(hasSetTextAction()).performTextInput("zzz")
         rule.onNodeWithText(str(R.string.series_no_match)).assertIsDisplayed()
         rule.onNodeWithContentDescription(str(R.string.library_search_clear)).performClick()
@@ -297,7 +303,7 @@ class LibraryScreensTest {
         assertTrue(!has(str(R.string.mark_cancel)))
         assertEquals(0, fake.api.count("playEpisode"))
         rule.onNodeWithText(str(R.string.title_resume)).assertIsDisplayed()
-        rule.onNodeWithText(str(R.string.title_restart)).assertIsDisplayed()
+        rule.onNodeWithContentDescription(str(R.string.title_restart)).assertIsDisplayed()
         rule.onNodeWithText(str(R.string.title_resume)).performClick()
         settle()
         assertTrue(!has("Episode details."))
@@ -425,7 +431,7 @@ class LibraryScreensTest {
         // The show's tile on the next-up row, ahead of its poster among what arrived last.
         rule.onAllNodesWithText("Dark").onFirst().performClick()
         // Nothing of it has been seen: play, without the two resume answers.
-        assertTrue(!has(str(R.string.title_restart)))
+        assertTrue(!said(str(R.string.title_restart)))
         rule.onNodeWithText(str(R.string.title_play)).performClick()
         rule.waitForIdle()
         assertEquals(1, fake.api.count("playEpisode"))
@@ -521,7 +527,7 @@ class LibraryScreensTest {
         // A film with a point to resume from: resume, or start over.
         text("Dune").performClick()
         rule.waitUntil { has("Spice.") }
-        rule.onAllNodesWithText(str(R.string.title_restart)).onLast().performClick()
+        rule.onAllNodesWithContentDescription(str(R.string.title_restart)).onLast().performClick()
         settle()
         assertTrue(!has("Spice."))
         text("Dune").performClick()
@@ -532,7 +538,7 @@ class LibraryScreensTest {
         // A film not begun: only play.
         text("Heat").performClick()
         rule.waitUntil { has("Spice.") }
-        assertTrue(!has(str(R.string.title_restart)))
+        assertTrue(!said(str(R.string.title_restart)))
         rule.onAllNodesWithText(str(R.string.title_play)).onLast().performClick()
         settle()
         assertEquals(3, fake.api.plays.size)
