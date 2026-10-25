@@ -176,7 +176,7 @@ private fun CornerPill(
  * because 8.3 means different things at the two of them.
  */
 @Composable
-private fun RatingMark(rating: Double = 0.0, from: String, modifier: Modifier) {
+private fun RatingMark(rating: Double, from: String, modifier: Modifier) {
     val figure = Formatters.rating(rating)
     val said = listOfNotNull(RATING_NAMES[from], figure).joinToString(" ")
     CornerPill(modifier.semantics { contentDescription = said }) {

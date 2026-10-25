@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -86,13 +87,17 @@ class DetailsEdgesTest {
         val target = MarkTarget(MarkTarget.Kind.MOVIE, 1, "Title")
         var state by mutableStateOf(DetailsUiState(target))
         val marked = mutableListOf<Boolean>()
+        var showOpened = 0
         rule.show {
             DetailsDialog(state, null, true, DetailsActions(R.string.title_resume, true,
-                watched = true, onMark = { marked += it }) {}) {}
+                watched = true, onMark = { marked += it }, onShow = { showOpened++ }) {}) {}
         }
         rule.waitForIdle()
+        rule.onNodeWithContentDescription(context.getString(R.string.title_show)).assertIsNotEnabled()
         state = DetailsUiState(target, failed = true)
         rule.waitForIdle()
+        rule.onNodeWithContentDescription(context.getString(R.string.title_show)).performClick()
+        assertEquals(1, showOpened)
         rule.onNodeWithContentDescription(context.getString(R.string.mark_unwatched)).performClick()
         assertEquals(listOf(false), marked)
         state = DetailsUiState(target, details = TitleDetails(watched = true, resume = 1))

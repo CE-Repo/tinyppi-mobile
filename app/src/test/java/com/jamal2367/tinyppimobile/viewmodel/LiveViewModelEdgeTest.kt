@@ -73,6 +73,7 @@ class LiveViewModelEdgeTest {
     @Test
     fun `opening another show leaves unrelated show details in place and closing twice is harmless`() = runTest(dispatcher) {
         val vm = viewModel()
+        vm.closeShow()
         val other = MarkTarget(MarkTarget.Kind.SHOW, 99, "Other")
         vm.openDetails(other)
         advanceUntilIdle()

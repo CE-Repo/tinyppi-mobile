@@ -3,6 +3,8 @@ package com.jamal2367.tinyppimobile.ui.library
 import android.content.Context
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
@@ -677,6 +679,10 @@ class LibraryScreensTest {
         assertTrue(!said(str(R.string.series_back)))
         assertTrue(has("1986."))
         assertEquals(1, fake.api.count("details"))
+        rule.onAllNodesWithText(str(R.string.title_open)).onLast().performClick()
+        rule.waitUntil { said(str(R.string.series_back)) }
+        fake.viewModel.closeShow()
+        rule.waitUntil { has("1986.") && !said(str(R.string.series_back)) }
     }
 
     @Test
@@ -703,7 +709,17 @@ class LibraryScreensTest {
     @Test
     fun `a restored open show has a seasons window without a details page`() {
         fake.viewModel.openShow(shows.first())
-        rule.show { SeriesScreen(onOpenSettings = {}, viewModel = fake.viewModel) }
+        var current by mutableStateOf(false)
+        rule.show {
+            CompositionLocalProvider(com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage provides current) {
+                com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme(androidx.compose.ui.graphics.Color.Red) {
+                    SeriesScreen(onOpenSettings = {}, viewModel = fake.viewModel)
+                }
+            }
+        }
+        rule.waitForIdle()
+        assertTrue(!said(str(R.string.series_back)))
+        current = true
         rule.waitUntil { said(str(R.string.series_back)) }
         rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
         rule.waitUntil { has("Secrets") }
@@ -734,6 +750,24 @@ class LibraryScreensTest {
         text("Unexpected film").performClick()
         rule.waitUntil { has(str(R.string.title_play)) }
         assertTrue(!said(str(R.string.title_show)))
+    }
+
+    @Test
+    fun `a show absent from the shelf keeps details while its episodes load`() {
+        val gate = CompletableDeferred<EpisodeList>()
+        fake.api.episodes = { gate.await() }
+        showSeries()
+        rule.waitUntil { has("Chernobyl") }
+        fake.viewModel.openDetails(com.jamal2367.tinyppimobile.data.model.MarkTarget(
+            com.jamal2367.tinyppimobile.data.model.MarkTarget.Kind.SHOW, 99, "Missing show"))
+        rule.waitUntil { fake.viewModel.details.value?.details != null }
+        fake.viewModel.openShow(LibraryShow(99, "Missing show"))
+        rule.waitForIdle()
+        assertTrue(!said(str(R.string.series_back)))
+        gate.complete(EpisodeList(episodes = listOf(LibraryEpisode(99, "Found episode", season = 1))))
+        rule.waitUntil { said(str(R.string.series_back)) }
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        rule.waitUntil { fake.viewModel.series.value.open == null }
     }
 
 }

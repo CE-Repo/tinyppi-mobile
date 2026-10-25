@@ -21,6 +21,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.foundation.background
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -287,8 +288,9 @@ private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: D
  */
 @Composable
 internal fun rememberDismissSwipe(onDismiss: () -> Unit): NestedScrollConnection {
-    val threshold = with(LocalDensity.current) { 100.dp.toPx() }
-    return remember(onDismiss, threshold) {
+    val threshold by rememberUpdatedState(with(LocalDensity.current) { 100.dp.toPx() })
+    val dismiss by rememberUpdatedState(onDismiss)
+    return remember {
         object : NestedScrollConnection {
             private var pulled = 0f
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
@@ -299,7 +301,7 @@ internal fun rememberDismissSwipe(onDismiss: () -> Unit): NestedScrollConnection
                 return Offset.Zero
             }
             override suspend fun onPreFling(available: Velocity): Velocity {
-                if (pulled >= threshold) onDismiss()
+                if (pulled >= threshold) dismiss()
                 pulled = 0f
                 return Velocity.Zero
             }
