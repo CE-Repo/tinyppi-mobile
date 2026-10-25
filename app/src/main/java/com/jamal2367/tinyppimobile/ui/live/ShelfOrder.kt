@@ -42,8 +42,9 @@ enum class ShelfSort(@param:StringRes val label: Int) {
 }
 
 /**
- * What a shelf is narrowed to: a genre, and for films the file's grade,
- * resolution and sound (see [FormatNames]). Empty is everything.
+ * What a shelf is narrowed to: a genre, and for films the file's grade -
+ * or one Dolby Vision profile, as `dv/8.1` - resolution and sound (see
+ * [FormatNames]). Empty is everything.
  */
 data class ShelfFilter(
     val genre: String = "",
@@ -73,13 +74,25 @@ object FormatNames {
 
     /** The name a format goes by, or the box's own word for one not listed. */
     fun of(names: Map<String, String>, value: String): String = names[value] ?: value
+
+    /**
+     * What a picture filter's value is called: a grade, or one Dolby Vision
+     * profile under it ("dv/8.1"), written the way the playing card writes
+     * a profile.
+     */
+    fun video(value: String): String =
+        if (value.startsWith(PROFILE)) "Dolby Vision P${value.removePrefix(PROFILE)}" else of(VIDEO, value)
+
+    /** The picture filter's value for one Dolby Vision profile. */
+    const val PROFILE = "dv/"
 }
 
 /** The films that pass [filter], in [sort]'s order. */
 internal fun List<LibraryFilm>.arranged(sort: ShelfSort, filter: ShelfFilter): List<LibraryFilm> =
     filter { film ->
         (filter.genre.isEmpty() || filter.genre in film.genres) &&
-            (filter.video.isEmpty() || film.video == filter.video) &&
+            (filter.video.isEmpty() || film.video == filter.video ||
+                (film.video == "dv" && filter.video == FormatNames.PROFILE + film.dvProfile)) &&
             (filter.resolution.isEmpty() || film.resolution == filter.resolution) &&
             (filter.audio.isEmpty() || film.audio == filter.audio)
     }.ordered(sort, { it.year }, { it.rating }, { it.added }, { it.duration })
@@ -112,6 +125,22 @@ private fun <T> lastWithout(has: (T) -> Boolean, order: Comparator<T>): Comparat
 /** Every genre on the shelf, once, in alphabetical order. */
 internal fun genresOf(genres: List<List<String>>): List<String> =
     genres.flatten().distinct().sortedWith(String.CASE_INSENSITIVE_ORDER)
+
+/**
+ * The grades on the shelf, in [FormatNames.VIDEO]'s order, and under Dolby
+ * Vision its profiles - where there is more than one, as one profile alone is
+ * the grade under another name: 5, 7, 7 FEL, 7 MEL, 8.1, 8.4.
+ */
+internal fun videoChoices(films: List<LibraryFilm>): List<String> {
+    val grades = formatsOf(films.map { it.video }, FormatNames.VIDEO)
+    val profiles = films.filter { it.video == "dv" && it.dvProfile.isNotEmpty() }
+        .map { it.dvProfile }
+        .distinct()
+        .sortedWith(compareBy<String> { it.substringBefore(' ').toDoubleOrNull() ?: Double.MAX_VALUE }.thenBy { it })
+    if (profiles.size < 2) return grades
+    val at = grades.indexOf("dv") + 1
+    return grades.take(at) + profiles.map { FormatNames.PROFILE + it } + grades.drop(at)
+}
 
 /** The formats [names] lists that some title on the shelf has, in [names]' order. */
 internal fun formatsOf(values: List<String>, names: Map<String, String>): List<String> {

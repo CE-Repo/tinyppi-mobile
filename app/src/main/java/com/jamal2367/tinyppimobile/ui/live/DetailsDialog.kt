@@ -99,17 +99,17 @@ private fun DetailsBody(details: TitleDetails) {
             )
         }
         val formats = listOf(
-            FormatNames.VIDEO to details.video,
-            FormatNames.RESOLUTION to details.resolution,
-            FormatNames.AUDIO to details.audio,
-        ).filter { it.second.isNotEmpty() }
+            FormatNames.video(if (details.dvProfile.isEmpty()) details.video else FormatNames.PROFILE + details.dvProfile),
+            FormatNames.of(FormatNames.RESOLUTION, details.resolution),
+            FormatNames.of(FormatNames.AUDIO, details.audio),
+        ).filter { it.isNotEmpty() }
         if (formats.isNotEmpty()) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
-                for ((names, value) in formats) FormatBadge(text = FormatNames.of(names, value))
+                for (format in formats) FormatBadge(text = format)
             }
         }
         if (details.tagline.isNotEmpty()) {

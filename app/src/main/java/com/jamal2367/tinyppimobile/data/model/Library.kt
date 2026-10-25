@@ -83,6 +83,11 @@ data class LibraryFilm(
      * `dtshd_ma`, `eac3`, ...). Empty where it has not, or for an older add-on.
      */
     val video: String = "",
+    /**
+     * A Dolby Vision film's profile as Kodi's scan found it - `5`, `7 FEL`,
+     * `7 MEL`, `8.1` - or empty where Kodi has none.
+     */
+    @SerialName("dv_profile") val dvProfile: String = "",
     val resolution: String = "",
     val audio: String = "",
 ) {
@@ -368,6 +373,7 @@ data class TitleDetails(
     @SerialName("cast_more") val castMore: Boolean = false,
     /** The file's formats, as on a film's tile. */
     val video: String = "",
+    @SerialName("dv_profile") val dvProfile: String = "",
     val resolution: String = "",
     val audio: String = "",
 )

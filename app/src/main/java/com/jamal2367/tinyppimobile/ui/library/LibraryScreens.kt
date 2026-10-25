@@ -74,6 +74,7 @@ import com.jamal2367.tinyppimobile.ui.live.arranged
 import com.jamal2367.tinyppimobile.ui.live.formatsOf
 import com.jamal2367.tinyppimobile.ui.live.genresOf
 import com.jamal2367.tinyppimobile.ui.live.shelfTools
+import com.jamal2367.tinyppimobile.ui.live.videoChoices
 import com.jamal2367.tinyppimobile.ui.components.LocalCardFolds
 import com.jamal2367.tinyppimobile.ui.live.dismissSearch
 import com.jamal2367.tinyppimobile.ui.live.episodeList
@@ -158,7 +159,7 @@ fun FilmsScreen(
     val choices = remember(library.films) {
         FilmChoices(
             genres = genresOf(library.films.map { it.genres }),
-            video = formatsOf(library.films.map { it.video }, FormatNames.VIDEO),
+            video = videoChoices(library.films),
             resolution = formatsOf(library.films.map { it.resolution }, FormatNames.RESOLUTION),
             audio = formatsOf(library.films.map { it.audio }, FormatNames.AUDIO),
         )
@@ -234,7 +235,7 @@ fun FilmsScreen(
             onSort = { sort = it },
             filters = listOf(
                 ShelfChoice(choices.genres, genre, R.string.filter_genre_all) { genre = it },
-                ShelfChoice(choices.video, video, R.string.filter_video_all, { FormatNames.of(FormatNames.VIDEO, it) }) {
+                ShelfChoice(choices.video, video, R.string.filter_video_all, FormatNames::video) {
                     video = it
                 },
                 ShelfChoice(

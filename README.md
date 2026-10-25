@@ -319,7 +319,9 @@ own. A box that cannot answer says so in the dialog.
 **Under the search box**, a row of chips puts the shelf in order - by title,
 the box's own order, or by year, rating, date added or, for films, running
 time; a title without the value goes last - and narrows it by genre, and for
-films by the grade (Dolby Vision, HDR10+, HDR10, HLG, SDR), the resolution (4K,
+films by the grade (Dolby Vision, HDR10+, HDR10, HLG, SDR - and under Dolby
+Vision each profile the shelf holds, such as P5, P7 FEL or P8.1, where it holds
+more than one), the resolution (4K,
 1080p, 720p, SD) and the sound of the first audio track (Dolby TrueHD, DTS-HD
 MA, Dolby Digital Plus, ...). A chip offers only what the shelf holds, and a
 filter with nothing to choose between is not drawn. The filters narrow every

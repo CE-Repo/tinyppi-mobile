@@ -107,6 +107,7 @@ class DemoServerTest {
         assertEquals("tvshow", json("/api/details?tvshowid=101")["kind"]!!.jsonPrimitive.content)
         assertEquals("Severance", json("/api/details?episodeid=101102")["show"]!!.jsonPrimitive.content)
         assertEquals("1080p", json("/api/details?movieid=3")["resolution"]!!.jsonPrimitive.content)
+        assertEquals("8.1", json("/api/details?movieid=8")["dv_profile"]!!.jsonPrimitive.content)
         for (unknown in listOf("movieid=999", "movieid=x", "tvshowid=1", "tvshowid=x", "episodeid=5", "episodeid=x", "")) {
             assertEquals(unknown, 404, get("/api/details?$unknown").first)
         }

@@ -40,6 +40,19 @@ class ShelfOrderTest {
     }
 
     @Test
+    fun `Dolby Vision is offered by profile where the shelf holds more than one`() {
+        fun dv(id: Int, profile: String) = LibraryFilm(id, "Film $id", video = "dv", dvProfile = profile)
+        val shelf = listOf(dv(1, "8.1"), dv(2, "7 MEL"), dv(3, "5"), dv(4, "7 FEL"), dv(5, ""), dv(6, "odd"),
+                           LibraryFilm(7, "Flat", video = "sdr"))
+        assertEquals(listOf("dv", "dv/5", "dv/7 FEL", "dv/7 MEL", "dv/8.1", "dv/odd", "sdr"), videoChoices(shelf))
+        assertEquals(listOf("dv", "sdr"), videoChoices(listOf(dv(1, "8.1"), dv(2, "8.1"), LibraryFilm(3, "Flat", video = "sdr"))))
+        assertEquals(listOf("Film 4"), titles(shelf.arranged(ShelfSort.TITLE, ShelfFilter(video = "dv/7 FEL"))))
+        assertEquals(6, shelf.arranged(ShelfSort.TITLE, ShelfFilter(video = "dv")).size)
+        assertEquals("Dolby Vision P8.1", FormatNames.video("dv/8.1"))
+        assertEquals("HDR10+", FormatNames.video("hdr10plus"))
+    }
+
+    @Test
     fun `shows sort and filter by genre`() {
         val shows = listOf(
             LibraryShow(1, "Andor", 2022, rating = 8.4, genres = listOf("Sci-Fi"), added = "2026-01-01"),

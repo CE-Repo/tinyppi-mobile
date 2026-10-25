@@ -65,6 +65,7 @@ object DemoServer {
     /** The formats the made-up films are cut in, and the genres of the made-up shows, handed out by id. */
     private val FILM_VIDEO = listOf("dv", "hdr10", "hdr10plus", "sdr")
     private val FILM_AUDIO = listOf("truehd", "eac3", "dtshd_ma", "ac3")
+    private val DV_PROFILES = listOf("5", "7 FEL", "8.1")
     private val SHOW_GENRES = listOf("Drama", "Science Fiction", "Crime", "Mystery")
     private const val DUNE_PLOT = "Paul Atreides lives among the Fremen now, learning the desert at Chani's side " +
         "while the Harkonnens tighten their grip on Arrakis. As the prophecy the Fremen believe in closes " +
@@ -628,6 +629,7 @@ object DemoServer {
                     put("added", addedDaysAgo((f.id * 7) % films.size, f.id))
                     putJsonArray("genres") { add(f.genre) }
                     put("video", FILM_VIDEO[f.id % FILM_VIDEO.size])
+                    if (f.id % FILM_VIDEO.size == 0) put("dv_profile", DV_PROFILES[f.id % DV_PROFILES.size])
                     put("resolution", if (f.id % 3 == 0) "1080p" else "2160p")
                     put("audio", FILM_AUDIO[f.id % FILM_AUDIO.size])
                 })
@@ -775,6 +777,7 @@ object DemoServer {
         }
         putJsonArray("ratings") { filmRatings(film).forEach { (source, value, votes) -> add(rating(source, value, votes)) } }
         put("video", FILM_VIDEO[film.id % FILM_VIDEO.size])
+        if (film.id % FILM_VIDEO.size == 0) put("dv_profile", DV_PROFILES[film.id % DV_PROFILES.size])
         put("resolution", if (film.id % 3 == 0) "1080p" else "2160p")
         put("audio", FILM_AUDIO[film.id % FILM_AUDIO.size])
     }

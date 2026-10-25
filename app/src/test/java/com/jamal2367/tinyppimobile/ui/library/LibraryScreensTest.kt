@@ -309,9 +309,9 @@ class LibraryScreensTest {
         fake.api.library = {
             Library(
                 movies = listOf(
-                    LibraryFilm(1, "Dune", 2024, genres = listOf("Sci-Fi"), video = "dv", resolution = "2160p", audio = "truehd"),
+                    LibraryFilm(1, "Dune", 2024, genres = listOf("Sci-Fi"), video = "dv", dvProfile = "8.1", resolution = "2160p", audio = "truehd"),
                     LibraryFilm(2, "Heat", 1995, genres = listOf("Crime"), video = "sdr", resolution = "1080p", audio = "dts"),
-                    LibraryFilm(3, "Alien", 1979, genres = listOf("Sci-Fi", "Horror"), video = "dv", resolution = "2160p", audio = "weird"),
+                    LibraryFilm(3, "Alien", 1979, genres = listOf("Sci-Fi", "Horror"), video = "dv", dvProfile = "5", resolution = "2160p", audio = "weird"),
                 ),
             )
         }
@@ -332,7 +332,11 @@ class LibraryScreensTest {
         text(str(R.string.filter_video_all)).performClick()
         text("SDR").performClick()
         rule.waitUntil { !has("Alien") }
+        // Each Dolby Vision profile on the shelf is a choice of its own.
         text("SDR").performClick()
+        text("Dolby Vision P5").performClick()
+        rule.waitUntil { has("Alien") && !has("Dune") }
+        text("Dolby Vision P5").performClick()
         text(str(R.string.filter_video_all)).performClick()
         text(str(R.string.filter_resolution_all)).performClick()
         text("4K").performClick()
@@ -396,7 +400,7 @@ class LibraryScreensTest {
                 directors = listOf("Michael Mann"), writers = listOf("M. Mann"), studios = listOf("Warner"),
                 cast = listOf(CastMember("Al Pacino", "Vincent"), CastMember("Val Kilmer", "")), castMore = true,
                 ratings = listOf(SourceRating("imdb", 8.3), SourceRating("kinopoisk", 8.0)), userrating = 9, top250 = 120,
-                video = "dv", resolution = "2160p", audio = "weird",
+                video = "dv", dvProfile = "7 FEL", resolution = "2160p", audio = "weird",
             )
         }
         showFilms()
@@ -408,7 +412,7 @@ class LibraryScreensTest {
         fake.playing(Snapshot(control = true, playing = false, libraryRevision = 3, title = "Something else"))
         rule.waitForIdle()
         for (shown in listOf(
-            "1995 · 2 h 50 min · Rated R", "Dolby Vision", "4K", "weird", "A Los Angeles crime saga",
+            "1995 · 2 h 50 min · Rated R", "Dolby Vision P7 FEL", "4K", "weird", "A Los Angeles crime saga",
             "Crime", "Michael Mann", "M. Mann", "Warner", "Al Pacino (Vincent), Val Kilmer, …",
             "IMDb 8.3, kinopoisk 8.0, ${str(R.string.live_rating_mine)} 9, ${str(R.string.live_rating_top250, 120)}",
         )) {
