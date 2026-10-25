@@ -6,6 +6,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
@@ -48,6 +51,25 @@ class CreditCardsTest {
         rule.onNodeWithText("Actor").assertExists()
         rule.onNodeWithText("Character").assertExists()
         rule.onNodeWithText("A").assertExists()
+    }
+
+    @Test
+    fun `cast without roles keeps its portrait and follows new names and server settings`() {
+        var details by mutableStateOf(TitleDetails(cast = listOf(CastMember("Ana", ""))))
+        var server by mutableStateOf<com.jamal2367.tinyppimobile.data.prefs.ServerConfig?>(null)
+        rule.show { DetailsBody(details, server) }
+        rule.onNodeWithText("Ana").assertExists()
+        rule.onNodeWithText("A").assertExists()
+        server = com.jamal2367.tinyppimobile.testing.Screens.box
+        rule.waitForIdle()
+        rule.onNodeWithText("Ana").assertExists()
+        details = TitleDetails(cast = listOf(CastMember("Bea", "", "portrait")))
+        rule.waitForIdle()
+        rule.onNodeWithText("Bea").assertExists()
+        rule.onNodeWithText("B").assertExists()
+        server = null
+        rule.waitForIdle()
+        rule.onNodeWithText("Bea").assertExists()
     }
 
     private fun checkCards(fontScale: Float) {
