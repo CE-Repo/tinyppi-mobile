@@ -330,6 +330,68 @@ data class ContinueItem(
 }
 
 /**
+ * Everything the library holds about one title, as `/api/details` answers
+ * it - read when its details are asked for, for the dialog that shows them.
+ *
+ * Every field but the first four is there only where the library has it; a
+ * missing one is its default here and is left off the dialog.
+ */
+@Serializable
+data class TitleDetails(
+    /** `movie`, `tvshow` or `episode`. */
+    val kind: String = "",
+    val id: Int = 0,
+    val title: String = "",
+    /** The library's own ratings, the known sources first. */
+    val ratings: List<SourceRating> = emptyList(),
+    val plot: String = "",
+    val tagline: String = "",
+    /** An episode's show. */
+    val show: String = "",
+    /** When it came out, or an episode first aired, as Kodi writes it. */
+    val premiered: String = "",
+    /** The age rating as the scraper wrote it, and its mark and level (see [MediaInfo.age]). */
+    val mpaa: String = "",
+    val age: String = "",
+    @SerialName("age_level") val ageLevel: String = "",
+    val year: Int = 0,
+    /** Seconds; 0 where the library does not know. */
+    val duration: Int = 0,
+    /** An episode's season and number; a series' count of seasons. */
+    val season: Int = -1,
+    val episode: Int = -1,
+    /** The reader's own, 1 to 10; 0 for none. */
+    val userrating: Int = 0,
+    /** The place in the IMDb Top 250; 0 for none. */
+    val top250: Int = 0,
+    val genres: List<String> = emptyList(),
+    val directors: List<String> = emptyList(),
+    val writers: List<String> = emptyList(),
+    val studios: List<String> = emptyList(),
+    val countries: List<String> = emptyList(),
+    /** The first twenty in billing order. */
+    val cast: List<CastMember> = emptyList(),
+    /** Whether the cast goes on past those twenty. */
+    @SerialName("cast_more") val castMore: Boolean = false,
+    /**
+     * The tags of its pictures, for their artwork addresses: a film's or a
+     * series' poster and fanart, an episode's still. Empty for none.
+     */
+    val poster: String = "",
+    val fanart: String = "",
+    val thumb: String = "",
+    /** The file's formats, as on a film's tile. */
+    val video: String = "",
+    @SerialName("dv_profile") val dvProfile: String = "",
+    val resolution: String = "",
+    val audio: String = "",
+)
+
+/** One of the cast, and who they played; [role] is empty where none is known. */
+@Serializable
+data class CastMember(val name: String = "", val role: String = "")
+
+/**
  * Something in the library that was pressed, to be marked seen or unseen:
  * which kind of title it is, Kodi's id for it, and what the question names it.
  */

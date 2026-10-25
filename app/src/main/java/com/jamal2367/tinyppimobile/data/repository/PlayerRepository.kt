@@ -11,6 +11,7 @@ import com.jamal2367.tinyppimobile.data.model.PlayBody
 import com.jamal2367.tinyppimobile.data.model.PlayEpisodeBody
 import com.jamal2367.tinyppimobile.data.model.ResumeBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
+import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.model.WatchedBody
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.data.model.PlaybackEventKind
@@ -55,6 +56,15 @@ class PlayerRepository(
 
     /** The films and episodes left half-watched, for the row above both shelves. */
     suspend fun continuing(): ContinueList = call { api.continuing() }
+
+    /** Everything the library holds about one title, for its details. */
+    suspend fun details(target: MarkTarget): TitleDetails = call {
+        when (target.kind) {
+            MarkTarget.Kind.MOVIE -> api.details(target.id, null, null)
+            MarkTarget.Kind.SHOW -> api.details(null, target.id, null)
+            MarkTarget.Kind.EPISODE -> api.details(null, null, target.id)
+        }
+    }
 
     /**
      * Put one of those films on the television.

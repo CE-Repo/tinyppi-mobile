@@ -298,8 +298,17 @@ is remembered like the others, and is not there at all once everything has
 been seen, or while a search finds nothing unwatched.
 
 **A tap on** a film, a series, an episode or a Continue watching tile opens a
-dialog with three options: **Play** (**Resume** where the box has a point to
-resume from), **Mark as watched** and **Mark as unwatched**. A series cannot be
+dialog with four options: **Play** (**Resume** where the box has a point to
+resume from), **Mark as watched**, **Mark as unwatched** and **Details**.
+
+**Details** opens a page of its own over the shelf, read from the library when
+it is asked for: the title's backdrop across the top (a film's or a series'
+fanart, an episode's still) with the poster standing on its lower edge beside
+the title, how long it runs and the file's formats; then the ratings as the
+overview card's shields - the age rating, every score, your own and the Top
+250 place - the slogan and the plot, the genres, the director, the writers and
+the studio, and the cast as a row of cards with who each played. A box that
+cannot answer says so on the page. A series cannot be
 played, so its first option is **Open**, which shows its episodes. Marking is
 written into Kodi's own library — a series marked either way is every episode
 of it — and every shelf is read again at once, so the tick and the unwatched
@@ -413,6 +422,7 @@ All of it.
 | `GET /api/series` | The series it has, for the wall under them. |
 | `GET /api/episodes` | The episodes of one series, read when it is opened. |
 | `GET /api/continue` | The films and episodes left half-watched, for the row at the top of both shelves, and the next-up row. |
+| `GET /api/details` | Everything the library holds about one title, for its details page. |
 | `POST /api/mode` | The VS10 buttons. |
 | `POST /api/command` | Play/pause, stop, previous/next chapter, jump to a chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track, audio offset, subtitle offset, tempo. |
 | `POST /api/play` | Starting one of the library's films, or one episode of a series — resumed, or from the beginning. |

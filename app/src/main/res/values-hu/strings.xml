@@ -56,6 +56,13 @@
     <string name="title_resume">Folytatás</string>
     <string name="title_open">Megnyitás</string>
     <string name="title_restart">Lejátszás az elejéről</string>
+    <string name="title_details">Részletek</string>
+    <string name="details_failed">A részleteket nem sikerült beolvasni.</string>
+    <string name="details_close">Bezárás</string>
+    <string name="details_genre">Műfaj</string>
+    <string name="details_writer">Forgatókönyv</string>
+    <string name="details_studio">Stúdió</string>
+    <string name="details_ratings">Értékelések</string>
     <string name="shelf_sort">Rendezés: %1$s</string>
     <string name="sort_title">Cím</string>
     <string name="sort_year">Év</string>

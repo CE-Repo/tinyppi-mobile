@@ -35,6 +35,9 @@ import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
 import com.jamal2367.tinyppimobile.data.model.Snapshot
+import com.jamal2367.tinyppimobile.data.model.SourceRating
+import com.jamal2367.tinyppimobile.data.model.CastMember
+import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
 import com.jamal2367.tinyppimobile.data.repository.LiveState
@@ -404,5 +407,74 @@ class LibraryScreensTest {
         rule.waitForIdle()
         pass++
         rule.waitUntil { has("pass 1") }
+    }
+
+    private fun said(description: String) =
+        rule.onAllNodesWithContentDescription(description).fetchSemanticsNodes().isNotEmpty()
+
+    @Test
+    fun `a title's details stand on a page of their own, and a failure says so`() {
+        fake.api.details = { kind, id ->
+            TitleDetails(
+                kind = kind, id = id, title = "Heat", plot = "A heist.", tagline = "A Los Angeles crime saga",
+                year = 1995, duration = 10200, mpaa = "Rated R", age = "mpa_r", ageLevel = "R", genres = listOf("Crime"),
+                directors = listOf("Michael Mann"), writers = listOf("M. Mann"), studios = listOf("Warner"),
+                cast = listOf(CastMember("Al Pacino", "Vincent"), CastMember("Val Kilmer", "")), castMore = true,
+                ratings = listOf(SourceRating("imdb", 8.3)), userrating = 9, top250 = 120,
+                poster = "p2", fanart = "f2", video = "dv", dvProfile = "7 FEL", resolution = "2160p", audio = "weird",
+            )
+        }
+        showFilms()
+        rule.waitUntil { has("Heat") }
+        text("Heat").performClick()
+        rule.onNodeWithText(str(R.string.title_details)).performClick()
+        rule.waitUntil { has("A heist.") }
+        // The screen moving under the open page leaves it as it is.
+        fake.playing(Snapshot(control = true, playing = false, libraryRevision = 3, title = "Something else"))
+        rule.waitForIdle()
+        for (shown in listOf(
+            "1995 · 2 h 50 min", "Dolby Vision P7 FEL", "4K", "weird", "A Los Angeles crime saga",
+            "Crime", "Michael Mann", "M. Mann", "Warner", "Al Pacino", "Vincent", "Val Kilmer", "\u2026",
+        )) {
+            assertTrue(shown, has(shown))
+        }
+        // The ratings as the overview card's shields, the age rating first.
+        for (spoken in listOf("Rated R", "IMDb 8.3", "${str(R.string.live_rating_mine)} 9", str(R.string.live_rating_top250, 120))) {
+            assertTrue(spoken, said(spoken))
+        }
+        rule.onNodeWithContentDescription(str(R.string.details_close)).performClick()
+        rule.waitForIdle()
+        assertTrue(!has("A heist."))
+
+        fake.api.details = { _, _ -> throw ApiFailure.Api(404, "no such title") }
+        text("Gravity").performClick()
+        rule.onNodeWithText(str(R.string.title_details)).performClick()
+        rule.waitUntil { has(str(R.string.details_failed)) }
+        rule.onNodeWithContentDescription(str(R.string.details_close)).performClick()
+        rule.waitForIdle()
+        assertTrue(!has(str(R.string.details_failed)))
+    }
+
+    @Test
+    fun `a series with little to say, and an episode under its still`() {
+        fake.api.details = { kind, id ->
+            if (kind == "tvshow") TitleDetails(kind = kind, id = id, title = "Chernobyl")
+            else TitleDetails(kind = kind, id = id, title = "Ghosts", thumb = "t76", plot = "It begins.")
+        }
+        fake.api.continuing = {
+            ContinueList(next = listOf(ContinueItem("episode", 76, "Ghosts", poster = "s7", duration = 3000, show = "Dark", season = 2, episode = 1)))
+        }
+        showSeries()
+        rule.waitUntil { has("Chernobyl") }
+        text("Chernobyl").performClick()
+        rule.onNodeWithText(str(R.string.title_details)).performClick()
+        rule.waitForIdle()
+        assertTrue(!has(str(R.string.details_genre)) && !has(str(R.string.live_credit_cast)))
+        rule.onNodeWithContentDescription(str(R.string.details_close)).performClick()
+        rule.onAllNodesWithText("Dark").onFirst().performClick()
+        rule.onNodeWithText(str(R.string.title_details)).performClick()
+        rule.waitUntil { has("It begins.") }
+        rule.onNodeWithContentDescription(str(R.string.details_close)).performClick()
+        assertEquals(2, fake.api.count("details"))
     }
 }

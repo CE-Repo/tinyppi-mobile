@@ -244,7 +244,7 @@ private fun creditLine(label: String, names: String, colors: ColorScheme): Annot
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun RatingRow(media: MediaInfo) {
+internal fun RatingRow(media: MediaInfo) {
     val tall = badgeHeight()
     val colours = MaterialTheme.colorScheme
     FlowRow(
