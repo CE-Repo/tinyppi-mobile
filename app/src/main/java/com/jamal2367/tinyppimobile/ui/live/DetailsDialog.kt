@@ -39,6 +39,10 @@ import androidx.compose.material.icons.Icons
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
@@ -96,6 +100,8 @@ data class DetailsUiState(
 internal class DetailsActions(
     @param:StringRes val play: Int,
     val resumable: Boolean,
+    val onMark: ((Boolean) -> Unit)? = null,
+    val onClearResume: (() -> Unit)? = null,
     onPlay: (fromStart: Boolean) -> Unit,
 ) {
     val onFirst: () -> Unit = { onPlay(false) }
@@ -249,30 +255,39 @@ private fun Hero(target: MarkTarget, details: TitleDetails, server: ServerConfig
  */
 @Composable
 private fun Actions(actions: DetailsActions) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-        Button(onClick = withKeyTick(actions.onFirst), modifier = Modifier.weight(1f).height(ACTION_HEIGHT)) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Button(onClick = withKeyTick(actions.onFirst), modifier = Modifier.fillMaxWidth().heightIn(min = ACTION_HEIGHT)) {
             Icon(
-                imageVector = if (actions.play == R.string.title_open) {
-                    Icons.AutoMirrored.Rounded.OpenInNew
-                } else {
-                    Icons.Rounded.PlayArrow
-                },
+                imageVector = if (actions.play == R.string.title_open) Icons.AutoMirrored.Rounded.OpenInNew else Icons.Rounded.PlayArrow,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
             )
-            Text(stringResource(actions.play), modifier = Modifier.padding(start = 8.dp), maxLines = 1)
+            Text(stringResource(actions.play), modifier = Modifier.padding(start = 8.dp))
         }
-        if (actions.resumable) {
-            OutlinedButton(onClick = withKeyTick(actions.onRestart), modifier = Modifier.weight(1f).height(ACTION_HEIGHT)) {
-                Icon(Icons.Rounded.Replay, contentDescription = null, modifier = Modifier.size(20.dp))
-                Text(
-                    stringResource(R.string.title_restart),
-                    modifier = Modifier.padding(start = 8.dp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+        FlowRow(
+            maxItemsInEachRow = 2,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            if (actions.resumable) {
+                DetailAction(Icons.Rounded.Replay, R.string.title_restart, actions.onRestart, Modifier.weight(1f))
+                actions.onClearResume?.let { clear ->
+                    DetailAction(Icons.Rounded.RestartAlt, R.string.resume_clear, clear, Modifier.weight(1f))
+                }
+            }
+            actions.onMark?.let { mark ->
+                DetailAction(Icons.Rounded.Visibility, R.string.mark_watched, { mark(true) }, Modifier.weight(1f))
+                DetailAction(Icons.Rounded.VisibilityOff, R.string.mark_unwatched, { mark(false) }, Modifier.weight(1f))
             }
         }
+    }
+}
+
+@Composable
+private fun DetailAction(icon: ImageVector, @StringRes label: Int, onClick: () -> Unit, modifier: Modifier) {
+    OutlinedButton(onClick = withKeyTick(onClick), modifier = modifier.heightIn(min = ACTION_HEIGHT)) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+        Text(stringResource(label), textAlign = TextAlign.Center, modifier = Modifier.weight(1f).padding(start = 8.dp))
     }
 }
 

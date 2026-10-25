@@ -1,6 +1,10 @@
 package com.jamal2367.tinyppimobile.ui.live
 
 import android.content.Context
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.isRoot
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableIntStateOf
@@ -49,7 +53,7 @@ class DetailsDialogTest {
     private fun has(text: String) = rule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
 
     private fun closeShown() =
-        rule.onAllNodesWithContentDescription(context.getString(R.string.details_close)).fetchSemanticsNodes().isNotEmpty()
+        has("One")
 
     @Test
     fun `the dialog shows the read as it goes, and closes on its button`() {
@@ -93,7 +97,7 @@ class DetailsDialogTest {
         rule.waitUntil { !has("\u2026") }
         state = DetailsUiState(film, details = TitleDetails(cast = cast))
         rule.waitUntil { !has("Ben") }
-        rule.onNodeWithContentDescription(context.getString(R.string.details_close)).performClick()
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
         assertEquals(1, closed)
     }
 

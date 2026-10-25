@@ -57,7 +57,6 @@ import com.jamal2367.tinyppimobile.util.MediaUrls
 import com.jamal2367.tinyppimobile.ui.live.ContinueUiState
 import com.jamal2367.tinyppimobile.ui.live.FILM_START_TIMEOUT_MS
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
-import com.jamal2367.tinyppimobile.ui.live.TitleDialog
 import com.jamal2367.tinyppimobile.ui.live.TitleQuestion
 import com.jamal2367.tinyppimobile.ui.live.markTarget
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
@@ -193,11 +192,8 @@ fun FilmsScreen(
         ArrangeableCard(FOLD_FILMS, stringResource(R.string.library_all, shown.size)),
     )
     ArrangeBackHandler(CardScreens.FILMS, layout)
-    var asking by remember { mutableStateOf<TitleQuestion?>(null) }
-    // The first answers of the question the details were opened from, which
-    // the details page offers too.
     var detailed by remember { mutableStateOf<DetailsActions?>(null) }
-    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume) { question ->
+    val openDetails: (TitleQuestion) -> Unit = { question ->
         detailed = question.detailsActions(viewModel)
         viewModel.openDetails(question.target)
     }
@@ -206,24 +202,14 @@ fun FilmsScreen(
         val question = TitleQuestion(item.markTarget(), if (item.resume > 0) R.string.title_resume else R.string.title_play, resumable = item.resume > 0) { fromStart ->
             viewModel.playContinuing(item, fromStart)
         }
-        detailed = question.detailsActions(viewModel)
-        viewModel.openDetails(question.target)
+        openDetails(question)
     }
-    // A press on a film asks first; playing it is the first answer.
-    val askFilm: (LibraryFilm) -> Unit = { film ->
-        asking = TitleQuestion(
+    val detailsFilm: (LibraryFilm) -> Unit = { film ->
+        openDetails(TitleQuestion(
             film.markTarget(),
             if (film.resume > 0) R.string.title_resume else R.string.title_play,
             resumable = film.resume > 0,
-        ) { fromStart -> viewModel.playFilm(film, fromStart) }
-    }
-    val detailsFilm: (LibraryFilm) -> Unit = { film ->
-        askFilm(film)
-        asking?.let { question ->
-            detailed = question.detailsActions(viewModel)
-            viewModel.openDetails(question.target)
-        }
-        asking = null
+        ) { fromStart -> viewModel.playFilm(film, fromStart) })
     }
 
     Shelf(
@@ -294,13 +280,7 @@ fun FilmsScreen(
                         gapAbove = above,
                         expanded = continueOpen,
                         onToggle = { folds.setExpanded(FOLD_FILMS_CONTINUE, !continueOpen) },
-                        onPlay = { item ->
-                            asking = TitleQuestion(
-                                item.markTarget(),
-                                R.string.title_resume,
-                                resumable = true,
-                            ) { fromStart -> viewModel.playContinuing(item, fromStart) }
-                        },
+                        onPlay = detailsContinue,
                     )
                     above = true
                 }
@@ -325,7 +305,7 @@ fun FilmsScreen(
                             },
                             starting = library.starting == film.id,
                             enabled = library.starting == null,
-                            onPlay = { askFilm(film) },
+                            onPlay = { detailsFilm(film) },
                             onDetails = { detailsFilm(film) },
                             modifier = modifier,
                         )
@@ -357,7 +337,7 @@ fun FilmsScreen(
                             },
                             starting = library.starting == film.id,
                             enabled = library.starting == null,
-                            onPlay = { askFilm(film) },
+                            onPlay = { detailsFilm(film) },
                             onDetails = { detailsFilm(film) },
                             modifier = modifier,
                         )
@@ -376,7 +356,7 @@ fun FilmsScreen(
                         gapAbove = above,
                         expanded = wallOpen,
                         onToggle = { folds.setExpanded(FOLD_FILMS, !wallOpen) },
-                        onPlay = askFilm,
+                        onPlay = detailsFilm,
                         onDetails = detailsFilm,
                     )
                     above = true
@@ -452,11 +432,8 @@ fun SeriesScreen(
         ArrangeableCard(FOLD_SERIES, stringResource(R.string.series_all, shown.size)),
     )
     ArrangeBackHandler(CardScreens.SERIES, layout)
-    var asking by remember { mutableStateOf<TitleQuestion?>(null) }
-    // The first answers of the question the details were opened from, which
-    // the details page offers too.
     var detailed by remember { mutableStateOf<DetailsActions?>(null) }
-    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume) { question ->
+    val openDetails: (TitleQuestion) -> Unit = { question ->
         detailed = question.detailsActions(viewModel)
         viewModel.openDetails(question.target)
     }
@@ -468,34 +445,15 @@ fun SeriesScreen(
         detailed = question.detailsActions(viewModel)
         viewModel.openDetails(question.target)
     }
-    // A series cannot be played, so its first answer opens it.
-    val askShow: (LibraryShow) -> Unit = { show ->
-        asking = TitleQuestion(show.markTarget(), R.string.title_open) { viewModel.openShow(show) }
-    }
     val detailsShow: (LibraryShow) -> Unit = { show ->
-        askShow(show)
-        asking?.let { question ->
-            detailed = question.detailsActions(viewModel)
-            viewModel.openDetails(question.target)
-        }
-        asking = null
+        openDetails(TitleQuestion(show.markTarget(), R.string.title_open) { viewModel.openShow(show) })
     }
-    val askEpisode: (LibraryEpisode) -> Unit = { episode ->
-        asking = TitleQuestion(
-            episode.markTarget(),
-            if (episode.resume > 0) R.string.title_resume else R.string.title_play,
-            resumable = episode.resume > 0,
-        ) { fromStart -> viewModel.playEpisode(episode, fromStart) }
-    }
-
     val detailsEpisode: (LibraryEpisode) -> Unit = { episode ->
-        val question = TitleQuestion(
+        openDetails(TitleQuestion(
             episode.markTarget(),
             if (episode.resume > 0) R.string.title_resume else R.string.title_play,
             resumable = episode.resume > 0,
-        ) { fromStart -> viewModel.playEpisode(episode, fromStart) }
-        detailed = question.detailsActions(viewModel)
-        viewModel.openDetails(question.target)
+        ) { fromStart -> viewModel.playEpisode(episode, fromStart) })
     }
 
     // The way out of a show is the way back, and on this screen the system's
@@ -535,7 +493,7 @@ fun SeriesScreen(
                 openSeasons = series.openSeasons,
                 onBack = viewModel::closeShow,
                 onSeason = viewModel::toggleSeason,
-                onPlay = askEpisode,
+                onPlay = detailsEpisode,
                 onDetails = detailsEpisode,
             )
             return@Shelf
@@ -579,13 +537,7 @@ fun SeriesScreen(
                         gapAbove = above,
                         expanded = continueOpen,
                         onToggle = { folds.setExpanded(FOLD_SERIES_CONTINUE, !continueOpen) },
-                        onPlay = { item ->
-                            asking = TitleQuestion(
-                                item.markTarget(),
-                                R.string.title_resume,
-                                resumable = true,
-                            ) { fromStart -> viewModel.playContinuing(item, fromStart) }
-                        },
+                        onPlay = detailsContinue,
                     )
                     above = true
                 }
@@ -605,11 +557,7 @@ fun SeriesScreen(
                         gapAbove = above,
                         expanded = nextOpen,
                         onToggle = { folds.setExpanded(FOLD_SERIES_NEXT, !nextOpen) },
-                        onPlay = { item ->
-                            asking = TitleQuestion(item.markTarget(), R.string.title_play) { fromStart ->
-                                viewModel.playContinuing(item, fromStart)
-                            }
-                        },
+                        onPlay = detailsContinue,
                     )
                     above = true
                 }
@@ -634,7 +582,7 @@ fun SeriesScreen(
                             },
                             opening = series.opening == show.id,
                             enabled = series.opening == null,
-                            onOpen = { askShow(show) },
+                            onOpen = { detailsShow(show) },
                             onDetails = { detailsShow(show) },
                             modifier = modifier,
                         )
@@ -663,7 +611,7 @@ fun SeriesScreen(
                             },
                             opening = series.opening == show.id,
                             enabled = series.opening == null,
-                            onOpen = { askShow(show) },
+                            onOpen = { detailsShow(show) },
                             onDetails = { detailsShow(show) },
                             modifier = modifier,
                         )
@@ -682,7 +630,7 @@ fun SeriesScreen(
                         gapAbove = above,
                         expanded = wallOpen,
                         onToggle = { folds.setExpanded(FOLD_SERIES, !wallOpen) },
-                        onOpen = askShow,
+                        onOpen = detailsShow,
                         onDetails = detailsShow,
                     )
                     above = true
@@ -692,73 +640,19 @@ fun SeriesScreen(
     }
 }
 
-/**
- * The question a press on a title asks, while one is open: play it (open it,
- * for a series), or count it as seen or as unseen.
- *
- * Held by the screen rather than by the view model: it is a question on the
- * screen in front of somebody, and one left open when they switch tabs is a
- * question about a title they are no longer looking at.
- */
-@Composable
-private fun TitleAsker(
-    question: TitleQuestion?,
-    onDone: () -> Unit,
-    onMark: (MarkTarget, Boolean) -> Unit,
-    onClearResume: (MarkTarget) -> Unit,
-    onDetails: (TitleQuestion) -> Unit,
-) {
-    val asked = question ?: return
-    val answers = asked.answers(onDone, onMark, onClearResume, onDetails)
-    TitleDialog(
-        question = asked,
-        onDismiss = onDone,
-        onPlay = answers.onPlay,
-        onMark = answers.onMark,
-        onClearResume = answers.onClearResume,
-        onDetails = answers.onDetails,
-    )
-}
-
-/** What the dialog's options do: each closes the dialog, then does its own thing. */
-private class TitleAnswers(
-    val onPlay: (fromStart: Boolean) -> Unit,
-    val onMark: (watched: Boolean) -> Unit,
-    val onClearResume: () -> Unit,
-    val onDetails: () -> Unit,
-)
-
-/**
- * The answers to this question. Made outside composition, so they are new
- * with each question rather than remembered across them - there is nothing to
- * keep: the dialog is up for one question at a time.
- */
-private fun TitleQuestion.answers(
-    onDone: () -> Unit,
-    onMark: (MarkTarget, Boolean) -> Unit,
-    onClearResume: (MarkTarget) -> Unit,
-    onDetails: (TitleQuestion) -> Unit,
-) = TitleAnswers(
-    onPlay = { fromStart ->
-        onDone()
-        onPlay(fromStart)
-    },
+/** Every library action closes the details before updating Kodi and the shelves. */
+private fun TitleQuestion.detailsActions(viewModel: LiveViewModel) = DetailsActions(
+    play = play,
+    resumable = resumable,
     onMark = { watched ->
-        onDone()
-        onMark(target, watched)
+        viewModel.closeDetails()
+        viewModel.setWatched(target, watched)
     },
     onClearResume = {
-        onDone()
-        onClearResume(target)
+        viewModel.closeDetails()
+        viewModel.clearResume(target)
     },
-    onDetails = {
-        onDone()
-        onDetails(this)
-    },
-)
-
-/** Play, resume or start over from the details page as from the question, the page closing first. */
-private fun TitleQuestion.detailsActions(viewModel: LiveViewModel) = DetailsActions(play, resumable) { fromStart ->
+) { fromStart ->
     viewModel.closeDetails()
     onPlay(fromStart)
 }

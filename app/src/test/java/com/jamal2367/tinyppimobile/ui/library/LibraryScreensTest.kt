@@ -163,7 +163,7 @@ class LibraryScreensTest {
         rule.onNodeWithText(str(R.string.resume_clear)).performClick()
         text("Heat").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_play)).assertIsDisplayed()
-        rule.onNodeWithText(str(R.string.mark_cancel)).performClick()
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
         // From the continue row.
         rule.onAllNodesWithText("Arrival").onFirst().performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_resume)).performClick()
@@ -260,7 +260,7 @@ class LibraryScreensTest {
         // A show from the unseen row, a search, and the continue row.
         rule.waitUntil { rule.onAllNodesWithText("Silo").fetchSemanticsNodes().isNotEmpty() }
         text("Silo").performTouchInput { longClick() }
-        rule.onNodeWithText(str(R.string.mark_cancel)).performClick()
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
         text("Dark").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.mark_watched)).performClick()
         rule.onNode(hasSetTextAction()).performTextInput("zzz")
