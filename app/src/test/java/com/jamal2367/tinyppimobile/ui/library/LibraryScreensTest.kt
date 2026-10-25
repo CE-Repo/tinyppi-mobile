@@ -770,4 +770,30 @@ class LibraryScreensTest {
         rule.waitUntil { fake.viewModel.series.value.open == null }
     }
 
+    @Test
+    fun `an unrelated opening keeps details then a later direct opening gets its own window`() {
+        val gate = CompletableDeferred<EpisodeList>()
+        fake.api.episodes = { gate.await() }
+        showSeries()
+        rule.waitUntil { has("Chernobyl") }
+        fake.viewModel.openDetails(com.jamal2367.tinyppimobile.data.model.MarkTarget(
+            com.jamal2367.tinyppimobile.data.model.MarkTarget.Kind.SHOW, 99, "Other show"))
+        rule.waitUntil { fake.viewModel.details.value?.details != null }
+        fake.viewModel.openShow(shows.first())
+        rule.waitUntil { fake.viewModel.series.value.opening == shows.first().id }
+        rule.waitForIdle()
+        assertTrue(has("Other show"))
+        assertTrue(!said(str(R.string.series_back)))
+        fake.viewModel.closeShow()
+        fake.viewModel.closeDetails()
+        rule.waitForIdle()
+        fake.api.episodes = { EpisodeList(episodes = episodes) }
+        fake.viewModel.openShow(shows[1])
+        rule.waitUntil { said(str(R.string.series_back)) }
+        rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
+        rule.waitUntil { has("Secrets") }
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        rule.waitUntil { fake.viewModel.series.value.open == null }
+    }
+
 }
