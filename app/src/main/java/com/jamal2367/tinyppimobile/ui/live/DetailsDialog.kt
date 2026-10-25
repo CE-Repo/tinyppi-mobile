@@ -2,6 +2,13 @@
 
 package com.jamal2367.tinyppimobile.ui.live
 
+import androidx.compose.runtime.remember
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.foundation.background
 import androidx.compose.runtime.getValue
 import com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage
@@ -147,7 +154,26 @@ internal fun DetailsDialog(
 private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: DetailsActions?, onDismiss: () -> Unit) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         val details = state.details
-        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        val scroll = rememberScrollState()
+        val threshold = with(LocalDensity.current) { 100.dp.toPx() }
+        val dismissSwipe = remember(onDismiss, threshold) {
+            object : NestedScrollConnection {
+                var pulled = 0f
+                override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                    if (source == NestedScrollSource.UserInput) {
+                        pulled = (pulled + available.y).coerceAtLeast(0f)
+                        if (consumed.y < 0f) pulled = 0f
+                    }
+                    return Offset.Zero
+                }
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    if (pulled >= threshold) onDismiss()
+                    pulled = 0f
+                    return Velocity.Zero
+                }
+            }
+        }
+        Column(modifier = Modifier.nestedScroll(dismissSwipe).verticalScroll(scroll)) {
             Hero(state.target, details ?: TitleDetails(), server, onDismiss)
             Column(
                 verticalArrangement = Arrangement.spacedBy(22.dp),
@@ -347,8 +373,6 @@ internal fun DetailsBody(details: TitleDetails) {
     }
     val facts = listOf(
         stringResource(R.string.details_genre) to details.genres,
-        stringResource(R.string.live_credit_director) to details.directors,
-        stringResource(R.string.details_writer) to details.writers,
         stringResource(R.string.details_studio) to details.studios,
     ).filter { it.second.isNotEmpty() }
     if (facts.isNotEmpty()) {
@@ -356,7 +380,9 @@ internal fun DetailsBody(details: TitleDetails) {
             for ((heading, names) in facts) Fact(heading, names.joinToString(", "))
         }
     }
-    if (details.cast.isNotEmpty()) Cast(details.cast, details.castMore)
+    if (details.directors.isNotEmpty()) Cast(details.directors.map { CastMember(name = it) }, false, stringResource(R.string.live_credit_director))
+    if (details.writers.isNotEmpty()) Cast(details.writers.map { CastMember(name = it) }, false, stringResource(R.string.details_writer))
+    if (details.cast.isNotEmpty()) Cast(details.cast, details.castMore, stringResource(R.string.live_credit_cast))
 }
 
 /** One fact: its name in the quieter colour over the names. */
@@ -379,10 +405,10 @@ private fun Fact(heading: String, names: String) {
  * ellipsis at the end where the library holds more.
  */
 @Composable
-private fun Cast(cast: List<CastMember>, more: Boolean) {
+private fun Cast(cast: List<CastMember>, more: Boolean, heading: String) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
-            text = stringResource(R.string.live_credit_cast),
+            text = heading,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
         )
@@ -419,17 +445,12 @@ private fun CastCard(person: CastMember) {
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
         }
-        // Two lines of name and one of role, held open where they are not
-        // filled - an empty text takes no line at all, so a role nobody
-        // named is a space - so every card in the row stands the same height.
         Text(
             text = person.name,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
             minLines = 2,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
         )
         Text(
             text = person.role.ifEmpty { "\u00A0" },
@@ -437,8 +458,6 @@ private fun CastCard(person: CastMember) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             minLines = 1,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
         )
     }
 }

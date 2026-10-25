@@ -5,6 +5,7 @@
 
 package com.jamal2367.tinyppimobile.ui.live
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +61,7 @@ internal fun LazyListScope.seriesWall(
     expanded: Boolean,
     onToggle: () -> Unit,
     onOpen: (LibraryShow) -> Unit,
+    onDetails: (LibraryShow) -> Unit = onOpen,
 ) {
     val key = "series-wall"
     shelfCard(
@@ -82,6 +84,7 @@ internal fun LazyListScope.seriesWall(
             // the screen.
             enabled = opening == null,
             onOpen = { onOpen(show) },
+            onDetails = { onDetails(show) },
             modifier = Modifier.weight(1f),
         )
     }
@@ -102,10 +105,11 @@ internal fun ShowTile(
     opening: Boolean,
     enabled: Boolean,
     onOpen: () -> Unit,
+    onDetails: () -> Unit = onOpen,
     modifier: Modifier,
 ) {
     Column(
-        modifier = modifier.clickable(enabled = enabled, onClick = onOpen),
+        modifier = modifier.combinedClickable(enabled = enabled, onClick = onDetails, onLongClick = onOpen),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         ArtFrame(

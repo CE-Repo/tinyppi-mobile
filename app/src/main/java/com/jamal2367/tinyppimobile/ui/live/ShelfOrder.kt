@@ -146,6 +146,7 @@ object FormatNames {
     )
     val RESOLUTION = linkedMapOf("2160p" to "4K", "1080p" to "1080p", "720p" to "720p", "sd" to "SD")
     val AUDIO = linkedMapOf(
+        "atmos" to "Dolby Atmos", "dtsx" to "DTS:X",
         "truehd" to "Dolby TrueHD", "dtshd_ma" to "DTS-HD MA", "pcm" to "PCM", "flac" to "FLAC",
         "dtshd_hra" to "DTS-HD HRA", "eac3" to "Dolby Digital Plus", "dts" to "DTS",
         "ac3" to "Dolby Digital", "aac" to "AAC", "opus" to "Opus", "vorbis" to "Vorbis",

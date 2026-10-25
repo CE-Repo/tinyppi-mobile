@@ -10,12 +10,16 @@ import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
@@ -145,23 +149,23 @@ class LibraryScreensTest {
         rule.onNodeWithText(str(R.string.recent_title)).assertIsDisplayed()
 
         // A film from the wall, resumable: every option of the dialog.
-        text("Dune").performClick()
+        text("Dune").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_restart)).performClick()
         settle()
-        text("Dune").performClick()
+        text("Dune").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_resume)).performClick()
         settle()
-        text("Dune").performClick()
+        text("Dune").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.mark_watched)).performClick()
-        text("Dune").performClick()
+        text("Dune").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.mark_unwatched)).performClick()
-        text("Dune").performClick()
+        text("Dune").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.resume_clear)).performClick()
-        text("Heat").performClick()
+        text("Heat").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_play)).assertIsDisplayed()
         rule.onNodeWithText(str(R.string.mark_cancel)).performClick()
         // From the continue row.
-        rule.onAllNodesWithText("Arrival").onFirst().performClick()
+        rule.onAllNodesWithText("Arrival").onFirst().performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_resume)).performClick()
         settle()
         assertTrue(fake.api.calls.containsAll(listOf("play", "setWatched", "clearResume")))
@@ -201,7 +205,7 @@ class LibraryScreensTest {
         fake.api.play = { gate.await(); com.jamal2367.tinyppimobile.data.model.CommandAck(ok = true) }
         showFilms()
         rule.waitUntil { rule.onAllNodesWithText("Gravity").fetchSemanticsNodes().isNotEmpty() }
-        text("Gravity").performClick()
+        text("Gravity").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_play)).performClick()
         rule.mainClock.advanceTimeBy(1_000)
         gate.complete(Unit)
@@ -237,7 +241,7 @@ class LibraryScreensTest {
         rule.waitUntil { rule.onAllNodesWithText("Chernobyl").fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText(str(R.string.series_unseen_all, 2)).assertIsDisplayed()
 
-        text("Dark").performClick()
+        text("Dark").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_open)).performClick()
         rule.waitUntil { rule.onAllNodesWithText(str(R.string.series_back)).fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText(str(R.string.series_specials)).performClick()
@@ -255,9 +259,9 @@ class LibraryScreensTest {
 
         // A show from the unseen row, a search, and the continue row.
         rule.waitUntil { rule.onAllNodesWithText("Silo").fetchSemanticsNodes().isNotEmpty() }
-        text("Silo").performClick()
+        text("Silo").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.mark_cancel)).performClick()
-        text("Dark").performClick()
+        text("Dark").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.mark_watched)).performClick()
         rule.onNode(hasSetTextAction()).performTextInput("zzz")
         rule.onNodeWithText(str(R.string.series_no_match)).assertIsDisplayed()
@@ -435,7 +439,6 @@ class LibraryScreensTest {
         showFilms()
         rule.waitUntil { has("Heat") }
         text("Heat").performClick()
-        rule.onNodeWithText(str(R.string.title_details)).performClick()
         rule.waitUntil { has("A heist.") }
         // The screen moving under the open page leaves it as it is.
         fake.playing(Snapshot(control = true, playing = false, libraryRevision = 3, title = "Something else"))
@@ -456,7 +459,6 @@ class LibraryScreensTest {
 
         fake.api.details = { _, _ -> throw ApiFailure.Api(404, "no such title") }
         text("Gravity").performClick()
-        rule.onNodeWithText(str(R.string.title_details)).performClick()
         rule.waitUntil { has(str(R.string.details_failed)) }
         rule.onNodeWithContentDescription(str(R.string.details_close)).performClick()
         rule.waitForIdle()
@@ -475,12 +477,10 @@ class LibraryScreensTest {
         showSeries()
         rule.waitUntil { has("Chernobyl") }
         text("Chernobyl").performClick()
-        rule.onNodeWithText(str(R.string.title_details)).performClick()
         rule.waitForIdle()
         assertTrue(!has(str(R.string.details_genre)) && !has(str(R.string.live_credit_cast)))
         rule.onNodeWithContentDescription(str(R.string.details_close)).performClick()
         rule.onAllNodesWithText("Dark").onFirst().performClick()
-        rule.onNodeWithText(str(R.string.title_details)).performClick()
         rule.waitUntil { has("It begins.") }
         rule.onNodeWithContentDescription(str(R.string.details_close)).performClick()
         assertEquals(2, fake.api.count("details"))
@@ -493,20 +493,17 @@ class LibraryScreensTest {
         rule.waitUntil { has("Dune") }
         // A film with a point to resume from: resume, or start over.
         text("Dune").performClick()
-        rule.onNodeWithText(str(R.string.title_details)).performClick()
         rule.waitUntil { has("Spice.") }
         rule.onAllNodesWithText(str(R.string.title_restart)).onLast().performClick()
         settle()
         assertTrue(!has("Spice."))
         text("Dune").performClick()
-        rule.onNodeWithText(str(R.string.title_details)).performClick()
         rule.waitUntil { has("Spice.") }
         rule.onAllNodesWithText(str(R.string.title_resume)).onLast().performClick()
         settle()
         assertEquals(listOf(false, null), fake.api.plays.map { it.resume })
         // A film not begun: only play.
         text("Heat").performClick()
-        rule.onNodeWithText(str(R.string.title_details)).performClick()
         rule.waitUntil { has("Spice.") }
         assertTrue(!has(str(R.string.title_restart)))
         rule.onAllNodesWithText(str(R.string.title_play)).onLast().performClick()
@@ -515,12 +512,22 @@ class LibraryScreensTest {
     }
 
     @Test
+    fun `pulling down at the top closes details`() {
+        fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, plot = "Swipe details.") }
+        showFilms()
+        rule.waitUntil { has("Heat") }
+        text("Heat").performClick()
+        rule.waitUntil { has("Swipe details.") }
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
+        rule.waitUntil { !has("Swipe details.") }
+    }
+
+    @Test
     fun `a series' details page opens it`() {
         fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, title = "Chernobyl", plot = "1986.") }
         showSeries()
         rule.waitUntil { has("Chernobyl") }
         text("Chernobyl").performClick()
-        rule.onNodeWithText(str(R.string.title_details)).performClick()
         rule.waitUntil { has("1986.") }
         rule.onAllNodesWithText(str(R.string.title_open)).onLast().performClick()
         rule.waitForIdle()

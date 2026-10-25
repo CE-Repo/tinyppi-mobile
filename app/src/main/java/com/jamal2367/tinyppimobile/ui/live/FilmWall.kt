@@ -6,6 +6,7 @@
 package com.jamal2367.tinyppimobile.ui.live
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,6 +58,7 @@ internal fun LazyListScope.filmWall(
     expanded: Boolean,
     onToggle: () -> Unit,
     onPlay: (LibraryFilm) -> Unit,
+    onDetails: (LibraryFilm) -> Unit = onPlay,
 ) {
     val key = "film-wall"
     shelfCard(
@@ -79,6 +81,7 @@ internal fun LazyListScope.filmWall(
             // won, which is not the one the second press was for.
             enabled = starting == null,
             onPlay = { onPlay(film) },
+            onDetails = { onDetails(film) },
             modifier = Modifier.weight(1f),
         )
     }
@@ -105,10 +108,11 @@ internal fun FilmTile(
     starting: Boolean,
     enabled: Boolean,
     onPlay: () -> Unit,
+    onDetails: () -> Unit = onPlay,
     modifier: Modifier,
 ) {
     Column(
-        modifier = modifier.clickable(enabled = enabled, onClick = onPlay),
+        modifier = modifier.combinedClickable(enabled = enabled, onClick = onDetails, onLongClick = onPlay),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         ArtFrame(

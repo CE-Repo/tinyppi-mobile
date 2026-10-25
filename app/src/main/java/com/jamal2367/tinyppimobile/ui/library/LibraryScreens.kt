@@ -61,6 +61,7 @@ import com.jamal2367.tinyppimobile.ui.live.TitleDialog
 import com.jamal2367.tinyppimobile.ui.live.TitleQuestion
 import com.jamal2367.tinyppimobile.ui.live.markTarget
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
+import com.jamal2367.tinyppimobile.data.model.ContinueItem
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
@@ -201,6 +202,13 @@ fun FilmsScreen(
         viewModel.openDetails(question.target)
     }
     DetailsShown(viewModel, detailed)
+    val detailsContinue: (ContinueItem) -> Unit = { item ->
+        val question = TitleQuestion(item.markTarget(), if (item.resume > 0) R.string.title_resume else R.string.title_play, resumable = item.resume > 0) { fromStart ->
+            viewModel.playContinuing(item, fromStart)
+        }
+        detailed = question.detailsActions(viewModel)
+        viewModel.openDetails(question.target)
+    }
     // A press on a film asks first; playing it is the first answer.
     val askFilm: (LibraryFilm) -> Unit = { film ->
         asking = TitleQuestion(
@@ -208,6 +216,14 @@ fun FilmsScreen(
             if (film.resume > 0) R.string.title_resume else R.string.title_play,
             resumable = film.resume > 0,
         ) { fromStart -> viewModel.playFilm(film, fromStart) }
+    }
+    val detailsFilm: (LibraryFilm) -> Unit = { film ->
+        askFilm(film)
+        asking?.let { question ->
+            detailed = question.detailsActions(viewModel)
+            viewModel.openDetails(question.target)
+        }
+        asking = null
     }
 
     Shelf(
@@ -269,6 +285,7 @@ fun FilmsScreen(
             when (id) {
                 FOLD_FILMS_CONTINUE -> if (search.isBlank() && resumable.isNotEmpty()) {
                     continueCard(
+                        onDetails = detailsContinue,
                         items = resumable,
                         columns = columns,
                         server = state.live.server,
@@ -309,6 +326,7 @@ fun FilmsScreen(
                             starting = library.starting == film.id,
                             enabled = library.starting == null,
                             onPlay = { askFilm(film) },
+                            onDetails = { detailsFilm(film) },
                             modifier = modifier,
                         )
                     }
@@ -340,6 +358,7 @@ fun FilmsScreen(
                             starting = library.starting == film.id,
                             enabled = library.starting == null,
                             onPlay = { askFilm(film) },
+                            onDetails = { detailsFilm(film) },
                             modifier = modifier,
                         )
                     }
@@ -358,6 +377,7 @@ fun FilmsScreen(
                         expanded = wallOpen,
                         onToggle = { folds.setExpanded(FOLD_FILMS, !wallOpen) },
                         onPlay = askFilm,
+                        onDetails = detailsFilm,
                     )
                     above = true
                 }
@@ -441,9 +461,24 @@ fun SeriesScreen(
         viewModel.openDetails(question.target)
     }
     DetailsShown(viewModel, detailed)
+    val detailsContinue: (ContinueItem) -> Unit = { item ->
+        val question = TitleQuestion(item.markTarget(), if (item.resume > 0) R.string.title_resume else R.string.title_play, resumable = item.resume > 0) { fromStart ->
+            viewModel.playContinuing(item, fromStart)
+        }
+        detailed = question.detailsActions(viewModel)
+        viewModel.openDetails(question.target)
+    }
     // A series cannot be played, so its first answer opens it.
     val askShow: (LibraryShow) -> Unit = { show ->
         asking = TitleQuestion(show.markTarget(), R.string.title_open) { viewModel.openShow(show) }
+    }
+    val detailsShow: (LibraryShow) -> Unit = { show ->
+        askShow(show)
+        asking?.let { question ->
+            detailed = question.detailsActions(viewModel)
+            viewModel.openDetails(question.target)
+        }
+        asking = null
     }
     val askEpisode: (LibraryEpisode) -> Unit = { episode ->
         asking = TitleQuestion(
@@ -524,6 +559,7 @@ fun SeriesScreen(
             when (id) {
                 FOLD_SERIES_CONTINUE -> if (search.isBlank() && resumable.isNotEmpty()) {
                     continueCard(
+                        onDetails = detailsContinue,
                         items = resumable,
                         columns = columns,
                         server = state.live.server,
@@ -547,6 +583,7 @@ fun SeriesScreen(
                 // being watched, started from its beginning.
                 FOLD_SERIES_NEXT -> if (search.isBlank() && nextUp.isNotEmpty()) {
                     continueCard(
+                        onDetails = detailsContinue,
                         items = nextUp,
                         key = "next-up",
                         title = { stringResource(R.string.next_up_count, nextUp.size) },
@@ -587,6 +624,7 @@ fun SeriesScreen(
                             opening = series.opening == show.id,
                             enabled = series.opening == null,
                             onOpen = { askShow(show) },
+                            onDetails = { detailsShow(show) },
                             modifier = modifier,
                         )
                     }
@@ -615,6 +653,7 @@ fun SeriesScreen(
                             opening = series.opening == show.id,
                             enabled = series.opening == null,
                             onOpen = { askShow(show) },
+                            onDetails = { detailsShow(show) },
                             modifier = modifier,
                         )
                     }
@@ -633,6 +672,7 @@ fun SeriesScreen(
                         expanded = wallOpen,
                         onToggle = { folds.setExpanded(FOLD_SERIES, !wallOpen) },
                         onOpen = askShow,
+                        onDetails = detailsShow,
                     )
                     above = true
                 }
