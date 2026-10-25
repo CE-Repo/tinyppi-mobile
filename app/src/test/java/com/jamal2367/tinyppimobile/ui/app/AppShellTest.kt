@@ -52,6 +52,19 @@ class AppShellTest {
     private fun seen(text: String) = rule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
 
     @Test
+    fun `starting a film on the shelf returns to live`() {
+        rule.until { seen("Dune: Part Two") }
+        tab(R.string.library_title).performClick()
+        rule.until { seen("Heat") }
+        rule.onAllNodesWithText("Heat").onFirst().performClick()
+        rule.until { seen(str(R.string.title_play)) }
+        rule.onNodeWithText(str(R.string.title_play)).performClick()
+        rule.until { env.box.asked.any { it.startsWith("POST ") } }
+        rule.until { rule.onAllNodesWithText("Dune: Part Two").fetchSemanticsNodes().isNotEmpty() }
+        assertTrue(env.box.asked.any { it.startsWith("POST ") })
+    }
+
+    @Test
     fun `every tab opens from the bar, and back goes home, then out`() {
         rule.until { seen("Dune: Part Two") }
         rule.until { rule.onAllNodesWithContentDescription(str(R.string.series_title)).fetchSemanticsNodes().isNotEmpty() }

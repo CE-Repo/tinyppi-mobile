@@ -769,7 +769,7 @@ private fun FineSection(controls: PlayerControls, viewModel: LiveViewModel) {
  */
 @Composable
 private fun OffsetStepper(
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
     label: String,
     reported: Double,
     step: Double,

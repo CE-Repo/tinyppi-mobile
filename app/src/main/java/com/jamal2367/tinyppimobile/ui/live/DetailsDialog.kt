@@ -576,7 +576,7 @@ private fun Fact(heading: String, names: String) {
  * ellipsis at the end where the library holds more.
  */
 @Composable
-private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server: ServerConfig? = null, sizing: List<CastMember> = cast) {
+private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server: ServerConfig? = null, sizing: List<CastMember>) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
     val nameStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
@@ -643,7 +643,7 @@ private fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
 }
 
 @Composable
-private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server: ServerConfig? = null) {
+private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server: ServerConfig?) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,

@@ -55,12 +55,12 @@ internal fun ArtFrame(
     url: String?,
     ratio: Float,
     modifier: Modifier,
-    progress: Float? = null,
+    progress: Float?,
     watched: Boolean = false,
-    busy: Boolean = false,
+    busy: Boolean,
     unseen: Int = 0,
-    rating: Double = 0.0,
-    ratingFrom: String = "",
+    rating: Double,
+    ratingFrom: String,
 ) {
     Box(
         modifier = modifier

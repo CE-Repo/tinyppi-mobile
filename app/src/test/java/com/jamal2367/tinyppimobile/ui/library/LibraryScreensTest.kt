@@ -700,4 +700,20 @@ class LibraryScreensTest {
         assertTrue(!said(str(R.string.series_back)))
         assertEquals(null, fake.viewModel.series.value.open)
     }
+    @Test
+    fun `a restored open show has a seasons window without a details page`() {
+        fake.viewModel.openShow(shows.first())
+        rule.show { SeriesScreen(onOpenSettings = {}, viewModel = fake.viewModel) }
+        rule.waitUntil { said(str(R.string.series_back)) }
+        rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
+        rule.waitUntil { has("Secrets") }
+        rule.onNodeWithText("Secrets").performClick()
+        rule.waitUntil { fake.viewModel.details.value?.target?.id == 71 }
+        fake.viewModel.closeDetails()
+        rule.waitForIdle()
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        rule.waitUntil { fake.viewModel.series.value.open == null }
+        assertTrue(!said(str(R.string.series_back)))
+    }
+
 }
