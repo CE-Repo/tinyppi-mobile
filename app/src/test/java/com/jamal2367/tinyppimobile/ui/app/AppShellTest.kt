@@ -5,9 +5,11 @@ import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -52,15 +54,29 @@ class AppShellTest {
     private fun seen(text: String) = rule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
 
     @Test
+    fun `moving and resetting cards persists through the activity wiring`() {
+        rule.until { seen("Dune: Part Two") }
+        rule.onAllNodesWithText("Dune: Part Two").onFirst().performTouchInput { longClick() }
+        rule.until { seen(str(R.string.cards_reset)) }
+        rule.onAllNodesWithContentDescription(str(R.string.cards_move_down)).onFirst().performClick()
+        rule.until { env.app.container.router.settings.cardOrders.isNotEmpty() }
+        rule.onNodeWithText(str(R.string.cards_reset)).performClick()
+        rule.until { env.app.container.router.settings.cardOrders.isEmpty() }
+        rule.onNodeWithText(str(R.string.cards_done)).performClick()
+        rule.until { !seen(str(R.string.cards_reset)) }
+    }
+
+    @Test
     fun `starting a film on the shelf returns to live`() {
         rule.until { seen("Dune: Part Two") }
         tab(R.string.library_title).performClick()
         rule.until { seen("Heat") }
-        rule.onAllNodesWithText("Heat").onFirst().performClick()
+        rule.onAllNodesWithText("Heat").onLast().performClick()
         rule.until { seen(str(R.string.title_play)) }
         rule.onNodeWithText(str(R.string.title_play)).performClick()
         rule.until { env.box.asked.any { it.startsWith("POST ") } }
         rule.until { rule.onAllNodesWithText("Dune: Part Two").fetchSemanticsNodes().isNotEmpty() }
+        rule.onAllNodesWithText("Dune: Part Two").onFirst().assertIsDisplayed()
         assertTrue(env.box.asked.any { it.startsWith("POST ") })
     }
 

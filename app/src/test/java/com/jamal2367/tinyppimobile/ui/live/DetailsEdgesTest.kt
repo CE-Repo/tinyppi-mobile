@@ -49,8 +49,13 @@ class DetailsEdgesTest {
     fun `dismiss gesture ignores side effects resets when scrolling up and consumes no velocity`() {
         lateinit var swipe: NestedScrollConnection
         var closed = 0
-        val dismiss = { closed++; Unit }
-        rule.show { swipe = rememberDismissSwipe(dismiss) }
+        var dismiss by mutableStateOf<() -> Unit>({ closed++; Unit })
+        var density by mutableStateOf(1f)
+        rule.show {
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density),
+            ) { swipe = rememberDismissSwipe(dismiss) }
+        }
         runBlocking {
             assertEquals(Offset.Zero, swipe.onPostScroll(Offset.Zero, Offset(0f, 10000f), NestedScrollSource.SideEffect))
             assertEquals(Velocity.Zero, swipe.onPreFling(Velocity(0f, 100f)))
@@ -65,6 +70,15 @@ class DetailsEdgesTest {
             swipe.onPreFling(Velocity.Zero)
             assertEquals(1, closed)
         }
+        dismiss = { closed += 2 }
+        rule.waitForIdle()
+        density = 2f
+        rule.waitForIdle()
+        runBlocking {
+            swipe.onPostScroll(Offset.Zero, Offset(0f, 10000f), NestedScrollSource.UserInput)
+            swipe.onPreFling(Velocity.Zero)
+        }
+        assertEquals(3, closed)
     }
 
     @Test
@@ -135,6 +149,15 @@ class DetailsEdgesTest {
         val bounds = rule.onNodeWithText("Unbounded").fetchSemanticsNode().boundsInRoot
         assertTrue(bounds.width > 0f)
         assertTrue(bounds.height > 0f)
+    }
+
+    @Test
+    fun `details can use the material scheme without an app accent provider`() {
+        rule.setContent {
+            DetailsDialog(DetailsUiState(MarkTarget(MarkTarget.Kind.MOVIE, 1, "Bare title"),
+                TitleDetails(plot = "Bare plot")), null, true, null) {}
+        }
+        rule.onNodeWithText("Bare plot").assertExists()
     }
 
 }

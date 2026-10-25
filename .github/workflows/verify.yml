@@ -27,6 +27,9 @@ jobs:
           packages: "platforms;android-37.0 build-tools;37.0.0"
       - name: Unit tests and coverage gate
         run: ./gradlew testDebugUnitTest jacocoDebugUnitTestCoverageVerification --stacktrace
+      - name: Preserve coverage when a test fails
+        if: failure()
+        run: ./gradlew jacocoDebugUnitTestReport -x testDebugUnitTest --stacktrace
       - name: Lint
         run: ./gradlew lintRelease --stacktrace
       - name: Upload reports

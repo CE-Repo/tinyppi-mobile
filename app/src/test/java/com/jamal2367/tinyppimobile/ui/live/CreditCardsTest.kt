@@ -15,6 +15,7 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.jamal2367.tinyppimobile.data.model.CastMember
 import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.testing.Screens.show
@@ -70,6 +71,36 @@ class CreditCardsTest {
         server = null
         rule.waitForIdle()
         rule.onNodeWithText("Bea").assertExists()
+    }
+
+    @Test
+    fun `cast measurements follow typography and density changes`() {
+        var nameSize by mutableStateOf(14)
+        var roleSize by mutableStateOf(12)
+        var scale by mutableStateOf(1f)
+        rule.show {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density * scale)) {
+                val typography = androidx.compose.material3.MaterialTheme.typography
+                androidx.compose.material3.MaterialTheme(typography = typography.copy(
+                    labelLarge = typography.labelLarge.copy(fontSize = nameSize.sp, lineHeight = (nameSize + 6).sp),
+                    labelMedium = typography.labelMedium.copy(fontSize = roleSize.sp, lineHeight = (roleSize + 4).sp),
+                )) {
+                    DetailsBody(TitleDetails(cast = listOf(CastMember("Name", "Role"))))
+                }
+            }
+        }
+        val before = rule.onAllNodesWithTag("credit-card").fetchSemanticsNodes().single().boundsInRoot.height
+        nameSize = 24
+        rule.waitForIdle()
+        roleSize = 20
+        rule.waitForIdle()
+        val after = rule.onAllNodesWithTag("credit-card").fetchSemanticsNodes().single().boundsInRoot.height
+        assertTrue(after > before)
+        scale = 0.9f
+        rule.waitForIdle()
+        rule.onNodeWithText("Name").assertExists()
+        rule.onNodeWithText("Role").assertExists()
     }
 
     private fun checkCards(fontScale: Float) {
