@@ -5,6 +5,7 @@
 
 package com.jamal2367.tinyppimobile.ui.live
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +61,7 @@ internal fun LazyListScope.seriesWall(
     expanded: Boolean,
     onToggle: () -> Unit,
     onOpen: (LibraryShow) -> Unit,
+    onDetails: (LibraryShow) -> Unit = onOpen,
 ) {
     val key = "series-wall"
     shelfCard(
@@ -82,6 +84,7 @@ internal fun LazyListScope.seriesWall(
             // the screen.
             enabled = opening == null,
             onOpen = { onOpen(show) },
+            onDetails = { onDetails(show) },
             modifier = Modifier.weight(1f),
         )
     }
@@ -102,10 +105,11 @@ internal fun ShowTile(
     opening: Boolean,
     enabled: Boolean,
     onOpen: () -> Unit,
+    onDetails: () -> Unit = onOpen,
     modifier: Modifier,
 ) {
     Column(
-        modifier = modifier.clickable(enabled = enabled, onClick = onOpen),
+        modifier = modifier.combinedClickable(enabled = enabled, onClick = onDetails, onLongClick = onOpen),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         ArtFrame(
@@ -158,6 +162,7 @@ internal fun LazyListScope.episodeList(
     onBack: () -> Unit,
     onSeason: (Int) -> Unit,
     onPlay: (LibraryEpisode) -> Unit,
+    onDetails: (LibraryEpisode) -> Unit,
 ) {
     item(key = "episode-heading") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -221,6 +226,7 @@ internal fun LazyListScope.episodeList(
                     starting = starting == episode.id,
                     enabled = starting == null,
                     onPlay = { onPlay(episode) },
+                    onDetails = { onDetails(episode) },
                 )
             }
         }
@@ -333,7 +339,7 @@ private fun SeasonHeading(
     }
 }
 
-/** One episode: its still, which one it is, its name, and a press that starts it. */
+/** One episode: tap for details, hold for playback and library actions. */
 @Composable
 private fun EpisodeRow(
     episode: LibraryEpisode,
@@ -341,11 +347,12 @@ private fun EpisodeRow(
     starting: Boolean,
     enabled: Boolean,
     onPlay: () -> Unit,
+    onDetails: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = enabled, onClick = onPlay),
+            .combinedClickable(enabled = enabled, onClick = onDetails, onLongClick = onPlay),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

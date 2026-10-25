@@ -5,6 +5,7 @@ import com.jamal2367.tinyppimobile.data.model.ContinueItem
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
+import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import java.net.URLEncoder
 
@@ -101,6 +102,23 @@ object MediaUrls {
         } else {
             shelfArt(server, "poster", "movieid", item.id, item.poster)
         }
+
+    /**
+     * One of a title's pictures for its details - `poster`, `fanart` or
+     * `thumb` - addressed by the id its kind goes by; null without a tag.
+     */
+    fun details(server: ServerConfig?, target: MarkTarget, kind: String, tag: String): String? =
+        shelfArt(
+            server,
+            kind,
+            when (target.kind) {
+                MarkTarget.Kind.MOVIE -> "movieid"
+                MarkTarget.Kind.SHOW -> "tvshowid"
+                MarkTarget.Kind.EPISODE -> "episodeid"
+            },
+            target.id,
+            tag,
+        )
 
     /**
      * One picture off one of the library shelves.

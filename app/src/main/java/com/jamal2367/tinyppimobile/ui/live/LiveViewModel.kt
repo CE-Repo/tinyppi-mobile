@@ -11,6 +11,7 @@ import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
+import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
@@ -18,6 +19,7 @@ import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.data.repository.PlayerRepository
 import com.jamal2367.tinyppimobile.util.toUserMessage
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -138,6 +140,8 @@ data class SeriesUiState(
 data class ContinueUiState(
     /** Films and episodes both, the last one seen first. */
     val items: List<ContinueItem> = emptyList(),
+    /** The next episode of each show being watched, for the "next up" row. */
+    val next: List<ContinueItem> = emptyList(),
     val read: Boolean = false,
     val loading: Boolean = false,
     /**
@@ -288,8 +292,46 @@ class LiveViewModel(
     /** Pick a subtitle track, or pass null to switch them off. */
     fun selectSubtitle(index: Int?) = command { repository.selectSubtitle(index) }
 
+    /** Set the audio offset, in seconds. */
+    fun setAudioDelay(seconds: Double) = command { repository.setAudioDelay(seconds) }
+
+    /** Set the subtitle offset, in seconds. */
+    fun setSubtitleDelay(seconds: Double) = command { repository.setSubtitleDelay(seconds) }
+
     /** Put the driver into one of the VS10 modes this snapshot offered. */
     fun setMode(mode: String) = command { repository.setMode(mode) }
+
+    private val _details = MutableStateFlow<DetailsUiState?>(null)
+
+    /** The title whose details are open, and what has been read of them; null for none. */
+    val details: StateFlow<DetailsUiState?> = _details.asStateFlow()
+
+    private var detailsRead: Job? = null
+
+    /**
+     * Read everything the library holds about one title, for the dialog that
+     * shows it. A failure is the dialog's to show rather than a line along
+     * the bottom of the screen.
+     */
+    fun openDetails(target: MarkTarget) {
+        detailsRead?.cancel()
+        _details.value = DetailsUiState(target)
+        detailsRead = viewModelScope.launch {
+            _details.value = try {
+                DetailsUiState(target, details = repository.details(target))
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Throwable) {
+                DetailsUiState(target, failed = true)
+            }
+        }
+    }
+
+    /** Close the details, letting go of a read still out. */
+    fun closeDetails() {
+        detailsRead?.cancel()
+        _details.value = null
+    }
 
     /**
      * Read the box's film library.
@@ -613,6 +655,7 @@ class LiveViewModel(
             val answer = repository.continuing()
             _continuing.value = _continuing.value.copy(
                 items = answer.items,
+                next = answer.next,
                 read = true,
                 loading = false,
                 offered = true,
@@ -630,6 +673,7 @@ class LiveViewModel(
                 read = refused,
                 offered = !refused,
                 items = if (refused) emptyList() else _continuing.value.items,
+                next = if (refused) emptyList() else _continuing.value.next,
                 starting = null,
             )
         }
@@ -681,25 +725,30 @@ class LiveViewModel(
      * A failure is said out loud, because this one was asked for.
      */
     fun setWatched(target: MarkTarget, watched: Boolean) =
-        write { repository.setWatched(target, watched) }
+        write(target, { it.copy(watched = watched) }) { repository.setWatched(target, watched) }
 
     /**
      * Forget where a film or an episode got to, leaving it seen or unseen as
      * it was: it leaves the continue-watching row, and its bar leaves the wall.
      */
-    fun clearResume(target: MarkTarget) = write { repository.clearResume(target) }
+    fun clearResume(target: MarkTarget) =
+        write(target, { it.copy(resume = 0) }) { repository.clearResume(target) }
 
     /** One write to the library, and every shelf read again after it. */
-    private fun write(block: suspend () -> Unit) {
+    private fun write(target: MarkTarget, update: (TitleDetails) -> TitleDetails, block: suspend () -> Unit) {
+        if (_details.value?.busy == true) return
+        changeDetails(target) { it.copy(busy = true, actionError = null) }
         viewModelScope.launch {
             try {
                 block()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Throwable) {
+                changeDetails(target) { it.copy(busy = false, actionError = describe(failure)) }
                 report(failure)
                 return@launch
             }
+            changeDetails(target) { it.copy(details = update(it.details ?: TitleDetails()), busy = false) }
             _library.value = _library.value.copy(read = false)
             _series.value = _series.value.copy(read = false)
             _continuing.value = _continuing.value.copy(read = false)
@@ -710,6 +759,11 @@ class LiveViewModel(
             refreshSeries()
             refreshContinuing()
         }
+    }
+
+    private fun changeDetails(target: MarkTarget, change: (DetailsUiState) -> DetailsUiState) {
+        val current = _details.value
+        if (current?.target == target) _details.value = change(current)
     }
 
     private fun command(block: suspend () -> Unit) {

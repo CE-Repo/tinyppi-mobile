@@ -164,6 +164,12 @@ data class AppSettings(
      * and the settings are the only way to bring a tab back.
      */
     val hiddenTabs: Set<String> = emptySet(),
+    /**
+     * The order each shelf was last put in, by shelf, as `ShelfOrder` keeps
+     * it (`YEAR:down`): a shelf sorted by when a film was added should
+     * still be tomorrow.
+     */
+    val shelfOrders: Map<String, String> = emptyMap(),
 ) {
     /** Whether any card anywhere has been moved or taken off its screen. */
     val cardsArranged: Boolean

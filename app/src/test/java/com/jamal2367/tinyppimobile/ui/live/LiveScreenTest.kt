@@ -176,9 +176,8 @@ class LiveScreenTest {
         fake.playing(Screens.film.copy(media = MediaInfo(directors = listOf("Christopher Nolan"))))
         showLive()
         rule.onNodeWithText("Dune: Part Two").assertIsDisplayed()
-        // Only in the overview's credits, under its heading.
-        assertEquals(true, rule.onAllNodesWithText("Christopher Nolan").fetchSemanticsNodes().isEmpty())
-        assertEquals(1, rule.onAllNodesWithText("Christopher Nolan", substring = true).fetchSemanticsNodes().size)
+        // Only on the title's details page, which the overview opens.
+        assertEquals(true, rule.onAllNodesWithText("Christopher Nolan", substring = true).fetchSemanticsNodes().isEmpty())
     }
 
     @Test

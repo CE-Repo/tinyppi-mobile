@@ -5,7 +5,7 @@
 
 package com.jamal2367.tinyppimobile.ui.live
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,9 +40,15 @@ import com.jamal2367.tinyppimobile.util.MediaUrls
  * It folds like every other card, and is not there at all where there is
  * nothing to resume - an empty card with a heading over it would be a card
  * saying nothing.
+ *
+ * The series screen's "next up" row is the same card under its own [key] and
+ * [title]: the next episode of each show being watched, which has no bar
+ * because nothing of it has been seen.
  */
 internal fun LazyListScope.continueCard(
     items: List<ContinueItem>,
+    key: String = "continue",
+    title: @Composable () -> String = { stringResource(R.string.continue_count, items.size) },
     columns: Int,
     server: ServerConfig?,
     showArtwork: Boolean,
@@ -51,11 +57,12 @@ internal fun LazyListScope.continueCard(
     expanded: Boolean,
     onToggle: () -> Unit,
     onPlay: (ContinueItem) -> Unit,
+    onDetails: (ContinueItem) -> Unit = onPlay,
 ) {
     posterRowCard(
-        key = "continue",
+        key = key,
         // How many are on it, the way the other cards on the shelf say.
-        title = { stringResource(R.string.continue_count, items.size) },
+        title = title,
         items = items,
         itemKey = { it.key },
         columns = columns,
@@ -70,6 +77,7 @@ internal fun LazyListScope.continueCard(
             // One press at a time, for the reason the wall gives.
             enabled = starting == null,
             onPlay = { onPlay(item) },
+            onDetails = { onDetails(item) },
             modifier = modifier,
         )
     }
@@ -164,10 +172,11 @@ private fun ContinueTile(
     starting: Boolean,
     enabled: Boolean,
     onPlay: () -> Unit,
+    onDetails: () -> Unit = onPlay,
     modifier: Modifier,
 ) {
     Column(
-        modifier = modifier.clickable(enabled = enabled, onClick = onPlay),
+        modifier = modifier.combinedClickable(enabled = enabled, onClick = onDetails, onLongClick = onPlay),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         ArtFrame(

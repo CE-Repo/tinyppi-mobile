@@ -60,6 +60,9 @@ class AppShellTest {
         rule.until { seen(str(R.string.nav_metadata)) }
         tab(R.string.library_title).performClick()
         rule.until { seen("Heat") }
+        // The shelf turned round is kept with the settings, and drawn from them.
+        rule.onAllNodesWithText(str(R.string.sort_ascending)).onFirst().performClick()
+        rule.until { seen(str(R.string.sort_descending)) }
         tab(R.string.series_title).performClick()
         rule.until { seen("Dark") }
         tab(R.string.nav_history).performClick()
