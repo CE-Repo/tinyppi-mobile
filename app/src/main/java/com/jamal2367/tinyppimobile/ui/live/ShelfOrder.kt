@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
@@ -272,30 +273,7 @@ internal fun LazyListScope.shelfTools(
                         // Faded out at a side the row goes on past, so a chip
                         // runs out softly rather than being cut off at the
                         // card's inner edge - and the fade says there is more.
-                        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                        .drawWithContent {
-                            drawContent()
-                            val fade = FADE_WIDTH.toPx()
-                            if (scroll.canScrollBackward) {
-                                drawRect(
-                                    Brush.horizontalGradient(listOf(Color.Transparent, Color.Black), endX = fade),
-                                    size = size.copy(width = fade),
-                                    blendMode = BlendMode.DstIn,
-                                )
-                            }
-                            if (scroll.canScrollForward) {
-                                drawRect(
-                                    Brush.horizontalGradient(
-                                        listOf(Color.Black, Color.Transparent),
-                                        startX = size.width - fade,
-                                        endX = size.width,
-                                    ),
-                                    topLeft = Offset(size.width - fade, 0f),
-                                    size = size.copy(width = fade),
-                                    blendMode = BlendMode.DstIn,
-                                )
-                            }
-                        }
+                        .fadedEdges({ scroll.canScrollBackward }, { scroll.canScrollForward })
                         .horizontalScroll(scroll),
                 ) {
                     val sortNames = sorts.map { stringResource(it.label) }
@@ -454,6 +432,43 @@ private fun DirectionChip(descending: Boolean, onFlip: () -> Unit) {
         modifier = Modifier.height(CHIP_HEIGHT),
     )
 }
+
+/**
+ * A row that scrolls sideways faded out at a side it goes on past - [back]
+ * and [forward] say which - so what stands at the edge runs out softly
+ * rather than being cut off. Nothing at a side the row has reached the end
+ * of. The filter row and the rows of cast cards on a details page, which
+ * fade further in ([width]): a card is wider than a chip.
+ */
+internal fun Modifier.fadedEdges(
+    back: () -> Boolean,
+    forward: () -> Boolean,
+    width: Dp = FADE_WIDTH,
+) = this
+    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        val fade = width.toPx()
+        if (back()) {
+            drawRect(
+                Brush.horizontalGradient(listOf(Color.Transparent, Color.Black), endX = fade),
+                size = size.copy(width = fade),
+                blendMode = BlendMode.DstIn,
+            )
+        }
+        if (forward()) {
+            drawRect(
+                Brush.horizontalGradient(
+                    listOf(Color.Black, Color.Transparent),
+                    startX = size.width - fade,
+                    endX = size.width,
+                ),
+                topLeft = Offset(size.width - fade, 0f),
+                size = size.copy(width = fade),
+                blendMode = BlendMode.DstIn,
+            )
+        }
+    }
 
 /** How far in from a side the row fades out where it goes on past it. */
 private val FADE_WIDTH = 28.dp

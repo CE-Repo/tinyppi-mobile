@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -67,6 +68,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
@@ -533,13 +535,40 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String) {
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
         )
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // Out to the page's edges rather than the margin the text keeps, the
+        // first card still on the margin, and faded at a side it goes on past
+        // as the filter row is, rather than cutting the card there off hard.
+        val row = rememberLazyListState()
+        LazyRow(
+            state = row,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(horizontal = PAGE_EDGE),
+            modifier = Modifier
+                .bleed(PAGE_EDGE)
+                .fadedEdges({ row.canScrollBackward }, { row.canScrollForward }, CAST_FADE),
+        ) {
             items(cast) { person -> CastCard(person, nameHeight, roleHeight) }
             if (more) {
                 item { Text("…", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 24.dp)) }
             }
         }
     }
+}
+
+/**
+ * [edge] wider on either side than the column it stands in, out over the
+ * column's own margin. Left alone where the column has no width to go by.
+ */
+private fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
+    if (!constraints.hasBoundedWidth) {
+        val placeable = measurable.measure(constraints)
+        return@layout layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+    }
+    val extra = (edge * 2).roundToPx()
+    val placeable = measurable.measure(
+        constraints.copy(minWidth = constraints.minWidth + extra, maxWidth = constraints.maxWidth + extra),
+    )
+    layout(constraints.maxWidth, placeable.height) { placeable.place(-extra / 2, 0) }
 }
 
 @Composable
@@ -590,6 +619,9 @@ internal val PAGE_EDGE = 20.dp
 private val HERO_HEIGHT = 300.dp
 private val POSTER_WIDTH = 104.dp
 private val CAST_WIDTH = 136.dp
+
+/** How far in from a side a row of cast cards fades where it goes on past it. */
+private val CAST_FADE = 64.dp
 private val ACTION_HEIGHT = 48.dp
 
 /**
