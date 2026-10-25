@@ -423,7 +423,7 @@ internal fun filmTileWidth(columns: Int): Dp {
 internal val FILM_GAP = CardGap
 
 /** A shelf card's padding, and the room between its heading and what it holds - a `SectionCard`'s. */
-internal val CARD_PADDING = 16.dp
+private val CARD_PADDING = 16.dp
 internal val CARD_INNER_GAP = 12.dp
 private val FILM_TILE_MIN = 104.dp
 internal val RESUME_BAR = 3.dp

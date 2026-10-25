@@ -37,7 +37,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.layout
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -198,21 +204,40 @@ internal fun LazyListScope.shelfTools(
         // loose pills over the posters.
         Box(modifier = Modifier.padding(bottom = CardGap)) {
             CardSegment(CardPart.WHOLE) {
+                val scroll = rememberScrollState()
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        // Out to the card's edges, so the row is seen to go on under
-                        // them rather than stop short at its padding.
-                        .layout { measurable, constraints ->
-                            val edge = CARD_PADDING.roundToPx()
-                            val wide = measurable.measure(
-                                constraints.copy(minWidth = constraints.maxWidth + 2 * edge, maxWidth = constraints.maxWidth + 2 * edge),
-                            )
-                            layout(constraints.maxWidth, wide.height) { wide.place(-edge, 0) }
+                        .padding(vertical = 12.dp)
+                        // Faded out at a side the row goes on past, so a chip
+                        // runs out softly rather than being cut off at the
+                        // card's inner edge - and the fade says there is more.
+                        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                        .drawWithContent {
+                            drawContent()
+                            val fade = FADE_WIDTH.toPx()
+                            if (scroll.canScrollBackward) {
+                                drawRect(
+                                    Brush.horizontalGradient(listOf(Color.Transparent, Color.Black), endX = fade),
+                                    size = size.copy(width = fade),
+                                    blendMode = BlendMode.DstIn,
+                                )
+                            }
+                            if (scroll.canScrollForward) {
+                                drawRect(
+                                    Brush.horizontalGradient(
+                                        listOf(Color.Black, Color.Transparent),
+                                        startX = size.width - fade,
+                                        endX = size.width,
+                                    ),
+                                    topLeft = Offset(size.width - fade, 0f),
+                                    size = size.copy(width = fade),
+                                    blendMode = BlendMode.DstIn,
+                                )
+                            }
                         }
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = CARD_PADDING, vertical = 12.dp),
+                        .horizontalScroll(scroll),
                 ) {
                     val sortNames = sorts.map { stringResource(it.label) }
                     ChoiceChip(
@@ -342,6 +367,9 @@ private fun ChoiceChip(
         }
     }
 }
+
+/** How far in from a side the row fades out where it goes on past it. */
+private val FADE_WIDTH = 28.dp
 
 /** As tall as a finger needs, and no taller: the row is a head, not a keypad. */
 private val CHIP_HEIGHT = 40.dp
