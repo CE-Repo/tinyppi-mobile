@@ -135,11 +135,13 @@ class DetailsEdgesTest {
         rule.mainClock.autoAdvance = false
 
         covered = true
+        rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle()
         rule.onNodeWithText("Seasons").assertExists()
         assertTrue(rule.onAllNodesWithText("Show details").fetchSemanticsNodes().isEmpty())
 
         covered = false
+        rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle()
         rule.onNodeWithText("Show details").assertExists()
         assertTrue(rule.onAllNodesWithText("Seasons").fetchSemanticsNodes().isEmpty())
