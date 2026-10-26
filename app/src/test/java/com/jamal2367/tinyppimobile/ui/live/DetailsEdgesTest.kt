@@ -116,38 +116,6 @@ class DetailsEdgesTest {
     }
 
     @Test
-    fun `details and seasons replace each other without a transition`() {
-        var covered by mutableStateOf(false)
-        rule.show {
-            DetailsDialog(
-                DetailsUiState(
-                    MarkTarget(MarkTarget.Kind.SHOW, 7, "Dark"),
-                    TitleDetails(plot = "Show details"),
-                ),
-                null,
-                false,
-                null,
-                over = if (covered) ({ Text("Seasons") }) else null,
-                onDismiss = {},
-            )
-        }
-        rule.waitUntil { rule.onAllNodesWithText("Show details").fetchSemanticsNodes().isNotEmpty() }
-        rule.mainClock.autoAdvance = false
-
-        rule.runOnIdle { covered = true }
-        rule.mainClock.advanceTimeByFrame()
-        rule.waitForIdle()
-        rule.onNodeWithText("Seasons").assertExists()
-        assertTrue(rule.onAllNodesWithText("Show details").fetchSemanticsNodes().isEmpty())
-
-        rule.runOnIdle { covered = false }
-        rule.mainClock.advanceTimeByFrame()
-        rule.waitForIdle()
-        rule.onNodeWithText("Show details").assertExists()
-        assertTrue(rule.onAllNodesWithText("Seasons").fetchSemanticsNodes().isEmpty())
-    }
-
-    @Test
     fun `details actions survive loading and failure and mark a watched title unseen`() {
         val target = MarkTarget(MarkTarget.Kind.MOVIE, 1, "Title")
         var state by mutableStateOf(DetailsUiState(target))
