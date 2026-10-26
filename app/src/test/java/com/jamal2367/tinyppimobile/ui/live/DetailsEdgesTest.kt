@@ -10,6 +10,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -80,6 +84,35 @@ class DetailsEdgesTest {
             swipe.onPreFling(Velocity.Zero)
         }
         assertEquals(3, closed)
+    }
+
+
+    @Test
+    fun `returning from seasons preserves the details scroll position`() {
+        var covered by mutableStateOf(false)
+        val state = DetailsUiState(
+            MarkTarget(MarkTarget.Kind.SHOW, 7, "Dark"),
+            TitleDetails(plot = "A long plot. ".repeat(1000)),
+        )
+        rule.show {
+            DetailsDialog(
+                state, null, false, null,
+                over = if (covered) ({ Text("Seasons") }) else null,
+                onDismiss = {},
+            )
+        }
+        val page = rule.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange))
+        page.performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, 240f) }
+        rule.waitForIdle()
+        val before = page.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value()
+        assertTrue(before > 0f)
+        covered = true
+        rule.waitForIdle()
+        rule.onNodeWithText("Seasons").assertExists()
+        covered = false
+        rule.waitForIdle()
+        val after = page.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value()
+        assertEquals(before, after, 0.5f)
     }
 
     @Test

@@ -17,9 +17,9 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Velocity
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
@@ -198,7 +198,7 @@ internal fun DetailsDialog(
                     exit = slideOutHorizontally { it } + fadeOut(),
                     label = "details-page",
                 ) {
-                    DetailsPages(state, pictures, actions, over, onDismiss)
+                    DetailsPages(state, pictures, actions, over)
                 }
             }
         }
@@ -215,10 +215,10 @@ private fun DetailsPages(
     pictures: ServerConfig?,
     actions: DetailsActions?,
     over: (@Composable () -> Unit)?,
-    onDismiss: () -> Unit,
 ) {
     // The page that slides out keeps being drawn as it goes, after
     // the caller has already let go of it.
+    val scroll = rememberScrollState()
     val leaving = remember { OverPage() }
     if (over != null) leaving.content = over
     AnimatedContent(
@@ -234,7 +234,7 @@ private fun DetailsPages(
         },
         label = "details-over",
     ) { covered ->
-        if (covered) leaving.content() else DetailsPage(state, pictures, actions, onDismiss)
+        if (covered) leaving.content() else DetailsPage(state, pictures, actions, scroll)
     }
 }
 
@@ -244,12 +244,10 @@ private class OverPage {
 }
 
 @Composable
-private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: DetailsActions?, onDismiss: () -> Unit) {
+private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: DetailsActions?, scroll: ScrollState) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         val details = state.details
-        val scroll = rememberScrollState()
-        val dismissSwipe = rememberDismissSwipe(onDismiss)
-        Column(modifier = Modifier.nestedScroll(dismissSwipe).verticalScroll(scroll)) {
+        Column(modifier = Modifier.verticalScroll(scroll)) {
             Hero(state.target, details ?: TitleDetails(), server)
             Column(
                 verticalArrangement = Arrangement.spacedBy(22.dp),
@@ -284,7 +282,7 @@ private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: D
  * A pull down past the top of a page that closes it, the way a sheet is
  * flicked away: what the page's own scrolling leaves over at its top is
  * added up, and a fling that comes after enough of it closes the page.
- * Shared by the details and by a show's seasons (see SeasonsDialog).
+ * Used by a show's seasons (see SeasonsDialog); details only scroll.
  */
 @Composable
 internal fun rememberDismissSwipe(onDismiss: () -> Unit): NestedScrollConnection {

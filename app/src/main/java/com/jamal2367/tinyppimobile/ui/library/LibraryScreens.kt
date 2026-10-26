@@ -712,7 +712,7 @@ fun SeriesScreen(
 }
 
 /**
- * Only the primary action closes the page - unless it [closes] not, as a
+ * Playback actions close the page - unless it [closes] not, as a
  * show's does, whose seasons open over it; state changes update it in place.
  */
 private fun TitleQuestion.detailsActions(
@@ -731,7 +731,7 @@ private fun TitleQuestion.detailsActions(
         viewModel.clearResume(target)
     },
 ) { fromStart ->
-    if (!fromStart && closes) viewModel.closeDetails()
+    if (closes) viewModel.closeDetails()
     onPlay(fromStart)
 }
 
