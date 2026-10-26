@@ -1,6 +1,8 @@
 package com.jamal2367.tinyppimobile.ui.live
 
 import android.content.Context
+import androidx.activity.ComponentDialog
+import org.robolectric.shadows.ShadowDialog
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.onLast
@@ -56,7 +58,7 @@ class DetailsDialogTest {
         has("One")
 
     @Test
-    fun `the dialog shows the read as it goes, and closes on its button`() {
+    fun `the dialog shows the read as it goes, ignores swiping and closes on Back`() {
         var state by mutableStateOf(DetailsUiState(film))
         var closed = 0
         rule.setContent {
@@ -98,6 +100,10 @@ class DetailsDialogTest {
         state = DetailsUiState(film, details = TitleDetails(cast = cast))
         rule.waitUntil { !has("Ben") }
         rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
+        assertEquals(0, closed)
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
         assertEquals(1, closed)
     }
 

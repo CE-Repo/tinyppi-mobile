@@ -541,7 +541,7 @@ class LiveCardsTest {
         // The playing title's: no keys to play it with.
         assertEquals(false, seen(str(R.string.title_play)))
         rule.runOnIdle {
-            (ShadowDialog.getLatestDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
         }
         rule.waitForIdle()
         rule.until { !seen("Paul joins the Fremen.") }
@@ -553,7 +553,7 @@ class LiveCardsTest {
         rule.until { asked.size == 2 }
         assertEquals("episode" to 76, asked.last())
         rule.runOnIdle {
-            (ShadowDialog.getLatestDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
         }
         rule.waitForIdle()
 

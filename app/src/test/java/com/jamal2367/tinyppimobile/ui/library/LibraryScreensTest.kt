@@ -177,13 +177,13 @@ class LibraryScreensTest {
         rule.waitUntil { !said(str(R.string.resume_clear)) }
         assertTrue(has(str(R.string.title_play)))
         rule.runOnIdle {
-            (ShadowDialog.getLatestDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
         }
         rule.waitForIdle()
         text("Heat").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_play)).assertIsDisplayed()
         rule.runOnIdle {
-            (ShadowDialog.getLatestDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
         }
         rule.waitForIdle()
         // From the continue row.
@@ -284,7 +284,7 @@ class LibraryScreensTest {
         rule.waitUntil { has(str(R.string.title_open)) }
         assertTrue(!said(str(R.string.series_back)))
         rule.runOnIdle {
-            (ShadowDialog.getLatestDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
         }
         rule.waitForIdle()
         assertEquals(1, rule.onAllNodes(isRoot()).fetchSemanticsNodes().size)
@@ -293,14 +293,14 @@ class LibraryScreensTest {
         rule.waitUntil { rule.onAllNodesWithText("Silo").fetchSemanticsNodes().isNotEmpty() }
         text("Silo").performTouchInput { longClick() }
         rule.runOnIdle {
-            (ShadowDialog.getLatestDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
         }
         rule.waitForIdle()
         text("Dark").performTouchInput { longClick() }
         rule.onNodeWithContentDescription(str(R.string.mark_watched)).performClick()
         rule.waitUntil { said(str(R.string.mark_unwatched)) }
         rule.runOnIdle {
-            (ShadowDialog.getLatestDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
         }
         rule.waitForIdle()
         rule.onNode(hasSetTextAction()).performTextInput("zzz")
@@ -533,7 +533,7 @@ class LibraryScreensTest {
             assertTrue(spoken, said(spoken))
         }
         rule.runOnIdle {
-            (ShadowDialog.getLatestDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
         }
         rule.waitForIdle()
         assertTrue(!has("A heist."))
@@ -542,7 +542,7 @@ class LibraryScreensTest {
         text("Gravity").performClick()
         rule.waitUntil { has(str(R.string.details_failed)) }
         rule.runOnIdle {
-            (ShadowDialog.getLatestDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
         }
         rule.waitForIdle()
         assertTrue(!has(str(R.string.details_failed)))
@@ -563,13 +563,13 @@ class LibraryScreensTest {
         rule.waitForIdle()
         assertTrue(!has(str(R.string.details_genre)) && !has(str(R.string.live_credit_cast)))
         rule.runOnIdle {
-            (ShadowDialog.getLatestDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
         }
         rule.waitForIdle()
         rule.onAllNodesWithText("Dark").onFirst().performClick()
         rule.waitUntil { has("It begins.") }
         rule.runOnIdle {
-            (ShadowDialog.getLatestDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
         }
         rule.waitForIdle()
         assertEquals(2, fake.api.count("details"))
@@ -670,7 +670,7 @@ class LibraryScreensTest {
         rule.waitUntil { has(str(R.string.title_open)) }
         assertTrue(!said(str(R.string.title_show)))
         rule.runOnIdle {
-            (ShadowDialog.getLatestDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
         }
         rule.waitForIdle()
 
@@ -761,7 +761,7 @@ class LibraryScreensTest {
         rule.onNodeWithText("Secrets").performClick()
         rule.waitUntil { fake.viewModel.details.value?.target?.id == 71 }
         rule.runOnIdle {
-            (ShadowDialog.getLatestDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
         }
         rule.waitForIdle()
         rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
@@ -823,7 +823,7 @@ class LibraryScreensTest {
         assertTrue(!said(str(R.string.series_back)))
         fake.viewModel.closeShow()
         rule.runOnIdle {
-            (ShadowDialog.getLatestDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
         }
         rule.waitForIdle()
         fake.api.episodes = { EpisodeList(episodes = episodes) }
