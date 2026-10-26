@@ -498,7 +498,7 @@ fun SeriesScreen(
     // there again on coming back to choose the next one.
     // The show the seasons are for: the one that is open, or - while its
     // episodes are still being read - the one being opened from its page,
-    // whose seasons already slide in over it and wait for the episodes there.
+    // whose seasons already replace it and wait for the episodes there.
     val seasonsOf = open ?: showPage?.takeIf { it.target.id == series.opening }
         ?.let { page -> series.shows.firstOrNull { it.id == page.target.id } }
         ?.let { OpenShow(it.id, it.title, it.fanart) }
@@ -520,8 +520,8 @@ fun SeriesScreen(
             )
         }
     }
-    // The seasons are the show's page turned over, in the same window: they
-    // slide in over its details and back out to them (see DetailsDialog).
+    // The seasons replace the show's details in the same window and give way
+    // to them again when they are closed (see DetailsDialog).
     DetailsPage(
         viewModel,
         showPage,

@@ -7,6 +7,8 @@
     -->
     <style name="Theme.TinyPpiMobile" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/window_background</item>
+        <!-- Full-screen details dialogs must appear and disappear immediately. -->
+        <item name="android:windowAnimationStyle">@style/Animation.TinyPpiMobile.None</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <!--
@@ -16,5 +18,12 @@
             this is only for the frames before it does.
         -->
         <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <style name="Animation.TinyPpiMobile.None" parent="@android:style/Animation">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@null</item>
+        <item name="android:windowShowAnimation">@null</item>
+        <item name="android:windowHideAnimation">@null</item>
     </style>
 </resources>
