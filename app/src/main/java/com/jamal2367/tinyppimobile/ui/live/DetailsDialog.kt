@@ -2,14 +2,12 @@
 
 package com.jamal2367.tinyppimobile.ui.live
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalView
@@ -160,9 +158,7 @@ internal class DetailsActions(
  * screens under it do, and keeps its last line clear of the bar at the foot.
  *
  * [over] is a page the details give way to in the same window - a show's
- * seasons - sliding in from the side over them and back out again, the way
- * one page of the app gives way to the next, rather than one window closing
- * and another opening on top of the shelf.
+ * seasons - rather than another window opening on top of the shelf.
  */
 @Composable
 internal fun DetailsDialog(
@@ -206,8 +202,9 @@ internal fun DetailsDialog(
 }
 
 /**
- * The details, or the page they have given way to ([over]), sliding one over
- * the other.
+ * The details, or the page they have given way to ([over]). The switch is
+ * immediate so moving between details and seasons never waits for an
+ * animation to finish.
  */
 @Composable
 private fun DetailsPages(
@@ -216,31 +213,8 @@ private fun DetailsPages(
     actions: DetailsActions?,
     over: (@Composable () -> Unit)?,
 ) {
-    // The page that slides out keeps being drawn as it goes, after
-    // the caller has already let go of it.
     val scroll = rememberScrollState()
-    val leaving = remember { OverPage() }
-    if (over != null) leaving.content = over
-    AnimatedContent(
-        targetState = over != null,
-        transitionSpec = {
-            if (targetState) {
-                (slideInHorizontally { it } + fadeIn()) togetherWith
-                    (slideOutHorizontally { -it / 4 } + fadeOut())
-            } else {
-                (slideInHorizontally { -it / 4 } + fadeIn()) togetherWith
-                    (slideOutHorizontally { it } + fadeOut())
-            }
-        },
-        label = "details-over",
-    ) { covered ->
-        if (covered) leaving.content() else DetailsPage(state, pictures, actions, scroll)
-    }
-}
-
-/** What a details window last had over it, held for as long as it slides out. */
-private class OverPage {
-    lateinit var content: @Composable () -> Unit
+    if (over != null) over() else DetailsPage(state, pictures, actions, scroll)
 }
 
 @Composable

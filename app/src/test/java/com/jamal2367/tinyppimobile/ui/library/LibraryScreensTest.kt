@@ -705,7 +705,7 @@ class LibraryScreensTest {
         rule.waitUntil { has("1986.") }
         rule.onAllNodesWithText(str(R.string.title_open)).onLast().performClick()
         rule.waitUntil { said(str(R.string.series_back)) }
-        // The page has slid over to the seasons, in the same window.
+        // The seasons have replaced the details in the same window.
         assertTrue(!has("1986."))
         assertEquals(2, rule.onAllNodes(isRoot()).fetchSemanticsNodes().size)
         rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()

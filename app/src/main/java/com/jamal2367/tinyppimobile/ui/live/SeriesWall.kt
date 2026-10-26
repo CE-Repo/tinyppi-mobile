@@ -217,9 +217,9 @@ internal fun SeasonsDialog(
 /**
  * The page itself, for a window of its own ([SeasonsDialog]) or for the
  * show's details page to turn into (see DetailsDialog's `over`), where it
- * slides in over the details as the seasons are opened and back out as they
- * are left. While the episodes are still being read ([loading]) it already
- * stands there, with the show's head and a line saying it is coming.
+ * replaces the details while the seasons are open. While the episodes are
+ * still being read ([loading]) it already stands there, with the show's head
+ * and a line saying it is coming.
  */
 @Composable
 internal fun SeasonsPage(

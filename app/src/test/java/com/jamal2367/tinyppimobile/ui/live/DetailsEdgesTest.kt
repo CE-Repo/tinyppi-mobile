@@ -15,6 +15,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -113,6 +114,36 @@ class DetailsEdgesTest {
         rule.waitForIdle()
         val after = page.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value()
         assertEquals(before, after, 0.5f)
+    }
+
+    @Test
+    fun `details and seasons replace each other without a transition`() {
+        var covered by mutableStateOf(false)
+        rule.show {
+            DetailsDialog(
+                DetailsUiState(
+                    MarkTarget(MarkTarget.Kind.SHOW, 7, "Dark"),
+                    TitleDetails(plot = "Show details"),
+                ),
+                null,
+                false,
+                null,
+                over = if (covered) ({ Text("Seasons") }) else null,
+                onDismiss = {},
+            )
+        }
+        rule.waitUntil { rule.onAllNodesWithText("Show details").fetchSemanticsNodes().isNotEmpty() }
+        rule.mainClock.autoAdvance = false
+
+        covered = true
+        rule.waitForIdle()
+        rule.onNodeWithText("Seasons").assertExists()
+        rule.onNodeWithText("Show details").assertDoesNotExist()
+
+        covered = false
+        rule.waitForIdle()
+        rule.onNodeWithText("Show details").assertExists()
+        rule.onNodeWithText("Seasons").assertDoesNotExist()
     }
 
     @Test
