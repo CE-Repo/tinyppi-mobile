@@ -679,7 +679,13 @@ private val ACTION_HEIGHT = 48.dp
 internal fun DetailsShown(viewModel: LiveViewModel, actions: DetailsActions?, except: MarkTarget.Kind? = null) {
     val details by viewModel.details.collectAsStateWithLifecycle()
     // A kind the screen shows in a place of its own (see SeriesScreen).
-    DetailsPage(viewModel, details?.takeIf { it.target.kind != except }, actions)
+    DetailsPage(
+        viewModel,
+        details?.takeIf { it.target.kind != except },
+        actions,
+        over = null,
+        onDismiss = viewModel::closeDetails,
+    )
 }
 
 /**
@@ -692,8 +698,8 @@ internal fun DetailsPage(
     viewModel: LiveViewModel,
     open: DetailsUiState?,
     actions: DetailsActions?,
-    over: (@Composable () -> Unit)? = null,
-    onDismiss: () -> Unit = viewModel::closeDetails,
+    over: (@Composable () -> Unit)?,
+    onDismiss: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val page = open?.takeIf { LocalIsCurrentPage.current } ?: return
