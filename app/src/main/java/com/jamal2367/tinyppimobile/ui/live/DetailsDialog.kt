@@ -2,12 +2,6 @@
 
 package com.jamal2367.tinyppimobile.ui.live
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalView
@@ -169,7 +163,6 @@ internal fun DetailsDialog(
     adaptive: Boolean = false,
     intensity: Float = 1f,
     over: (@Composable () -> Unit)? = null,
-    visible: MutableTransitionState<Boolean>? = null,
     onDismiss: () -> Unit,
 ) {
     val pictures = if (showArtwork) server else null
@@ -181,21 +174,13 @@ internal fun DetailsDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
-        // The page slides in and out itself (see [visible]); the window's own
-        // animation, a zoom from the middle of the screen, would be a second
-        // one on top of it.
+        // Details pages change immediately. Disable the platform dialog's
+        // default zoom as well, so films and episodes never animate in or out.
         val window = (LocalView.current.parent as DialogWindowProvider).window
         SideEffect { window.setWindowAnimations(0) }
         MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
             ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
-                AnimatedVisibility(
-                    visibleState = visible ?: remember { MutableTransitionState(true) },
-                    enter = slideInHorizontally { it } + fadeIn(),
-                    exit = slideOutHorizontally { it } + fadeOut(),
-                    label = "details-page",
-                ) {
-                    DetailsPages(state, pictures, actions, over)
-                }
+                DetailsPages(state, pictures, actions, over)
             }
         }
     }
@@ -711,38 +696,15 @@ internal fun DetailsPage(
     onDismiss: () -> Unit = viewModel::closeDetails,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val shown = open?.takeIf { LocalIsCurrentPage.current }
-    // A page that has been closed is still drawn while it slides out, from
-    // what it last showed.
-    val held = remember { HeldPage() }
-    if (shown != null) {
-        held.state = shown
-        held.actions = actions
-        held.over = over
-    }
-    val visible = remember { MutableTransitionState(false) }
-    visible.targetState = shown != null
-    val page = held.state ?: return
-    if (visible.isIdle && !visible.currentState) {
-        held.state = null
-        return
-    }
+    val page = open?.takeIf { LocalIsCurrentPage.current } ?: return
     DetailsDialog(
         state = page,
         server = state.live.server,
         showArtwork = state.settings.showArtwork,
-        actions = held.actions,
+        actions = actions,
         adaptive = state.settings.adaptiveColor,
         intensity = state.settings.adaptiveColorIntensity,
-        over = held.over,
-        visible = visible,
+        over = over,
         onDismiss = onDismiss,
     )
-}
-
-/** What a details page last showed, held for as long as it slides out. */
-private class HeldPage {
-    var state: DetailsUiState? = null
-    var actions: DetailsActions? = null
-    var over: (@Composable () -> Unit)? = null
 }

@@ -680,19 +680,14 @@ class LibraryScreensTest {
     }
 
     @Test
-    fun `a details page slides out when it is closed rather than vanishing`() {
-        fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, plot = "Sliding.") }
+    fun `a details page disappears when it is closed`() {
+        fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, plot = "Closing.") }
         showFilms()
         rule.waitUntil { has("Heat") }
         text("Heat").performClick()
-        rule.waitUntil { has("Sliding.") }
-        rule.mainClock.autoAdvance = false
+        rule.waitUntil { has("Closing.") }
         fake.viewModel.closeDetails()
-        rule.mainClock.advanceTimeBy(48)
-        // Still on the way out.
-        assertTrue(has("Sliding."))
-        rule.mainClock.autoAdvance = true
-        rule.waitUntil { !has("Sliding.") }
+        rule.waitUntil { !has("Closing.") }
         assertEquals(1, rule.onAllNodes(isRoot()).fetchSemanticsNodes().size)
     }
 
@@ -721,7 +716,7 @@ class LibraryScreensTest {
     }
 
     @Test
-    fun `the seasons slide in while their episodes are read, and leaving then opens nothing later`() {
+    fun `the seasons appear while their episodes are read, and leaving then opens nothing later`() {
         val gate = CompletableDeferred<EpisodeList>()
         fake.api.episodes = { gate.await() }
         fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, title = "Chernobyl", plot = "1986.") }
