@@ -1,9 +1,8 @@
 package com.jamal2367.tinyppimobile.ui.live
 
+import androidx.activity.ComponentDialog
+import org.robolectric.shadows.ShadowDialog
 import android.content.Context
-import androidx.compose.ui.test.swipeDown
-import androidx.compose.ui.test.onLast
-import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
@@ -541,7 +540,10 @@ class LiveCardsTest {
         assertEquals(listOf("movie" to 1), asked)
         // The playing title's: no keys to play it with.
         assertEquals(false, seen(str(R.string.title_play)))
-        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
         rule.until { !seen("Paul joins the Fremen.") }
 
         // An episode opens as one.
@@ -550,7 +552,10 @@ class LiveCardsTest {
         rule.onNodeWithText(str(R.string.live_plot)).performClick()
         rule.until { asked.size == 2 }
         assertEquals("episode" to 76, asked.last())
-        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
 
         // A file the library does not know has no card.
         fake.playing(told.copy(media = MediaInfo(plot = "A plot.")))
