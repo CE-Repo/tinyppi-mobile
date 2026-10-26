@@ -15,7 +15,6 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -138,12 +137,12 @@ class DetailsEdgesTest {
         covered = true
         rule.waitForIdle()
         rule.onNodeWithText("Seasons").assertExists()
-        rule.onNodeWithText("Show details").assertDoesNotExist()
+        assertTrue(rule.onAllNodesWithText("Show details").fetchSemanticsNodes().isEmpty())
 
         covered = false
         rule.waitForIdle()
         rule.onNodeWithText("Show details").assertExists()
-        rule.onNodeWithText("Seasons").assertDoesNotExist()
+        assertTrue(rule.onAllNodesWithText("Seasons").fetchSemanticsNodes().isEmpty())
     }
 
     @Test
