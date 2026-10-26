@@ -194,6 +194,7 @@ internal fun SeasonsDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
+        DisableDialogWindowAnimations()
         MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
             ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
                 SeasonsPage(

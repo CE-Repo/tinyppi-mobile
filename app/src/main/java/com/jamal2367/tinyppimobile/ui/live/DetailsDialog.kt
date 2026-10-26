@@ -174,16 +174,20 @@ internal fun DetailsDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
-        // Details pages change immediately. Disable the platform dialog's
-        // default zoom as well, so films and episodes never animate in or out.
-        val window = (LocalView.current.parent as DialogWindowProvider).window
-        SideEffect { window.setWindowAnimations(0) }
+        DisableDialogWindowAnimations()
         MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
             ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
                 DetailsPages(state, pictures, actions, over)
             }
         }
     }
+}
+
+/** Keep every full-screen details window free of platform enter/exit animations. */
+@Composable
+internal fun DisableDialogWindowAnimations() {
+    val window = (LocalView.current.parent as DialogWindowProvider).window
+    SideEffect { window.setWindowAnimations(0) }
 }
 
 /**
