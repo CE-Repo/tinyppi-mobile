@@ -25,6 +25,15 @@ class ApiParsingTest {
         assertEquals("", old.thumbnail)
         val photo = Json.decodeFromString<com.jamal2367.tinyppimobile.data.model.CastMember>("""{"name":"Actor","thumbnail":"1234abcd"}""")
         assertEquals("1234abcd", photo.thumbnail)
+        val legacy = Json.decodeFromString<com.jamal2367.tinyppimobile.data.model.TitleDetails>(
+            """{"directors":["Director"]}"""
+        )
+        assertEquals(emptyList<com.jamal2367.tinyppimobile.data.model.CastMember>(), legacy.crew)
+        val enriched = Json.decodeFromString<com.jamal2367.tinyppimobile.data.model.TitleDetails>(
+            """{"crew":[{"name":"Director","role":"director","thumbnail":"crew-tag"}]}"""
+        )
+        assertEquals("crew-tag", enriched.crew.single().thumbnail)
+        assertEquals("director", enriched.crew.single().role)
     }
 
 

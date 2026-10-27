@@ -11,6 +11,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Velocity
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.runtime.rememberUpdatedState
@@ -485,7 +486,7 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 text = stringResource(R.string.details_description),
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp),
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -514,11 +515,13 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
     }
     val directorRole = stringResource(R.string.live_credit_director)
     val writerRole = stringResource(R.string.details_writer)
-    val crew = details.directors.map { CastMember(it, directorRole) } +
+    val crew = if (details.crew.isNotEmpty()) details.crew.map {
+        it.copy(role = if (it.role == "director") directorRole else writerRole)
+    } else details.directors.map { CastMember(it, directorRole) } +
         details.writers.map { CastMember(it, writerRole) }
     val people = crew + details.cast
     if (details.cast.isNotEmpty()) Cast(details.cast, details.castMore, stringResource(R.string.live_credit_cast), server, people)
-    if (crew.isNotEmpty()) Cast(crew, false, stringResource(R.string.details_crew), sizing = people)
+    if (crew.isNotEmpty()) Cast(crew, false, stringResource(R.string.details_crew), server, people)
 }
 
 /** One fact: the same bold heading as the other details sections. */
@@ -527,7 +530,7 @@ private fun Fact(heading: String, names: String) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
             text = heading,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp),
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -541,7 +544,7 @@ private fun Fact(heading: String, names: String) {
  * ellipsis at the end where the library holds more.
  */
 @Composable
-private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server: ServerConfig? = null, sizing: List<CastMember>) {
+private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server: ServerConfig?, sizing: List<CastMember>) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
     val nameStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
@@ -569,7 +572,7 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server:
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
             text = heading,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp),
             fontWeight = FontWeight.Bold,
         )
         // Scroll to the page edges, keeping portraits and text fully opaque.
