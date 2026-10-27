@@ -543,7 +543,7 @@ private fun Fact(heading: String, names: String) {
  * ellipsis at the end where the library holds more.
  */
 @Composable
-private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server: ServerConfig? = null, sizing: List<CastMember>) {
+private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server: ServerConfig?, sizing: List<CastMember>) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
     val nameStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
