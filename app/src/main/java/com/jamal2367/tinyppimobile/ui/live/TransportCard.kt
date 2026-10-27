@@ -8,6 +8,8 @@ package com.jamal2367.tinyppimobile.ui.live
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -34,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,6 +62,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.jamal2367.tinyppimobile.R
+import com.jamal2367.tinyppimobile.data.model.PlayerAction
 import com.jamal2367.tinyppimobile.data.model.PlayerControls
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.model.Track
@@ -66,6 +70,10 @@ import com.jamal2367.tinyppimobile.ui.components.SectionCard
 import com.jamal2367.tinyppimobile.ui.components.withKeyTick
 import com.jamal2367.tinyppimobile.ui.theme.neutralTonalButtonColors
 import com.jamal2367.tinyppimobile.ui.theme.neutralTonalIconButtonColors
+import kotlinx.coroutines.delay
+import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.roundToLong
 
 /**
  * The transport and the track pickers, in a card of their own.
@@ -96,6 +104,8 @@ internal fun ControlsCard(
         if (!snapshot.controls.isEmpty) {
             TrackSection(snapshot.controls, viewModel)
         }
+
+        FineSection(snapshot.controls, viewModel)
     }
 }
 
@@ -696,3 +706,183 @@ private fun TrackPicker(
 
 /** The entry at the top of a track menu that turns the track off. */
 private class TrackOff(val label: String, val onPick: () -> Unit)
+
+/**
+ * The fine adjustments, under the track pickers: the audio offset, and the
+ * subtitle offset while there are subtitles to move.
+ *
+ * Each only where the box reports it - an add-on older than them reports
+ * none, and the card is as it was.
+ */
+@Composable
+private fun FineSection(controls: PlayerControls, viewModel: LiveViewModel) {
+    val audio = controls.audioDelay
+    val subtitles = controls.subtitleDelay?.takeIf { controls.subtitleOn }
+    if (audio == null && subtitles == null) return
+
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = TRACK_GAP),
+    ) {
+        val density = LocalDensity.current
+        val minimum = 148.dp * maxOf(1f, density.fontScale)
+        val paired = audio != null && subtitles != null && maxWidth >= minimum * 2 + TRANSPORT_GAP
+        val stepperWidth = if (paired) with(density) {
+            ((constraints.maxWidth - TRANSPORT_GAP.roundToPx()) / 2).toDp()
+        } else maxWidth
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(TRANSPORT_GAP),
+            verticalArrangement = Arrangement.spacedBy(TRANSPORT_GAP),
+        ) {
+            if (audio != null) {
+                OffsetStepper(
+                    modifier = Modifier.width(stepperWidth),
+                    label = stringResource(R.string.live_audio_offset),
+                    reported = audio,
+                    step = AUDIO_OFFSET_STEP,
+                    limit = PlayerAction.AUDIO_DELAY_LIMIT,
+                    onSet = viewModel::setAudioDelay,
+                )
+            }
+            if (subtitles != null) {
+                OffsetStepper(
+                    modifier = Modifier.width(stepperWidth),
+                    label = stringResource(R.string.live_subtitle_offset),
+                    reported = subtitles,
+                    step = SUBTITLE_OFFSET_STEP,
+                    limit = PlayerAction.SUBTITLE_DELAY_LIMIT,
+                    onSet = viewModel::setSubtitleDelay,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * One offset: its name over a step back, the value, and a step on. The value
+ * is a key too, and puts the offset back to nothing.
+ *
+ * A pressed value is shown at once and held against the snapshots for a
+ * moment: the box reads the offsets once a second, and one read before the
+ * press would put the old value back under the thumb.
+ */
+@Composable
+private fun OffsetStepper(
+    modifier: Modifier,
+    label: String,
+    reported: Double,
+    step: Double,
+    limit: Double,
+    onSet: (Double) -> Unit,
+) {
+    val offset = remember { HeldOffset() }
+    offset.reported = reported
+    offset.step = step
+    offset.limit = limit
+    offset.onSet = onSet
+    LaunchedEffect(offset.held) {
+        if (offset.held != null) {
+            delay(OFFSET_HOLD_MS)
+            offset.held = null
+        }
+    }
+    val shown = offsetText(offset.value)
+    val reset = stringResource(R.string.live_offset_reset)
+
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(TRACK_GAP)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clearAndSetSemantics {},
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(TRANSPORT_GAP),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            JumpButton(
+                label = "\u2212",
+                description = "$label \u2212",
+                onClick = offset::stepBack,
+                modifier = Modifier.weight(1f),
+            )
+            FilledTonalButton(
+                onClick = withKeyTick(offset::reset),
+                contentPadding = PaddingValues(horizontal = 4.dp),
+                shape = TRANSPORT_SHAPE,
+                colors = neutralTonalButtonColors(),
+                modifier = Modifier
+                    .weight(2f)
+                    .height(TRANSPORT_BUTTON)
+                    .semantics {
+                        contentDescription = reset
+                        stateDescription = "$label $shown"
+                    },
+            ) {
+                Text(text = shown, maxLines = 1, modifier = Modifier.clearAndSetSemantics {})
+            }
+            JumpButton(
+                label = "+",
+                description = "$label +",
+                onClick = offset::stepOn,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+/**
+ * What one stepper holds between the snapshots: the value last pressed, if
+ * the hold is still on, over the one the box last reported - and what a
+ * press does with it. The rest is handed in on every composition.
+ */
+private class HeldOffset {
+    var held by mutableStateOf<Double?>(null)
+    var reported = 0.0
+    var step = 0.0
+    var limit = 0.0
+    var onSet: (Double) -> Unit = {}
+
+    val value: Double get() = held ?: reported
+
+    fun stepBack() = set(value - step)
+
+    fun stepOn() = set(value + step)
+
+    fun reset() = set(0.0)
+
+    private fun set(wanted: Double) {
+        val next = ((wanted * 1000).roundToLong() / 1000.0).coerceIn(-limit, limit)
+        held = next
+        onSet(next)
+    }
+}
+
+/**
+ * An offset as the stepper writes it: milliseconds below a second, seconds
+ * with two decimals above, signed so that early and late cannot be mistaken
+ * for one another.
+ */
+internal fun offsetText(seconds: Double): String {
+    val ms = (seconds * 1000).roundToLong()
+    if (ms == 0L) return "0 ms"
+    val sign = if (ms > 0) "+" else "\u2212"
+    val size = abs(ms)
+    return sign + if (size < 1000) "$size ms" else String.format(Locale.ROOT, "%.2f s", size / 1000.0)
+}
+
+/**
+ * How far a press moves each offset: Kodi's own step for the subtitles, and
+ * two of its 25 ms steps for the sound, which would otherwise take forty
+ * presses to move a second.
+ */
+private const val AUDIO_OFFSET_STEP = 0.05
+private const val SUBTITLE_OFFSET_STEP = 0.1
+
+/** How long a pressed offset stands against the snapshots. */
+private const val OFFSET_HOLD_MS = 2000L

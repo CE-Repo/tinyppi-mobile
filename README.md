@@ -58,8 +58,11 @@ command endpoints.
   that was lost. A phone that opens halfway through a film gets the whole
   picture, not the part it was connected for.
 - **The player**, on a box that allows it: play, stop, seek, volume, mute,
-  audio and subtitle tracks, and the VS10 conversions the source can be put
-  through.
+  audio and subtitle tracks, the audio and subtitle offsets, and the VS10
+  conversions the source can be put through.
+- **The library**, sorted and filtered by genre and by what the files are -
+  Dolby Vision, HDR10, 4K, TrueHD and the rest - with the next episode of
+  every show being watched.
 
 ---
 
@@ -78,7 +81,7 @@ Nothing here works until it is.
 
 ## 3. Setting It Up
 
-1. In Kodi: **Add-ons → TinyPPI → Settings → Web**. Switch the server on. It
+1. In Kodi: **Add-ons → TinyPPI → Settings → Dashboard**. Switch the server on. It
    shows the address it is listening on and an eight-character token.
 2. In the app: **Settings → Local address**. Type the host and the port (the
    add-on's default is **8099**), then the token.
@@ -142,20 +145,15 @@ source and output badges, the video and audio formats named in badges of
 their own, the progress, and — on a box that allows it — the transport row,
 the track pickers and the VS10 conversions.
 
-Under the card of what is playing, the **Overview** card, all of it centred:
-the plot, with the slogan right over it where there is one, upright and set
-like a credit's heading so the two read as one text — most
-episodes carry a plot and no slogan — and
-hanging on the plot's end the director, then the cast, each its heading in
-bold on a line of its own centred over the names (every director, and the
-cast's first twenty in billing order, ending in "…" where there are more),
-left out where Kodi has none. The genre and
-the studio stand in the card above. Last, under the heading Ratings, every
-rating Kodi's library holds for the title, as a row of small shields. The
-card starts folded, and folds again for every new title: the plot cut to five lines, and the credits and the
-ratings hidden under it. A tap on the plot lets all of it out, and another
-folds it again; only a plot that fits with nothing under it has nothing to
-fold. Each has its source's mark on the left, on a
+Under the card of what is playing, the **Overview** card: its heading and an
+arrow, nothing more. A tap on it opens the playing title's details page (see
+the shelves below) - every rating the title has as a row of small shields, the
+slogan and the plot, the genres, the director, the writers and the studio, and
+the cast as a row of cards of one height - without the play keys, since it is
+playing already. It is drawn for a film or an episode the library holds; a
+file it does not know has no details, and no card. Like every card there it
+moves and comes off the screen, a long press on it opening the arranging. On
+the details page each shield has its source's mark on the left, on a
 ground of the source's colour, instead of its name, and what it gave on the
 right — the same marks and shields the add-on's dashboard draws: first the
 age rating, where the add-on could place it, as a shield like the others:
@@ -185,6 +183,16 @@ with a tick, the line over the bar naming the chapter under the finger; let go
 there, or simply tap the dot, and the box jumps to the start of that chapter.
 The dots are a reading and come with control switched off too; *Chapter
 markers* under *Appearance* in the settings takes them off the bar.
+
+Under the track pickers sit the **fine adjustments**: the audio offset, for
+lip sync, in steps of 50 ms; and the subtitle offset, in Kodi's own 100 ms
+steps, while subtitles are on.
+A tap on an offset's value puts it back to nothing. The value pressed is shown
+at once and held for a moment against the readings, so the next one, read
+before the press, does not put the old number back under the thumb. Kodi has
+no remote call for the subtitle offset, so the box moves it the way a remote
+does, a step at a time - and Kodi shows its own slider on the television while
+it does. A box whose add-on is older than these (2.20.0) shows none of them.
 
 While something is playing on such a box, the phone's own volume buttons turn
 the box up and down instead of the phone; a switch under *Readings* in the
@@ -285,8 +293,23 @@ is remembered like the others, and is not there at all once everything has
 been seen, or while a search finds nothing unwatched.
 
 **A tap on** a film, a series, an episode or a Continue watching tile opens a
-dialog with three options: **Play** (**Resume** where the box has a point to
-resume from), **Mark as watched** and **Mark as unwatched**. A series cannot be
+dialog with four options: **Details** first, then **Play** (**Resume** where
+the box has a point to resume from), **Mark as watched** and **Mark as
+unwatched**.
+
+**Details** opens a page of its own over the shelf, read from the library when
+it is asked for: the title's backdrop across the top (a film's or a series'
+fanart, an episode's still) with the poster standing on its lower edge beside
+the title, how long it runs and the file's formats; under it the dialog's
+first options as keys - **Play** or **Resume**, **Play from the beginning**
+for a title with a point to resume from, **Open** for a series; then the ratings as the
+overview card's shields - the age rating, every score, your own and the Top
+250 place - the slogan and the plot, the genres, the director, the writers and
+the studio, and the cast as a row of cards of one height with who each played,
+the same layout as the Overview card. The page runs the whole screen, top to
+bottom, and where the app takes its colour from what is playing, the page takes
+its own from the title's poster: its keys are in that title's colour. A box
+that cannot answer says so on the page. A series cannot be
 played, so its first option is **Open**, which shows its episodes. Marking is
 written into Kodi's own library — a series marked either way is every episode
 of it — and every shelf is read again at once, so the tick and the unwatched
@@ -296,6 +319,31 @@ A film or an episode that was stopped part-way through gets two more options:
 **Play from the beginning**, which starts it from the top instead of resuming,
 and **Clear resume point**, which forgets where it got to — taking it off
 Continue watching — while leaving it watched or unwatched as it was.
+
+**Under the search box**, a card holding one row of chips that scrolls sideways puts the
+shelf in order - by title,
+the box's own order, or by year, rating, date added or, for films, running
+time; a title without the value goes last. The arrow chip beside it turns
+the order round, ascending or descending; a new order starts the way it
+reads best (the newest, the best and the latest added first, titles and
+running time from the start), and both are kept, so the shelf is in the same
+order the next time the app opens - and narrows it by genre, and for
+films by the grade (Dolby Vision, HDR10+, HDR10, HLG, SDR - and under Dolby
+Vision each profile the shelf holds, such as P5, P7 FEL or P8.1, where it holds
+more than one), the resolution (4K,
+1080p, 720p, SD) and the sound of the first audio track (Dolby TrueHD, DTS-HD
+MA, Dolby Digital Plus, ...). A chip offers only what the shelf holds, and a
+filter with nothing to choose between is not drawn. The filters narrow every
+card on the screen the way the search does, and are kept with it across a turn
+of the phone. A chip names what it is set to and takes the accent once a
+filter is chosen, and while any is, a last chip puts them all back. Kodi does
+not record Atmos or DTS:X in its library, so the sound is filtered by the
+codec it rides on.
+
+**Next up**, on the series screen, holds the next unwatched episode of each
+show being watched - its first unseen one in episode order, specials left out
+- the show watched last first. An episode already on Continue watching is not
+repeated, and a tap starts it from the beginning.
 
 **Pulling either shelf down** reads it again anyway. It is the answer when the
 box was off while the app was looking at it, or when its library was switched
@@ -378,9 +426,10 @@ All of it.
 | `GET /api/library` | The films the box has, for the wall shown while nothing is playing. |
 | `GET /api/series` | The series it has, for the wall under them. |
 | `GET /api/episodes` | The episodes of one series, read when it is opened. |
-| `GET /api/continue` | The films and episodes left half-watched, for the row at the top of both shelves. |
+| `GET /api/continue` | The films and episodes left half-watched, for the row at the top of both shelves, and the next-up row. |
+| `GET /api/details` | Everything the library holds about one title, for its details page. |
 | `POST /api/mode` | The VS10 buttons. |
-| `POST /api/command` | Play/pause, stop, previous/next chapter, jump to a chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track. |
+| `POST /api/command` | Play/pause, stop, previous/next chapter, jump to a chapter, seek, seek to a percentage, volume up/down, mute, audio track, subtitle track, audio offset, subtitle offset. |
 | `POST /api/play` | Starting one of the library's films, or one episode of a series — resumed, or from the beginning. |
 | `POST /api/watched` | Marking a film, a series or an episode as watched or unwatched. |
 | `POST /api/resume` | Clearing the resume point of a film or an episode. |

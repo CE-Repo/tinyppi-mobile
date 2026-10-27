@@ -56,6 +56,33 @@
     <string name="title_resume">Folytatás</string>
     <string name="title_open">Megnyitás</string>
     <string name="title_restart">Lejátszás az elejéről</string>
+    <string name="title_show">Ugrás a sorozathoz</string>
+    <string name="title_details">Részletek</string>
+    <string name="details_failed">A részleteket nem sikerült beolvasni.</string>
+    <string name="details_close">Bezárás</string>
+    <string name="details_genre">Műfaj</string>
+    <string name="details_crew">Stáb</string>
+    <string name="details_writer">Forgatókönyv</string>
+    <string name="details_studio">Stúdió</string>
+    <string name="details_ratings">Értékelések</string>
+    <string name="shelf_sort">Rendezés: %1$s</string>
+    <string name="sort_title">Cím</string>
+    <string name="sort_year">Év</string>
+    <string name="sort_rating">Értékelés</string>
+    <string name="sort_added">Hozzáadás dátuma</string>
+    <string name="sort_runtime">Játékidő</string>
+    <string name="sort_ascending">Növekvő</string>
+    <string name="sort_descending">Csökkenő</string>
+        <string name="filter_genre">Műfaj</string>
+    <string name="filter_video">Kép</string>
+    <string name="filter_resolution">Felbontás</string>
+    <string name="filter_audio">Hang</string>
+    <string name="filter_reset">Visszaállítás</string>
+<string name="filter_genre_all">Minden műfaj</string>
+    <string name="filter_video_all">Minden képformátum</string>
+    <string name="filter_resolution_all">Minden felbontás</string>
+    <string name="filter_audio_all">Minden hangformátum</string>
+    <string name="next_up_count">Következik · %1$d</string>
     <string name="resume_clear">Folytatási pont törlése</string>
     <string name="mark_watched">Megjelölés látottként</string>
     <string name="mark_unwatched">Megjelölés nem látottként</string>
@@ -114,10 +141,12 @@
     <string name="live_subtitles">Feliratok</string>
     <string name="live_subtitles_off">Ki</string>
     <string name="live_track_unknown">Ismeretlen</string>
+    <string name="live_audio_offset">Hangeltolás</string>
+    <string name="live_subtitle_offset">Felirateltolás</string>
+    <string name="live_offset_reset">Visszaállítás 0-ra</string>
 
-    <string name="live_plot">Áttekintés</string>
-    <string name="live_plot_more">Több megjelenítése</string>
-    <string name="live_plot_less">Kevesebb megjelenítése</string>
+    <string name="live_plot">A filmről</string>
+    <string name="live_plot_episode">Az epizódról</string>
     <string name="live_rating_mine">Saját értékelés</string>
     <string name="live_rating_top250">Top 250 · %1$d. hely</string>
     <string name="live_award_won">%1$d díj</string>
@@ -273,4 +302,7 @@
     <string name="settings_cards_reset">Összes kártya visszaállítása</string>
     <string name="settings_cards_reset_desc">Minden kártya visszakerül a helyére minden képernyőn, és minden eltávolított kártya újra látható.</string>
 
+    <string name="details_awards">Díjak</string>
+    <string name="details_award_hint">A halványított ikonok jelöléseket mutatnak.</string>
+    <string name="details_description">Leírás</string>
 </resources>

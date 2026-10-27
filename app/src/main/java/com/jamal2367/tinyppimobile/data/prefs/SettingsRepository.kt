@@ -71,6 +71,11 @@ class SettingsRepository(private val context: Context) {
     }
 
     /** The order the cards of one screen are in now, from the top. */
+    /** Keep the order [shelf] was put in, as `ShelfOrder.encoded` writes it. */
+    suspend fun setShelfOrder(shelf: String, order: String) = edit {
+        it[stringPreferencesKey("$SHELF_PREFIX$shelf")] = order
+    }
+
     suspend fun setCardOrder(screen: String, order: List<String>) = edit {
         it[cardOrderKey(screen)] = order.joinToString(ORDER_SEPARATOR)
     }
@@ -155,6 +160,9 @@ class SettingsRepository(private val context: Context) {
             .toMap(),
         cardHidden = this[KEY_CARD_HIDDEN].orEmpty(),
         hiddenTabs = this[KEY_HIDDEN_TABS].orEmpty(),
+        shelfOrders = asMap().entries
+            .filter { it.key.name.startsWith(SHELF_PREFIX) }
+            .associate { (key, value) -> key.name.removePrefix(SHELF_PREFIX) to value.toString() },
     )
 
     private fun Preferences.readServer(prefix: String, defaultEnabled: Boolean) = ServerConfig(
@@ -201,6 +209,9 @@ class SettingsRepository(private val context: Context) {
          */
         const val ORDER_PREFIX = "card_order."
         const val ORDER_SEPARATOR = "\n"
+
+        /** Each shelf's order is a key of its own too. */
+        const val SHELF_PREFIX = "shelf_order."
 
         fun cardOrderKey(screen: String) = stringPreferencesKey("$ORDER_PREFIX$screen")
     }

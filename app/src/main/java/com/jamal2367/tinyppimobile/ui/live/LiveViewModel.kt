@@ -11,6 +11,7 @@ import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
+import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
@@ -18,6 +19,8 @@ import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.data.repository.PlayerRepository
 import com.jamal2367.tinyppimobile.util.toUserMessage
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +28,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -138,6 +142,8 @@ data class SeriesUiState(
 data class ContinueUiState(
     /** Films and episodes both, the last one seen first. */
     val items: List<ContinueItem> = emptyList(),
+    /** The next episode of each show being watched, for the "next up" row. */
+    val next: List<ContinueItem> = emptyList(),
     val read: Boolean = false,
     val loading: Boolean = false,
     /**
@@ -180,6 +186,15 @@ class LiveViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = LiveUiState(),
         )
+
+    private val _started = Channel<Unit>(Channel.CONFLATED)
+
+    /**
+     * Once for every title the box has agreed to play, from a wall, the
+     * episode list or the row of half-watched ones: the shell takes it as the
+     * word to go to the live tab, where what was just started is shown.
+     */
+    val started: Flow<Unit> = _started.receiveAsFlow()
 
     private val _library = MutableStateFlow(LibraryUiState())
 
@@ -288,8 +303,72 @@ class LiveViewModel(
     /** Pick a subtitle track, or pass null to switch them off. */
     fun selectSubtitle(index: Int?) = command { repository.selectSubtitle(index) }
 
+    /** Set the audio offset, in seconds. */
+    fun setAudioDelay(seconds: Double) = command { repository.setAudioDelay(seconds) }
+
+    /** Set the subtitle offset, in seconds. */
+    fun setSubtitleDelay(seconds: Double) = command { repository.setSubtitleDelay(seconds) }
+
     /** Put the driver into one of the VS10 modes this snapshot offered. */
     fun setMode(mode: String) = command { repository.setMode(mode) }
+
+    private val _details = MutableStateFlow<DetailsUiState?>(null)
+
+    /** The title whose details are open, and what has been read of them; null for none. */
+    val details: StateFlow<DetailsUiState?> = _details.asStateFlow()
+
+    private val _underDetails = MutableStateFlow<DetailsUiState?>(null)
+
+    /**
+     * The details of the show whose seasons are open over them; null for
+     * none. Kept rather than closed when the seasons open, so leaving the
+     * seasons finds the page they were opened from exactly as it was, with
+     * nothing to read again (see [popDetails]).
+     */
+    val underDetails: StateFlow<DetailsUiState?> = _underDetails.asStateFlow()
+
+    private var detailsRead: Job? = null
+
+    /** The read of the episodes of a show being opened, while it is out. */
+    private var opening: Job? = null
+
+    /**
+     * Read everything the library holds about one title, for the dialog that
+     * shows it. A failure is the dialog's to show rather than a line along
+     * the bottom of the screen.
+     */
+    fun openDetails(target: MarkTarget) {
+        detailsRead?.cancel()
+        _details.value = DetailsUiState(target)
+        detailsRead = viewModelScope.launch {
+            val read = try {
+                DetailsUiState(target, details = repository.details(target))
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Throwable) {
+                DetailsUiState(target, failed = true)
+            }
+            // Into whichever page is showing the title by now: a show's page
+            // may have gone under its seasons while it was being read.
+            if (_underDetails.value?.target == target) _underDetails.value = read else _details.value = read
+        }
+    }
+
+    /**
+     * The page under the seasons back in front, as the seasons are left.
+     * Nothing where there is none.
+     */
+    fun popDetails() {
+        val under = _underDetails.value ?: return
+        _details.value = under
+        _underDetails.value = null
+    }
+
+    /** Close the details, letting go of a read still out. */
+    fun closeDetails() {
+        detailsRead?.cancel()
+        _details.value = null
+    }
 
     /**
      * Read the box's film library.
@@ -398,6 +477,7 @@ class LiveViewModel(
                 // list is worth reading again the next time nothing is on.
                 _library.value = _library.value.copy(read = false)
                 _continuing.value = _continuing.value.copy(read = false)
+                _started.trySend(Unit)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Throwable) {
@@ -496,9 +576,16 @@ class LiveViewModel(
         if (current.opening != null || current.starting != null) return
 
         _series.value = current.copy(opening = show.id)
-        viewModelScope.launch {
+        opening = viewModelScope.launch {
             try {
                 val answer = repository.episodes(show.id)
+                // The show's own details, where they are what it was opened
+                // from, stay as they are under its seasons rather than close.
+                val page = _details.value
+                if (page != null && page.target.kind == MarkTarget.Kind.SHOW && page.target.id == show.id) {
+                    _underDetails.value = page
+                    _details.value = null
+                }
                 _series.value = _series.value.copy(
                     open = OpenShow(show.id, show.title, show.fanart, answer.episodes),
                     opening = null,
@@ -543,6 +630,9 @@ class LiveViewModel(
 
     /** Back out of a show, to the wall it was opened from. */
     fun closeShow() {
+        // A show left while its episodes are still being read stays left:
+        // its seasons do not come up a moment later over the shelf.
+        opening?.cancel()
         if (_series.value.open != null || _series.value.opening != null) {
             _series.value = _series.value.copy(
                 open = null,
@@ -575,6 +665,7 @@ class LiveViewModel(
                 // on the count its show's tile wears.
                 _series.value = _series.value.copy(read = false)
                 _continuing.value = _continuing.value.copy(read = false)
+                _started.trySend(Unit)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Throwable) {
@@ -613,6 +704,7 @@ class LiveViewModel(
             val answer = repository.continuing()
             _continuing.value = _continuing.value.copy(
                 items = answer.items,
+                next = answer.next,
                 read = true,
                 loading = false,
                 offered = true,
@@ -630,6 +722,7 @@ class LiveViewModel(
                 read = refused,
                 offered = !refused,
                 items = if (refused) emptyList() else _continuing.value.items,
+                next = if (refused) emptyList() else _continuing.value.next,
                 starting = null,
             )
         }
@@ -654,6 +747,7 @@ class LiveViewModel(
                     _library.value = _library.value.copy(read = false)
                 }
                 _continuing.value = _continuing.value.copy(read = false)
+                _started.trySend(Unit)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Throwable) {
@@ -681,25 +775,30 @@ class LiveViewModel(
      * A failure is said out loud, because this one was asked for.
      */
     fun setWatched(target: MarkTarget, watched: Boolean) =
-        write { repository.setWatched(target, watched) }
+        write(target, { it.copy(watched = watched) }) { repository.setWatched(target, watched) }
 
     /**
      * Forget where a film or an episode got to, leaving it seen or unseen as
      * it was: it leaves the continue-watching row, and its bar leaves the wall.
      */
-    fun clearResume(target: MarkTarget) = write { repository.clearResume(target) }
+    fun clearResume(target: MarkTarget) =
+        write(target, { it.copy(resume = 0) }) { repository.clearResume(target) }
 
     /** One write to the library, and every shelf read again after it. */
-    private fun write(block: suspend () -> Unit) {
+    private fun write(target: MarkTarget, update: (TitleDetails) -> TitleDetails, block: suspend () -> Unit) {
+        if (_details.value?.busy == true) return
+        changeDetails(target) { it.copy(busy = true, actionError = null) }
         viewModelScope.launch {
             try {
                 block()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Throwable) {
+                changeDetails(target) { it.copy(busy = false, actionError = describe(failure)) }
                 report(failure)
                 return@launch
             }
+            changeDetails(target) { it.copy(details = update(it.details ?: TitleDetails()), busy = false) }
             _library.value = _library.value.copy(read = false)
             _series.value = _series.value.copy(read = false)
             _continuing.value = _continuing.value.copy(read = false)
@@ -710,6 +809,11 @@ class LiveViewModel(
             refreshSeries()
             refreshContinuing()
         }
+    }
+
+    private fun changeDetails(target: MarkTarget, change: (DetailsUiState) -> DetailsUiState) {
+        val current = _details.value
+        if (current?.target == target) _details.value = change(current)
     }
 
     private fun command(block: suspend () -> Unit) {

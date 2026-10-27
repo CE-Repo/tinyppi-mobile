@@ -5,48 +5,67 @@
 
 package com.jamal2367.tinyppimobile.ui.live
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.ui.components.FoldChevron
+import com.jamal2367.tinyppimobile.ui.theme.CardGap
+import com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme
+import com.jamal2367.tinyppimobile.ui.theme.LocalBaseColorScheme
+import com.jamal2367.tinyppimobile.ui.theme.rememberArtworkAccent
 import com.jamal2367.tinyppimobile.util.MediaUrls
 
 /**
  * The same card again for what Kodi knows as TV shows.
  *
  * A series is not something that can be put on - an episode is - so a press
- * here does not start anything: it opens the show, and the screen becomes that
- * show's episodes (see [episodeList]). What the poster carries instead of a
+ * here does not start anything: it opens the show, and its seasons come up in
+ * a page of their own over the shelf (see [SeasonsDialog]). What the poster carries instead of a
  * resume bar is how many episodes are still waiting, which is the one number a
  * shelf of series is scanned for.
  */
@@ -60,6 +79,7 @@ internal fun LazyListScope.seriesWall(
     expanded: Boolean,
     onToggle: () -> Unit,
     onOpen: (LibraryShow) -> Unit,
+    onDetails: (LibraryShow) -> Unit,
 ) {
     val key = "series-wall"
     shelfCard(
@@ -82,6 +102,7 @@ internal fun LazyListScope.seriesWall(
             // the screen.
             enabled = opening == null,
             onOpen = { onOpen(show) },
+            onDetails = { onDetails(show) },
             modifier = Modifier.weight(1f),
         )
     }
@@ -102,10 +123,11 @@ internal fun ShowTile(
     opening: Boolean,
     enabled: Boolean,
     onOpen: () -> Unit,
+    onDetails: () -> Unit,
     modifier: Modifier,
 ) {
     Column(
-        modifier = modifier.clickable(enabled = enabled, onClick = onOpen),
+        modifier = modifier.combinedClickable(enabled = enabled, onClick = onDetails, onLongClick = onOpen),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         ArtFrame(
@@ -139,15 +161,166 @@ internal fun ShowTile(
 }
 
 /**
- * The episodes of the show somebody opened, and the way back out.
+ * The show somebody opened, as a page of its own over the shelf, drawn the
+ * way its details are (see DetailsDialog): the show's backdrop across the
+ * top, fading into the page, its poster standing on the lower edge beside its
+ * name, the year and how many episodes it has - and under that its seasons,
+ * each folded away with its episodes in it. A press on an episode opens that
+ * episode's details over this page, and back, a pull down past its top or
+ * the arrow on the backdrop returns to where it was opened from.
+ *
+ * Coloured from the show's poster where the app takes its colour from what
+ * is playing ([adaptive]), as the details are. The page runs under the
+ * system's bars at both ends, edge to edge as the screens under it do, and
+ * keeps its last line clear of the bar at the foot.
+ */
+@Composable
+internal fun SeasonsDialog(
+    open: OpenShow,
+    show: LibraryShow?,
+    server: ServerConfig?,
+    showArtwork: Boolean,
+    adaptive: Boolean,
+    intensity: Float,
+    starting: Int?,
+    openSeasons: Set<Int>,
+    onDismiss: () -> Unit,
+    onSeason: (Int) -> Unit,
+    onPlay: (LibraryEpisode) -> Unit,
+    onDetails: (LibraryEpisode) -> Unit,
+) {
+    val poster = show?.let { MediaUrls.showPoster(if (showArtwork) server else null, it) }
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+    ) {
+        DisableDialogWindowAnimations()
+        MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
+            ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
+                SeasonsPage(
+                    open = open,
+                    show = show,
+                    server = server,
+                    showArtwork = showArtwork,
+                    loading = false,
+                    starting = starting,
+                    openSeasons = openSeasons,
+                    onDismiss = onDismiss,
+                    onSeason = onSeason,
+                    onPlay = onPlay,
+                    onDetails = onDetails,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The page itself, for a window of its own ([SeasonsDialog]) or for the
+ * show's details page to turn into (see DetailsDialog's `over`), where it
+ * replaces the details while the seasons are open. While the episodes are
+ * still being read ([loading]) it already stands there, with the show's head
+ * and a line saying it is coming.
+ */
+@Composable
+internal fun SeasonsPage(
+    open: OpenShow,
+    show: LibraryShow?,
+    server: ServerConfig?,
+    showArtwork: Boolean,
+    loading: Boolean,
+    starting: Int?,
+    openSeasons: Set<Int>,
+    onDismiss: () -> Unit,
+    onSeason: (Int) -> Unit,
+    onPlay: (LibraryEpisode) -> Unit,
+    onDetails: (LibraryEpisode) -> Unit,
+) {
+    val pictures = if (showArtwork) server else null
+    val poster = show?.let { MediaUrls.showPoster(pictures, it) }
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+        LazyColumn(
+            contentPadding = PaddingValues(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(CardGap),
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(rememberDismissSwipe(onDismiss))
+                .navigationBarsPadding(),
+        ) {
+            item(key = "seasons-hero") {
+                Box {
+                    PageHero(
+                        backdrop = MediaUrls.showFanart(pictures, open.id, open.fanart),
+                        poster = poster,
+                        title = open.title,
+                        meta = listOfNotNull(
+                            show?.year?.takeIf { it > 0 }?.toString(),
+                            if (loading) {
+                                null
+                            } else {
+                                pluralStringResource(
+                                    R.plurals.series_episodes,
+                                    open.episodes.size,
+                                    open.episodes.size,
+                                )
+                            },
+                        ).joinToString(META_GAP),
+                        // Room for the arrow over a heading with no backdrop
+                        // behind it.
+                        bareTop = 64.dp,
+                    )
+                    // The way back, on the backdrop where the eye already is,
+                    // round and on a scrim of its own so it reads on any
+                    // picture.
+                    IconButton(
+                        onClick = onDismiss,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.Black.copy(alpha = 0.45f),
+                            contentColor = Color.White,
+                        ),
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .statusBarsPadding()
+                            .padding(8.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = stringResource(R.string.series_back),
+                        )
+                    }
+                }
+            }
+            if (loading) {
+                item(key = "seasons-loading") {
+                    Box(modifier = Modifier.fillMaxWidth().padding(top = 24.dp), contentAlignment = Alignment.Center) {
+                        LoadingIndicator()
+                    }
+                }
+            } else {
+                episodeList(
+                    open = open,
+                    server = pictures,
+                    showArtwork = showArtwork,
+                    starting = starting,
+                    openSeasons = openSeasons,
+                    edge = PAGE_EDGE,
+                    onSeason = onSeason,
+                    onPlay = onPlay,
+                    onDetails = onDetails,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The episodes of the show somebody opened, under their seasons, [edge] in
+ * from either side of the page.
  *
  * Rows rather than a wall: an episode is chosen by its number and its name -
  * the still is a reminder of which one it was, not what it is recognised by -
  * and a row is where a number and a name fit. They arrive in the order they
  * were made, under the season they belong to.
- *
- * The way back sits at the top, where it is one press away however far down a
- * forty-episode show somebody has scrolled.
  */
 internal fun LazyListScope.episodeList(
     open: OpenShow,
@@ -155,62 +328,11 @@ internal fun LazyListScope.episodeList(
     showArtwork: Boolean,
     starting: Int?,
     openSeasons: Set<Int>,
-    onBack: () -> Unit,
+    edge: Dp,
     onSeason: (Int) -> Unit,
     onPlay: (LibraryEpisode) -> Unit,
+    onDetails: (LibraryEpisode) -> Unit,
 ) {
-    item(key = "episode-heading") {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.series_back))
-            }
-            // The show itself, before its seasons: a picture at the shape a
-            // television is, which is what a series is recognised by once its
-            // poster has been left behind on the wall.
-            //
-            // Only where the phone is showing artwork at all, and the frame
-            // holds its place either way - a show the library scraped no
-            // fanart for gets the stand-in rather than a heading that sits
-            // higher than it does on every other show.
-            if (showArtwork) {
-                ArtFrame(
-                    url = MediaUrls.showFanart(server, open.id, open.fanart),
-                    ratio = WIDE_RATIO,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = open.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                Text(
-                    text = pluralStringResource(
-                        R.plurals.series_episodes,
-                        open.episodes.size,
-                        open.episodes.size,
-                    ),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
 
     val rows: (List<LibraryEpisode>) -> Unit = { listing ->
         for (episode in listing) {
@@ -221,6 +343,8 @@ internal fun LazyListScope.episodeList(
                     starting = starting == episode.id,
                     enabled = starting == null,
                     onPlay = { onPlay(episode) },
+                    onDetails = { onDetails(episode) },
+                    modifier = Modifier.padding(horizontal = edge),
                 )
             }
         }
@@ -256,6 +380,7 @@ internal fun LazyListScope.episodeList(
                 expanded = unfolded,
                 ruled = rule,
                 onToggle = { onSeason(number) },
+                modifier = Modifier.padding(horizontal = edge),
             )
         }
         ruled = true
@@ -280,10 +405,11 @@ private fun SeasonHeading(
     expanded: Boolean,
     ruled: Boolean,
     onToggle: () -> Unit,
+    modifier: Modifier,
 ) {
     val press = remember { MutableInteractionSource() }
 
-    Column {
+    Column(modifier) {
         // Ruled between one season and the next rather than around each: what
         // makes a stack of folds read as one list is the line between them.
         if (ruled) {
@@ -333,7 +459,7 @@ private fun SeasonHeading(
     }
 }
 
-/** One episode: its still, which one it is, its name, and a press that starts it. */
+/** One episode: tap for details, hold for playback and library actions. */
 @Composable
 private fun EpisodeRow(
     episode: LibraryEpisode,
@@ -341,11 +467,13 @@ private fun EpisodeRow(
     starting: Boolean,
     enabled: Boolean,
     onPlay: () -> Unit,
+    onDetails: () -> Unit,
+    modifier: Modifier,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .clickable(enabled = enabled, onClick = onPlay),
+            .combinedClickable(enabled = enabled, onClick = onDetails, onLongClick = onPlay),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

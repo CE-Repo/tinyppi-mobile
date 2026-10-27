@@ -74,6 +74,14 @@ fun rememberArtworkAccent(url: String?): Color? {
 val LocalArtworkAccent = staticCompositionLocalOf<Color?> { null }
 
 /**
+ * The app's palette before any poster coloured it, for a part of the screen
+ * that wears another title's colour than the one playing - a title's details
+ * page - and must start again from the app's own rather than the film's.
+ * Null outside [ArtworkAccentTheme].
+ */
+val LocalBaseColorScheme = staticCompositionLocalOf<ColorScheme?> { null }
+
+/**
  * The app's theme again, in the colour of the poster on screen.
  *
  * Wrapped around the whole app rather than the one screen showing the poster:
@@ -115,7 +123,7 @@ fun ArtworkAccentTheme(
         if (dimmed == null) base else base.accented(dimmed)
     }
 
-    CompositionLocalProvider(LocalArtworkAccent provides dimmed) {
+    CompositionLocalProvider(LocalArtworkAccent provides dimmed, LocalBaseColorScheme provides base) {
         MaterialExpressiveTheme(
             colorScheme = scheme,
             motionScheme = MotionScheme.expressive(),
