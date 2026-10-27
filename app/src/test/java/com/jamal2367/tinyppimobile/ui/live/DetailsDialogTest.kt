@@ -69,8 +69,10 @@ class DetailsDialogTest {
         rule.waitUntil { has(context.getString(R.string.details_failed)) }
         state = DetailsUiState(film, details = TitleDetails(plot = "Plot of one"))
         rule.waitUntil { has("Plot of one") }
+        assertTrue(has(context.getString(R.string.details_description)))
         state = DetailsUiState(film, details = TitleDetails(tagline = "Only a slogan"))
         rule.waitUntil { has("Only a slogan") }
+        assertTrue(has(context.getString(R.string.details_description)))
         // Each kind of rating brings the row on its own.
         for ((said, rated) in listOf(
             "FSK 12" to TitleDetails(mpaa = "FSK 12"),
@@ -82,6 +84,7 @@ class DetailsDialogTest {
         )) {
             state = DetailsUiState(film, details = rated)
             rule.waitUntil { rule.onAllNodesWithContentDescription(said).fetchSemanticsNodes().isNotEmpty() }
+            assertTrue(!has(context.getString(R.string.details_description)))
         }
         // A cast with no more to it ends without an ellipsis, and stays as it
         // is while the rest of the page changes around it.

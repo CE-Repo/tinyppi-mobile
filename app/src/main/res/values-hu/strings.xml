@@ -304,4 +304,5 @@
 
     <string name="details_awards">Díjak</string>
     <string name="details_award_hint">A halványított ikonok jelöléseket mutatnak.</string>
+    <string name="details_description">Leírás</string>
 </resources>

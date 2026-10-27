@@ -304,4 +304,5 @@
 
     <string name="details_awards">Auszeichnungen</string>
     <string name="details_award_hint">Abgedunkelte Symbole kennzeichnen Nominierungen.</string>
+    <string name="details_description">Beschreibung</string>
 </resources>

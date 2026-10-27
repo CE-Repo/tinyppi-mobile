@@ -311,4 +311,5 @@
 
     <string name="details_awards">Awards</string>
     <string name="details_award_hint">Dimmed icons indicate nominations.</string>
+    <string name="details_description">Description</string>
 </resources>

@@ -483,12 +483,19 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
     RatingGroups(rated)
     if (details.tagline.isNotEmpty() || details.plot.isNotEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                text = stringResource(R.string.details_description),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
             if (details.tagline.isNotEmpty()) {
                 Text(
                     text = details.tagline,
                     style = MaterialTheme.typography.titleMedium,
                     fontStyle = FontStyle.Italic,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
             if (details.plot.isNotEmpty()) {
