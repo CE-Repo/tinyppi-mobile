@@ -480,10 +480,7 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
         top250 = details.top250,
         awards = details.awards,
     )
-    val anyRating = rated.ratings.isNotEmpty() || rated.mpaa.isNotEmpty() || rated.userRating > 0
-    if (anyRating || rated.top250 > 0 || rated.awards.isNotEmpty()) {
-        RatingRow(rated)
-    }
+    RatingGroups(rated)
     if (details.tagline.isNotEmpty() || details.plot.isNotEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (details.tagline.isNotEmpty()) {

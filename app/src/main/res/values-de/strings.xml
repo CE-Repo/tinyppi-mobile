@@ -302,4 +302,6 @@
     <string name="settings_cards_reset">Alle Karten zurücksetzen</string>
     <string name="settings_cards_reset_desc">Jede Karte auf jeder Seite wieder an ihrem Platz, und jede entfernte Karte wieder da.</string>
 
+    <string name="details_awards">Auszeichnungen</string>
+    <string name="details_award_hint">Abgedunkelte Symbole kennzeichnen Nominierungen.</string>
 </resources>
