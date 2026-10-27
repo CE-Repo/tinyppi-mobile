@@ -127,20 +127,20 @@ class DetailsDialogTest {
 
     @Test
     fun `enriched crew keeps portraits and translates roles with legacy fallback`() {
-        val director = com.jamal2367.tinyppimobile.data.model.CastMember("Director", "director", "director-tag")
-        val writer = com.jamal2367.tinyppimobile.data.model.CastMember("Writer", "writer", "writer-tag")
+        val director = com.jamal2367.tinyppimobile.data.model.CastMember("Alex Director", "director", "director-tag")
+        val writer = com.jamal2367.tinyppimobile.data.model.CastMember("Sam Writer", "writer", "writer-tag")
         var details by mutableStateOf(TitleDetails(crew = listOf(director, writer)))
         rule.setContent {
             TinyPpiTheme(themeMode = ThemeMode.DARK) {
                 DetailsDialog(DetailsUiState(film, details), com.jamal2367.tinyppimobile.testing.Screens.box, true, null) {}
             }
         }
-        rule.waitUntil { has("Director") && has("Writer") }
+        rule.waitUntil { has("Alex Director") && has("Sam Writer") }
         assertTrue(has(context.getString(R.string.live_credit_director)))
         assertTrue(has(context.getString(R.string.details_writer)))
         details = TitleDetails(directors = listOf("Legacy Director"), writers = listOf("Legacy Writer"))
         rule.waitUntil { has("Legacy Director") && has("Legacy Writer") }
-        assertTrue(!has("Director"))
+        assertTrue(!has("Alex Director"))
     }
 
     @Test
