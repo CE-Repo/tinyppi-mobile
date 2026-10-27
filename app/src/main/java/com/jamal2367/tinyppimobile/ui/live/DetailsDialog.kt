@@ -213,7 +213,7 @@ private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: D
         Column(modifier = Modifier.verticalScroll(scroll)) {
             Hero(state.target, details ?: TitleDetails(), server)
             Column(
-                verticalArrangement = Arrangement.spacedBy(22.dp),
+                verticalArrangement = Arrangement.spacedBy(32.dp),
                 modifier = Modifier
                     .padding(start = PAGE_EDGE, end = PAGE_EDGE, top = 18.dp, bottom = 32.dp)
                     .navigationBarsPadding(),
@@ -509,7 +509,7 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
         stringResource(R.string.details_studio) to details.studios,
     ).filter { it.second.isNotEmpty() }
     if (facts.isNotEmpty()) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
             for ((heading, names) in facts) Fact(heading, names.joinToString(", "))
         }
     }

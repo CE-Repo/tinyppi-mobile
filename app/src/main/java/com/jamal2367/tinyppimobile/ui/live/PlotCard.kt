@@ -241,7 +241,7 @@ internal fun RatingGroups(media: MediaInfo) {
     val hasRatings = media.ratings.isNotEmpty() || media.mpaa.isNotBlank() || media.userRating > 0 || media.top250 > 0
     val awards = media.awards.filter { it.award in AWARD_MARKS }
     if (!hasRatings && awards.isEmpty()) return
-    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
         if (hasRatings) RatingGroup(stringResource(R.string.details_ratings), media.copy(awards = emptyList()))
         if (awards.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
