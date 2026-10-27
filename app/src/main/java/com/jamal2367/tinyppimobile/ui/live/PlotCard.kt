@@ -258,7 +258,8 @@ internal fun RatingGroups(media: MediaInfo) {
 
 @Composable
 private fun RatingGroup(title: String, media: MediaInfo) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    // Shields have no text line-box inset; give them the facts' visible breathing room.
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(text = title, style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp), fontWeight = FontWeight.Bold)
         RatingRow(media)
     }

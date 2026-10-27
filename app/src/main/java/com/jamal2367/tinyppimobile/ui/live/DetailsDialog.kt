@@ -483,7 +483,8 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
     )
     RatingGroups(rated)
     if (details.tagline.isNotEmpty() || details.plot.isNotEmpty()) {
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        // The slogan's compact italic line needs more room than the body-text facts.
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = stringResource(R.string.details_description),
                 style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp),
@@ -571,7 +572,8 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server:
     }
     val nameHeight = with(density) { heights.first.toDp() }
     val roleHeight = with(density) { heights.second.toDp() }
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    // Portraits have no text line-box inset; match the facts' visible breathing room.
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = heading,
             style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp),
