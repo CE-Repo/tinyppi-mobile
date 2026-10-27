@@ -86,7 +86,7 @@ class CreditCardsTest {
                     labelLarge = typography.labelLarge.copy(fontSize = nameSize.sp, lineHeight = (nameSize + 6).sp),
                     labelMedium = typography.labelMedium.copy(fontSize = roleSize.sp, lineHeight = (roleSize + 4).sp),
                 )) {
-                    DetailsBody(TitleDetails(cast = listOf(CastMember("Name", "Role"))))
+                    DetailsBody(TitleDetails(cast = listOf(CastMember("Name with several words", "Role with several words"))))
                 }
             }
         }
@@ -96,11 +96,11 @@ class CreditCardsTest {
         roleSize = 20
         rule.waitForIdle()
         val after = rule.onAllNodesWithTag("credit-card").fetchSemanticsNodes().single().boundsInRoot.height
-        assertTrue(after > before)
+        assertTrue("larger typography grows the text slots: $before -> $after", after > before)
         scale = 0.9f
         rule.waitForIdle()
-        rule.onNodeWithText("Name").assertExists()
-        rule.onNodeWithText("Role").assertExists()
+        rule.onNodeWithText("Name with several words").assertExists()
+        rule.onNodeWithText("Role with several words").assertExists()
     }
 
     private fun checkCards(fontScale: Float) {
