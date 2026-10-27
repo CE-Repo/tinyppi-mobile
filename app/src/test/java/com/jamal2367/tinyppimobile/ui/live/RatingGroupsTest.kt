@@ -14,6 +14,7 @@ import com.jamal2367.tinyppimobile.data.model.MediaInfo
 import com.jamal2367.tinyppimobile.data.model.SourceRating
 import com.jamal2367.tinyppimobile.testing.Screens.show
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -67,6 +68,13 @@ class RatingGroupsTest {
         val ratingBottom = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot.bottom
         val awardTop = rule.onNodeWithText(awards).fetchSemanticsNode().boundsInRoot.top
         assertTrue("awards follow ratings", awardTop > ratingBottom)
+        val ratingLeft = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot.left
+        val ratingHeadingLeft = rule.onNodeWithText(ratings).fetchSemanticsNode().boundsInRoot.left
+        assertEquals("ratings align with heading", ratingHeadingLeft, ratingLeft, 0.5f)
+        val oscarLabel = "Oscar " + context.getString(R.string.live_award_won, 1)
+        val awardLeft = rule.onNodeWithContentDescription(oscarLabel).fetchSemanticsNode().boundsInRoot.left
+        val awardHeadingLeft = rule.onNodeWithText(awards).fetchSemanticsNode().boundsInRoot.left
+        assertEquals("awards align with heading", awardHeadingLeft, awardLeft, 0.5f)
         media = MediaInfo()
         rule.waitForIdle()
         rule.onNodeWithText(ratings).assertDoesNotExist()
