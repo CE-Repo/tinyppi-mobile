@@ -85,7 +85,9 @@ import kotlinx.coroutines.withTimeoutOrNull
  * Under the card of what is playing until the reader moves it, and like every
  * other card there it moves and comes off the screen (see CardLayout): a long
  * press on it opens the arranging, as one on a heading does. Drawn for a title
- * the library holds (see [PlayingItem.opensDetails]).
+ * the library holds (see [PlayingItem.opensDetails]), and for anything else
+ * the snapshot says something about (see [MediaInfo.hasOverview]) - a
+ * broadcast's plot and cast among them.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

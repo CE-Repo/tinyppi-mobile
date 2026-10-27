@@ -406,6 +406,20 @@ class LiveViewModel(
     }
 
     /**
+     * The details of a playing title the box hands out none for - a
+     * broadcast, a file the library does not know, a box that takes no
+     * orders - drawn from what [snapshot] says of it, with nothing to read.
+     * Its target has no id: the pictures are the playing title's (see
+     * `MediaUrls.details`), and there is nothing to play or mark.
+     */
+    fun showPlayingDetails(snapshot: Snapshot) {
+        detailsRead?.cancel()
+        val media = snapshot.media
+        val kind = if (media.item.kind == "episode") MarkTarget.Kind.EPISODE else MarkTarget.Kind.MOVIE
+        _details.value = DetailsUiState(MarkTarget(kind, 0, snapshot.title), details = media.details(snapshot.art))
+    }
+
+    /**
      * The page under the seasons back in front, as the seasons are left.
      * Nothing where there is none.
      */

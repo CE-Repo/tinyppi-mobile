@@ -16,6 +16,9 @@ import com.jamal2367.tinyppimobile.data.model.WatchedBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
 import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.model.Snapshot
+import com.jamal2367.tinyppimobile.data.model.ArtTags
+import com.jamal2367.tinyppimobile.data.model.MediaInfo
+import com.jamal2367.tinyppimobile.data.model.PlayingItem
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
@@ -252,6 +255,30 @@ class LiveViewModelTest {
         assertEquals(2, api.count("hello"))
         assertTrue(vm.library.value.offered)
         assertNull("nobody asked, so nothing is reported", vm.message.value)
+    }
+
+    @Test
+    fun `a broadcast's details come from the snapshot, with nothing asked of the box`() = runTest(dispatcher) {
+        val vm = viewModel()
+        val snapshot = Snapshot(
+            playing = true,
+            title = "Tagesschau",
+            media = MediaInfo(plot = "Die Nachrichten.", cast = listOf("Jens Riewa"), roles = listOf("Sprecher")),
+            art = ArtTags(poster = "p1"),
+        )
+        vm.showPlayingDetails(snapshot)
+        advanceUntilIdle()
+
+        val shown = vm.details.value!!
+        assertEquals(MarkTarget(MarkTarget.Kind.MOVIE, 0, "Tagesschau"), shown.target)
+        assertEquals("Die Nachrichten.", shown.details?.plot)
+        assertEquals("Sprecher", shown.details?.cast?.single()?.role)
+        assertEquals("p1", shown.details?.poster)
+        assertEquals(0, api.count("details"))
+
+        // An episode the library does not hand out is one still.
+        vm.showPlayingDetails(snapshot.copy(media = MediaInfo(plot = "x", item = PlayingItem("episode", 9))))
+        assertEquals(MarkTarget.Kind.EPISODE, vm.details.value!!.target.kind)
     }
 
     @Test

@@ -149,14 +149,19 @@ private fun LiveContent(
     viewModel: LiveViewModel,
 ) {
     val layout = LocalCardLayout.current
-    // A box that takes no orders hands out no details, and nor does one whose
-    // shelf for the title is off (see _serve_details in the add-on's
-    // web/routes.py, and LiveViewModel.readOffers).
+    // The overview opens the library's details of a title it holds - on a
+    // box that takes orders and whose shelf for the title is on, as the box
+    // hands them out nowhere else (see _serve_details in the add-on's
+    // web/routes.py, and LiveViewModel.readOffers). For anything else - a
+    // broadcast, a file the library does not know, a box that hands out no
+    // details - it opens what the snapshot says of the title, where it says
+    // anything (see LiveViewModel.showPlayingDetails).
     val filmsOffered = viewModel.library.collectAsStateWithLifecycle().value.offered
     val seriesOffered = viewModel.series.collectAsStateWithLifecycle().value.offered
     val playingItem = snapshot.media.item
     val opensDetails = playingItem.opensDetails && canControl &&
         (if (playingItem.kind == "movie") filmsOffered else seriesOffered)
+    val showsOverview = opensDetails || snapshot.media.hasOverview
     val plotTitle = stringResource(
         if (snapshot.media.item.kind == "episode") R.string.live_plot_episode else R.string.live_plot,
     )
@@ -211,7 +216,7 @@ private fun LiveContent(
         // (see CardLayout).
         val groups = snapshot.groups.associateBy { "$GROUP_PREFIX${it.id}" }
         val present = buildList {
-            if (opensDetails) add(FOLD_PLOT)
+            if (showsOverview) add(FOLD_PLOT)
             if (canControl) add(FOLD_CONTROLS)
             if (snapshot.vs10.options.isNotEmpty()) add(FOLD_VS10)
             addAll(groups.keys)
@@ -245,7 +250,13 @@ private fun LiveContent(
         for (id in shown) {
             when (id) {
                 FOLD_PLOT -> item(key = id) {
-                    PlotCard(plotTitle) { viewModel.openDetails(snapshot.media.item.target(snapshot.title)) }
+                    PlotCard(plotTitle) {
+                        if (opensDetails) {
+                            viewModel.openDetails(playingItem.target(snapshot.title))
+                        } else {
+                            viewModel.showPlayingDetails(snapshot)
+                        }
+                    }
                 }
 
                 FOLD_CONTROLS -> item(key = id) {

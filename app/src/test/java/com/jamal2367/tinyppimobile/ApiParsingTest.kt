@@ -253,6 +253,17 @@ class ApiParsingTest {
     }
 
     @Test
+    fun `the snapshot names every genre and writer, and who each of the cast played`() {
+        val snapshot = json.decodeFromString(
+            Snapshot.serializer(),
+            """{"playing":true,"media":{"genres":["Drama","News"],"writers":["W"],"cast":["A","B"],"roles":["X",""]}}""",
+        )
+        assertEquals(listOf("Drama", "News"), snapshot.media.genres)
+        assertEquals(listOf("W"), snapshot.media.writers)
+        assertEquals(listOf("X", ""), snapshot.media.roles)
+    }
+
+    @Test
     fun `hello says which shelves the box offers`() {
         val hello = json.decodeFromString(
             Hello.serializer(),

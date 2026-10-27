@@ -4,6 +4,7 @@ import com.jamal2367.tinyppimobile.data.model.ArtTags
 import com.jamal2367.tinyppimobile.data.model.Frame
 import com.jamal2367.tinyppimobile.data.model.InfoGroup
 import com.jamal2367.tinyppimobile.data.model.InfoRowData
+import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import org.junit.Assert.assertEquals
@@ -45,6 +46,19 @@ class UtilEdgeTest {
         )
         assertNull(MediaUrls.portrait(box, ""))
         assertNull(MediaUrls.portrait(null, "0123456789abcdef"))
+    }
+
+    @Test
+    fun `the playing title's details ask for its pictures without an id`() {
+        val box = ServerConfig(enabled = true, host = "h", port = 1)
+        val playing = MarkTarget(MarkTarget.Kind.MOVIE, 0, "Tagesschau")
+        assertEquals("http://h:1/api/art?kind=poster&v=p1", MediaUrls.details(box, playing, "poster", "p1"))
+        assertNull(MediaUrls.details(box, playing, "poster", ""))
+        assertNull(MediaUrls.details(null, playing, "poster", "p1"))
+        assertEquals(
+            "http://h:1/api/art?kind=poster&movieid=3&v=p1",
+            MediaUrls.details(box, MarkTarget(MarkTarget.Kind.MOVIE, 3, "Heat"), "poster", "p1"),
+        )
     }
 
     @Test

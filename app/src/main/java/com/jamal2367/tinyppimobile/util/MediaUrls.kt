@@ -106,9 +106,11 @@ object MediaUrls {
     /**
      * One of a title's pictures for its details - `poster`, `fanart` or
      * `thumb` - addressed by the id its kind goes by; null without a tag.
+     * A target without an id is the playing title, whose details come from
+     * the snapshot: its pictures are asked for as the playing title's are.
      */
     fun details(server: ServerConfig?, target: MarkTarget, kind: String, tag: String): String? =
-        shelfArt(
+        if (target.id <= 0) playingArt(server, kind, tag) else shelfArt(
             server,
             kind,
             when (target.kind) {
@@ -130,6 +132,13 @@ object MediaUrls {
         val box = server ?: return null
         val picture = tag.takeIf { it.isNotBlank() }?.encoded() ?: return null
         return "${box.baseUrl}/api/art?kind=thumb&portrait=$picture&v=$picture"
+    }
+
+    /** One picture of the playing title, by its kind and tag; null without a tag. */
+    private fun playingArt(server: ServerConfig?, kind: String, tag: String): String? {
+        val box = server ?: return null
+        val picture = tag.takeIf { it.isNotBlank() }?.encoded() ?: return null
+        return "${box.baseUrl}/api/art?kind=$kind&v=$picture"
     }
 
     /**

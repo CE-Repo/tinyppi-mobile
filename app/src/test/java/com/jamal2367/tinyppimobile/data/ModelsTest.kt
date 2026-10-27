@@ -2,9 +2,11 @@ package com.jamal2367.tinyppimobile.data
 
 import com.jamal2367.tinyppimobile.data.model.ActiveArea
 import com.jamal2367.tinyppimobile.data.model.ApiErrorBody
+import com.jamal2367.tinyppimobile.data.model.ArtTags
 import com.jamal2367.tinyppimobile.data.model.Award
 import com.jamal2367.tinyppimobile.data.model.Chapter
 import com.jamal2367.tinyppimobile.data.model.CommandAck
+import com.jamal2367.tinyppimobile.data.model.CastMember
 import com.jamal2367.tinyppimobile.data.model.CommandBody
 import com.jamal2367.tinyppimobile.data.model.ContinueItem
 import com.jamal2367.tinyppimobile.data.model.Frame
@@ -139,6 +141,40 @@ class ModelsTest {
         assertFalse(PlayingItem("channel", 4).opensDetails)
         assertEquals(MarkTarget(MarkTarget.Kind.MOVIE, 3, "Heat"), PlayingItem("movie", 3).target("Heat"))
         assertEquals(MarkTarget(MarkTarget.Kind.EPISODE, 7, "Pilot"), PlayingItem("episode", 7).target("Pilot"))
+    }
+
+    @Test
+    fun `a title the box hands out no details for has the snapshot's to show`() {
+        assertFalse(MediaInfo().hasOverview)
+        assertFalse(MediaInfo(plot = "  ", item = PlayingItem("movie", 3)).hasOverview)
+        for (told in listOf(
+            MediaInfo(plot = "News."), MediaInfo(ratings = listOf(SourceRating("imdb", 7.0))),
+            MediaInfo(userRating = 8), MediaInfo(top250 = 3), MediaInfo(mpaa = "FSK 12"),
+            MediaInfo(awards = listOf(Award("oscar"))), MediaInfo(directors = listOf("D")),
+            MediaInfo(writers = listOf("W")), MediaInfo(cast = listOf("C")),
+        )) {
+            assertTrue(told.toString(), told.hasOverview)
+        }
+
+        val details = MediaInfo(
+            year = "2026", plot = "News.", tagline = "Live.", genres = listOf("News"),
+            cast = listOf("Jens Riewa", "Judith Rakers"), roles = listOf("Sprecher"), castMore = true,
+            directors = listOf("D"), writers = listOf("W"), studios = listOf("ARD"),
+            mpaa = "FSK 0", age = "fsk0", ageLevel = "0", userRating = 7, top250 = 0,
+            item = PlayingItem("episode", 0),
+        ).details(ArtTags(poster = "p1", fanart = "f1"))
+        assertEquals("episode", details.kind)
+        assertEquals(2026, details.year)
+        assertEquals(listOf(CastMember("Jens Riewa", "Sprecher"), CastMember("Judith Rakers", "")), details.cast)
+        assertTrue(details.castMore)
+        assertEquals(listOf("News"), details.genres)
+        assertEquals(listOf("W"), details.writers)
+        assertEquals("fsk0", details.age)
+        assertEquals(7, details.userrating)
+        assertEquals("p1", details.poster)
+        assertEquals("f1", details.fanart)
+        // A year that is no number is none.
+        assertEquals(0, MediaInfo(year = "n/a").details(ArtTags()).year)
     }
 
     @Test
