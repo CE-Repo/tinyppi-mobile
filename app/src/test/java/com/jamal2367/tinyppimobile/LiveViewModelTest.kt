@@ -255,6 +255,37 @@ class LiveViewModelTest {
         assertEquals(2, api.count("hello"))
         assertTrue(vm.library.value.offered)
         assertNull("nobody asked, so nothing is reported", vm.message.value)
+
+        // What a box says it offers where it already did changes nothing; a
+        // shelf it has switched off goes.
+        api.hello = { Hello(library = true, series = false) }
+        live.value = LiveState(connection = LiveState.Connection.Offline)
+        advanceUntilIdle()
+        live.value = LiveState(connection = LiveState.Connection.Streaming, server = box)
+        advanceUntilIdle()
+        assertTrue(vm.library.value.offered)
+        assertFalse(vm.library.value.read)
+        assertFalse(vm.series.value.offered)
+        assertTrue(vm.series.value.read)
+    }
+
+    @Test
+    fun `an answer from a box that has gone is let go of`() = runTest(dispatcher) {
+        val gate = CompletableDeferred<Unit>()
+        api.hello = {
+            gate.await()
+            Hello(library = false)
+        }
+        val vm = viewModel()
+        watch(vm)
+        val box = ServerConfig(enabled = true, host = "192.168.1.10")
+        live.value = LiveState(connection = LiveState.Connection.Streaming, server = box)
+        advanceUntilIdle()
+        live.value = LiveState(connection = LiveState.Connection.Offline)
+        advanceUntilIdle()
+        gate.complete(Unit)
+        advanceUntilIdle()
+        assertTrue(vm.library.value.offered)
     }
 
     @Test
@@ -279,6 +310,20 @@ class LiveViewModelTest {
         // An episode the library does not hand out is one still.
         vm.showPlayingDetails(snapshot.copy(media = MediaInfo(plot = "x", item = PlayingItem("episode", 9))))
         assertEquals(MarkTarget.Kind.EPISODE, vm.details.value!!.target.kind)
+
+        // A library read still out is let go of: its answer would put another
+        // title's page in this one's place.
+        val gate = CompletableDeferred<Unit>()
+        api.details = { kind, id ->
+            gate.await()
+            TitleDetails(kind = kind, id = id, plot = "Heat.")
+        }
+        vm.openDetails(MarkTarget(MarkTarget.Kind.MOVIE, 2, "Heat"))
+        advanceUntilIdle()
+        vm.showPlayingDetails(snapshot)
+        gate.complete(Unit)
+        advanceUntilIdle()
+        assertEquals("Die Nachrichten.", vm.details.value?.details?.plot)
     }
 
     @Test

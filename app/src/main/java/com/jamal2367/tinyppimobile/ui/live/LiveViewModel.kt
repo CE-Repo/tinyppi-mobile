@@ -187,6 +187,9 @@ class LiveViewModel(
      */
     private var offersFrom: ServerConfig? = null
 
+    /** That box's answer while it is out; let go of when the box is lost or another found. */
+    private var offersRead: Job? = null
+
     val state: StateFlow<LiveUiState> =
         combine(liveState.onEach { noteBox(it) }, settings) { live, settings ->
             LiveUiState(live = live, settings = settings)
@@ -298,7 +301,10 @@ class LiveViewModel(
         val box = live.server.takeIf { live.isAnswering }
         if (box == offersFrom) return
         offersFrom = box
-        if (box != null) viewModelScope.launch { readOffers() }
+        // An answer still out from a box that is gone would say what that
+        // box offers, not this one.
+        offersRead?.cancel()
+        offersRead = if (box != null) viewModelScope.launch { readOffers() } else null
     }
 
     /**

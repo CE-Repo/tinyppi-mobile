@@ -379,7 +379,7 @@ data class MediaInfo(
         directors = directors,
         writers = writers,
         studios = studios,
-        cast = cast.mapIndexed { index, name -> CastMember(name, roles.getOrElse(index) { "" }) },
+        cast = cast.mapIndexed { index, name -> CastMember(name, if (index < roles.size) roles[index] else "") },
         castMore = castMore,
         poster = art.poster,
         fanart = art.fanart,
