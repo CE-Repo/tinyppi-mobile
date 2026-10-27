@@ -24,6 +24,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import com.jamal2367.tinyppimobile.data.model.TitleDetails
+import com.jamal2367.tinyppimobile.data.model.Hello
 import com.jamal2367.tinyppimobile.data.model.PlayingItem
 import androidx.compose.ui.test.longClick
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +56,7 @@ import com.jamal2367.tinyppimobile.ui.components.CardLayout
 import com.jamal2367.tinyppimobile.ui.components.CardScreens
 import com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -588,9 +590,82 @@ class LiveCardsTest {
         }
         rule.waitForIdle()
 
-        // A file the library does not know has no card.
-        fake.playing(told.copy(media = MediaInfo(plot = "A plot.")))
-        rule.until { !seen(str(R.string.live_plot_episode)) }
+        // A file the library does not know, with nothing said of it, has no card.
+        fake.playing(told.copy(media = MediaInfo()))
+        rule.until { !seen(str(R.string.live_plot_episode)) && !seen(str(R.string.live_plot)) }
+
+        // Nor has a box that takes no orders, which hands out no details,
+        // where the snapshot says nothing either.
+        fake.playing(told.copy(control = false, media = MediaInfo(item = PlayingItem("movie", 1))))
+        rule.waitForIdle()
+        assertEquals(false, seen(str(R.string.live_plot)))
+        assertEquals(2, asked.size)
+    }
+
+    @Test
+    fun `a broadcast's overview opens what the snapshot says of it, asking the box nothing`() {
+        val asked = mutableListOf<Pair<String, Int>>()
+        fake.api.details = { kind, id ->
+            asked += kind to id
+            TitleDetails(kind = kind, id = id)
+        }
+        fake.playing(
+            told.copy(
+                title = "Tagesschau",
+                media = MediaInfo(
+                    plot = "Die Nachrichten des Tages.",
+                    cast = listOf("Jens Riewa", "Judith Rakers"),
+                    roles = listOf("Sprecher"),
+                ),
+            ),
+        )
+        showLive()
+        rule.onNodeWithText(str(R.string.live_plot)).performClick()
+        rule.until { seen("Die Nachrichten des Tages.") }
+        assertTrue(seen("Jens Riewa"))
+        assertTrue(seen("Sprecher"))
+        assertTrue(seen("Judith Rakers"))
+        // Already playing: nothing to play it with, and nothing asked of the box.
+        assertEquals(false, seen(str(R.string.title_play)))
+        assertEquals(emptyList<Pair<String, Int>>(), asked)
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
+
+        // A live channel's is named for its programme.
+        fake.playing(told.copy(title = "Tagesschau", media = MediaInfo(plot = "Live.", item = PlayingItem("broadcast"))))
+        rule.until { seen(str(R.string.live_plot_broadcast)) }
+        rule.onNodeWithText(str(R.string.live_plot_broadcast)).performClick()
+        rule.until { seen("Live.") }
+        assertEquals(emptyList<Pair<String, Int>>(), asked)
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
+
+        // A library title on a box that takes no orders: the same.
+        fake.playing(told.copy(control = false, media = MediaInfo(plot = "Paul joins the Fremen.", item = PlayingItem("movie", 1))))
+        rule.until { seen(str(R.string.live_plot)) }
+        rule.onNodeWithText(str(R.string.live_plot)).performClick()
+        rule.until { seen("Paul joins the Fremen.") }
+        assertEquals(emptyList<Pair<String, Int>>(), asked)
+    }
+
+    @Test
+    fun `the overview is not offered for a title whose shelf the box has switched off`() {
+        fake.api.hello = { Hello(library = false, series = true) }
+        fake.playing(told.copy(media = told.media.copy(item = PlayingItem("movie", 1))))
+        showLive()
+        rule.until { !fake.viewModel.library.value.offered }
+        // With nothing in the snapshot to show instead, there is no card.
+        fake.playing(told.copy(media = MediaInfo(item = PlayingItem("movie", 1))))
+        rule.waitForIdle()
+        assertEquals(false, seen(str(R.string.live_plot)))
+
+        // An episode's shelf is on, so its details are there to open.
+        fake.playing(told.copy(title = "Ghosts", media = MediaInfo(item = PlayingItem("episode", 76))))
+        rule.until { seen(str(R.string.live_plot_episode)) }
     }
 
     @Test

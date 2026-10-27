@@ -631,9 +631,10 @@ private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server:
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
-            if (server != null && person.thumbnail.isNotBlank()) {
+            val portrait = MediaUrls.portrait(server, person.thumbnail)
+            if (portrait != null) {
                 AsyncImage(
-                    model = "${server.baseUrl}/api/art?kind=thumb&portrait=${person.thumbnail}&v=${person.thumbnail}",
+                    model = portrait,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.matchParentSize(),

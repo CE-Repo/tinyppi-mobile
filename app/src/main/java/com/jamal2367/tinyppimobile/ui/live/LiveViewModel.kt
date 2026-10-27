@@ -14,6 +14,7 @@ import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
+import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
 import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.data.repository.PlayerRepository
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -178,8 +180,18 @@ class LiveViewModel(
     private val describe: (Throwable) -> String,
 ) : ViewModel() {
 
+    /**
+     * The box whose shelves were last asked about (see [readOffers]), or null
+     * while none is answering: each box is asked once each time it is found,
+     * not on every snapshot.
+     */
+    private var offersFrom: ServerConfig? = null
+
+    /** That box's answer while it is out; let go of when the box is lost or another found. */
+    private var offersRead: Job? = null
+
     val state: StateFlow<LiveUiState> =
-        combine(liveState, settings) { live, settings ->
+        combine(liveState.onEach { noteBox(it) }, settings) { live, settings ->
             LiveUiState(live = live, settings = settings)
         }.stateIn(
             scope = viewModelScope,
@@ -278,6 +290,51 @@ class LiveViewModel(
         _continuing.value = _continuing.value.copy(read = false)
     }
 
+    /**
+     * Ask a box that has just been found which shelves it offers.
+     *
+     * Part of reading the live state rather than a watch of its own: the
+     * connection is held only while a screen looks (see `AppContainer`), and
+     * a collector of its own here would hold it open behind the screen.
+     */
+    private fun noteBox(live: LiveState) {
+        val box = live.server.takeIf { live.isAnswering }
+        if (box == offersFrom) return
+        offersFrom = box
+        // An answer still out from a box that is gone would say what that
+        // box offers, not this one.
+        offersRead?.cancel()
+        offersRead = if (box != null) viewModelScope.launch { readOffers() } else null
+    }
+
+    /**
+     * Which shelves the box offers, from `/api/hello`, before any shelf has
+     * been read: a shelf switched off is gone from the bar at once, and the
+     * overview card does not offer the details of a title whose shelf is off
+     * (the box would refuse them). A shelf switched on again is read anew.
+     *
+     * An add-on older than the flags says nothing, and a box that cannot be
+     * asked leaves things as they stand: the shelves still find out for
+     * themselves when they are refused.
+     */
+    private suspend fun readOffers() {
+        val hello = try {
+            repository.hello()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Throwable) {
+            return
+        }
+        hello.library?.let { offered ->
+            val held = _library.value
+            if (held.offered != offered) _library.value = held.copy(offered = offered, read = !offered)
+        }
+        hello.series?.let { offered ->
+            val held = _series.value
+            if (held.offered != offered) _series.value = held.copy(offered = offered, read = !offered)
+        }
+    }
+
     fun playPause() = command { repository.playPause() }
 
     fun stop() = command { repository.stop() }
@@ -352,6 +409,20 @@ class LiveViewModel(
             // may have gone under its seasons while it was being read.
             if (_underDetails.value?.target == target) _underDetails.value = read else _details.value = read
         }
+    }
+
+    /**
+     * The details of a playing title the box hands out none for - a
+     * broadcast, a file the library does not know, a box that takes no
+     * orders - drawn from what [snapshot] says of it, with nothing to read.
+     * Its target has no id: the pictures are the playing title's (see
+     * `MediaUrls.details`), and there is nothing to play or mark.
+     */
+    fun showPlayingDetails(snapshot: Snapshot) {
+        detailsRead?.cancel()
+        val media = snapshot.media
+        val kind = if (media.item.kind == "episode") MarkTarget.Kind.EPISODE else MarkTarget.Kind.MOVIE
+        _details.value = DetailsUiState(MarkTarget(kind, 0, snapshot.title), details = media.details(snapshot.art))
     }
 
     /**

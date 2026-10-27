@@ -150,8 +150,13 @@ arrow, nothing more. A tap on it opens the playing title's details page (see
 the shelves below) - every rating the title has as a row of small shields, the
 slogan and the plot, the genres, the director, the writers and the studio, and
 the cast as a row of cards of one height - without the play keys, since it is
-playing already. It is drawn for a film or an episode the library holds; a
-file it does not know has no details, and no card. Like every card there it
+playing already. For a film or an episode the library holds they are the
+library's, read from the box (where the box takes orders and the title's shelf
+is on); for anything else - a live TV broadcast, a file the library does not
+know - the page shows what the box says of what is playing: the plot, the
+ratings and who is in it, each with who they played. With nothing said of it at
+all, there is no card. The card is named for what plays: about the film, the
+episode, or - on a live channel - the programme. Like every card there it
 moves and comes off the screen, a long press on it opening the arranging. On
 the details page each shield has its source's mark on the left, on a
 ground of the source's colour, instead of its name, and what it gave on the
@@ -418,7 +423,7 @@ All of it.
 
 | Endpoint | Used for |
 |---|---|
-| `GET /api/hello` | The connection test. Unauthenticated on the far side, which is what lets the test tell "nothing there" from "wrong token". |
+| `GET /api/hello` | The connection test, and which shelves the box offers (`library`, `series`), asked each time a box is found. Unauthenticated on the far side, which is what lets the test tell "nothing there" from "wrong token". |
 | `GET /api/stream` | The live connection. One per app, shared by every screen. |
 | `GET /api/state` | The polling fallback, and the second half of the connection test. |
 | `GET /api/history` | The chart and the event list. |

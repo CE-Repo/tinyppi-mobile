@@ -257,8 +257,9 @@ data class Logos(val video: String = "", val audio: String = "")
 
 /**
  * Which library title is playing - `movie` or `episode` and its id - as the
- * add-on says; empty for a file the library does not know, and from an
- * add-on older than the field.
+ * add-on says; `broadcast` without an id for a live TV or radio channel;
+ * empty for a file the library does not know, and from an add-on older than
+ * the field.
  */
 @Serializable
 data class PlayingItem(val kind: String = "", val id: Int = 0) {
@@ -341,7 +342,49 @@ data class MediaInfo(
     val studios: List<String> = emptyList(),
     /** Which library title is playing, for the overview card to open its details. */
     val item: PlayingItem = PlayingItem(),
+    /** Every genre, every writer, and who each of [cast] played ("" for none known). */
+    val genres: List<String> = emptyList(),
+    val writers: List<String> = emptyList(),
+    val roles: List<String> = emptyList(),
 ) {
+    /**
+     * Whether the snapshot says anything a details page could show - a plot,
+     * a rating, who made it or is in it - for a title the box hands out no
+     * details for: a broadcast, a file the library does not know.
+     */
+    val hasOverview: Boolean
+        get() = plot.isNotBlank() || ratings.isNotEmpty() || userRating > 0 || top250 > 0 ||
+            mpaa.isNotBlank() || awards.isNotEmpty() || directors.isNotEmpty() || writers.isNotEmpty() ||
+            cast.isNotEmpty()
+
+    /**
+     * What the snapshot says of the title, as a details page draws it: each
+     * of the cast with who they played, under the playing title's own
+     * pictures ([art]).
+     */
+    fun details(art: ArtTags): TitleDetails = TitleDetails(
+        kind = item.kind,
+        ratings = ratings,
+        plot = plot,
+        tagline = tagline,
+        show = show,
+        mpaa = mpaa,
+        age = age,
+        ageLevel = ageLevel,
+        year = year.toIntOrNull() ?: 0,
+        userrating = userRating,
+        top250 = top250,
+        awards = awards,
+        genres = genres,
+        directors = directors,
+        writers = writers,
+        studios = studios,
+        cast = cast.mapIndexed { index, name -> CastMember(name, if (index < roles.size) roles[index] else "") },
+        castMore = castMore,
+        poster = art.poster,
+        fanart = art.fanart,
+    )
+
     /** `S02E07`, when this is an episode of something. */
     val episodeLabel: String?
         get() {

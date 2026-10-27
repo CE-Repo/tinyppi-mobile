@@ -152,6 +152,7 @@
 
     <string name="live_plot">About the film</string>
     <string name="live_plot_episode">About the episode</string>
+    <string name="live_plot_broadcast">About the programme</string>
     <string name="live_rating_mine">My rating</string>
     <string name="live_rating_top250">Top 250 · #%1$d</string>
     <string name="live_award_won">%1$d won</string>

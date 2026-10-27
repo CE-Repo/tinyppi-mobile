@@ -247,6 +247,31 @@ class ApiParsingTest {
         assertFalse(hello.control)
         assertEquals(200, hello.intervalMs)
         assertEquals("Verbunden", hello.strings["connected"])
+        // An add-on older than the shelf flags says nothing either way.
+        assertNull(hello.library)
+        assertNull(hello.series)
+    }
+
+    @Test
+    fun `the snapshot names every genre and writer, and who each of the cast played`() {
+        val snapshot = json.decodeFromString(
+            Snapshot.serializer(),
+            """{"playing":true,"media":{"genres":["Drama","News"],"writers":["W"],"cast":["A","B"],"roles":["X",""]}}""",
+        )
+        assertEquals(listOf("Drama", "News"), snapshot.media.genres)
+        assertEquals(listOf("W"), snapshot.media.writers)
+        assertEquals(listOf("X", ""), snapshot.media.roles)
+    }
+
+    @Test
+    fun `hello says which shelves the box offers`() {
+        val hello = json.decodeFromString(
+            Hello.serializer(),
+            """{"control":true,"library":false,"series":true}""",
+        )
+
+        assertEquals(false, hello.library)
+        assertEquals(true, hello.series)
     }
 
     @Test

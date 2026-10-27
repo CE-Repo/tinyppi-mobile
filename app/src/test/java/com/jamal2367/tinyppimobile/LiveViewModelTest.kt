@@ -4,6 +4,7 @@ import com.jamal2367.tinyppimobile.data.model.CommandAck
 import com.jamal2367.tinyppimobile.data.model.ContinueItem
 import com.jamal2367.tinyppimobile.data.model.ContinueList
 import com.jamal2367.tinyppimobile.data.model.EpisodeList
+import com.jamal2367.tinyppimobile.data.model.Hello
 import com.jamal2367.tinyppimobile.data.model.Library
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
@@ -15,6 +16,9 @@ import com.jamal2367.tinyppimobile.data.model.WatchedBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
 import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.model.Snapshot
+import com.jamal2367.tinyppimobile.data.model.ArtTags
+import com.jamal2367.tinyppimobile.data.model.MediaInfo
+import com.jamal2367.tinyppimobile.data.model.PlayingItem
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
@@ -193,6 +197,144 @@ class LiveViewModelTest {
         assertFalse(vm.library.value.offered)
         assertEquals(1, api.count("library"))
         assertNull("the wall is an offer, and its failure is not reported", vm.message.value)
+    }
+
+    @Test
+    fun `a box found answering is asked once which shelves it offers`() = runTest(dispatcher) {
+        api.hello = { Hello(library = false, series = true) }
+        val vm = viewModel()
+        watch(vm)
+        val box = ServerConfig(enabled = true, host = "192.168.1.10")
+
+        // Nothing is asked of a box that has not answered.
+        live.value = LiveState(connection = LiveState.Connection.Connecting)
+        advanceUntilIdle()
+        assertEquals(0, api.count("hello"))
+
+        live.value = LiveState(connection = LiveState.Connection.Streaming, server = box)
+        advanceUntilIdle()
+        assertFalse(vm.library.value.offered)
+        assertTrue(vm.series.value.offered)
+        // A shelf the box has said it does not offer is not read.
+        vm.refreshLibrary()
+        advanceUntilIdle()
+        assertEquals(0, api.count("library"))
+
+        // Every snapshot from the same box asks nothing again.
+        live.value = LiveState(connection = LiveState.Connection.Streaming, server = box, snapshot = Snapshot())
+        advanceUntilIdle()
+        assertEquals(1, api.count("hello"))
+
+        // Found again after it was lost, it is asked again: the shelf has
+        // been switched back on in the meantime, and is read anew.
+        live.value = LiveState(connection = LiveState.Connection.Offline)
+        advanceUntilIdle()
+        api.hello = { Hello(library = true, series = true) }
+        live.value = LiveState(connection = LiveState.Connection.Streaming, server = box)
+        advanceUntilIdle()
+        assertEquals(2, api.count("hello"))
+        assertTrue(vm.library.value.offered)
+        assertFalse(vm.library.value.read)
+    }
+
+    @Test
+    fun `an older box, or one that cannot say, leaves the shelves to find out themselves`() = runTest(dispatcher) {
+        val vm = viewModel()
+        watch(vm)
+        val box = ServerConfig(enabled = true, host = "192.168.1.10")
+        live.value = LiveState(connection = LiveState.Connection.Streaming, server = box)
+        advanceUntilIdle()
+        assertTrue(vm.library.value.offered)
+        assertTrue(vm.series.value.offered)
+
+        api.hello = { throw ApiFailure.Api(500, "boom") }
+        live.value = LiveState(connection = LiveState.Connection.Offline)
+        advanceUntilIdle()
+        live.value = LiveState(connection = LiveState.Connection.Streaming, server = box)
+        advanceUntilIdle()
+        assertEquals(2, api.count("hello"))
+        assertTrue(vm.library.value.offered)
+        assertNull("nobody asked, so nothing is reported", vm.message.value)
+
+        // What a box says it offers where it already did changes nothing; a
+        // shelf it has switched off goes.
+        api.hello = { Hello(library = true, series = false) }
+        live.value = LiveState(connection = LiveState.Connection.Offline)
+        advanceUntilIdle()
+        live.value = LiveState(connection = LiveState.Connection.Streaming, server = box)
+        advanceUntilIdle()
+        assertTrue(vm.library.value.offered)
+        assertFalse(vm.library.value.read)
+        assertFalse(vm.series.value.offered)
+        assertTrue(vm.series.value.read)
+
+        // Still off, it stays off; switched on again, it is read anew.
+        for ((series, offered) in listOf(false to false, true to true)) {
+            api.hello = { Hello(series = series) }
+            live.value = LiveState(connection = LiveState.Connection.Offline)
+            advanceUntilIdle()
+            live.value = LiveState(connection = LiveState.Connection.Streaming, server = box)
+            advanceUntilIdle()
+            assertEquals(offered, vm.series.value.offered)
+            assertEquals(!offered, vm.series.value.read)
+        }
+    }
+
+    @Test
+    fun `an answer from a box that has gone is let go of`() = runTest(dispatcher) {
+        val gate = CompletableDeferred<Unit>()
+        api.hello = {
+            gate.await()
+            Hello(library = false)
+        }
+        val vm = viewModel()
+        watch(vm)
+        val box = ServerConfig(enabled = true, host = "192.168.1.10")
+        live.value = LiveState(connection = LiveState.Connection.Streaming, server = box)
+        advanceUntilIdle()
+        live.value = LiveState(connection = LiveState.Connection.Offline)
+        advanceUntilIdle()
+        gate.complete(Unit)
+        advanceUntilIdle()
+        assertTrue(vm.library.value.offered)
+    }
+
+    @Test
+    fun `a broadcast's details come from the snapshot, with nothing asked of the box`() = runTest(dispatcher) {
+        val vm = viewModel()
+        val snapshot = Snapshot(
+            playing = true,
+            title = "Tagesschau",
+            media = MediaInfo(plot = "Die Nachrichten.", cast = listOf("Jens Riewa"), roles = listOf("Sprecher")),
+            art = ArtTags(poster = "p1"),
+        )
+        vm.showPlayingDetails(snapshot)
+        advanceUntilIdle()
+
+        val shown = vm.details.value!!
+        assertEquals(MarkTarget(MarkTarget.Kind.MOVIE, 0, "Tagesschau"), shown.target)
+        assertEquals("Die Nachrichten.", shown.details?.plot)
+        assertEquals("Sprecher", shown.details?.cast?.single()?.role)
+        assertEquals("p1", shown.details?.poster)
+        assertEquals(0, api.count("details"))
+
+        // An episode the library does not hand out is one still.
+        vm.showPlayingDetails(snapshot.copy(media = MediaInfo(plot = "x", item = PlayingItem("episode", 9))))
+        assertEquals(MarkTarget.Kind.EPISODE, vm.details.value!!.target.kind)
+
+        // A library read still out is let go of: its answer would put another
+        // title's page in this one's place.
+        val gate = CompletableDeferred<Unit>()
+        api.details = { kind, id ->
+            gate.await()
+            TitleDetails(kind = kind, id = id, plot = "Heat.")
+        }
+        vm.openDetails(MarkTarget(MarkTarget.Kind.MOVIE, 2, "Heat"))
+        advanceUntilIdle()
+        vm.showPlayingDetails(snapshot)
+        gate.complete(Unit)
+        advanceUntilIdle()
+        assertEquals("Die Nachrichten.", vm.details.value?.details?.plot)
     }
 
     @Test
