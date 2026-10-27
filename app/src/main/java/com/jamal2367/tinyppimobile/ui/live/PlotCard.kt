@@ -259,7 +259,7 @@ internal fun RatingGroups(media: MediaInfo) {
 @Composable
 private fun RatingGroup(title: String, media: MediaInfo) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(text = title, style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp, lineHeight = 24.sp), fontWeight = FontWeight.Bold)
+        Text(text = title, style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp), fontWeight = FontWeight.Bold)
         RatingRow(media)
     }
 }

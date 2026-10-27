@@ -486,7 +486,7 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 text = stringResource(R.string.details_description),
-                style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp, lineHeight = 24.sp),
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp),
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -530,7 +530,7 @@ private fun Fact(heading: String, names: String) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
             text = heading,
-            style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp, lineHeight = 24.sp),
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp),
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -572,7 +572,7 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server:
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
             text = heading,
-            style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp, lineHeight = 24.sp),
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp),
             fontWeight = FontWeight.Bold,
         )
         // Scroll to the page edges, keeping portraits and text fully opaque.
