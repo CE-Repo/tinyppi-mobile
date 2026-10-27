@@ -141,7 +141,7 @@ class DetailsEdgesTest {
     }
 
     @Test
-    fun `cast fades are drawn at both ends and names without roles fit`() {
+    fun `cast scrolls to either end and names without roles fit`() {
         val cast = (1..12).map { CastMember("Actor $it", if (it == 1) "" else "Role $it") }
         rule.show { Box(Modifier.width(280.dp)) { DetailsBody(TitleDetails(cast = cast, castMore = true)) } }
         rule.onRoot().captureToImage()

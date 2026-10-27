@@ -149,8 +149,11 @@ private fun LiveContent(
     viewModel: LiveViewModel,
 ) {
     val layout = LocalCardLayout.current
+    val plotTitle = stringResource(
+        if (snapshot.media.item.kind == "episode") R.string.live_plot_episode else R.string.live_plot,
+    )
     val labels = LiveCardLabels(
-        plot = stringResource(R.string.live_plot),
+        plot = plotTitle,
         controls = stringResource(R.string.live_transport),
         vs10 = stringResource(R.string.live_vs10),
     )
@@ -234,7 +237,7 @@ private fun LiveContent(
         for (id in shown) {
             when (id) {
                 FOLD_PLOT -> item(key = id) {
-                    PlotCard { viewModel.openDetails(snapshot.media.item.target(snapshot.title)) }
+                    PlotCard(plotTitle) { viewModel.openDetails(snapshot.media.item.target(snapshot.title)) }
                 }
 
                 FOLD_CONTROLS -> item(key = id) {

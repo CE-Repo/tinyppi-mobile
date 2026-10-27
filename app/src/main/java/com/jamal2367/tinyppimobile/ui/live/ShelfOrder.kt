@@ -437,8 +437,7 @@ private fun DirectionChip(descending: Boolean, onFlip: () -> Unit) {
  * A row that scrolls sideways faded out at a side it goes on past - [back]
  * and [forward] say which - so what stands at the edge runs out softly
  * rather than being cut off. Nothing at a side the row has reached the end
- * of. The filter row and the rows of cast cards on a details page, which
- * fade further in ([width]): a card is wider than a chip.
+ * of. Used for the shelf filter row.
  */
 internal fun Modifier.fadedEdges(
     back: () -> Boolean,

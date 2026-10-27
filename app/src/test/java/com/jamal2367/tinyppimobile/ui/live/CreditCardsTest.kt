@@ -26,9 +26,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.GraphicsMode
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = "w411dp-h1200dp")
 class CreditCardsTest {
     @get:Rule val rule = createComposeRule()
@@ -86,7 +88,7 @@ class CreditCardsTest {
                     labelLarge = typography.labelLarge.copy(fontSize = nameSize.sp, lineHeight = (nameSize + 6).sp),
                     labelMedium = typography.labelMedium.copy(fontSize = roleSize.sp, lineHeight = (roleSize + 4).sp),
                 )) {
-                    DetailsBody(TitleDetails(cast = listOf(CastMember("Name", "Role"))))
+                    DetailsBody(TitleDetails(cast = listOf(CastMember("Name with several words", "Role with several words"))))
                 }
             }
         }
@@ -96,11 +98,11 @@ class CreditCardsTest {
         roleSize = 20
         rule.waitForIdle()
         val after = rule.onAllNodesWithTag("credit-card").fetchSemanticsNodes().single().boundsInRoot.height
-        assertTrue(after > before)
+        assertTrue("larger typography grows the text slots: $before -> $after", after > before)
         scale = 0.9f
         rule.waitForIdle()
-        rule.onNodeWithText("Name").assertExists()
-        rule.onNodeWithText("Role").assertExists()
+        rule.onNodeWithText("Name with several words").assertExists()
+        rule.onNodeWithText("Role with several words").assertExists()
     }
 
     private fun checkCards(fontScale: Float) {
@@ -130,12 +132,13 @@ class CreditCardsTest {
             val initial = rule.onNodeWithText(name.take(1)).fetchSemanticsNode().boundsInRoot
             val lastText = if (index < 2) roles[index] else crewRoles[index - 2]
             val last = rule.onNodeWithText(lastText).fetchSemanticsNode().boundsInRoot
-            val contentTop = initial.center.y - card.width * 72f / 136f
-            assertEquals("portrait at top: $name", card.top + card.width * 12f / 136f, contentTop, 1f)
+            val contentTop = initial.center.y - card.width / 2
+            assertEquals("square portrait at top: $name", card.top, contentTop, 1f)
             val nameBox = rule.onNodeWithText(name).fetchSemanticsNode().boundsInRoot
-            val pictureBottom = initial.center.y + card.width * 72f / 136f
-            assertEquals("text centred below portrait: $name", (pictureBottom + card.bottom) / 2,
-                (nameBox.top + last.bottom) / 2, 1f)
+            val pictureBottom = initial.center.y + card.width / 2
+            assertEquals("name below portrait: $name", pictureBottom + card.width * 12f / 160f, nameBox.top, 1f)
+            assertEquals("name left aligned: $name", card.left, nameBox.left, 1f)
+            assertEquals("role left aligned: $name", card.left, last.left, 1f)
             assertTrue("role after name: $name", last.top >= nameBox.bottom)
         }
         for (text in names + crewRoles + roles) {
