@@ -591,6 +591,12 @@ class LiveCardsTest {
         // A file the library does not know has no card.
         fake.playing(told.copy(media = MediaInfo(plot = "A plot.")))
         rule.until { !seen(str(R.string.live_plot_episode)) }
+
+        // Nor has a box that takes no orders: it hands out no details.
+        fake.playing(told.copy(media = told.media.copy(item = PlayingItem("movie", 1))))
+        rule.until { seen(str(R.string.live_plot)) }
+        fake.playing(told.copy(control = false, media = told.media.copy(item = PlayingItem("movie", 1))))
+        rule.until { !seen(str(R.string.live_plot)) }
     }
 
     @Test

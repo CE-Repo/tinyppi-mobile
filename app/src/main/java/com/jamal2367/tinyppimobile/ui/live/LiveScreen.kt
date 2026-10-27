@@ -203,7 +203,9 @@ private fun LiveContent(
         // (see CardLayout).
         val groups = snapshot.groups.associateBy { "$GROUP_PREFIX${it.id}" }
         val present = buildList {
-            if (snapshot.media.item.opensDetails) add(FOLD_PLOT)
+            // A box that takes no orders hands out no details either (see
+            // _serve_details in the add-on's web/routes.py).
+            if (snapshot.media.item.opensDetails && canControl) add(FOLD_PLOT)
             if (canControl) add(FOLD_CONTROLS)
             if (snapshot.vs10.options.isNotEmpty()) add(FOLD_VS10)
             addAll(groups.keys)
