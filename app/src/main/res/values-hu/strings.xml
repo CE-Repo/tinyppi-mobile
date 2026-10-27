@@ -302,4 +302,7 @@
     <string name="settings_cards_reset">Összes kártya visszaállítása</string>
     <string name="settings_cards_reset_desc">Minden kártya visszakerül a helyére minden képernyőn, és minden eltávolított kártya újra látható.</string>
 
+    <string name="details_awards">Díjak</string>
+    <string name="details_award_hint">A halványított ikonok jelöléseket mutatnak.</string>
+    <string name="details_description">Leírás</string>
 </resources>

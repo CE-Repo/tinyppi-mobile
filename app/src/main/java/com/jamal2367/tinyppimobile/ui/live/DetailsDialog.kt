@@ -480,18 +480,22 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
         top250 = details.top250,
         awards = details.awards,
     )
-    val anyRating = rated.ratings.isNotEmpty() || rated.mpaa.isNotEmpty() || rated.userRating > 0
-    if (anyRating || rated.top250 > 0 || rated.awards.isNotEmpty()) {
-        RatingRow(rated)
-    }
+    RatingGroups(rated)
     if (details.tagline.isNotEmpty() || details.plot.isNotEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                text = stringResource(R.string.details_description),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
             if (details.tagline.isNotEmpty()) {
                 Text(
                     text = details.tagline,
                     style = MaterialTheme.typography.titleMedium,
                     fontStyle = FontStyle.Italic,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
             if (details.plot.isNotEmpty()) {
@@ -517,15 +521,15 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
     if (crew.isNotEmpty()) Cast(crew, false, stringResource(R.string.details_crew), sizing = people)
 }
 
-/** One fact: its name in the quieter colour over the names. */
+/** One fact: the same bold heading as the other details sections. */
 @Composable
 private fun Fact(heading: String, names: String) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
             text = heading,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(text = names, style = MaterialTheme.typography.bodyLarge)
     }

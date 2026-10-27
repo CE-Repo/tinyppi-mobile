@@ -309,4 +309,7 @@
     <string name="settings_cards_reset">Reset all cards</string>
     <string name="settings_cards_reset_desc">Every card back in its place on every screen, and every removed card shown again.</string>
 
+    <string name="details_awards">Awards</string>
+    <string name="details_award_hint">Dimmed icons indicate nominations.</string>
+    <string name="details_description">Description</string>
 </resources>

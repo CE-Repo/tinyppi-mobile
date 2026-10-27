@@ -155,8 +155,8 @@ internal fun RatingRow(media: MediaInfo) {
     val tall = badgeHeight()
     val colours = MaterialTheme.colorScheme
     FlowRow(
-        // Every line of them centred, the last one too.
-        horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterHorizontally),
+        // Every line starts at the same left edge as its heading.
+        horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.Start),
         verticalArrangement = Arrangement.spacedBy(7.dp),
         itemVerticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
@@ -232,6 +232,35 @@ internal fun RatingRow(media: MediaInfo) {
             ) { DrawnMark(TOP250.drawing) }
         }
         media.awards.forEach { award -> AwardShield(award, tall) }
+    }
+}
+
+/** Separate ratings and awards; sections without shields are omitted. */
+@Composable
+internal fun RatingGroups(media: MediaInfo) {
+    val hasRatings = media.ratings.isNotEmpty() || media.mpaa.isNotBlank() || media.userRating > 0 || media.top250 > 0
+    val awards = media.awards.filter { it.award in AWARD_MARKS }
+    if (!hasRatings && awards.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        if (hasRatings) RatingGroup(stringResource(R.string.details_ratings), media.copy(awards = emptyList()))
+        if (awards.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                RatingGroup(stringResource(R.string.details_awards), MediaInfo(awards = awards))
+                if (awards.any { it.won.isEmpty() }) Text(
+                    text = stringResource(R.string.details_award_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RatingGroup(title: String, media: MediaInfo) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        RatingRow(media)
     }
 }
 

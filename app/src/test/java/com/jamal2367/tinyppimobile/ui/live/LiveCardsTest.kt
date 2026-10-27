@@ -17,7 +17,6 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
@@ -430,7 +429,6 @@ class LiveCardsTest {
         // The age rating first: on the first line, before the first score.
         val imdb = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot
         val age = rule.onNodeWithContentDescription("FSK 12").fetchSemanticsNode().boundsInRoot
-        val screen = rule.onRoot().fetchSemanticsNode().boundsInRoot
         assertEquals(age.center.y, imdb.center.y, 1f)
         assertEquals(true, age.right <= imdb.left)
 
@@ -452,9 +450,8 @@ class LiveCardsTest {
         rule.until { rule.onAllNodesWithContentDescription("FSK 16").fetchSemanticsNodes().isNotEmpty() }
         val alone = rule.onNodeWithContentDescription("FSK 16").fetchSemanticsNode().boundsInRoot
         assertEquals(35f / 26f, alone.width / alone.height, 0.05f)
-        // Centred: a badge alone stands in the middle of the row, which is
-        // the middle of the screen.
-        assertEquals(screen.center.x, alone.center.x, 1f)
+        // A badge alone keeps the same left edge as the full row.
+        assertEquals(age.left, alone.left, 1f)
 
         // With its level, the age rating is a shield like the scores': the
         // board's plate on the left, the level written beside it.
