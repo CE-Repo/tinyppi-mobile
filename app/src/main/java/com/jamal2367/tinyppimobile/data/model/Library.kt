@@ -377,6 +377,8 @@ data class TitleDetails(
     val genres: List<String> = emptyList(),
     val directors: List<String> = emptyList(),
     val writers: List<String> = emptyList(),
+    /** Optional enriched crew; roles are the stable codes director and writer. */
+    val crew: List<CastMember> = emptyList(),
     val studios: List<String> = emptyList(),
     val countries: List<String> = emptyList(),
     /** The first twenty in billing order. */

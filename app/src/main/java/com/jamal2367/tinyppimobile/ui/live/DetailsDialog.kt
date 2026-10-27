@@ -514,11 +514,13 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
     }
     val directorRole = stringResource(R.string.live_credit_director)
     val writerRole = stringResource(R.string.details_writer)
-    val crew = details.directors.map { CastMember(it, directorRole) } +
+    val crew = if (details.crew.isNotEmpty()) details.crew.map {
+        it.copy(role = if (it.role == "director") directorRole else writerRole)
+    } else details.directors.map { CastMember(it, directorRole) } +
         details.writers.map { CastMember(it, writerRole) }
     val people = crew + details.cast
     if (details.cast.isNotEmpty()) Cast(details.cast, details.castMore, stringResource(R.string.live_credit_cast), server, people)
-    if (crew.isNotEmpty()) Cast(crew, false, stringResource(R.string.details_crew), sizing = people)
+    if (crew.isNotEmpty()) Cast(crew, false, stringResource(R.string.details_crew), server, people)
 }
 
 /** One fact: the same bold heading as the other details sections. */
