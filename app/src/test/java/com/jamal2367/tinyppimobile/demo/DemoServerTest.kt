@@ -100,6 +100,23 @@ class DemoServerTest {
         assertTrue(json("/api/history")["events"]!!.jsonArray.size == 5)
         assertEquals(404, get("/api/nothing").first)
 
+        // The next-up row, the sorting fields, and a title's details of every kind.
+        assertTrue(continuing["next"]!!.jsonArray.isNotEmpty())
+        assertEquals("Science Fiction", json("/api/library")["movies"]!!.jsonArray.first().jsonObject["genres"]!!.jsonArray.first().jsonPrimitive.content)
+        assertEquals("Dune: Part Two", json("/api/details?movieid=1")["title"]!!.jsonPrimitive.content)
+        assertEquals("fanart-1", json("/api/details?movieid=1")["fanart"]!!.jsonPrimitive.content)
+        // Who each played, where the pretend library knows, and nobody's role where it does not.
+        val role = { id: Int -> json("/api/details?movieid=$id")["cast"]!!.jsonArray.first().jsonObject["role"]!!.jsonPrimitive.content }
+        assertEquals("Paul Atreides", role(1))
+        assertEquals("", role(2))
+        assertEquals("tvshow", json("/api/details?tvshowid=101")["kind"]!!.jsonPrimitive.content)
+        assertEquals("Severance", json("/api/details?episodeid=101102")["show"]!!.jsonPrimitive.content)
+        assertEquals("1080p", json("/api/details?movieid=3")["resolution"]!!.jsonPrimitive.content)
+        assertEquals("8.1", json("/api/details?movieid=8")["dv_profile"]!!.jsonPrimitive.content)
+        for (unknown in listOf("movieid=999", "movieid=x", "tvshowid=1", "tvshowid=x", "episodeid=5", "episodeid=x", "")) {
+            assertEquals(unknown, 404, get("/api/details?$unknown").first)
+        }
+
         // Pictures of every kind, drawn once and then served again.
         for (query in listOf(
             "kind=poster&v=movie-1", "kind=poster&v=movie-1", "kind=poster&v=movie-21",
@@ -151,6 +168,18 @@ class DemoServerTest {
         command("subtitle", 2)
         command("subtitle", -1)
         command("subtitle")
+        command("audio_delay", 0.05)
+        command("subtitle_delay", -0.2)
+        var fine = state()["controls"]!!.jsonObject
+        assertEquals(0.05, fine["audio_delay"]!!.jsonPrimitive.content.toDouble(), 0.0)
+        assertEquals(-0.2, fine["subtitle_delay"]!!.jsonPrimitive.content.toDouble(), 0.0)
+        command("audio_delay")
+        command("subtitle_delay")
+        command("playpause")
+        fine = state()["controls"]!!.jsonObject
+        assertEquals(0.0, fine["audio_delay"]!!.jsonPrimitive.content.toDouble(), 0.0)
+        assertEquals(0.0, fine["subtitle_delay"]!!.jsonPrimitive.content.toDouble(), 0.0)
+        command("playpause")
         command("unknown")
         post("/api/command", "not json")
         snapshot = state()
@@ -195,7 +224,9 @@ class DemoServerTest {
         assertEquals(false, rated["cast_more"]!!.jsonPrimitive.boolean)
         assertEquals("Legendary Pictures", rated["studios"]!!.jsonArray.single().jsonPrimitive.content)
         assertEquals(null, rated["studios_more"])
-        assertEquals(null, rated["genres"])
+        assertEquals("Science Fiction", rated["genres"]!!.jsonArray.single().jsonPrimitive.content)
+        assertEquals("Chani", rated["roles"]!!.jsonArray[1].jsonPrimitive.content)
+        assertEquals("Jon Spaihts", rated["writers"]!!.jsonArray[1].jsonPrimitive.content)
         assertEquals(9, rated["userrating"]!!.jsonPrimitive.int)
         assertEquals(27, rated["top250"]!!.jsonPrimitive.int)
         post("/api/play", """{"movieid":3,"resume":false}""")

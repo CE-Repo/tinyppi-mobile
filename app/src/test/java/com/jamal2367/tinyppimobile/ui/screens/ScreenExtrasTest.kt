@@ -9,6 +9,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
@@ -120,7 +121,7 @@ class ScreenExtrasTest {
         rule.waitForIdle()
         assertEquals(7, fake.viewModel.series.value.opening)
         gate.complete(EpisodeList(episodes = listOf(LibraryEpisode(71, "Lies", season = 1, episode = 1, duration = 60))))
-        rule.until { seen(str(R.string.series_back)) }
+        rule.until { rule.onAllNodesWithContentDescription(str(R.string.series_back)).fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
         rule.until { seen("Lies") }
         rule.onAllNodesWithText("Pilot").fetchSemanticsNodes()

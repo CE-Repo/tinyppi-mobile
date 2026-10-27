@@ -20,6 +20,13 @@ import org.junit.Test
  * These are the shapes `SnapshotBuilder.build` actually produces.
  */
 class ApiParsingTest {
+    @Test fun castPortraitsRemainCompatibleWithOlderServers() {
+        val old = Json.decodeFromString<com.jamal2367.tinyppimobile.data.model.CastMember>("""{"name":"Actor","role":"Role"}""")
+        assertEquals("", old.thumbnail)
+        val photo = Json.decodeFromString<com.jamal2367.tinyppimobile.data.model.CastMember>("""{"name":"Actor","thumbnail":"1234abcd"}""")
+        assertEquals("1234abcd", photo.thumbnail)
+    }
+
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -178,7 +185,8 @@ class ApiParsingTest {
         // An add-on older than the plot card sends none of its fields.
         assertEquals("", snapshot.media.tagline)
         assertEquals("", snapshot.media.plot)
-        assertFalse(snapshot.media.hasRatings)
+        assertTrue(snapshot.media.ratings.isEmpty())
+        assertFalse(snapshot.media.item.opensDetails)
     }
 
     @Test

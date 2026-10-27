@@ -67,6 +67,9 @@ fun LiveScreen(
         viewModel.consumeMessage()
     }
 
+    // The playing title's details, opened from the overview card.
+    DetailsShown(viewModel, actions = null)
+
     val poster = state.snapshot
         ?.takeIf { state.settings.showArtwork }
         ?.let { MediaUrls.art(state.live.server, it.art, MediaUrls.ArtKind.POSTER) }
@@ -197,7 +200,7 @@ private fun LiveContent(
         // (see CardLayout).
         val groups = snapshot.groups.associateBy { "$GROUP_PREFIX${it.id}" }
         val present = buildList {
-            if (snapshot.media.showsPlotCard) add(FOLD_PLOT)
+            if (snapshot.media.item.opensDetails) add(FOLD_PLOT)
             if (canControl) add(FOLD_CONTROLS)
             if (snapshot.vs10.options.isNotEmpty()) add(FOLD_VS10)
             addAll(groups.keys)
@@ -230,7 +233,9 @@ private fun LiveContent(
         // and its fold as the box adds and drops panels mid-film.
         for (id in shown) {
             when (id) {
-                FOLD_PLOT -> item(key = id) { PlotCard(snapshot.media, titleKey(snapshot)) }
+                FOLD_PLOT -> item(key = id) {
+                    PlotCard { viewModel.openDetails(snapshot.media.item.target(snapshot.title)) }
+                }
 
                 FOLD_CONTROLS -> item(key = id) {
                     ControlsCard(
@@ -277,11 +282,3 @@ internal const val CARD_NOW_PLAYING = "live.now"
 
 /** What a card of the box's readings is named by, before the group's own id. */
 internal const val GROUP_PREFIX = "details."
-
-/**
- * Which title is playing, for the overview to start folded on every new one:
- * its name, year and, for an episode, which one it is.
- */
-private fun titleKey(snapshot: Snapshot): String = with(snapshot.media) {
-    listOf(snapshot.title, year, season, episode).joinToString("|")
-}

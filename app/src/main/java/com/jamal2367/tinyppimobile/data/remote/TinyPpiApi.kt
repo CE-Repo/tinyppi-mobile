@@ -12,6 +12,7 @@ import com.jamal2367.tinyppimobile.data.model.PlayBody
 import com.jamal2367.tinyppimobile.data.model.PlayEpisodeBody
 import com.jamal2367.tinyppimobile.data.model.ResumeBody
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
+import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.model.WatchedBody
 import kotlinx.serialization.json.JsonObject
 import retrofit2.http.Body
@@ -93,6 +94,18 @@ interface TinyPpiApi {
      */
     @GET("api/continue")
     suspend fun continuing(): ContinueList
+
+    /**
+     * Everything the library holds about one film, series or episode, named
+     * by exactly one of the three ids (the others are left out of the
+     * address). Unknown (404) to an add-on older than the dialog.
+     */
+    @GET("api/details")
+    suspend fun details(
+        @Query("movieid") movieId: Int?,
+        @Query("tvshowid") showId: Int?,
+        @Query("episodeid") episodeId: Int?,
+    ): TitleDetails
 
     /** Put the driver into one of the VS10 modes the snapshot offered. */
     @POST("api/mode")

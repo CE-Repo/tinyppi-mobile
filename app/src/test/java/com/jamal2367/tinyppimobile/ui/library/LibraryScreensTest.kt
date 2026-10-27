@@ -1,19 +1,33 @@
 package com.jamal2367.tinyppimobile.ui.library
 
+import androidx.activity.ComponentDialog
+import org.robolectric.shadows.ShadowDialog
 import android.content.Context
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
@@ -30,6 +44,9 @@ import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.SeriesLibrary
 import com.jamal2367.tinyppimobile.data.model.Snapshot
+import com.jamal2367.tinyppimobile.data.model.SourceRating
+import com.jamal2367.tinyppimobile.data.model.CastMember
+import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
 import com.jamal2367.tinyppimobile.data.repository.LiveState
@@ -136,24 +153,41 @@ class LibraryScreensTest {
         rule.onNodeWithText(str(R.string.continue_count, 2)).assertIsDisplayed()
         rule.onNodeWithText(str(R.string.recent_title)).assertIsDisplayed()
 
-        // A film from the wall, resumable: every option of the dialog.
-        text("Dune").performClick()
-        rule.onNodeWithText(str(R.string.title_restart)).performClick()
+        // Every action stays in one row beside the primary playback button.
+        text("Dune").performTouchInput { longClick() }
+        val playBounds = rule.onNodeWithText(str(R.string.title_resume)).fetchSemanticsNode().boundsInRoot
+        for (label in listOf(R.string.title_restart, R.string.resume_clear, R.string.mark_watched)) {
+            val toolBounds = rule.onNodeWithContentDescription(str(label)).fetchSemanticsNode().boundsInRoot
+            assertTrue("action is beside playback", toolBounds.left >= playBounds.right)
+            assertEquals(playBounds.center.y, toolBounds.center.y, 1f)
+        }
+        rule.onNodeWithContentDescription(str(R.string.title_restart)).performClick()
         settle()
-        text("Dune").performClick()
+        assertEquals(null, fake.viewModel.details.value)
+        text("Dune").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_resume)).performClick()
         settle()
-        text("Dune").performClick()
-        rule.onNodeWithText(str(R.string.mark_watched)).performClick()
-        text("Dune").performClick()
-        rule.onNodeWithText(str(R.string.mark_unwatched)).performClick()
-        text("Dune").performClick()
-        rule.onNodeWithText(str(R.string.resume_clear)).performClick()
-        text("Heat").performClick()
+        text("Dune").performTouchInput { longClick() }
+        rule.onNodeWithContentDescription(str(R.string.mark_watched)).performClick()
+        rule.waitUntil { said(str(R.string.mark_unwatched)) }
+        assertTrue(!said(str(R.string.mark_watched)))
+        rule.onNodeWithContentDescription(str(R.string.mark_unwatched)).performClick()
+        rule.waitUntil { said(str(R.string.mark_watched)) }
+        rule.onNodeWithContentDescription(str(R.string.resume_clear)).performClick()
+        rule.waitUntil { !said(str(R.string.resume_clear)) }
+        assertTrue(has(str(R.string.title_play)))
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
+        text("Heat").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_play)).assertIsDisplayed()
-        rule.onNodeWithText(str(R.string.mark_cancel)).performClick()
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
         // From the continue row.
-        rule.onAllNodesWithText("Arrival").onFirst().performClick()
+        rule.onAllNodesWithText("Arrival").onFirst().performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_resume)).performClick()
         settle()
         assertTrue(fake.api.calls.containsAll(listOf("play", "setWatched", "clearResume")))
@@ -193,7 +227,7 @@ class LibraryScreensTest {
         fake.api.play = { gate.await(); com.jamal2367.tinyppimobile.data.model.CommandAck(ok = true) }
         showFilms()
         rule.waitUntil { rule.onAllNodesWithText("Gravity").fetchSemanticsNodes().isNotEmpty() }
-        text("Gravity").performClick()
+        text("Gravity").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_play)).performClick()
         rule.mainClock.advanceTimeBy(1_000)
         gate.complete(Unit)
@@ -229,28 +263,46 @@ class LibraryScreensTest {
         rule.waitUntil { rule.onAllNodesWithText("Chernobyl").fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText(str(R.string.series_unseen_all, 2)).assertIsDisplayed()
 
-        text("Dark").performClick()
+        text("Dark").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_open)).performClick()
-        rule.waitUntil { rule.onAllNodesWithText(str(R.string.series_back)).fetchSemanticsNodes().isNotEmpty() }
+        rule.waitUntil { said(str(R.string.series_back)) }
         rule.onNodeWithText(str(R.string.series_specials)).performClick()
         rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
         rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
         rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
-        text("S01E02").performClick()
-        rule.onNodeWithText(str(R.string.title_restart)).performClick()
+        text("S01E02").performTouchInput { longClick() }
+        rule.onNodeWithContentDescription(str(R.string.title_restart)).performClick()
         settle()
-        text("Loose").performClick()
+        assertTrue(said(str(R.string.series_back)))
+        assertTrue(!said(str(R.string.title_restart)))
+        text("Loose").performTouchInput { longClick() }
         rule.onNodeWithText(str(R.string.title_play)).performClick()
         rule.waitForIdle()
         assertEquals(2, fake.api.count("playEpisode"))
-        rule.onNodeWithText(str(R.string.series_back)).performClick()
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        // Its way out goes back to the show's details it was opened over.
+        rule.waitUntil { has(str(R.string.title_open)) }
+        assertTrue(!said(str(R.string.series_back)))
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
+        assertEquals(1, rule.onAllNodes(isRoot()).fetchSemanticsNodes().size)
 
         // A show from the unseen row, a search, and the continue row.
         rule.waitUntil { rule.onAllNodesWithText("Silo").fetchSemanticsNodes().isNotEmpty() }
-        text("Silo").performClick()
-        rule.onNodeWithText(str(R.string.mark_cancel)).performClick()
-        text("Dark").performClick()
-        rule.onNodeWithText(str(R.string.mark_watched)).performClick()
+        text("Silo").performTouchInput { longClick() }
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
+        text("Dark").performTouchInput { longClick() }
+        rule.onNodeWithContentDescription(str(R.string.mark_watched)).performClick()
+        rule.waitUntil { said(str(R.string.mark_unwatched)) }
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
         rule.onNode(hasSetTextAction()).performTextInput("zzz")
         rule.onNodeWithText(str(R.string.series_no_match)).assertIsDisplayed()
         rule.onNodeWithContentDescription(str(R.string.library_search_clear)).performClick()
@@ -267,6 +319,45 @@ class LibraryScreensTest {
     }
 
     @Test
+    fun `an episode tap opens its details and playback closes them`() {
+        fake.api.details = { kind, id ->
+            assertEquals("episode", kind)
+            assertEquals(72, id)
+            TitleDetails(kind = kind, id = id, plot = "Episode details.")
+        }
+        showSeries()
+        rule.waitUntil { has("Dark") }
+        text("Dark").performTouchInput { longClick() }
+        rule.onNodeWithText(str(R.string.title_open)).performClick()
+        rule.waitUntil { said(str(R.string.series_back)) }
+        // The seasons are the show's details page turned over, in the same
+        // window over the shelf: no window closes and none opens for them.
+        assertEquals(2, rule.onAllNodes(isRoot()).fetchSemanticsNodes().size)
+        assertEquals(1, fake.api.count("details"))
+        rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
+
+        text("S01E02").performClick()
+        rule.waitUntil { has("Episode details.") }
+        assertTrue(!has(str(R.string.mark_cancel)))
+        assertEquals(0, fake.api.count("playEpisode"))
+        rule.onNodeWithText(str(R.string.title_resume)).assertIsDisplayed()
+        rule.onNodeWithContentDescription(str(R.string.title_restart)).assertIsDisplayed()
+        rule.onNodeWithText(str(R.string.title_resume)).performClick()
+        settle()
+        assertTrue(!has("Episode details."))
+        assertTrue(said(str(R.string.series_back)))
+        assertEquals(1, fake.api.count("playEpisode"))
+
+        // A pull down past the top of the seasons closes them, back to the
+        // show's details.
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
+        rule.waitUntil { has(str(R.string.title_open)) }
+        assertTrue(!said(str(R.string.series_back)))
+        // The show's page was there all along: nothing was read again for it.
+        assertEquals(2, fake.api.count("details"))
+    }
+
+    @Test
     fun `the series cards are arranged and a pull reads the shelf again`() {
         val cards = CardState()
         showSeries(cards)
@@ -274,7 +365,7 @@ class LibraryScreensTest {
         rule.onNodeWithText(str(R.string.recent_title)).performTouchInput { longClick() }
         assertEquals("series", cards.editing)
         rule.onNodeWithText(str(R.string.cards_done)).performClick()
-        cards.hidden = setOf("series/shelf.series.continue", "series/shelf.series.recent", "series/shelf.series.unseen", "series/shelf.series")
+        cards.hidden = setOf("series/shelf.series.continue", "series/shelf.series.next", "series/shelf.series.recent", "series/shelf.series.unseen", "series/shelf.series")
         rule.onNodeWithText(str(R.string.cards_all_hidden)).assertIsDisplayed()
         cards.hidden = emptySet()
         rule.onAllNodes(hasScrollToIndexAction()).onFirst().performTouchInput { swipeDown() }
@@ -297,4 +388,446 @@ class LibraryScreensTest {
         showSeries()
         rule.onNodeWithText(str(R.string.library_empty_title)).assertIsDisplayed()
     }
+
+    private fun has(value: String) = rule.onAllNodesWithText(value).fetchSemanticsNodes().isNotEmpty()
+
+    @Test
+    fun `the film shelf sorts and filters by what the films carry`() {
+        fake.api.continuing = { ContinueList() }
+        fake.api.library = {
+            Library(
+                movies = listOf(
+                    LibraryFilm(1, "Dune", 2024, genres = listOf("Sci-Fi"), video = "dv", dvProfile = "8.1", resolution = "2160p", audio = "truehd"),
+                    LibraryFilm(2, "Heat", 1995, genres = listOf("Crime"), video = "sdr", resolution = "1080p", audio = "dts"),
+                    LibraryFilm(3, "Alien", 1979, genres = listOf("Sci-Fi", "Horror"), video = "dv", dvProfile = "5", resolution = "2160p", audio = "weird"),
+                ),
+            )
+        }
+        val cards = CardState()
+        showFilms(cards)
+        rule.waitUntil { has("Heat") }
+        rule.onNodeWithContentDescription(str(R.string.shelf_sort, str(R.string.sort_title))).performClick()
+        text(str(R.string.sort_year)).performClick()
+        rule.waitUntil {
+            rule.onAllNodesWithContentDescription(str(R.string.shelf_sort, str(R.string.sort_year))).fetchSemanticsNodes().isNotEmpty()
+        }
+        // The newest first, and kept for the next launch; a press turns it round.
+        assertEquals("YEAR:down", cards.shelfOrders["films"])
+        text(str(R.string.sort_descending)).performClick()
+        rule.waitUntil { has(str(R.string.sort_ascending)) }
+        assertEquals("YEAR", cards.shelfOrders["films"])
+
+        text(str(R.string.filter_genre)).performClick()
+        text("Crime").performClick()
+        rule.waitUntil { !has("Dune") }
+        assertTrue(has("Heat"))
+        text("Crime").performClick()
+        text(str(R.string.filter_genre_all)).performClick()
+        rule.waitUntil { has("Dune") }
+
+        text(str(R.string.filter_video)).performClick()
+        text("SDR").performClick()
+        rule.waitUntil { !has("Alien") }
+        // Each Dolby Vision profile on the shelf is a choice of its own.
+        text("SDR").performClick()
+        text("Dolby Vision P5").performClick()
+        rule.waitUntil { has("Alien") && !has("Dune") }
+        text("Dolby Vision P5").performClick()
+        text(str(R.string.filter_video_all)).performClick()
+        text(str(R.string.filter_resolution)).performScrollTo().performClick()
+        text("4K").performClick()
+        rule.waitUntil { !has("Heat") }
+        text("4K").performClick()
+        text(str(R.string.filter_resolution_all)).performClick()
+        // Only the sound the app has a name for counts as a choice; one choice is no filter.
+        text(str(R.string.filter_audio)).performScrollTo().performClick()
+        text("DTS").performClick()
+        rule.waitUntil { !has("Dune") && has("Heat") }
+        // One press puts every filter back.
+        text(str(R.string.filter_reset)).performScrollTo().performClick()
+        rule.waitUntil { has("Dune") && has(str(R.string.filter_audio)) }
+    }
+
+    @Test
+    fun `the series shelf sorts and filters by genre, and offers what comes next`() {
+        fake.api.series = {
+            SeriesLibrary(shows = shows.mapIndexed { index, show -> show.copy(genres = listOf(listOf("Drama", "History", "Sci-Fi")[index])) })
+        }
+        fake.api.continuing = {
+            ContinueList(next = listOf(ContinueItem("episode", 76, "Ghosts", poster = "s7", duration = 3000, show = "Dark", season = 2, episode = 1)))
+        }
+        // An order a series cannot be put in, kept by some other build, is the shelf's own.
+        showSeries(CardState().apply { shelfOrders = mapOf("series" to "RUNTIME:down") })
+        rule.waitUntil { has("Chernobyl") }
+        assertTrue(has(str(R.string.sort_ascending)))
+        rule.onNodeWithContentDescription(str(R.string.shelf_sort, str(R.string.sort_title))).performClick()
+        // A series has no running time to be put in order by.
+        assertTrue(!has(str(R.string.sort_runtime)))
+        text(str(R.string.sort_rating)).performClick()
+        text(str(R.string.filter_genre)).performClick()
+        text("History").performClick()
+        rule.waitUntil { !has("Silo") }
+        text(str(R.string.filter_reset)).performScrollTo().performClick()
+        rule.waitUntil { has("Silo") }
+        text(str(R.string.filter_genre)).performClick()
+        text("History").performClick()
+        rule.waitUntil { !has("Silo") }
+
+        rule.onNodeWithText(str(R.string.next_up_count, 1)).assertIsDisplayed()
+        // The show's tile on the next-up row, ahead of its poster among what arrived last.
+        rule.onAllNodesWithText("Dark").onFirst().performClick()
+        // Nothing of it has been seen: play, without the two resume answers.
+        assertTrue(!said(str(R.string.title_restart)))
+        rule.onNodeWithText(str(R.string.title_play)).performClick()
+        rule.waitForIdle()
+        assertEquals(1, fake.api.count("playEpisode"))
+        settle()
+        text(str(R.string.next_up_count, 1)).performClick()
+        text(str(R.string.next_up_count, 1)).performClick()
+    }
+
+    @Test
+    fun `the shelves keep still while what holds them is drawn again`() {
+        var pass by mutableIntStateOf(0)
+        rule.show(CardState()) {
+            // Read here, so a change runs the caller again with the same screens in it.
+            Text("pass $pass")
+            FilmsScreen(onOpenSettings = {}, viewModel = fake.viewModel)
+            SeriesScreen(onOpenSettings = {}, viewModel = fake.viewModel)
+        }
+        rule.waitForIdle()
+        pass++
+        rule.waitUntil { has("pass 1") }
+    }
+
+    private fun said(description: String) =
+        rule.onAllNodesWithContentDescription(description).fetchSemanticsNodes().isNotEmpty()
+
+    @Test
+    fun `a title's details stand on a page of their own, and a failure says so`() {
+        fake.api.details = { kind, id ->
+            TitleDetails(
+                kind = kind, id = id, title = "Heat", plot = "A heist.", tagline = "A Los Angeles crime saga",
+                year = 1995, duration = 10200, mpaa = "Rated R", age = "mpa_r", ageLevel = "R", genres = listOf("Crime"),
+                directors = listOf("Michael Mann"), writers = listOf("M. Mann"), studios = listOf("Warner"),
+                cast = listOf(CastMember("Al Pacino", "Vincent"), CastMember("Val Kilmer", "")), castMore = true,
+                ratings = listOf(SourceRating("imdb", 8.3)), userrating = 9, top250 = 120,
+                poster = "p2", fanart = "f2", video = "dv", dvProfile = "7 FEL", resolution = "2160p", audio = "weird",
+            )
+        }
+        showFilms()
+        rule.waitUntil { has("Heat") }
+        text("Heat").performClick()
+        rule.waitUntil { has("A heist.") }
+        // The screen moving under the open page leaves it as it is.
+        fake.playing(Snapshot(control = true, playing = false, libraryRevision = 3, title = "Something else"))
+        rule.waitForIdle()
+        for (shown in listOf(
+            "1995 · 2 h 50 min", "Dolby Vision P7 FEL", "4K", "weird", "A Los Angeles crime saga",
+            "Crime", "Michael Mann", "M. Mann", "Warner", "Al Pacino", "Vincent", "Val Kilmer", "\u2026",
+        )) {
+            assertTrue(shown, has(shown))
+        }
+        // The ratings as the overview card's shields, the age rating first.
+        for (spoken in listOf("Rated R", "IMDb 8.3", "${str(R.string.live_rating_mine)} 9", str(R.string.live_rating_top250, 120))) {
+            assertTrue(spoken, said(spoken))
+        }
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
+        assertTrue(!has("A heist."))
+
+        fake.api.details = { _, _ -> throw ApiFailure.Api(404, "no such title") }
+        text("Gravity").performClick()
+        rule.waitUntil { has(str(R.string.details_failed)) }
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
+        assertTrue(!has(str(R.string.details_failed)))
+    }
+
+    @Test
+    fun `a series with little to say, and an episode under its still`() {
+        fake.api.details = { kind, id ->
+            if (kind == "tvshow") TitleDetails(kind = kind, id = id, title = "Chernobyl")
+            else TitleDetails(kind = kind, id = id, title = "Ghosts", thumb = "t76", plot = "It begins.")
+        }
+        fake.api.continuing = {
+            ContinueList(next = listOf(ContinueItem("episode", 76, "Ghosts", poster = "s7", duration = 3000, show = "Dark", season = 2, episode = 1)))
+        }
+        showSeries()
+        rule.waitUntil { has("Chernobyl") }
+        text("Chernobyl").performClick()
+        rule.waitForIdle()
+        assertTrue(!has(str(R.string.details_genre)) && !has(str(R.string.live_credit_cast)))
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
+        rule.onAllNodesWithText("Dark").onFirst().performClick()
+        rule.waitUntil { has("It begins.") }
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
+        assertEquals(2, fake.api.count("details"))
+    }
+
+    @Test
+    fun `the details page plays, resumes or starts over, and opens a series`() {
+        fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, title = "Dune", plot = "Spice.") }
+        showFilms()
+        rule.waitUntil { has("Dune") }
+        // A film with a point to resume from: resume, or start over.
+        text("Dune").performClick()
+        rule.waitUntil { has("Spice.") }
+        rule.onAllNodesWithContentDescription(str(R.string.title_restart)).onLast().performClick()
+        settle()
+        assertTrue(!has("Spice."))
+        assertEquals(null, fake.viewModel.details.value)
+        text("Dune").performClick()
+        rule.waitUntil { has("Spice.") }
+        rule.onAllNodesWithText(str(R.string.title_resume)).onLast().performClick()
+        settle()
+        assertEquals(listOf(false, null), fake.api.plays.map { it.resume })
+        // A film not begun: only play.
+        text("Heat").performClick()
+        rule.waitUntil { has("Spice.") }
+        assertTrue(!said(str(R.string.title_restart)))
+        rule.onAllNodesWithText(str(R.string.title_play)).onLast().performClick()
+        settle()
+        assertEquals(3, fake.api.plays.size)
+    }
+
+    @Test
+    fun `status changes keep details open and only switch the mark after success`() {
+        fake.api.details = { kind, id ->
+            TitleDetails(kind = kind, id = id, title = "Dune", watched = false, resume = 600)
+        }
+        val gate = CompletableDeferred<Unit>()
+        fake.api.setWatched = {
+            gate.await()
+            com.jamal2367.tinyppimobile.data.model.CommandAck(ok = true)
+        }
+        showFilms()
+        rule.waitUntil { has("Dune") }
+        text("Dune").performClick()
+        rule.waitUntil { fake.viewModel.details.value?.details != null }
+        rule.onNodeWithContentDescription(str(R.string.mark_watched)).performClick()
+        rule.waitUntil { fake.viewModel.details.value?.busy == true }
+        rule.onNodeWithContentDescription(str(R.string.mark_watched)).assertIsNotEnabled()
+        fake.viewModel.setWatched(fake.viewModel.details.value!!.target, true)
+        gate.complete(Unit)
+        rule.waitUntil { said(str(R.string.mark_unwatched)) }
+        assertEquals(1, fake.api.count("setWatched"))
+        assertTrue(!said(str(R.string.mark_watched)))
+
+        fake.api.setWatched = { throw ApiFailure.Api(500, "mark failed") }
+        rule.onNodeWithContentDescription(str(R.string.mark_unwatched)).performClick()
+        rule.waitUntil { has("mark failed") }
+        assertTrue(said(str(R.string.mark_unwatched)))
+        assertEquals(true, fake.viewModel.details.value?.details?.watched)
+
+        rule.onNodeWithContentDescription(str(R.string.resume_clear)).performClick()
+        rule.waitUntil { !said(str(R.string.resume_clear)) }
+        assertTrue(has(str(R.string.title_play)))
+        assertEquals(null, fake.viewModel.details.value?.actionError)
+        assertEquals(0, fake.viewModel.details.value?.details?.resume)
+        rule.onNodeWithText(str(R.string.title_play)).performClick()
+        rule.waitUntil { fake.viewModel.details.value == null }
+    }
+
+    @Test
+    fun `pulling down at the top keeps details open`() {
+        fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, plot = "Swipe details.") }
+        showFilms()
+        rule.waitUntil { has("Heat") }
+        text("Heat").performClick()
+        rule.waitUntil { has("Swipe details.") }
+        assertTrue(!said(str(R.string.details_close)))
+        rule.onAllNodes(isRoot()).onLast().performTouchInput { swipeDown() }
+        rule.waitForIdle()
+        assertTrue(has("Swipe details."))
+        assertTrue(fake.viewModel.details.value != null)
+    }
+
+    @Test
+    fun `an episode to go on with offers the way to its show, and a film or a lost show none`() {
+        fake.api.continuing = {
+            ContinueList(items = listOf(
+                ContinueItem("episode", 72, "Lies", duration = 3120, resume = 600, show = "Dark", tvshowid = 7, season = 1, episode = 2),
+                ContinueItem("episode", 76, "Gone", duration = 3120, resume = 600, show = "Lost", tvshowid = 99, season = 4, episode = 8),
+            ))
+        }
+        showSeries()
+        rule.waitUntil { rule.onAllNodesWithText("S01E02", substring = true).fetchSemanticsNodes().isNotEmpty() }
+        rule.onAllNodesWithText("S01E02", substring = true).onFirst().performClick()
+        rule.waitUntil { said(str(R.string.title_show)) }
+        rule.onNodeWithContentDescription(str(R.string.title_show)).performClick()
+        // The episode's page gives way to the show's, where its seasons open.
+        rule.waitUntil { has(str(R.string.title_open)) }
+        assertTrue(!said(str(R.string.title_show)))
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
+
+        rule.onAllNodesWithText("S04E08", substring = true).onFirst().performClick()
+        rule.waitUntil { has(str(R.string.title_resume)) }
+        assertTrue(!said(str(R.string.title_show)))
+    }
+
+    @Test
+    fun `a details page disappears when it is closed`() {
+        fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, plot = "Closing.") }
+        showFilms()
+        rule.waitUntil { has("Heat") }
+        text("Heat").performClick()
+        rule.waitUntil { has("Closing.") }
+        fake.viewModel.closeDetails()
+        rule.waitUntil { !has("Closing.") }
+        assertEquals(1, rule.onAllNodes(isRoot()).fetchSemanticsNodes().size)
+    }
+
+    @Test
+    fun `a series' details page opens it, and stays under its seasons until they are left`() {
+        fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, title = "Chernobyl", plot = "1986.") }
+        showSeries()
+        rule.waitUntil { has("Chernobyl") }
+        text("Chernobyl").performClick()
+        rule.waitUntil { has("1986.") }
+        rule.onAllNodesWithText(str(R.string.title_open)).onLast().performClick()
+        rule.waitUntil { said(str(R.string.series_back)) }
+        // The seasons have replaced the details in the same window.
+        assertTrue(!has("1986."))
+        assertEquals(2, rule.onAllNodes(isRoot()).fetchSemanticsNodes().size)
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        rule.waitForIdle()
+        // And back to the very page it came from, read once and only once.
+        assertTrue(!said(str(R.string.series_back)))
+        assertTrue(has("1986."))
+        assertEquals(1, fake.api.count("details"))
+        rule.onAllNodesWithText(str(R.string.title_open)).onLast().performClick()
+        rule.waitUntil { said(str(R.string.series_back)) }
+        fake.viewModel.closeShow()
+        rule.waitUntil { has("1986.") && !said(str(R.string.series_back)) }
+    }
+
+    @Test
+    fun `the seasons appear while their episodes are read, and leaving then opens nothing later`() {
+        val gate = CompletableDeferred<EpisodeList>()
+        fake.api.episodes = { gate.await() }
+        fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, title = "Chernobyl", plot = "1986.") }
+        showSeries()
+        rule.waitUntil { has("Chernobyl") }
+        text("Chernobyl").performClick()
+        rule.waitUntil { has("1986.") }
+        rule.onAllNodesWithText(str(R.string.title_open)).onLast().performClick()
+        // Already there, waiting for its episodes.
+        rule.waitUntil { said(str(R.string.series_back)) }
+        assertTrue(!has("1986."))
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        rule.waitUntil { has("1986.") }
+        // The read that was still out comes to nothing.
+        gate.complete(EpisodeList(episodes = episodes))
+        rule.waitForIdle()
+        assertTrue(!said(str(R.string.series_back)))
+        assertEquals(null, fake.viewModel.series.value.open)
+    }
+    @Test
+    fun `a restored open show has a seasons window without a details page`() {
+        fake.viewModel.openShow(shows[1])
+        var current by mutableStateOf(false)
+        rule.show {
+            CompositionLocalProvider(com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage provides current) {
+                com.jamal2367.tinyppimobile.ui.theme.ArtworkAccentTheme(androidx.compose.ui.graphics.Color.Red) {
+                    SeriesScreen(onOpenSettings = {}, viewModel = fake.viewModel)
+                }
+            }
+        }
+        rule.waitForIdle()
+        assertTrue(!said(str(R.string.series_back)))
+        current = true
+        rule.waitUntil { said(str(R.string.series_back)) }
+        rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
+        rule.waitUntil { has("Secrets") }
+        rule.onNodeWithText("Secrets").performClick()
+        rule.waitUntil { fake.viewModel.details.value?.target?.id == 71 }
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        rule.waitUntil { fake.viewModel.series.value.open == null }
+        assertTrue(!said(str(R.string.series_back)))
+    }
+
+    @Test
+    fun `a continue entry with no resume point offers play`() {
+        fake.api.continuing = { ContinueList(items = listOf(ContinueItem("movie", 99, "No resume"))) }
+        showFilms()
+        rule.waitUntil { has("No resume") }
+        text("No resume").performClick()
+        rule.waitUntil { has(str(R.string.title_play)) }
+        assertTrue(!said(str(R.string.title_restart)))
+    }
+
+    @Test
+    fun `a non episode in next up has no way to a show with the same id`() {
+        fake.api.continuing = { ContinueList(next = listOf(ContinueItem("movie", 99, "Unexpected film", tvshowid = 7))) }
+        showSeries()
+        rule.waitUntil { has("Unexpected film") }
+        text("Unexpected film").performClick()
+        rule.waitUntil { has(str(R.string.title_play)) }
+        assertTrue(!said(str(R.string.title_show)))
+    }
+
+    @Test
+    fun `a show absent from the shelf keeps details while its episodes load`() {
+        val gate = CompletableDeferred<EpisodeList>()
+        fake.api.episodes = { gate.await() }
+        showSeries()
+        rule.waitUntil { has("Chernobyl") }
+        fake.viewModel.openDetails(com.jamal2367.tinyppimobile.data.model.MarkTarget(
+            com.jamal2367.tinyppimobile.data.model.MarkTarget.Kind.SHOW, 99, "Missing show"))
+        rule.waitUntil { fake.viewModel.details.value?.details != null }
+        fake.viewModel.openShow(LibraryShow(99, "Missing show"))
+        rule.waitForIdle()
+        assertTrue(!said(str(R.string.series_back)))
+        gate.complete(EpisodeList(episodes = listOf(LibraryEpisode(99, "Found episode", season = 1))))
+        rule.waitUntil { said(str(R.string.series_back)) }
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        rule.waitUntil { fake.viewModel.series.value.open == null }
+    }
+
+    @Test
+    fun `an unrelated opening keeps details then a later direct opening gets its own window`() {
+        val gate = CompletableDeferred<EpisodeList>()
+        fake.api.episodes = { gate.await() }
+        showSeries()
+        rule.waitUntil { has("Chernobyl") }
+        fake.viewModel.openDetails(com.jamal2367.tinyppimobile.data.model.MarkTarget(
+            com.jamal2367.tinyppimobile.data.model.MarkTarget.Kind.SHOW, 99, "Other show"))
+        rule.waitUntil { fake.viewModel.details.value?.details != null }
+        fake.viewModel.openShow(shows.first())
+        rule.waitUntil { fake.viewModel.series.value.opening == shows.first().id }
+        rule.waitForIdle()
+        assertTrue(has("Other show"))
+        assertTrue(!said(str(R.string.series_back)))
+        fake.viewModel.closeShow()
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
+        fake.api.episodes = { EpisodeList(episodes = episodes) }
+        fake.viewModel.openShow(shows[1])
+        rule.waitUntil { said(str(R.string.series_back)) }
+        rule.onNodeWithText(str(R.string.series_season, 1)).performClick()
+        rule.waitUntil { has("Secrets") }
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        rule.waitUntil { fake.viewModel.series.value.open == null }
+    }
+
 }

@@ -21,6 +21,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.runtime.DontMemoize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -38,7 +39,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.activity.compose.BackHandler
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.ui.components.ArrangeBackHandler
 import com.jamal2367.tinyppimobile.ui.components.ArrangeableCard
@@ -57,17 +57,34 @@ import com.jamal2367.tinyppimobile.util.MediaUrls
 import com.jamal2367.tinyppimobile.ui.live.ContinueUiState
 import com.jamal2367.tinyppimobile.ui.live.FILM_START_TIMEOUT_MS
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
-import com.jamal2367.tinyppimobile.ui.live.TitleDialog
 import com.jamal2367.tinyppimobile.ui.live.TitleQuestion
 import com.jamal2367.tinyppimobile.ui.live.markTarget
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
+import com.jamal2367.tinyppimobile.data.model.ContinueItem
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.ui.live.continueCard
+import com.jamal2367.tinyppimobile.ui.live.DetailsActions
+import com.jamal2367.tinyppimobile.ui.live.DetailsPage
+import com.jamal2367.tinyppimobile.ui.live.DetailsShown
+import com.jamal2367.tinyppimobile.ui.live.FormatNames
+import com.jamal2367.tinyppimobile.ui.live.ShelfChoice
+import com.jamal2367.tinyppimobile.ui.live.ShelfFilter
+import com.jamal2367.tinyppimobile.ui.live.ShelfFilterKind
+import com.jamal2367.tinyppimobile.ui.live.LocalShelfOrders
+import com.jamal2367.tinyppimobile.ui.live.ShelfOrder
+import com.jamal2367.tinyppimobile.ui.live.ShelfSort
+import com.jamal2367.tinyppimobile.ui.live.arranged
+import com.jamal2367.tinyppimobile.ui.live.formatsOf
+import com.jamal2367.tinyppimobile.ui.live.genresOf
+import com.jamal2367.tinyppimobile.ui.live.shelfTools
+import com.jamal2367.tinyppimobile.ui.live.videoChoices
 import com.jamal2367.tinyppimobile.ui.components.LocalCardFolds
 import com.jamal2367.tinyppimobile.ui.live.dismissSearch
-import com.jamal2367.tinyppimobile.ui.live.episodeList
+import com.jamal2367.tinyppimobile.ui.live.SeasonsDialog
+import com.jamal2367.tinyppimobile.ui.live.OpenShow
+import com.jamal2367.tinyppimobile.ui.live.SeasonsPage
 import com.jamal2367.tinyppimobile.ui.live.filmColumns
 import com.jamal2367.tinyppimobile.ui.live.filmWall
 import com.jamal2367.tinyppimobile.ui.live.matching
@@ -135,7 +152,27 @@ fun FilmsScreen(
     }
 
     var search by rememberSaveable { mutableStateOf("") }
-    val shown = remember(library.films, search) { matching(library.films, search) }
+    // The filters, kept with the search across a turn of the phone, narrow
+    // every card on the screen the search does; the order is kept between
+    // launches.
+    val orders = LocalShelfOrders.current
+    val order = orders.of(SHELF_FILMS)
+    var genre by rememberSaveable { mutableStateOf("") }
+    var video by rememberSaveable { mutableStateOf("") }
+    var resolution by rememberSaveable { mutableStateOf("") }
+    var audio by rememberSaveable { mutableStateOf("") }
+    val filter = ShelfFilter(genre, video, resolution, audio)
+    val shown = remember(library.films, search, order, filter) {
+        matching(library.films, search).arranged(order, filter)
+    }
+    val choices = remember(library.films) {
+        FilmChoices(
+            genres = genresOf(library.films.map { it.genres }),
+            video = videoChoices(library.films),
+            resolution = formatsOf(library.films.map { it.resolution }, FormatNames.RESOLUTION),
+            audio = formatsOf(library.films.map { it.audio }, FormatNames.AUDIO),
+        )
+    }
     val resumable = remember(continuing.items) { continuing.items.filterNot { it.isEpisode } }
     // What has not been seen yet, as a wall of its own under the
     // continue-watching row: whether there is one at all is the library's
@@ -158,15 +195,25 @@ fun FilmsScreen(
         ArrangeableCard(FOLD_FILMS, stringResource(R.string.library_all, shown.size)),
     )
     ArrangeBackHandler(CardScreens.FILMS, layout)
-    var asking by remember { mutableStateOf<TitleQuestion?>(null) }
-    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume)
-    // A press on a film asks first; playing it is the first answer.
-    val askFilm: (LibraryFilm) -> Unit = { film ->
-        asking = TitleQuestion(
+    var detailed by remember { mutableStateOf<DetailsActions?>(null) }
+    val openDetails: (TitleQuestion) -> Unit = { question ->
+        detailed = question.detailsActions(viewModel)
+        viewModel.openDetails(question.target)
+    }
+    DetailsShown(viewModel, detailed)
+    val detailsContinue: (ContinueItem) -> Unit = { item ->
+        val question = TitleQuestion(item.markTarget(), if (item.resume > 0) R.string.title_resume else R.string.title_play, resumable = item.resume > 0) { fromStart ->
+            viewModel.playContinuing(item, fromStart)
+        }
+        openDetails(question)
+    }
+    val detailsFilm: (LibraryFilm) -> Unit = { film ->
+        openDetails(TitleQuestion(
             film.markTarget(),
             if (film.resume > 0) R.string.title_resume else R.string.title_play,
             resumable = film.resume > 0,
-        ) { fromStart -> viewModel.playFilm(film, fromStart) }
+            watched = film.watched,
+        ) { fromStart -> viewModel.playFilm(film, fromStart) })
     }
 
     Shelf(
@@ -199,6 +246,26 @@ fun FilmsScreen(
             search = search,
             onSearch = { search = it },
         )
+        shelfTools(
+            key = "films",
+            sorts = ShelfSort.entries,
+            order = order,
+            onOrder = { orders.set(SHELF_FILMS, it) },
+            filters = listOf(
+                ShelfChoice(ShelfFilterKind.GENRE, choices.genres, genre) { genre = it },
+                ShelfChoice(ShelfFilterKind.VIDEO, choices.video, video, FormatNames::video) { video = it },
+                ShelfChoice(ShelfFilterKind.RESOLUTION, choices.resolution, resolution, { FormatNames.of(FormatNames.RESOLUTION, it) }) {
+                    resolution = it
+                },
+                ShelfChoice(ShelfFilterKind.AUDIO, choices.audio, audio, { FormatNames.of(FormatNames.AUDIO, it) }) { audio = it },
+            ),
+            onReset = {
+                genre = ""
+                video = ""
+                resolution = ""
+                audio = ""
+            },
+        )
         val shownCards = layout.visible(CardScreens.FILMS, labels.map { it.id })
         if (shownCards.isEmpty()) allCardsHidden(CardScreens.FILMS, layout)
         // Whether a card has been drawn above the next one, which parts itself
@@ -208,6 +275,7 @@ fun FilmsScreen(
             when (id) {
                 FOLD_FILMS_CONTINUE -> if (search.isBlank() && resumable.isNotEmpty()) {
                     continueCard(
+                        onDetails = detailsContinue,
                         items = resumable,
                         columns = columns,
                         server = state.live.server,
@@ -216,13 +284,7 @@ fun FilmsScreen(
                         gapAbove = above,
                         expanded = continueOpen,
                         onToggle = { folds.setExpanded(FOLD_FILMS_CONTINUE, !continueOpen) },
-                        onPlay = { item ->
-                            asking = TitleQuestion(
-                                item.markTarget(),
-                                R.string.title_resume,
-                                resumable = true,
-                            ) { fromStart -> viewModel.playContinuing(item, fromStart) }
-                        },
+                        onPlay = detailsContinue,
                     )
                     above = true
                 }
@@ -247,7 +309,8 @@ fun FilmsScreen(
                             },
                             starting = library.starting == film.id,
                             enabled = library.starting == null,
-                            onPlay = { askFilm(film) },
+                            onPlay = { detailsFilm(film) },
+                            onDetails = { detailsFilm(film) },
                             modifier = modifier,
                         )
                     }
@@ -278,7 +341,8 @@ fun FilmsScreen(
                             },
                             starting = library.starting == film.id,
                             enabled = library.starting == null,
-                            onPlay = { askFilm(film) },
+                            onPlay = { detailsFilm(film) },
+                            onDetails = { detailsFilm(film) },
                             modifier = modifier,
                         )
                     }
@@ -296,7 +360,8 @@ fun FilmsScreen(
                         gapAbove = above,
                         expanded = wallOpen,
                         onToggle = { folds.setExpanded(FOLD_FILMS, !wallOpen) },
-                        onPlay = askFilm,
+                        onPlay = detailsFilm,
+                        onDetails = detailsFilm,
                     )
                     above = true
                 }
@@ -339,10 +404,15 @@ fun SeriesScreen(
     }
 
     var search by rememberSaveable { mutableStateOf("") }
-    val shown = remember(series.shows, search) {
-        matching(series.shows, search, { it.title }, { it.year })
+    val orders = LocalShelfOrders.current
+    val order = orders.of(SHELF_SERIES).takeIf { it.sort in SERIES_SORTS } ?: ShelfOrder()
+    var genre by rememberSaveable { mutableStateOf("") }
+    val shown = remember(series.shows, search, order, genre) {
+        matching(series.shows, search, { it.title }, { it.year }).arranged(order, genre)
     }
+    val genres = remember(series.shows) { genresOf(series.shows.map { it.genres }) }
     val resumable = remember(continuing.items) { continuing.items.filter { it.isEpisode } }
+    val nextUp = continuing.next
     // The shows with an episode still waiting, under the continue-watching row.
     val waiting = remember(series.shows) { series.shows.any { it.isWaiting } }
     val unseen = remember(shown) { shown.filter { it.isWaiting } }
@@ -350,41 +420,137 @@ fun SeriesScreen(
     val columns = filmColumns()
     val folds = LocalCardFolds.current
     val continueOpen = folds.isExpanded(FOLD_SERIES_CONTINUE)
+    val nextOpen = folds.isExpanded(FOLD_SERIES_NEXT)
     val recentOpen = folds.isExpanded(FOLD_SERIES_RECENT)
     val wallOpen = folds.isExpanded(FOLD_SERIES)
     val unseenOpen = folds.isExpanded(FOLD_SERIES_UNSEEN)
     val open = series.open
     val layout = LocalCardLayout.current
-    // Inside a show there are episodes on the screen and no cards to move.
-    val editing = open == null && layout.isEditing(CardScreens.SERIES)
+    val editing = layout.isEditing(CardScreens.SERIES)
     val labels = listOf(
         ArrangeableCard(FOLD_SERIES_CONTINUE, stringResource(R.string.continue_count, resumable.size)),
+        ArrangeableCard(FOLD_SERIES_NEXT, stringResource(R.string.next_up_count, nextUp.size)),
         ArrangeableCard(FOLD_SERIES_RECENT, stringResource(R.string.recent_title)),
         ArrangeableCard(FOLD_SERIES_UNSEEN, stringResource(R.string.series_unseen_all, unseen.size)),
         ArrangeableCard(FOLD_SERIES, stringResource(R.string.series_all, shown.size)),
     )
     ArrangeBackHandler(CardScreens.SERIES, layout)
-    var asking by remember { mutableStateOf<TitleQuestion?>(null) }
-    TitleAsker(asking, { asking = null }, viewModel::setWatched, viewModel::clearResume)
-    // A series cannot be played, so its first answer opens it.
-    val askShow: (LibraryShow) -> Unit = { show ->
-        asking = TitleQuestion(show.markTarget(), R.string.title_open) { viewModel.openShow(show) }
+    var detailed by remember { mutableStateOf<DetailsActions?>(null) }
+    val openDetails: (TitleQuestion) -> Unit = { question ->
+        detailed = question.detailsActions(viewModel)
+        viewModel.openDetails(question.target)
     }
-    val askEpisode: (LibraryEpisode) -> Unit = { episode ->
-        asking = TitleQuestion(
+    // A show's details have a place of their own, under the show's seasons:
+    // opening the show leaves them open there, and leaving the seasons finds
+    // them as they were - the same window throughout, so neither way is a
+    // page that closes, a shelf that flashes and a page that opens again.
+    var showActions by remember { mutableStateOf<DetailsActions?>(null) }
+    val detailsShow: (LibraryShow) -> Unit = { show ->
+        val question = TitleQuestion(show.markTarget(), R.string.title_open, watched = show.watched) {
+            viewModel.openShow(show)
+        }
+        showActions = question.detailsActions(viewModel, closes = false)
+        viewModel.openDetails(question.target)
+    }
+    val leaveShow: () -> Unit = {
+        viewModel.popDetails()
+        viewModel.closeShow()
+    }
+    // An episode on the rows of things to go on with offers the way to its
+    // show as well: the show's own page, where it is on the shelf.
+    val detailsContinue: (ContinueItem) -> Unit = { item ->
+        val question = TitleQuestion(item.markTarget(), if (item.resume > 0) R.string.title_resume else R.string.title_play, resumable = item.resume > 0) { fromStart ->
+            viewModel.playContinuing(item, fromStart)
+        }
+        val show = series.shows.firstOrNull { item.isEpisode && it.id == item.tvshowid }
+        detailed = question.detailsActions(
+            viewModel,
+            onShow = show?.let {
+                {
+                    viewModel.closeDetails()
+                    detailsShow(it)
+                }
+            },
+        )
+        viewModel.openDetails(question.target)
+    }
+    val details by viewModel.details.collectAsStateWithLifecycle()
+    val underDetails by viewModel.underDetails.collectAsStateWithLifecycle()
+    val showPage = underDetails ?: details?.takeIf { it.target.kind == MarkTarget.Kind.SHOW }
+    // A show closed under its page some other way - scanned away from the
+    // shelf - brings the page it was opened over back to the front.
+    LaunchedEffect(open == null, underDetails) {
+        if (open == null && underDetails != null) viewModel.popDetails()
+    }
+    val detailsEpisode: (LibraryEpisode) -> Unit = { episode ->
+        openDetails(TitleQuestion(
             episode.markTarget(),
             if (episode.resume > 0) R.string.title_resume else R.string.title_play,
             resumable = episode.resume > 0,
-        ) { fromStart -> viewModel.playEpisode(episode, fromStart) }
+            watched = episode.watched,
+        ) { fromStart -> viewModel.playEpisode(episode, fromStart) })
     }
 
-    // The way out of a show is the way back, and on this screen the system's
-    // own back gesture is the one nearest a thumb. Without this it would leave
-    // the shelf altogether, which is a whole tab further than anybody pressing
-    // it meant to go.
-    // Only on the tab in front: composed beside another one, it would take
-    // back away from a screen that has nothing to do with it.
-    BackHandler(enabled = open != null && LocalIsCurrentPage.current) { viewModel.closeShow() }
+    // The show that is open, as a page of its own over the shelf, its seasons
+    // folded away in it. Back closes it, as it does a title's details. Only
+    // on the tab in front, for the reason the details give (see DetailsShown):
+    // it stays open behind the live tab an episode was started for, and is
+    // there again on coming back to choose the next one.
+    // The show the seasons are for: the one that is open, or - while its
+    // episodes are still being read - the one being opened from its page,
+    // whose seasons already replace it and wait for the episodes there.
+    val seasonsOf = open ?: showPage?.takeIf { it.target.id == series.opening }
+        ?.let { page -> series.shows.firstOrNull { it.id == page.target.id } }
+        ?.let { OpenShow(it.id, it.title, it.fanart) }
+    val seasons: (@Composable () -> Unit)? = seasonsOf?.let { shown ->
+        {
+            SeasonsPage(
+                open = shown,
+                // Its poster and year are the shelf's, which the show is on.
+                show = series.shows.firstOrNull { it.id == shown.id },
+                server = state.live.server,
+                showArtwork = state.settings.showArtwork,
+                loading = open == null,
+                starting = series.starting,
+                openSeasons = series.openSeasons,
+                onDismiss = leaveShow,
+                onSeason = viewModel::toggleSeason,
+                onPlay = detailsEpisode,
+                onDetails = detailsEpisode,
+            )
+        }
+    }
+    // The seasons replace the show's details in the same window and give way
+    // to them again when they are closed (see DetailsDialog).
+    DetailsPage(
+        viewModel,
+        showPage,
+        showActions,
+        over = seasons,
+        onDismiss = if (seasons != null) leaveShow else viewModel::closeDetails,
+    )
+    // A show open with no page of its own under it has a window of its own.
+    if (open != null && showPage == null && LocalIsCurrentPage.current) {
+        SeasonsDialog(
+            open = open,
+            // Its poster and year are the shelf's, which the open show is on.
+            show = series.shows.firstOrNull { it.id == open.id },
+            server = state.live.server,
+            showArtwork = state.settings.showArtwork,
+            adaptive = state.settings.adaptiveColor,
+            intensity = state.settings.adaptiveColorIntensity,
+            starting = series.starting,
+            openSeasons = series.openSeasons,
+            onDismiss = leaveShow,
+            // This optional window needs only the current receiver; a cached
+            // callback adds compiler-generated branches without useful work.
+            onSeason = @DontMemoize { viewModel.toggleSeason(it) },
+            onPlay = detailsEpisode,
+            onDetails = detailsEpisode,
+        )
+    }
+    // After the seasons, so an episode's details stand over them.
+    DetailsShown(viewModel, detailed, except = MarkTarget.Kind.SHOW)
 
     Shelf(
         configured = state.isConfigured,
@@ -394,31 +560,15 @@ fun SeriesScreen(
         empty = series.shows.isEmpty(),
         icon = Icons.Outlined.Tv,
         refreshing = series.refreshing,
-        // Inside a show this reads that show's episodes again as well as the
-        // shelf behind it, which is what somebody looking at an episode list
-        // is pulling for.
         onRefresh = viewModel::pullSeries,
         message = message,
         onMessageShown = viewModel::consumeMessage,
         onOpenSettings = onOpenSettings,
-        // The cards of the wall part themselves; an open show, and the
-        // arranging rows, are rows the list spaces out.
-        gap = if (open != null || editing) CardGap else 0.dp,
+        // The cards of the wall part themselves; the arranging rows are rows
+        // the list spaces out.
+        gap = if (editing) CardGap else 0.dp,
         screen = CardScreens.SERIES,
     ) {
-        if (open != null) {
-            episodeList(
-                open = open,
-                server = state.live.server,
-                showArtwork = state.settings.showArtwork,
-                starting = series.starting,
-                openSeasons = series.openSeasons,
-                onBack = viewModel::closeShow,
-                onSeason = viewModel::toggleSeason,
-                onPlay = askEpisode,
-            )
-            return@Shelf
-        }
         // The same head and the same cards as on the films screen: the
         // episodes left half-watched, whichever show they belong to, the shows
         // that gained an episode last, the shows with one still waiting, and
@@ -434,6 +584,14 @@ fun SeriesScreen(
             search = search,
             onSearch = { search = it },
         )
+        shelfTools(
+            key = "series",
+            sorts = SERIES_SORTS,
+            order = order,
+            onOrder = { orders.set(SHELF_SERIES, it) },
+            filters = listOf(ShelfChoice(ShelfFilterKind.GENRE, genres, genre) { genre = it }),
+            onReset = { genre = "" },
+        )
         val shownCards = layout.visible(CardScreens.SERIES, labels.map { it.id })
         if (shownCards.isEmpty()) allCardsHidden(CardScreens.SERIES, layout)
         var above = false
@@ -441,6 +599,7 @@ fun SeriesScreen(
             when (id) {
                 FOLD_SERIES_CONTINUE -> if (search.isBlank() && resumable.isNotEmpty()) {
                     continueCard(
+                        onDetails = detailsContinue,
                         items = resumable,
                         columns = columns,
                         server = state.live.server,
@@ -449,13 +608,27 @@ fun SeriesScreen(
                         gapAbove = above,
                         expanded = continueOpen,
                         onToggle = { folds.setExpanded(FOLD_SERIES_CONTINUE, !continueOpen) },
-                        onPlay = { item ->
-                            asking = TitleQuestion(
-                                item.markTarget(),
-                                R.string.title_resume,
-                                resumable = true,
-                            ) { fromStart -> viewModel.playContinuing(item, fromStart) }
-                        },
+                        onPlay = detailsContinue,
+                    )
+                    above = true
+                }
+
+                // What comes after: the next unseen episode of each show
+                // being watched, started from its beginning.
+                FOLD_SERIES_NEXT -> if (search.isBlank() && nextUp.isNotEmpty()) {
+                    continueCard(
+                        onDetails = detailsContinue,
+                        items = nextUp,
+                        key = "next-up",
+                        title = { stringResource(R.string.next_up_count, nextUp.size) },
+                        columns = columns,
+                        server = state.live.server,
+                        showArtwork = state.settings.showArtwork,
+                        starting = continuing.starting,
+                        gapAbove = above,
+                        expanded = nextOpen,
+                        onToggle = { folds.setExpanded(FOLD_SERIES_NEXT, !nextOpen) },
+                        onPlay = detailsContinue,
                     )
                     above = true
                 }
@@ -480,7 +653,8 @@ fun SeriesScreen(
                             },
                             opening = series.opening == show.id,
                             enabled = series.opening == null,
-                            onOpen = { askShow(show) },
+                            onOpen = { detailsShow(show) },
+                            onDetails = { detailsShow(show) },
                             modifier = modifier,
                         )
                     }
@@ -508,7 +682,8 @@ fun SeriesScreen(
                             },
                             opening = series.opening == show.id,
                             enabled = series.opening == null,
-                            onOpen = { askShow(show) },
+                            onOpen = { detailsShow(show) },
+                            onDetails = { detailsShow(show) },
                             modifier = modifier,
                         )
                     }
@@ -526,7 +701,8 @@ fun SeriesScreen(
                         gapAbove = above,
                         expanded = wallOpen,
                         onToggle = { folds.setExpanded(FOLD_SERIES, !wallOpen) },
-                        onOpen = askShow,
+                        onOpen = detailsShow,
+                        onDetails = detailsShow,
                     )
                     above = true
                 }
@@ -536,61 +712,28 @@ fun SeriesScreen(
 }
 
 /**
- * The question a press on a title asks, while one is open: play it (open it,
- * for a series), or count it as seen or as unseen.
- *
- * Held by the screen rather than by the view model: it is a question on the
- * screen in front of somebody, and one left open when they switch tabs is a
- * question about a title they are no longer looking at.
+ * Playback actions close the page - unless it [closes] not, as a
+ * show's does, whose seasons open over it; state changes update it in place.
  */
-@Composable
-private fun TitleAsker(
-    question: TitleQuestion?,
-    onDone: () -> Unit,
-    onMark: (MarkTarget, Boolean) -> Unit,
-    onClearResume: (MarkTarget) -> Unit,
-) {
-    val asked = question ?: return
-    val answers = asked.answers(onDone, onMark, onClearResume)
-    TitleDialog(
-        question = asked,
-        onDismiss = onDone,
-        onPlay = answers.onPlay,
-        onMark = answers.onMark,
-        onClearResume = answers.onClearResume,
-    )
-}
-
-/** What the dialog's options do: each closes the dialog, then does its own thing. */
-private class TitleAnswers(
-    val onPlay: (fromStart: Boolean) -> Unit,
-    val onMark: (watched: Boolean) -> Unit,
-    val onClearResume: () -> Unit,
-)
-
-/**
- * The answers to this question. Made outside composition, so they are new
- * with each question rather than remembered across them - there is nothing to
- * keep: the dialog is up for one question at a time.
- */
-private fun TitleQuestion.answers(
-    onDone: () -> Unit,
-    onMark: (MarkTarget, Boolean) -> Unit,
-    onClearResume: (MarkTarget) -> Unit,
-) = TitleAnswers(
-    onPlay = { fromStart ->
-        onDone()
-        onPlay(fromStart)
-    },
+private fun TitleQuestion.detailsActions(
+    viewModel: LiveViewModel,
+    closes: Boolean = true,
+    onShow: (() -> Unit)? = null,
+) = DetailsActions(
+    play = play,
+    resumable = resumable,
+    watched = watched,
+    onShow = onShow,
     onMark = { watched ->
-        onDone()
-        onMark(target, watched)
+        viewModel.setWatched(target, watched)
     },
     onClearResume = {
-        onDone()
-        onClearResume(target)
+        viewModel.clearResume(target)
     },
-)
+) { fromStart ->
+    if (closes) viewModel.closeDetails()
+    onPlay(fromStart)
+}
 
 /** Whether a show has an episode still to be seen. */
 private val LibraryShow.isWaiting: Boolean
@@ -743,17 +886,33 @@ private fun Shelf(
 }
 
 /**
- * What the eight shelf cards are remembered by - folded, moved or taken off. Named for the card rather than
+ * What the nine shelf cards are remembered by - folded, moved or taken off. Named for the card rather than
  * its heading, so a translation or a rename does not open anything again.
  */
 private const val FOLD_FILMS_CONTINUE = "shelf.films.continue"
 private const val FOLD_FILMS = "shelf.films"
 private const val FOLD_SERIES_CONTINUE = "shelf.series.continue"
+private const val FOLD_SERIES_NEXT = "shelf.series.next"
 private const val FOLD_SERIES = "shelf.series"
 private const val FOLD_FILMS_UNSEEN = "shelf.films.unseen"
 private const val FOLD_SERIES_UNSEEN = "shelf.series.unseen"
 private const val FOLD_FILMS_RECENT = "shelf.films.recent"
 private const val FOLD_SERIES_RECENT = "shelf.series.recent"
+
+/** A series has no running time to be put in order by. */
+private val SERIES_SORTS = ShelfSort.entries - ShelfSort.RUNTIME
+
+/** What each shelf's order is kept under. */
+private const val SHELF_FILMS = "films"
+private const val SHELF_SERIES = "series"
+
+/** The values each film filter offers, read off the shelf. */
+private class FilmChoices(
+    val genres: List<String>,
+    val video: List<String>,
+    val resolution: List<String>,
+    val audio: List<String>,
+)
 
 /** The screen's name alone over the arranging rows: there is no wall to search. */
 private fun LazyListScope.arrangeTop(title: @Composable () -> String) {

@@ -30,6 +30,8 @@ import com.jamal2367.tinyppimobile.ui.components.CardFolds
 import com.jamal2367.tinyppimobile.ui.components.CardLayout
 import com.jamal2367.tinyppimobile.ui.components.LocalCardFolds
 import com.jamal2367.tinyppimobile.ui.components.LocalCardLayout
+import com.jamal2367.tinyppimobile.ui.live.LocalShelfOrders
+import com.jamal2367.tinyppimobile.ui.live.ShelfOrders
 import com.jamal2367.tinyppimobile.ui.live.LiveViewModel
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,6 +64,7 @@ class CardState {
     var hidden by mutableStateOf(emptySet<String>())
     var editing by mutableStateOf<String?>(null)
     val resets = mutableListOf<String>()
+    var shelfOrders by mutableStateOf(emptyMap<String, String>())
 
     @Composable
     fun Provide(content: @Composable () -> Unit) {
@@ -78,7 +81,13 @@ class CardState {
             onEditing = { editing = it },
             onReset = { screen -> resets += screen; orders = orders - screen },
         )
-        CompositionLocalProvider(LocalCardFolds provides folds, LocalCardLayout provides layout, content = content)
+        val orders = ShelfOrders(shelfOrders) { shelf, order -> shelfOrders = shelfOrders + (shelf to order) }
+        CompositionLocalProvider(
+            LocalCardFolds provides folds,
+            LocalCardLayout provides layout,
+            LocalShelfOrders provides orders,
+            content = content,
+        )
     }
 }
 

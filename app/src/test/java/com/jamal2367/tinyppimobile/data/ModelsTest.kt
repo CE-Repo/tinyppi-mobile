@@ -14,6 +14,8 @@ import com.jamal2367.tinyppimobile.data.model.L1Nits
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
+import com.jamal2367.tinyppimobile.data.model.MarkTarget
+import com.jamal2367.tinyppimobile.data.model.PlayingItem
 import com.jamal2367.tinyppimobile.data.model.SourceRating
 import com.jamal2367.tinyppimobile.data.model.MetadataRow
 import com.jamal2367.tinyppimobile.data.model.Metrics
@@ -125,44 +127,18 @@ class ModelsTest {
     }
 
     @Test
-    fun `the plot card is drawn for a plot, and not for a slogan on its own`() {
-        assertFalse(MediaInfo().hasPlot)
-        assertFalse(MediaInfo(tagline = " ", plot = "\n").hasPlot)
-        assertFalse(MediaInfo(tagline = "Long live the fighters.").hasPlot)
-        assertFalse(MediaInfo(tagline = "Long live the fighters.").showsPlotCard)
-        assertTrue(MediaInfo(plot = "Paul joins the Fremen.").hasPlot)
-        assertTrue(MediaInfo(tagline = "Long live the fighters.", plot = "Paul joins the Fremen.").hasPlot)
-        assertTrue(MediaInfo(plot = "Paul joins the Fremen.").showsPlotCard)
-    }
-
-    @Test
-    fun `any one way of rating a title is a rating, and draws the card without a plot`() {
-        assertFalse(MediaInfo(mpaa = " ").hasRatings)
+    fun `the overview opens the details of a film or an episode the library holds`() {
         assertEquals(SourceRating("", 0.0, 0), SourceRating())
         assertEquals(Award("", emptyList(), 0), Award())
         assertEquals("", MediaInfo().age)
         assertEquals("", MediaInfo().ageLevel)
-        assertFalse(MediaInfo().hasCredits)
-        // A studio is the playing card's, and no credit.
-        assertFalse(MediaInfo(studios = listOf("A24")).showsPlotCard)
-        // A director is one, like the cast.
-        assertTrue(MediaInfo(directors = listOf("Denis Villeneuve")).hasCredits)
-        // A cast is, and draws the card on its own.
-        val credited = MediaInfo(cast = listOf("Zendaya"))
-        assertTrue(credited.hasCredits)
-        assertTrue(credited.showsPlotCard)
-        assertFalse(credited.hasRatings)
-        for (rated in listOf(
-            MediaInfo(ratings = listOf(SourceRating("imdb", 8.5, 10))),
-            MediaInfo(userRating = 9),
-            MediaInfo(top250 = 27),
-            MediaInfo(mpaa = "FSK 12"),
-            MediaInfo(awards = listOf(Award("globe", emptyList(), 1))),
-        )) {
-            assertTrue(rated.hasRatings)
-            assertTrue(rated.showsPlotCard)
-            assertFalse(rated.hasPlot)
-        }
+        assertFalse(MediaInfo().item.opensDetails)
+        assertTrue(PlayingItem("movie", 3).opensDetails)
+        assertTrue(PlayingItem("episode", 7).opensDetails)
+        assertFalse(PlayingItem("movie", 0).opensDetails)
+        assertFalse(PlayingItem("channel", 4).opensDetails)
+        assertEquals(MarkTarget(MarkTarget.Kind.MOVIE, 3, "Heat"), PlayingItem("movie", 3).target("Heat"))
+        assertEquals(MarkTarget(MarkTarget.Kind.EPISODE, 7, "Pilot"), PlayingItem("episode", 7).target("Pilot"))
     }
 
     @Test
