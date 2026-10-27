@@ -121,6 +121,18 @@ object MediaUrls {
         )
 
     /**
+     * The portrait of one of a title's cast or crew, by the tag its details
+     * gave it (see `_portrait` in the add-on's `web/library/details.py`), or
+     * null where it has none. The tag is the picture's name and its version
+     * both, so the box answers it as immutable.
+     */
+    fun portrait(server: ServerConfig?, tag: String): String? {
+        val box = server ?: return null
+        val picture = tag.takeIf { it.isNotBlank() }?.encoded() ?: return null
+        return "${box.baseUrl}/api/art?kind=thumb&portrait=$picture&v=$picture"
+    }
+
+    /**
      * One picture off one of the library shelves.
      *
      * The three shelves address their art identically bar which kind and which

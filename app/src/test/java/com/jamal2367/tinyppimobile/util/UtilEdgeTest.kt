@@ -37,6 +37,17 @@ class UtilEdgeTest {
     }
 
     @Test
+    fun `a portrait is asked for by its tag alone`() {
+        val box = ServerConfig(enabled = true, host = "h", port = 1)
+        assertEquals(
+            "http://h:1/api/art?kind=thumb&portrait=0123456789abcdef&v=0123456789abcdef",
+            MediaUrls.portrait(box, "0123456789abcdef"),
+        )
+        assertNull(MediaUrls.portrait(box, ""))
+        assertNull(MediaUrls.portrait(null, "0123456789abcdef"))
+    }
+
+    @Test
     fun `the heaviest hue wins whichever bucket it sits in`() {
         val red = 0xFFE00000.toInt()
         val green = 0xFF00E000.toInt()
