@@ -541,20 +541,20 @@ private fun Fact(heading: String, names: String) {
 private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server: ServerConfig? = null, sizing: List<CastMember>) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
-    val nameStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+    val nameStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
     val roleStyle = MaterialTheme.typography.labelMedium
-    val textWidth = with(density) { (CAST_WIDTH - 24.dp).roundToPx() }
+    val textWidth = with(density) { CAST_WIDTH.roundToPx() }
     // Measure the whole row so scrolling to a longer name never changes its
     // height. The same slots keep names and roles aligned without truncation.
     val heights = remember(sizing, measurer, nameStyle, roleStyle, textWidth) {
         val constraints = Constraints(maxWidth = textWidth)
-        val nameMinimum = measurer.measure("A\nA", nameStyle, constraints = constraints).size.height
+        val nameMinimum = measurer.measure("A", nameStyle, constraints = constraints).size.height
         val nameHeight = sizing.fold(0) { height, person ->
             maxOf(height, measurer.measure(person.name, nameStyle, constraints = constraints).size.height)
         }.coerceAtLeast(nameMinimum)
         val roles = sizing.map { it.role }.filter { it.isNotEmpty() }
         val roleHeight = if (roles.isEmpty()) 0 else {
-            val roleMinimum = measurer.measure("A\nA", roleStyle, constraints = constraints).size.height
+            val roleMinimum = measurer.measure("A", roleStyle, constraints = constraints).size.height
             roles.fold(0) { height, role ->
                 maxOf(height, measurer.measure(role, roleStyle, constraints = constraints).size.height)
             }.coerceAtLeast(roleMinimum)
@@ -575,7 +575,7 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server:
         val row = rememberLazyListState()
         LazyRow(
             state = row,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = PAGE_EDGE),
             modifier = Modifier
                 .bleed(PAGE_EDGE)
@@ -608,21 +608,17 @@ internal fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
 @Composable
 private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server: ServerConfig?) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top,
         modifier = Modifier
             .width(CAST_WIDTH)
-            .height(12.dp + 144.dp + 24.dp + nameHeight + if (roleHeight > 0.dp) 6.dp + roleHeight else 0.dp)
-            .testTag("credit-card")
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(start = 12.dp, top = 12.dp, end = 12.dp),
+            .height(CAST_WIDTH + 12.dp + nameHeight + if (roleHeight > 0.dp) 4.dp + roleHeight else 0.dp)
+            .testTag("credit-card"),
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .width(112.dp)
-                .height(144.dp)
+                .size(CAST_WIDTH)
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.secondaryContainer),
         ) {
@@ -641,23 +637,23 @@ private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server:
             }
         }
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
-            modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 12.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         ) {
             Text(
                 text = person.name,
                 style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth().height(nameHeight),
             )
             if (person.role.isNotEmpty()) Text(
                 text = person.role,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth().height(roleHeight),
             )
         }
     }
@@ -667,7 +663,7 @@ private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server:
 internal val PAGE_EDGE = 20.dp
 private val HERO_HEIGHT = 300.dp
 private val POSTER_WIDTH = 104.dp
-private val CAST_WIDTH = 136.dp
+private val CAST_WIDTH = 160.dp
 
 /** How far in from a side a row of cast cards fades where it goes on past it. */
 private val CAST_FADE = 64.dp

@@ -130,12 +130,13 @@ class CreditCardsTest {
             val initial = rule.onNodeWithText(name.take(1)).fetchSemanticsNode().boundsInRoot
             val lastText = if (index < 2) roles[index] else crewRoles[index - 2]
             val last = rule.onNodeWithText(lastText).fetchSemanticsNode().boundsInRoot
-            val contentTop = initial.center.y - card.width * 72f / 136f
-            assertEquals("portrait at top: $name", card.top + card.width * 12f / 136f, contentTop, 1f)
+            val contentTop = initial.center.y - card.width / 2
+            assertEquals("square portrait at top: $name", card.top, contentTop, 1f)
             val nameBox = rule.onNodeWithText(name).fetchSemanticsNode().boundsInRoot
-            val pictureBottom = initial.center.y + card.width * 72f / 136f
-            assertEquals("text centred below portrait: $name", (pictureBottom + card.bottom) / 2,
-                (nameBox.top + last.bottom) / 2, 1f)
+            val pictureBottom = initial.center.y + card.width / 2
+            assertEquals("name below portrait: $name", pictureBottom + card.width * 12f / 160f, nameBox.top, 1f)
+            assertEquals("name left aligned: $name", card.left, nameBox.left, 1f)
+            assertEquals("role left aligned: $name", card.left, last.left, 1f)
             assertTrue("role after name: $name", last.top >= nameBox.bottom)
         }
         for (text in names + crewRoles + roles) {
