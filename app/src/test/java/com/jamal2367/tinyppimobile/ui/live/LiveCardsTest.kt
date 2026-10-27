@@ -474,6 +474,40 @@ class LiveCardsTest {
     }
 
     @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `award nominations keep the same visible golden edge as wins in both themes`() {
+        val names = listOf("oscar" to "Oscar", "globe" to "Golden Globe", "bafta" to "BAFTA", "emmy" to "Emmy")
+        var nominated by mutableStateOf(false)
+        var theme by mutableStateOf(com.jamal2367.tinyppimobile.data.prefs.ThemeMode.DARK)
+        rule.setContent {
+            TinyPpiTheme(themeMode = theme) {
+                RatingRow(MediaInfo(awards = names.map { (id, _) ->
+                    Award(id, if (nominated) emptyList() else listOf("Best Film"), 1)
+                }))
+            }
+        }
+        fun edges(label: Int) = names.map { (_, name) ->
+            val pixels = rule.onNodeWithContentDescription("$name ${str(label, 1)}").captureToImage().toPixelMap()
+            pixels[pixels.width / 2, 0]
+        }
+        for (mode in listOf(com.jamal2367.tinyppimobile.data.prefs.ThemeMode.DARK, com.jamal2367.tinyppimobile.data.prefs.ThemeMode.LIGHT)) {
+            theme = mode
+            nominated = false
+            rule.waitForIdle()
+            val wonEdges = edges(R.string.live_award_won)
+            nominated = true
+            rule.waitForIdle()
+            val nomineeEdges = edges(R.string.live_award_nominated)
+            for ((won, nominee) in wonEdges.zip(nomineeEdges)) {
+                assertEquals(won.red, nominee.red, 0.02f)
+                assertEquals(won.green, nominee.green, 0.02f)
+                assertEquals(won.blue, nominee.blue, 0.02f)
+                org.junit.Assert.assertTrue("golden border remains visible", nominee.red > nominee.blue + 0.1f)
+            }
+        }
+    }
+
+    @Test
     fun `the big awards stand last, as plates of what was won or else nominated for`() {
         rated = MediaInfo(
                     plot = "Plot.",

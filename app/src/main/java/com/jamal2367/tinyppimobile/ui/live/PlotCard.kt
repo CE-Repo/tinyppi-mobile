@@ -238,8 +238,8 @@ internal fun RatingRow(media: MediaInfo) {
 /**
  * One of the big awards: a drawing of what it hands out on its own ground,
  * like a house's mark, and beside it how many it won - or, where it won
- * none, how many it was nominated for, on a quieter shield: the line's
- * wash, and the mark dimmed. A tap shows what it won it for. One there is
+ * none, how many it was nominated for, with the mark dimmed. The coloured
+ * edge stays visible for both wins and nominations. A tap shows what it won it for. One there is
  * no drawing of is left out.
  */
 @Composable
@@ -248,7 +248,6 @@ private fun AwardShield(award: Award, tall: Dp) {
     val name = AWARD_NAMES.getValue(award.award)
     val won = award.won.size
     val more = if (award.nominated > 0) stringResource(R.string.live_award_nominated, award.nominated) else ""
-    val line = MaterialTheme.colorScheme.surfaceContainerHigh
     RatingShield(
         spoken = "$name ${if (won > 0) stringResource(R.string.live_award_won, won) else more}",
         named = if (won > 0) {
@@ -259,7 +258,7 @@ private fun AwardShield(award: Award, tall: Dp) {
         value = (if (won > 0) won else award.nominated).toString(),
         tall = tall,
         ground = if (won > 0) mark.ground else mark.ground.copy(alpha = NOMINEE_ALPHA),
-        hue = if (won > 0) mark.hue else line,
+        hue = mark.hue,
     ) { DrawnMark(mark.drawing, alpha = if (won > 0) 1f else NOMINEE_ALPHA) }
 }
 
@@ -275,14 +274,14 @@ private val RATING_MARKS = mapOf(
     "imdb" to HouseMark(R.drawable.rating_imdb, Color(0xFF121212), Color(0xFFF5C518)),
     "tmdb" to HouseMark(R.drawable.rating_tmdb, Color(0xFF0D253F), Color(0xFF01B4E4)),
     "trakt" to HouseMark(R.drawable.rating_trakt, Color(0xFF9F42C6)),
-    "tvdb" to HouseMark(R.drawable.rating_tvdb, Color(0xFF555555)),
+    "tvdb" to HouseMark(R.drawable.rating_tvdb, Color(0xFF555555), Color(0xFF6CD591)),
     "letterboxd" to HouseMark(R.drawable.rating_letterboxd, Color(0xFF202830), Color(0xFF00E054)),
     "metacritic" to HouseMark(R.drawable.rating_metacritic, Color(0xFF66CC33)),
     "metacriticuser" to HouseMark(R.drawable.rating_metacriticuser, Color(0xFF66CC33)),
     "rottentomatoes" to HouseMark(R.drawable.rating_rottentomatoes, Color(0xFFF9D320)),
     "popcorn" to HouseMark(R.drawable.rating_popcorn, Color(0xFF1E88E5)),
     "rogerebert" to HouseMark(R.drawable.rating_rogerebert, Color(0xFFC8102E)),
-    "myanimelist" to HouseMark(R.drawable.rating_myanimelist, Color(0xFF2E51A2)),
+    "myanimelist" to HouseMark(R.drawable.rating_myanimelist, Color(0xFF2E51A2), Color(0xFF7298F0)),
     "mdblist" to HouseMark(R.drawable.rating_mdblist, Color(0xFF4284CA)),
 )
 
@@ -290,12 +289,12 @@ private val TOP250 = HouseMark(R.drawable.rating_top250, Color(0xFFF5C518))
 
 /**
  * The big awards' drawings, by the name the add-on gives them, each on its
- * own ground; the two on a near-black or a deep one are washed and edged in
- * their drawing's gold.
+ * own ground; darker plates use a brighter gold for the shield's wash and
+ * edge so the border remains visible.
  */
 private val AWARD_MARKS = mapOf(
     "oscar" to HouseMark(R.drawable.rating_award_oscar, Color(0xFFE2B33C)),
-    "globe" to HouseMark(R.drawable.rating_award_globe, Color(0xFF9C6B1E)),
+    "globe" to HouseMark(R.drawable.rating_award_globe, Color(0xFF9C6B1E), Color(0xFFE2B33C)),
     "bafta" to HouseMark(R.drawable.rating_award_bafta, Color(0xFF141414), Color(0xFFE2B33C)),
     "emmy" to HouseMark(R.drawable.rating_award_emmy, Color(0xFF3B2A6B), Color(0xFFE2B33C)),
 )
@@ -325,7 +324,7 @@ private fun boardOf(age: String): String = when {
  * the colour the shield is washed in.
  */
 private val AGE_MARKS = mapOf(
-    "fsk0" to HouseMark(R.drawable.rating_fsk0, Color(0xFFFFFFFF)),
+    "fsk0" to HouseMark(R.drawable.rating_fsk0, Color(0xFFFFFFFF), Color(0xFF8A8A8A)),
     "fsk6" to HouseMark(R.drawable.rating_fsk6, Color(0xFFFFD500)),
     "fsk12" to HouseMark(R.drawable.rating_fsk12, Color(0xFF00A651)),
     "fsk16" to HouseMark(R.drawable.rating_fsk16, Color(0xFF00A0E3)),
@@ -334,7 +333,7 @@ private val AGE_MARKS = mapOf(
     "mpa_pg" to HouseMark(R.drawable.rating_mpa_pg, Color(0xFFFFD500)),
     "mpa_pg13" to HouseMark(R.drawable.rating_mpa_pg13, Color(0xFFF7941D)),
     "mpa_r" to HouseMark(R.drawable.rating_mpa_r, Color(0xFFE30613)),
-    "mpa_nc17" to HouseMark(R.drawable.rating_mpa_nc17, Color(0xFF2E3192)),
+    "mpa_nc17" to HouseMark(R.drawable.rating_mpa_nc17, Color(0xFF2E3192), Color(0xFF8A8FEC)),
     "tv_y" to HouseMark(R.drawable.rating_tv_y, Color(0xFF00A651)),
     "tv_y7" to HouseMark(R.drawable.rating_tv_y7, Color(0xFF00A651)),
     "tv_g" to HouseMark(R.drawable.rating_tv_g, Color(0xFF00A651)),
@@ -347,7 +346,7 @@ private val AGE_MARKS = mapOf(
     "bbfc_12" to HouseMark(R.drawable.rating_bbfc_12, Color(0xFFF58220)),
     "bbfc_15" to HouseMark(R.drawable.rating_bbfc_15, Color(0xFFE5007E)),
     "bbfc_18" to HouseMark(R.drawable.rating_bbfc_18, Color(0xFFE30613)),
-    "bbfc_r18" to HouseMark(R.drawable.rating_bbfc_r18, Color(0xFF1D1D6B)),
+    "bbfc_r18" to HouseMark(R.drawable.rating_bbfc_r18, Color(0xFF1D1D6B), Color(0xFF8A8FEC)),
 )
 
 /**
