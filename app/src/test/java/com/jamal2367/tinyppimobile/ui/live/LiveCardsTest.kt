@@ -633,6 +633,17 @@ class LiveCardsTest {
         }
         rule.waitForIdle()
 
+        // A live channel's is named for its programme.
+        fake.playing(told.copy(title = "Tagesschau", media = MediaInfo(plot = "Live.", item = PlayingItem("broadcast"))))
+        rule.until { seen(str(R.string.live_plot_broadcast)) }
+        rule.onNodeWithText(str(R.string.live_plot_broadcast)).performClick()
+        rule.until { seen("Live.") }
+        assertEquals(emptyList<Pair<String, Int>>(), asked)
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
+
         // A library title on a box that takes no orders: the same.
         fake.playing(told.copy(control = false, media = MediaInfo(plot = "Paul joins the Fremen.", item = PlayingItem("movie", 1))))
         rule.until { seen(str(R.string.live_plot)) }

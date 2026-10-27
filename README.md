@@ -155,7 +155,8 @@ library's, read from the box (where the box takes orders and the title's shelf
 is on); for anything else - a live TV broadcast, a file the library does not
 know - the page shows what the box says of what is playing: the plot, the
 ratings and who is in it, each with who they played. With nothing said of it at
-all, there is no card. Like every card there it
+all, there is no card. The card is named for what plays: about the film, the
+episode, or - on a live channel - the programme. Like every card there it
 moves and comes off the screen, a long press on it opening the arranging. On
 the details page each shield has its source's mark on the left, on a
 ground of the source's colour, instead of its name, and what it gave on the

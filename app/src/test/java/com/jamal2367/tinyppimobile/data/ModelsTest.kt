@@ -139,6 +139,7 @@ class ModelsTest {
         assertTrue(PlayingItem("episode", 7).opensDetails)
         assertFalse(PlayingItem("movie", 0).opensDetails)
         assertFalse(PlayingItem("channel", 4).opensDetails)
+        assertFalse(PlayingItem("broadcast").opensDetails)
         assertEquals(MarkTarget(MarkTarget.Kind.MOVIE, 3, "Heat"), PlayingItem("movie", 3).target("Heat"))
         assertEquals(MarkTarget(MarkTarget.Kind.EPISODE, 7, "Pilot"), PlayingItem("episode", 7).target("Pilot"))
     }

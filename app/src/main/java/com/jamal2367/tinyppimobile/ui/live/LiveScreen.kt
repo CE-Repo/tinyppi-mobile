@@ -163,7 +163,12 @@ private fun LiveContent(
         (if (playingItem.kind == "movie") filmsOffered else seriesOffered)
     val showsOverview = opensDetails || snapshot.media.hasOverview
     val plotTitle = stringResource(
-        if (snapshot.media.item.kind == "episode") R.string.live_plot_episode else R.string.live_plot,
+        when (snapshot.media.item.kind) {
+            "episode" -> R.string.live_plot_episode
+            // A live channel's programme (see PlayingItem).
+            "broadcast" -> R.string.live_plot_broadcast
+            else -> R.string.live_plot
+        },
     )
     val labels = LiveCardLabels(
         plot = plotTitle,

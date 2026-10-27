@@ -257,8 +257,9 @@ data class Logos(val video: String = "", val audio: String = "")
 
 /**
  * Which library title is playing - `movie` or `episode` and its id - as the
- * add-on says; empty for a file the library does not know, and from an
- * add-on older than the field.
+ * add-on says; `broadcast` without an id for a live TV or radio channel;
+ * empty for a file the library does not know, and from an add-on older than
+ * the field.
  */
 @Serializable
 data class PlayingItem(val kind: String = "", val id: Int = 0) {
