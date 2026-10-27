@@ -267,6 +267,17 @@ class LiveViewModelTest {
         assertFalse(vm.library.value.read)
         assertFalse(vm.series.value.offered)
         assertTrue(vm.series.value.read)
+
+        // Still off, it stays off; switched on again, it is read anew.
+        for ((series, offered) in listOf(false to false, true to true)) {
+            api.hello = { Hello(series = series) }
+            live.value = LiveState(connection = LiveState.Connection.Offline)
+            advanceUntilIdle()
+            live.value = LiveState(connection = LiveState.Connection.Streaming, server = box)
+            advanceUntilIdle()
+            assertEquals(offered, vm.series.value.offered)
+            assertEquals(!offered, vm.series.value.read)
+        }
     }
 
     @Test
