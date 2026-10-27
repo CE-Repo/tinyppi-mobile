@@ -549,7 +549,7 @@ class LiveCardsTest {
         // An episode opens as one.
         fake.playing(told.copy(title = "Ghosts", media = MediaInfo(item = PlayingItem("episode", 76))))
         rule.until { seen("Ghosts") }
-        rule.onNodeWithText(str(R.string.live_plot)).performClick()
+        rule.onNodeWithText(str(R.string.live_plot_episode)).performClick()
         rule.until { asked.size == 2 }
         assertEquals("episode" to 76, asked.last())
         rule.runOnIdle {
@@ -559,7 +559,7 @@ class LiveCardsTest {
 
         // A file the library does not know has no card.
         fake.playing(told.copy(media = MediaInfo(plot = "A plot.")))
-        rule.until { !seen(str(R.string.live_plot)) }
+        rule.until { !seen(str(R.string.live_plot_episode)) }
     }
 
     @Test

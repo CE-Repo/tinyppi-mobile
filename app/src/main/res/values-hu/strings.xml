@@ -145,7 +145,8 @@
     <string name="live_subtitle_offset">Felirateltolás</string>
     <string name="live_offset_reset">Visszaállítás 0-ra</string>
 
-    <string name="live_plot">Áttekintés</string>
+    <string name="live_plot">A filmről</string>
+    <string name="live_plot_episode">Az epizódról</string>
     <string name="live_rating_mine">Saját értékelés</string>
     <string name="live_rating_top250">Top 250 · %1$d. hely</string>
     <string name="live_award_won">%1$d díj</string>

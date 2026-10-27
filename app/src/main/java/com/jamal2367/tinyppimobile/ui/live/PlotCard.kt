@@ -89,7 +89,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun PlotCard(onOpen: () -> Unit) {
+internal fun PlotCard(title: String, onOpen: () -> Unit) {
     val screen = LocalCardScreen.current
     val layout = LocalCardLayout.current
     val haptics = LocalHapticFeedback.current
@@ -120,7 +120,7 @@ internal fun PlotCard(onOpen: () -> Unit) {
         Box(modifier = Modifier.padding(16.dp)) {
             CompositionLocalProvider(LocalCardScreen provides null) {
                 SectionHeading(
-                    title = stringResource(R.string.live_plot),
+                    title = title,
                     expanded = false,
                     onToggle = null,
                     trailing = {
@@ -574,7 +574,7 @@ private const val TIP_TIME = 4000L
 internal fun PlotCardPreview() {
     TinyPpiTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
-            Column(modifier = Modifier.padding(16.dp)) { PlotCard {} }
+            Column(modifier = Modifier.padding(16.dp)) { PlotCard(stringResource(R.string.live_plot)) {} }
         }
     }
 }
