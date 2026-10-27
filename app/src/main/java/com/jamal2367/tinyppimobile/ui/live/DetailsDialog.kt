@@ -37,7 +37,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -569,17 +568,11 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server:
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
         )
-        // Out to the page's edges rather than the margin the text keeps, the
-        // first card still on the margin, and faded at a side it goes on past
-        // as the filter row is, rather than cutting the card there off hard.
-        val row = rememberLazyListState()
+        // Scroll to the page edges, keeping portraits and text fully opaque.
         LazyRow(
-            state = row,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = PAGE_EDGE),
-            modifier = Modifier
-                .bleed(PAGE_EDGE)
-                .fadedEdges({ row.canScrollBackward }, { row.canScrollForward }, CAST_FADE),
+            modifier = Modifier.bleed(PAGE_EDGE),
         ) {
             items(cast) { person -> CastCard(person, nameHeight, roleHeight, server) }
             if (more) {
@@ -665,8 +658,6 @@ private val HERO_HEIGHT = 300.dp
 private val POSTER_WIDTH = 104.dp
 private val CAST_WIDTH = 160.dp
 
-/** How far in from a side a row of cast cards fades where it goes on past it. */
-private val CAST_FADE = 64.dp
 private val ACTION_HEIGHT = 48.dp
 
 /**
