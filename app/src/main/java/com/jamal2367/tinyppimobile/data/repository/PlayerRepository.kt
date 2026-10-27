@@ -3,6 +3,7 @@ package com.jamal2367.tinyppimobile.data.repository
 import com.jamal2367.tinyppimobile.data.model.ApiErrorBody
 import com.jamal2367.tinyppimobile.data.model.CommandBody
 import com.jamal2367.tinyppimobile.data.model.ContinueList
+import com.jamal2367.tinyppimobile.data.model.Hello
 import com.jamal2367.tinyppimobile.data.model.History
 import com.jamal2367.tinyppimobile.data.model.EpisodeList
 import com.jamal2367.tinyppimobile.data.model.Library
@@ -44,6 +45,9 @@ class PlayerRepository(
         // Events this app no longer shows, from an add-on that still writes them.
         history.copy(events = history.events.filterNot { it.kind in PlaybackEventKind.RETIRED })
     }
+
+    /** What the box is and which shelves it offers (`/api/hello`). */
+    suspend fun hello(): Hello = call { api.hello() }
 
     /** The films the box has, for the wall shown while nothing is playing. */
     suspend fun library(): Library = call { api.library() }

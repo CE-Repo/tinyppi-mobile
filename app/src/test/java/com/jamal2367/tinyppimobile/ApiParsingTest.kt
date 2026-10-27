@@ -247,6 +247,20 @@ class ApiParsingTest {
         assertFalse(hello.control)
         assertEquals(200, hello.intervalMs)
         assertEquals("Verbunden", hello.strings["connected"])
+        // An add-on older than the shelf flags says nothing either way.
+        assertNull(hello.library)
+        assertNull(hello.series)
+    }
+
+    @Test
+    fun `hello says which shelves the box offers`() {
+        val hello = json.decodeFromString(
+            Hello.serializer(),
+            """{"control":true,"library":false,"series":true}""",
+        )
+
+        assertEquals(false, hello.library)
+        assertEquals(true, hello.series)
     }
 
     @Test

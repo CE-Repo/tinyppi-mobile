@@ -14,6 +14,7 @@ import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
+import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
 import com.jamal2367.tinyppimobile.data.repository.LiveState
 import com.jamal2367.tinyppimobile.data.repository.PlayerRepository
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -178,8 +180,15 @@ class LiveViewModel(
     private val describe: (Throwable) -> String,
 ) : ViewModel() {
 
+    /**
+     * The box whose shelves were last asked about (see [readOffers]), or null
+     * while none is answering: each box is asked once each time it is found,
+     * not on every snapshot.
+     */
+    private var offersFrom: ServerConfig? = null
+
     val state: StateFlow<LiveUiState> =
-        combine(liveState, settings) { live, settings ->
+        combine(liveState.onEach { noteBox(it) }, settings) { live, settings ->
             LiveUiState(live = live, settings = settings)
         }.stateIn(
             scope = viewModelScope,
@@ -276,6 +285,48 @@ class LiveViewModel(
         _library.value = _library.value.copy(read = false)
         _series.value = _series.value.copy(read = false)
         _continuing.value = _continuing.value.copy(read = false)
+    }
+
+    /**
+     * Ask a box that has just been found which shelves it offers.
+     *
+     * Part of reading the live state rather than a watch of its own: the
+     * connection is held only while a screen looks (see `AppContainer`), and
+     * a collector of its own here would hold it open behind the screen.
+     */
+    private fun noteBox(live: LiveState) {
+        val box = live.server.takeIf { live.isAnswering }
+        if (box == offersFrom) return
+        offersFrom = box
+        if (box != null) viewModelScope.launch { readOffers() }
+    }
+
+    /**
+     * Which shelves the box offers, from `/api/hello`, before any shelf has
+     * been read: a shelf switched off is gone from the bar at once, and the
+     * overview card does not offer the details of a title whose shelf is off
+     * (the box would refuse them). A shelf switched on again is read anew.
+     *
+     * An add-on older than the flags says nothing, and a box that cannot be
+     * asked leaves things as they stand: the shelves still find out for
+     * themselves when they are refused.
+     */
+    private suspend fun readOffers() {
+        val hello = try {
+            repository.hello()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Throwable) {
+            return
+        }
+        hello.library?.let { offered ->
+            val held = _library.value
+            if (held.offered != offered) _library.value = held.copy(offered = offered, read = !offered)
+        }
+        hello.series?.let { offered ->
+            val held = _series.value
+            if (held.offered != offered) _series.value = held.copy(offered = offered, read = !offered)
+        }
     }
 
     fun playPause() = command { repository.playPause() }

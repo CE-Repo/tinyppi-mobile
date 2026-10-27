@@ -149,6 +149,14 @@ private fun LiveContent(
     viewModel: LiveViewModel,
 ) {
     val layout = LocalCardLayout.current
+    // A box that takes no orders hands out no details, and nor does one whose
+    // shelf for the title is off (see _serve_details in the add-on's
+    // web/routes.py, and LiveViewModel.readOffers).
+    val filmsOffered = viewModel.library.collectAsStateWithLifecycle().value.offered
+    val seriesOffered = viewModel.series.collectAsStateWithLifecycle().value.offered
+    val playingItem = snapshot.media.item
+    val opensDetails = playingItem.opensDetails && canControl &&
+        (if (playingItem.kind == "movie") filmsOffered else seriesOffered)
     val plotTitle = stringResource(
         if (snapshot.media.item.kind == "episode") R.string.live_plot_episode else R.string.live_plot,
     )
@@ -203,9 +211,7 @@ private fun LiveContent(
         // (see CardLayout).
         val groups = snapshot.groups.associateBy { "$GROUP_PREFIX${it.id}" }
         val present = buildList {
-            // A box that takes no orders hands out no details either (see
-            // _serve_details in the add-on's web/routes.py).
-            if (snapshot.media.item.opensDetails && canControl) add(FOLD_PLOT)
+            if (opensDetails) add(FOLD_PLOT)
             if (canControl) add(FOLD_CONTROLS)
             if (snapshot.vs10.options.isNotEmpty()) add(FOLD_VS10)
             addAll(groups.keys)

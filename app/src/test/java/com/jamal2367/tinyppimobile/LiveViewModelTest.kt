@@ -4,6 +4,7 @@ import com.jamal2367.tinyppimobile.data.model.CommandAck
 import com.jamal2367.tinyppimobile.data.model.ContinueItem
 import com.jamal2367.tinyppimobile.data.model.ContinueList
 import com.jamal2367.tinyppimobile.data.model.EpisodeList
+import com.jamal2367.tinyppimobile.data.model.Hello
 import com.jamal2367.tinyppimobile.data.model.Library
 import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
@@ -193,6 +194,64 @@ class LiveViewModelTest {
         assertFalse(vm.library.value.offered)
         assertEquals(1, api.count("library"))
         assertNull("the wall is an offer, and its failure is not reported", vm.message.value)
+    }
+
+    @Test
+    fun `a box found answering is asked once which shelves it offers`() = runTest(dispatcher) {
+        api.hello = { Hello(library = false, series = true) }
+        val vm = viewModel()
+        watch(vm)
+        val box = ServerConfig(enabled = true, host = "192.168.1.10")
+
+        // Nothing is asked of a box that has not answered.
+        live.value = LiveState(connection = LiveState.Connection.Connecting)
+        advanceUntilIdle()
+        assertEquals(0, api.count("hello"))
+
+        live.value = LiveState(connection = LiveState.Connection.Streaming, server = box)
+        advanceUntilIdle()
+        assertFalse(vm.library.value.offered)
+        assertTrue(vm.series.value.offered)
+        // A shelf the box has said it does not offer is not read.
+        vm.refreshLibrary()
+        advanceUntilIdle()
+        assertEquals(0, api.count("library"))
+
+        // Every snapshot from the same box asks nothing again.
+        live.value = LiveState(connection = LiveState.Connection.Streaming, server = box, snapshot = Snapshot())
+        advanceUntilIdle()
+        assertEquals(1, api.count("hello"))
+
+        // Found again after it was lost, it is asked again: the shelf has
+        // been switched back on in the meantime, and is read anew.
+        live.value = LiveState(connection = LiveState.Connection.Offline)
+        advanceUntilIdle()
+        api.hello = { Hello(library = true, series = true) }
+        live.value = LiveState(connection = LiveState.Connection.Streaming, server = box)
+        advanceUntilIdle()
+        assertEquals(2, api.count("hello"))
+        assertTrue(vm.library.value.offered)
+        assertFalse(vm.library.value.read)
+    }
+
+    @Test
+    fun `an older box, or one that cannot say, leaves the shelves to find out themselves`() = runTest(dispatcher) {
+        val vm = viewModel()
+        watch(vm)
+        val box = ServerConfig(enabled = true, host = "192.168.1.10")
+        live.value = LiveState(connection = LiveState.Connection.Streaming, server = box)
+        advanceUntilIdle()
+        assertTrue(vm.library.value.offered)
+        assertTrue(vm.series.value.offered)
+
+        api.hello = { throw ApiFailure.Api(500, "boom") }
+        live.value = LiveState(connection = LiveState.Connection.Offline)
+        advanceUntilIdle()
+        live.value = LiveState(connection = LiveState.Connection.Streaming, server = box)
+        advanceUntilIdle()
+        assertEquals(2, api.count("hello"))
+        assertTrue(vm.library.value.offered)
+        assertNull("nobody asked, so nothing is reported", vm.message.value)
     }
 
     @Test

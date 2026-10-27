@@ -150,6 +150,14 @@ data class Hello(
     @SerialName("auth_read") val authRead: Boolean = false,
     /** Whether this box lets a client switch anything at all. */
     val control: Boolean = false,
+    /**
+     * Whether the box offers its film shelf, and with it a film's details:
+     * the shelf switched on in the add-on and control allowed. Null from an
+     * add-on older than the flag, which says nothing either way.
+     */
+    val library: Boolean? = null,
+    /** The same for the series shelf, and an episode's or a show's details. */
+    val series: Boolean? = null,
     /** How often the add-on rebuilds its snapshot. */
     @SerialName("interval_ms") val intervalMs: Int = 200,
     /** The dashboard's own chrome, localized through Kodi's string table. */

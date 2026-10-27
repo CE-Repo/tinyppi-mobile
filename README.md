@@ -418,7 +418,7 @@ All of it.
 
 | Endpoint | Used for |
 |---|---|
-| `GET /api/hello` | The connection test. Unauthenticated on the far side, which is what lets the test tell "nothing there" from "wrong token". |
+| `GET /api/hello` | The connection test, and which shelves the box offers (`library`, `series`), asked each time a box is found. Unauthenticated on the far side, which is what lets the test tell "nothing there" from "wrong token". |
 | `GET /api/stream` | The live connection. One per app, shared by every screen. |
 | `GET /api/state` | The polling fallback, and the second half of the connection test. |
 | `GET /api/history` | The chart and the event list. |

@@ -130,7 +130,8 @@ class LiveScreenTest {
                 "command:volume_down", "command:mute", "command:volume_up",
                 "command:audio", "command:subtitle", "command:subtitle", "mode", "mode", "command:seek_percent",
             ),
-            fake.api.calls,
+            // What the box offers is asked once it answers; not a command.
+            fake.api.calls.filter { it != "hello" },
         )
     }
 

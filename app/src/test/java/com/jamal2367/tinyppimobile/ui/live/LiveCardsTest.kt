@@ -24,6 +24,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import com.jamal2367.tinyppimobile.data.model.TitleDetails
+import com.jamal2367.tinyppimobile.data.model.Hello
 import com.jamal2367.tinyppimobile.data.model.PlayingItem
 import androidx.compose.ui.test.longClick
 import androidx.compose.runtime.mutableStateOf
@@ -597,6 +598,20 @@ class LiveCardsTest {
         rule.until { seen(str(R.string.live_plot)) }
         fake.playing(told.copy(control = false, media = told.media.copy(item = PlayingItem("movie", 1))))
         rule.until { !seen(str(R.string.live_plot)) }
+    }
+
+    @Test
+    fun `the overview is not offered for a title whose shelf the box has switched off`() {
+        fake.api.hello = { Hello(library = false, series = true) }
+        fake.playing(told.copy(media = told.media.copy(item = PlayingItem("movie", 1))))
+        showLive()
+        rule.until { !fake.viewModel.library.value.offered }
+        rule.waitForIdle()
+        assertEquals(false, seen(str(R.string.live_plot)))
+
+        // An episode's shelf is on, so its details are there to open.
+        fake.playing(told.copy(title = "Ghosts", media = MediaInfo(item = PlayingItem("episode", 76))))
+        rule.until { seen(str(R.string.live_plot_episode)) }
     }
 
     @Test
