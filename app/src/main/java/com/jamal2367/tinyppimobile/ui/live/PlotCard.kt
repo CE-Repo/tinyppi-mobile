@@ -241,7 +241,7 @@ internal fun RatingGroups(media: MediaInfo) {
     val hasRatings = media.ratings.isNotEmpty() || media.mpaa.isNotBlank() || media.userRating > 0 || media.top250 > 0
     val awards = media.awards.filter { it.award in AWARD_MARKS }
     if (!hasRatings && awards.isEmpty()) return
-    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
         if (hasRatings) RatingGroup(stringResource(R.string.details_ratings), media.copy(awards = emptyList()))
         if (awards.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -258,7 +258,8 @@ internal fun RatingGroups(media: MediaInfo) {
 
 @Composable
 private fun RatingGroup(title: String, media: MediaInfo) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    // Shields have no text line-box inset; give them the facts' visible breathing room.
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(text = title, style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp), fontWeight = FontWeight.Bold)
         RatingRow(media)
     }

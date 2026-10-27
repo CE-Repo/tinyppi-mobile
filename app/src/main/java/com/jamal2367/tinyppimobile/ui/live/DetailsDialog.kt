@@ -213,7 +213,7 @@ private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: D
         Column(modifier = Modifier.verticalScroll(scroll)) {
             Hero(state.target, details ?: TitleDetails(), server)
             Column(
-                verticalArrangement = Arrangement.spacedBy(22.dp),
+                verticalArrangement = Arrangement.spacedBy(32.dp),
                 modifier = Modifier
                     .padding(start = PAGE_EDGE, end = PAGE_EDGE, top = 18.dp, bottom = 32.dp)
                     .navigationBarsPadding(),
@@ -483,24 +483,27 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
     )
     RatingGroups(rated)
     if (details.tagline.isNotEmpty() || details.plot.isNotEmpty()) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        // The slogan's compact italic line needs more room than the body-text facts.
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = stringResource(R.string.details_description),
                 style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp),
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            if (details.tagline.isNotEmpty()) {
-                Text(
-                    text = details.tagline,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontStyle = FontStyle.Italic,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            if (details.plot.isNotEmpty()) {
-                Text(text = details.plot, style = MaterialTheme.typography.bodyLarge)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (details.tagline.isNotEmpty()) {
+                    Text(
+                        text = details.tagline,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontStyle = FontStyle.Italic,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                if (details.plot.isNotEmpty()) {
+                    Text(text = details.plot, style = MaterialTheme.typography.bodyLarge)
+                }
             }
         }
     }
@@ -509,7 +512,7 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
         stringResource(R.string.details_studio) to details.studios,
     ).filter { it.second.isNotEmpty() }
     if (facts.isNotEmpty()) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
             for ((heading, names) in facts) Fact(heading, names.joinToString(", "))
         }
     }
@@ -569,7 +572,8 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server:
     }
     val nameHeight = with(density) { heights.first.toDp() }
     val roleHeight = with(density) { heights.second.toDp() }
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    // Portraits have no text line-box inset; match the facts' visible breathing room.
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = heading,
             style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp),
