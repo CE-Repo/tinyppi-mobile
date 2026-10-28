@@ -191,7 +191,7 @@ class LiveViewModel(
     private var offersRead: Job? = null
 
     val state: StateFlow<LiveUiState> =
-        combine(liveState.onEach { noteBox(it) }, settings) { live, settings ->
+        combine(liveState.onEach { noteBox(it); notePlaying(it) }, settings) { live, settings ->
             LiveUiState(live = live, settings = settings)
         }.stateIn(
             scope = viewModelScope,
@@ -386,6 +386,13 @@ class LiveViewModel(
 
     private var detailsRead: Job? = null
 
+    /**
+     * What was playing when the open details were opened from the overview
+     * card (see [playingKey]), or null for details opened anywhere else.
+     * Those details are about what is playing, and go when it does.
+     */
+    private var detailsPlaying: String? = null
+
     /** The read of the episodes of a show being opened, while it is out. */
     private var opening: Job? = null
 
@@ -394,8 +401,9 @@ class LiveViewModel(
      * shows it. A failure is the dialog's to show rather than a line along
      * the bottom of the screen.
      */
-    fun openDetails(target: MarkTarget) {
+    fun openDetails(target: MarkTarget, playing: Snapshot? = null) {
         detailsRead?.cancel()
+        detailsPlaying = playing?.let(::playingKey)
         _details.value = DetailsUiState(target)
         detailsRead = viewModelScope.launch {
             val read = try {
@@ -422,6 +430,7 @@ class LiveViewModel(
         detailsRead?.cancel()
         val media = snapshot.media
         val kind = if (media.item.kind == "episode") MarkTarget.Kind.EPISODE else MarkTarget.Kind.MOVIE
+        detailsPlaying = playingKey(snapshot)
         _details.value = DetailsUiState(MarkTarget(kind, 0, snapshot.title), details = media.details(snapshot.art))
     }
 
@@ -438,7 +447,29 @@ class LiveViewModel(
     /** Close the details, letting go of a read still out. */
     fun closeDetails() {
         detailsRead?.cancel()
+        detailsPlaying = null
         _details.value = null
+    }
+
+    /**
+     * Close the details of what was playing once it is no longer: stopped,
+     * or another title started in its place. A snapshot still to come - the
+     * stream being reopened - says nothing either way.
+     */
+    private fun notePlaying(live: LiveState) {
+        val held = detailsPlaying ?: return
+        val snapshot = live.snapshot ?: return
+        if (playingKey(snapshot) != held) closeDetails()
+    }
+
+    /**
+     * Which title is playing, or null for none: a title the library holds by
+     * its id, anything else - a broadcast, a loose file - by its name.
+     */
+    private fun playingKey(snapshot: Snapshot): String? {
+        if (!snapshot.playing) return null
+        val item = snapshot.media.item
+        return if (item.id > 0) "${item.kind}:${item.id}" else "title:${snapshot.title}"
     }
 
     /**

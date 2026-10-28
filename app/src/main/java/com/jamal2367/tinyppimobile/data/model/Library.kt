@@ -358,6 +358,17 @@ data class TitleDetails(
     val show: String = "",
     /** When it came out, or an episode first aired, as Kodi writes it. */
     val premiered: String = "",
+    /**
+     * A film's facts from TMDb, where the box has a TMDb key: the day it
+     * first ran in cinemas (`YYYY-MM-DD`, in the country Kodi's language
+     * points to), and what it cost and took in whole US dollars; empty and 0
+     * where unknown.
+     */
+    val cinema: String = "",
+    /** The country [cinema] is the first day in cinemas of (`DE`); empty where it is none in particular. */
+    @SerialName("cinema_country") val cinemaCountry: String = "",
+    val budget: Long = 0,
+    val revenue: Long = 0,
     /** The age rating as the scraper wrote it, and its mark and level (see [MediaInfo.age]). */
     val mpaa: String = "",
     val age: String = "",
@@ -377,7 +388,11 @@ data class TitleDetails(
     val genres: List<String> = emptyList(),
     val directors: List<String> = emptyList(),
     val writers: List<String> = emptyList(),
-    /** Optional enriched crew; roles are the stable codes director and writer. */
+    /**
+     * Optional enriched crew: Kodi's directors and writers under the codes
+     * `director` and `writer`, then the rest of the crew the box's TMDb
+     * credits name, each [CastMember.role] their jobs as the box words them.
+     */
     val crew: List<CastMember> = emptyList(),
     val studios: List<String> = emptyList(),
     val countries: List<String> = emptyList(),
@@ -399,9 +414,12 @@ data class TitleDetails(
     val audio: String = "",
 )
 
-/** One of the cast, and who they played; [role] is empty where none is known. */
+/**
+ * One of the cast, and who they played; [role] is empty where none is known.
+ * [tmdb] is their TMDb person id where the box could tell it, 0 otherwise.
+ */
 @Serializable
-data class CastMember(val name: String = "", val role: String = "", val thumbnail: String = "")
+data class CastMember(val name: String = "", val role: String = "", val thumbnail: String = "", val tmdb: Int = 0)
 
 /**
  * Something in the library that was pressed, to be marked seen or unseen:

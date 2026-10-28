@@ -10,6 +10,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.long
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
@@ -106,9 +107,39 @@ class DemoServerTest {
         assertEquals("Dune: Part Two", json("/api/details?movieid=1")["title"]!!.jsonPrimitive.content)
         assertEquals("fanart-1", json("/api/details?movieid=1")["fanart"]!!.jsonPrimitive.content)
         // Who each played, where the pretend library knows, and nobody's role where it does not.
-        val role = { id: Int -> json("/api/details?movieid=$id")["cast"]!!.jsonArray.first().jsonObject["role"]!!.jsonPrimitive.content }
-        assertEquals("Paul Atreides", role(1))
+        val role = { id: Int -> json("/api/details?movieid=$id")["cast"]!!.jsonArray.last().jsonObject["role"]!!.jsonPrimitive.content }
+        assertEquals("Lady Margot Fenring", role(1))
         assertEquals("", role(2))
+        // The two films the library knows best carry what a TMDb key adds:
+        // the countries, the cinema release, the money, and the whole crew,
+        // each person with a portrait and, where known, a TMDb id.
+        val oppenheimer = json("/api/details?movieid=2")
+        assertEquals("2023-07-20", oppenheimer["cinema"]!!.jsonPrimitive.content)
+        assertEquals(100_000_000L, oppenheimer["budget"]!!.jsonPrimitive.long)
+        assertEquals(975_811_333L, oppenheimer["revenue"]!!.jsonPrimitive.long)
+        assertEquals("United Kingdom", oppenheimer["countries"]!!.jsonArray.first().jsonPrimitive.content)
+        val crew = oppenheimer["crew"]!!.jsonArray.map { it.jsonObject }
+        assertEquals(listOf("director", "writer", "Producer"), crew.take(3).map { it["role"]!!.jsonPrimitive.content })
+        assertEquals(525, crew.first()["tmdb"]!!.jsonPrimitive.int)
+        assertEquals(null, crew[2]["tmdb"])
+        val murphy = oppenheimer["cast"]!!.jsonArray.first().jsonObject
+        assertEquals(2037, murphy["tmdb"]!!.jsonPrimitive.int)
+        val face = murphy["thumbnail"]!!.jsonPrimitive.content
+        assertEquals(200, get("/api/art?kind=thumb&portrait=$face&v=$face").first)
+        assertEquals(200, get("/api/art?kind=thumb&portrait=$face&v=$face").first)
+        // Every shield there is, both of Rotten Tomatoes' seals among them.
+        val shields = oppenheimer["ratings"]!!.jsonArray.map { it.jsonObject }
+        assertEquals(12, shields.size)
+        assertEquals(listOf("rottentomatoes", "popcorn"),
+            shields.filter { it["certified"]?.jsonPrimitive?.boolean == true }.map { it["source"]!!.jsonPrimitive.content })
+        // A film the library knows little of has none of it.
+        assertEquals(null, json("/api/details?movieid=3")["crew"])
+        // The boards and the award the films do not wear.
+        assertEquals("bbfc_15", json("/api/details?movieid=14")["age"]!!.jsonPrimitive.content)
+        val shogun = json("/api/details?tvshowid=103")
+        assertEquals("tv_ma", shogun["age"]!!.jsonPrimitive.content)
+        assertEquals("emmy", shogun["awards"]!!.jsonArray.single().jsonObject["award"]!!.jsonPrimitive.content)
+        assertEquals(null, json("/api/details?tvshowid=101")["awards"])
         assertEquals("tvshow", json("/api/details?tvshowid=101")["kind"]!!.jsonPrimitive.content)
         assertEquals("Severance", json("/api/details?episodeid=101102")["show"]!!.jsonPrimitive.content)
         assertEquals("1080p", json("/api/details?movieid=3")["resolution"]!!.jsonPrimitive.content)
@@ -211,7 +242,10 @@ class DemoServerTest {
         assertEquals(612_000, rated["ratings"]!!.jsonArray[0].jsonObject["votes"]!!.jsonPrimitive.int)
         // Rated as MDBList rates it, every house it gathers.
         assertEquals(
-            listOf("imdb", "tmdb", "trakt", "letterboxd", "metacritic", "rottentomatoes", "popcorn"),
+            listOf(
+                "imdb", "tmdb", "trakt", "tvdb", "letterboxd", "metacritic", "metacriticuser", "rottentomatoes",
+                "popcorn", "rogerebert", "myanimelist", "mdblist",
+            ),
             rated["ratings"]!!.jsonArray.map { it.jsonObject["source"]!!.jsonPrimitive.content },
         )
         assertEquals("FSK 12", rated["mpaa"]!!.jsonPrimitive.content)

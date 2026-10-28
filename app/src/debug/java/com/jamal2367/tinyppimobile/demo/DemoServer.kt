@@ -100,6 +100,18 @@ object DemoServer {
         ),
     )
 
+    /** The show that wears an Emmy and a TV age rating on its details. */
+    private const val SHOGUN = 103
+
+    /** The TMDb ids of the people the demo links to their TMDb page; the rest lead to TMDb's search. */
+    private val PEOPLE = mapOf(
+        "Timothée Chalamet" to 1190668, "Zendaya" to 505710, "Rebecca Ferguson" to 933238, "Javier Bardem" to 3810,
+        "Josh Brolin" to 16851, "Florence Pugh" to 1373737, "Christopher Walken" to 4690, "Léa Seydoux" to 121529,
+        "Dave Bautista" to 543530, "Denis Villeneuve" to 137427, "Hans Zimmer" to 947,
+        "Cillian Murphy" to 2037, "Emily Blunt" to 5081, "Matt Damon" to 1892, "Robert Downey Jr." to 3223,
+        "Christopher Nolan" to 525,
+    )
+
     /** What a film's chapters are called on the pretend box. */
     private val FILM_CHAPTERS = listOf(
         "Opening", "Arrakis", "The Fremen", "Sietch Tabr", "The Water of Life", "Sandworm",
@@ -175,6 +187,20 @@ object DemoServer {
         val watched: Boolean = false, val resumeMinutes: Int = 0, val tagline: String = "", val plot: String = "",
         val mpaa: String = "", val age: String = "", val ageLevel: String = "", val top250: Int = 0,
         val mine: Int = 0, val credits: Credits = Credits(), val awards: List<DemoAward> = emptyList(),
+        val tmdb: FromTmdb? = null,
+    )
+
+    /** One house's score, out of ten; [certified] for Rotten Tomatoes' seals. */
+    private class DemoRating(val source: String, val rating: Double, val votes: Int, val certified: Boolean = false)
+
+    /**
+     * What the add-on adds to a film's details from TMDb: where it was made,
+     * when it first ran in cinemas, what it cost and took, and the rest of
+     * its crew under their jobs.
+     */
+    private class FromTmdb(
+        val countries: List<String>, val cinema: String, val budget: Long, val revenue: Long,
+        val crew: List<Pair<String, String>>,
     )
 
     /** One of the big awards a title won or was nominated for, as the add-on sends it. */
@@ -201,6 +227,17 @@ object DemoServer {
             1, "Dune: Part Two", 2024, 166, 8.5, "Science Fiction", resumeMinutes = 71, tagline = DUNE_TAGLINE,
             plot = DUNE_PLOT, mpaa = DUNE_MPAA, age = DUNE_AGE, ageLevel = DUNE_AGE_LEVEL, top250 = DUNE_TOP250,
             mine = DUNE_MINE, credits = DUNE_CREDITS, awards = DUNE_AWARDS,
+            tmdb = FromTmdb(
+                countries = listOf("United States of America", "Canada"), cinema = "2024-02-29",
+                budget = 190_000_000, revenue = 714_844_358,
+                crew = listOf(
+                    "Mary Parent" to "Producer", "Cale Boyter" to "Producer", "Tanya Lapointe" to "Producer",
+                    "Hans Zimmer" to "Original Music Composer", "Greig Fraser" to "Director of Photography",
+                    "Joe Walker" to "Editor", "Francine Maisler" to "Casting", "Patrice Vermette" to "Production Design",
+                    "Jacqueline West" to "Costume Design", "Paul Lambert" to "Visual Effects Supervisor",
+                    "Frank Herbert" to "Novel",
+                ),
+            ),
         ),
         // A slogan and a plot for the first two only: the rest play without
         // them, the way a file the library knows little about does.
@@ -218,6 +255,24 @@ object DemoServer {
                     "Casey Affleck",
                 ),
                 studios = listOf("Syncopy", "Atlas Entertainment"),
+                writers = listOf("Christopher Nolan"),
+                // Who the last of them played the library does not say.
+                roles = listOf(
+                    "J. Robert Oppenheimer", "Kitty Oppenheimer", "Leslie Groves", "Lewis Strauss", "Jean Tatlock",
+                    "Ernest Lawrence",
+                ),
+            ),
+            // Rated by the house it is a favourite of as well.
+            top250 = 61, mine = 10,
+            tmdb = FromTmdb(
+                countries = listOf("United Kingdom", "United States of America"), cinema = "2023-07-20",
+                budget = 100_000_000, revenue = 975_811_333,
+                crew = listOf(
+                    "Emma Thomas" to "Producer", "Charles Roven" to "Producer",
+                    "Ludwig Göransson" to "Original Music Composer", "Hoyte van Hoytema" to "Director of Photography",
+                    "Jennifer Lame" to "Editor", "John Papsidera" to "Casting", "Ruth De Jong" to "Production Design",
+                    "Ellen Mirojnick" to "Costume Design", "Kai Bird" to "Novel", "Martin J. Sherwin" to "Novel",
+                ),
             ),
             awards = listOf(
                 DemoAward(
@@ -243,7 +298,8 @@ object DemoServer {
         Film(11, "Gravity", 2013, 91, 7.7, "Science Fiction"),
         Film(12, "Top Gun: Maverick", 2022, 130, 8.2, "Action"),
         Film(13, "Avatar: The Way of Water", 2022, 192, 7.5, "Adventure"),
-        Film(14, "1917", 2019, 119, 8.2, "War", watched = true),
+        // Rated by the British board, as a scraper set to the UK writes it.
+        Film(14, "1917", 2019, 119, 8.2, "War", watched = true, mpaa = "15", age = "bbfc_15", ageLevel = "15"),
         Film(15, "Alien: Romulus", 2024, 119, 7.1, "Horror"),
         Film(16, "Heat", 1995, 170, 8.3, "Crime", watched = true),
         Film(17, "No Time to Die", 2021, 163, 7.3, "Action"),
@@ -272,18 +328,24 @@ object DemoServer {
      * A film's scores, made up from its rating: IMDb's with a count of votes
      * in proportion, and TMDb's a little under it with far fewer.
      */
-    private fun filmRatings(film: Film): List<Triple<String, Double, Int>> {
+    private fun filmRatings(film: Film): List<DemoRating> {
         val votes = (film.rating * 72_000).toInt()
-        val scraped = listOf(Triple("imdb", film.rating, votes), Triple("tmdb", film.rating - 0.3, votes / 90))
-        // The films the library knows best are rated as MDBList rates them,
-        // every house it gathers; the rest as a scraper leaves them.
+        val scraped = listOf(DemoRating("imdb", film.rating, votes), DemoRating("tmdb", film.rating - 0.3, votes / 90))
+        // The films the library knows best wear every shield there is: every
+        // house MDBList gathers, both of Rotten Tomatoes' seals, and MDBList's
+        // own score; the rest as a scraper leaves them.
         if (film.plot.isEmpty()) return scraped
         return scraped + listOf(
-            Triple("trakt", film.rating - 0.1, votes / 20),
-            Triple("letterboxd", film.rating + 0.3, votes * 2),
-            Triple("metacritic", film.rating - 0.6, 67),
-            Triple("rottentomatoes", film.rating + 0.7, 410),
-            Triple("popcorn", film.rating + 1.0, 10_000),
+            DemoRating("trakt", film.rating - 0.1, votes / 20),
+            DemoRating("tvdb", film.rating - 0.4, votes / 300),
+            DemoRating("letterboxd", film.rating + 0.3, votes * 2),
+            DemoRating("metacritic", film.rating - 0.6, 67),
+            DemoRating("metacriticuser", film.rating - 0.2, 2_400),
+            DemoRating("rottentomatoes", (film.rating + 0.7).coerceAtMost(9.9), 410, certified = true),
+            DemoRating("popcorn", (film.rating + 1.0).coerceAtMost(9.9), 10_000, certified = true),
+            DemoRating("rogerebert", 8.8, 0),
+            DemoRating("myanimelist", film.rating - 0.5, 1_200),
+            DemoRating("mdblist", film.rating + 0.1, 0),
         )
     }
 
@@ -519,9 +581,7 @@ object DemoServer {
                 put("tagline", playingTagline)
                 put("plot", playingPlot)
                 putJsonArray("ratings") {
-                    playingRatings.forEach { (source, rating, votes) ->
-                        add(buildJsonObject { put("source", source); put("rating", rating); put("votes", votes) })
-                    }
+                    playingRatings.forEach { add(rating(it)) }
                 }
                 put("mpaa", playingMpaa)
                 // The mark the add-on reads the age rating as, and its level.
@@ -753,7 +813,13 @@ object DemoServer {
                 put("season", show.seasons)
                 put("poster", "show-${show.id}"); put("fanart", "fanart-${show.id}")
                 putJsonArray("genres") { add(SHOW_GENRES[show.id % SHOW_GENRES.size]) }
-                putJsonArray("ratings") { add(rating("imdb", show.rating, (show.rating * 40_000).toInt())) }
+                putJsonArray("ratings") { add(rating(DemoRating("imdb", show.rating, (show.rating * 40_000).toInt()))) }
+                // Shōgun wears the shields the films do not: a US TV age
+                // rating and the Emmys it won.
+                if (show.id == SHOGUN) {
+                    put("mpaa", "TV-MA"); put("age", "tv_ma"); put("age_level", "MA")
+                    put("awards", awardsJson(listOf(DemoAward("emmy", listOf("Outstanding Drama Series (2024)"), 7))))
+                }
             }
         }
         val id = query["episodeid"]?.toIntOrNull() ?: return null
@@ -764,7 +830,7 @@ object DemoServer {
             put("kind", "episode"); put("id", id); put("title", episodeTitle(season, episode))
             put("show", show.title); put("tvshowid", show.id); put("season", season); put("episode", episode)
             put("duration", 52 * 60); put("thumb", "thumb-$id")
-            putJsonArray("ratings") { add(rating("imdb", show.rating, 0)) }
+            putJsonArray("ratings") { add(rating(DemoRating("imdb", show.rating, 0))) }
         }
     }
 
@@ -780,12 +846,31 @@ object DemoServer {
         putJsonArray("directors") { film.credits.directors.forEach { add(it) } }
         putJsonArray("studios") { film.credits.studios.forEach { add(it) } }
         putJsonArray("writers") { film.credits.writers.forEach { add(it) } }
+        val tmdb = film.tmdb
         putJsonArray("cast") {
             film.credits.cast.forEachIndexed { index, name ->
-                add(buildJsonObject { put("name", name); put("role", film.credits.roles.getOrNull(index).orEmpty()) })
+                add(buildJsonObject {
+                    put("name", name); put("role", film.credits.roles.getOrNull(index).orEmpty())
+                    person(name)
+                })
             }
         }
-        putJsonArray("ratings") { filmRatings(film).forEach { (source, value, votes) -> add(rating(source, value, votes)) } }
+        if (tmdb != null) {
+            // What the add-on adds with a TMDb key: Kodi's directors and
+            // writers under their codes, then the rest of the crew under
+            // their jobs, each with their TMDb id and a portrait where it has
+            // them (a name without an id leads to TMDb's search).
+            putJsonArray("crew") {
+                val kodi = film.credits.directors.map { it to "director" } + film.credits.writers.map { it to "writer" }
+                (kodi + tmdb.crew).forEach { (name, role) ->
+                    add(buildJsonObject { put("name", name); put("role", role); person(name) })
+                }
+            }
+            putJsonArray("countries") { tmdb.countries.forEach { add(it) } }
+            put("cinema", tmdb.cinema); put("cinema_country", "DE")
+            put("budget", tmdb.budget); put("revenue", tmdb.revenue)
+        }
+        putJsonArray("ratings") { filmRatings(film).forEach { add(rating(it)) } }
         put("video", FILM_VIDEO[film.id % FILM_VIDEO.size])
         if (film.id % FILM_VIDEO.size == 0) put("dv_profile", DV_PROFILES[film.id % DV_PROFILES.size])
         put("resolution", if (film.id % 3 == 0) "1080p" else "2160p")
@@ -804,8 +889,15 @@ object DemoServer {
         }
     }
 
-    private fun rating(source: String, value: Double, votes: Int) = buildJsonObject {
-        put("source", source); put("rating", value); put("votes", votes)
+    private fun rating(rating: DemoRating) = buildJsonObject {
+        put("source", rating.source); put("rating", rating.rating); put("votes", rating.votes)
+        if (rating.certified) put("certified", true)
+    }
+
+    /** A person's TMDb id, where the demo knows it, and their portrait. */
+    private fun kotlinx.serialization.json.JsonObjectBuilder.person(name: String) {
+        PEOPLE[name]?.let { put("tmdb", it) }
+        put("thumbnail", "person-${abs(name.hashCode())}")
     }
 
     /* --- Commands --------------------------------------------------------- */
@@ -837,7 +929,7 @@ object DemoServer {
                     playingTagline = ""
                     playingPlot = "Season $season, episode $episode of ${show.title}, made up for the demo box like every episode on it."
                     // Rated on its own, with no count, and its show's age rating.
-                    playingRatings = listOf(Triple("tvdb", show.rating, 0))
+                    playingRatings = listOf(DemoRating("tvdb", show.rating, 0))
                     playingMpaa = "TV-MA"; playingAge = "tv_ma"; playingAgeLevel = "MA"; playingTop250 = 0; playingMine = 0
                     playingAwards = emptyList()
                     // Its show's studio, its own director, and its guests
@@ -911,6 +1003,7 @@ object DemoServer {
     )
 
     private fun picture(query: Map<String, String>): ByteArray {
+        query["portrait"]?.let { return portrait(it) }
         val kind = query["kind"] ?: "poster"
         val tag = query["v"] ?: "x"
         return art.getOrPut("$kind/$tag") {
@@ -936,6 +1029,24 @@ object DemoServer {
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
                 out.toByteArray()
             }
+        }
+    }
+
+    /** A person's made-up portrait: a figure on a square of colour, the same one for the same tag. */
+    private fun portrait(tag: String): ByteArray = art.getOrPut("portrait/$tag") {
+        val size = 300
+        val (from, to) = palettes[abs(tag.hashCode()) % palettes.size]
+        val bitmap = createBitmap(size, size)
+        val canvas = Canvas(bitmap)
+        canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), Paint().apply {
+            shader = LinearGradient(0f, 0f, size.toFloat(), size.toFloat(), from.toInt(), to.toInt(), Shader.TileMode.CLAMP)
+        })
+        val figure = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(140, 255, 255, 255) }
+        canvas.drawCircle(150f, 118f, 58f, figure)
+        canvas.drawOval(45f, 198f, 255f, 382f, figure)
+        ByteArrayOutputStream().use { out ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            out.toByteArray()
         }
     }
 

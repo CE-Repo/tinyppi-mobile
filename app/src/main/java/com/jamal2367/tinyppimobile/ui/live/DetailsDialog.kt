@@ -3,6 +3,7 @@
 package com.jamal2367.tinyppimobile.ui.live
 
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.DialogWindowProvider
@@ -97,6 +98,22 @@ import com.jamal2367.tinyppimobile.ui.components.FormatBadge
 import com.jamal2367.tinyppimobile.ui.components.PosterImage
 import com.jamal2367.tinyppimobile.ui.components.withKeyTick
 import com.jamal2367.tinyppimobile.util.MediaUrls
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import android.icu.text.CompactDecimalFormat
+import android.net.Uri
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalUriHandler
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import java.time.format.FormatStyle
+import java.util.Locale
 
 /**
  * A title whose details were asked for, and where reading them has got to:
@@ -170,14 +187,19 @@ internal fun DetailsDialog(
     val poster = details?.let {
         MediaUrls.details(pictures, state.target, if (it.poster.isNotEmpty()) "poster" else "thumb", it.poster.ifEmpty { it.thumb })
     }
+    // The dialog's window puts the platform's own link handler back - the
+    // browser - so the app's (a Custom Tab, see InAppBrowser) is handed in.
+    val links = LocalUriHandler.current
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         DisableDialogWindowAnimations()
-        MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
-            ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
-                DetailsPages(state, pictures, actions, over)
+        CompositionLocalProvider(LocalUriHandler provides links) {
+            MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
+                ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
+                    DetailsPages(state, pictures, actions, over)
+                }
             }
         }
     }
@@ -507,9 +529,27 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
             }
         }
     }
+    val locale = LocalConfiguration.current.locales[0]
+    // What it cost and what it took share a line - "Budget/Box office" over
+    // "$165M/$402M" - or whichever of the two is known.
+    val money = listOf(
+        stringResource(R.string.details_budget) to dollars(details.budget, locale),
+        stringResource(R.string.details_revenue) to dollars(details.revenue, locale),
+    ).mapNotNull { (heading, amount) -> amount?.let { heading to it } }
+    val made = details.revenue - details.budget
+    val profit = dollars(kotlin.math.abs(made), locale)
     val facts = listOf(
         stringResource(R.string.details_genre) to details.genres,
         stringResource(R.string.details_studio) to details.studios,
+        stringResource(R.string.details_country) to details.countries,
+        stringResource(R.string.details_cinema) to listOfNotNull(
+            details.cinema.ifEmpty { null }?.let { cinemaDay(it, locale) + details.cinemaCountry.ifEmpty { null }?.let { " ($it)" }.orEmpty() },
+        ),
+        money.joinToString("/") { it.first } to listOfNotNull(money.joinToString("/") { it.second }.ifEmpty { null }),
+        // What it took less what it cost, where both are known: its profit,
+        // or what it lost under that name.
+        stringResource(if (made < 0) R.string.details_loss else R.string.details_profit) to
+            listOfNotNull(profit.takeIf { money.size == 2 }),
     ).filter { it.second.isNotEmpty() }
     if (facts.isNotEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
@@ -518,14 +558,45 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
     }
     val directorRole = stringResource(R.string.live_credit_director)
     val writerRole = stringResource(R.string.details_writer)
+    // Kodi's directors and writers by their codes, everyone else the box's
+    // TMDb credits name under their jobs as the box words them.
     val crew = if (details.crew.isNotEmpty()) details.crew.map {
-        it.copy(role = if (it.role == "director") directorRole else writerRole)
+        it.copy(role = when (it.role) {
+            "director" -> directorRole
+            "writer" -> writerRole
+            else -> it.role
+        })
     } else details.directors.map { CastMember(it, directorRole) } +
         details.writers.map { CastMember(it, writerRole) }
     val people = crew + details.cast
     if (details.cast.isNotEmpty()) Cast(details.cast, details.castMore, stringResource(R.string.live_credit_cast), server, people)
     if (crew.isNotEmpty()) Cast(crew, false, stringResource(R.string.details_crew), server, people)
 }
+
+/** "2021-09-16" as the reader writes a day; the day itself where it is none. */
+internal fun cinemaDay(day: String, locale: Locale): String = try {
+    LocalDate.parse(day).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale))
+} catch (_: DateTimeParseException) {
+    day
+}
+
+/** Whole US dollars, short - "165 Mio. $", "$165M" - or null for none. */
+@Composable
+private fun dollars(amount: Long, locale: Locale): String? {
+    if (amount <= 0) return null
+    val short = CompactDecimalFormat.getInstance(locale, CompactDecimalFormat.CompactStyle.SHORT)
+        .apply { maximumSignificantDigits = 3 }
+        .format(amount)
+    return stringResource(R.string.details_dollars, short)
+}
+
+/**
+ * A person's page on TMDb, with everything they have made: by their id where
+ * the box found it in the title's credits, otherwise TMDb's search for their name.
+ */
+internal fun personPage(person: CastMember): String =
+    if (person.tmdb > 0) "https://www.themoviedb.org/person/${person.tmdb}"
+    else "https://www.themoviedb.org/search/person?query=" + Uri.encode(person.name)
 
 /** One fact: the same bold heading as the other details sections. */
 @Composable
@@ -574,8 +645,16 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server:
     val roleHeight = with(density) { heights.second.toDp() }
     // Portraits have no text line-box inset; match the facts' visible breathing room.
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // How many there are, beside the heading: "Cast (24)", "(20+)" where
+        // the library holds more than the row shows.
+        val muted = MaterialTheme.colorScheme.onSurfaceVariant
         Text(
-            text = heading,
+            text = buildAnnotatedString {
+                append(heading)
+                withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = muted)) {
+                    append(" (${cast.size}${if (more) "+" else ""})")
+                }
+            },
             style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp),
             fontWeight = FontWeight.Bold,
         )
@@ -611,11 +690,17 @@ internal fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
 
 @Composable
 private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server: ServerConfig?) {
+    // The card is the way to the person's page on TMDb.
+    val uriHandler = LocalUriHandler.current
     Column(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top,
         modifier = Modifier
             .width(CAST_WIDTH)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClickLabel = stringResource(R.string.details_person_page)) {
+                runCatching { uriHandler.openUri(personPage(person)) }
+            }
             .height(CAST_WIDTH + 12.dp + nameHeight + if (roleHeight > 0.dp) 4.dp + roleHeight else 0.dp)
             .testTag("credit-card"),
     ) {
@@ -624,13 +709,12 @@ private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server:
             modifier = Modifier
                 .size(CAST_WIDTH)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.secondaryContainer),
+                .background(placeholderBrush(person.name))
+                .testTag("credit-portrait"),
         ) {
-            Text(
-                text = person.name.take(1).uppercase(),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
+            // Under the portrait, and in its place where there is none or it
+            // cannot be read: a figure on a colour of the person's own.
+            PersonFigure(Modifier.matchParentSize().testTag("credit-placeholder"))
             val portrait = MediaUrls.portrait(server, person.thumbnail)
             if (portrait != null) {
                 AsyncImage(
@@ -664,11 +748,38 @@ private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server:
     }
 }
 
+/**
+ * The colours a person without a portrait stands on, two to a gradient; each
+ * person always gets the same pair, picked by their name.
+ */
+private val PLACEHOLDER_COLOURS = listOf(
+    0xFF1D3557 to 0xFFE63946, 0xFF0B3D2E to 0xFF3CA87A, 0xFF2B1055 to 0xFFD53369,
+    0xFF3A1C08 to 0xFFF4A259, 0xFF0F2027 to 0xFF2C7A99, 0xFF42275A to 0xFFB06AB3,
+    0xFF141E30 to 0xFF4A7AB0, 0xFF5C2A09 to 0xFFE0B050, 0xFF1F1C2C to 0xFF928DAB,
+    0xFF093028 to 0xFF3CA87A, 0xFF3E0E12 to 0xFFC0392B, 0xFF16222A to 0xFF4A8BA3,
+)
+
+internal fun placeholderBrush(name: String): Brush {
+    val (from, to) = PLACEHOLDER_COLOURS[Math.floorMod(name.hashCode(), PLACEHOLDER_COLOURS.size)]
+    return Brush.linearGradient(listOf(Color(from), Color(to)))
+}
+
+/** A head and shoulders in pale outline, the same shape at any size. */
+@Composable
+private fun PersonFigure(modifier: Modifier) {
+    Canvas(modifier) {
+        val unit = size.minDimension / 300f
+        val figure = Color.White.copy(alpha = 0.55f)
+        drawCircle(figure, radius = 58f * unit, center = Offset(150f * unit, 118f * unit))
+        drawOval(figure, topLeft = Offset(45f * unit, 198f * unit), size = Size(210f * unit, 184f * unit))
+    }
+}
+
 /** The page's side margin, the backdrop's height, a poster's and a cast card's width. */
 internal val PAGE_EDGE = 20.dp
 private val HERO_HEIGHT = 300.dp
 private val POSTER_WIDTH = 104.dp
-private val CAST_WIDTH = 160.dp
+private val CAST_WIDTH = 144.dp
 
 private val ACTION_HEIGHT = 48.dp
 

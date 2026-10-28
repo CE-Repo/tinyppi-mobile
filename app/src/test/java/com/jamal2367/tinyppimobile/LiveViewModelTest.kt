@@ -338,6 +338,45 @@ class LiveViewModelTest {
     }
 
     @Test
+    fun `the playing title's details close once it stops or another starts`() = runTest(dispatcher) {
+        val vm = viewModel()
+        watch(vm)
+        api.details = { kind, id -> TitleDetails(kind = kind, id = id, plot = "Heat.") }
+        val heat = Snapshot(playing = true, title = "Heat", media = MediaInfo(item = PlayingItem("movie", 2)))
+        live.value = LiveState(snapshot = heat)
+        vm.openDetails(PlayingItem("movie", 2).target("Heat"), playing = heat)
+        advanceUntilIdle()
+
+        // Pausing, or the stream being reopened, is the same title still.
+        live.value = LiveState(snapshot = heat.copy(paused = true))
+        live.value = LiveState()
+        advanceUntilIdle()
+        assertEquals("Heat.", vm.details.value?.details?.plot)
+
+        // Another title in its place.
+        live.value = LiveState(snapshot = heat.copy(media = MediaInfo(item = PlayingItem("movie", 1))))
+        advanceUntilIdle()
+        assertNull(vm.details.value)
+
+        // A broadcast's, by its name, once nothing plays.
+        val news = Snapshot(playing = true, title = "Tagesschau")
+        live.value = LiveState(snapshot = news)
+        vm.showPlayingDetails(news)
+        advanceUntilIdle()
+        live.value = LiveState(snapshot = Snapshot())
+        advanceUntilIdle()
+        assertNull(vm.details.value)
+
+        // Details opened from a shelf are not about what is playing.
+        live.value = LiveState(snapshot = heat)
+        vm.openDetails(MarkTarget(MarkTarget.Kind.MOVIE, 1, "Blade Runner"))
+        advanceUntilIdle()
+        live.value = LiveState(snapshot = Snapshot())
+        advanceUntilIdle()
+        assertEquals(1, vm.details.value?.target?.id)
+    }
+
+    @Test
     fun `a box that cannot be reached is asked again next time`() = runTest(dispatcher) {
         var fail = true
         api.library = { if (fail) throw ApiFailure.Unreachable(null, true, null) else Library(listOf(blade)) }

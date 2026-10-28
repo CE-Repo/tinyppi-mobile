@@ -152,6 +152,106 @@ class DetailsEdgesTest {
         rule.onNodeWithText("Actor 12").assertExists()
     }
     @Test
+    fun `a film's cinema release, budget and takings follow its names`() {
+        val details = TitleDetails(genres = listOf("Sci-Fi"), cinema = "2021-09-16", cinemaCountry = "DE",
+            budget = 165_000_000, revenue = 2_923_706_026)
+        rule.show { DetailsBody(details) }
+        rule.onNodeWithText(context.getString(R.string.details_cinema)).assertExists()
+        // The day with the country it is the first in cinemas of.
+        rule.onNodeWithText("Sep 16, 2021 (DE)").assertExists()
+        // And what it made, where both are known.
+        rule.onNodeWithText(context.getString(R.string.details_profit)).assertExists()
+        rule.onNodeWithText("\$2.76B").assertExists()
+        // What it cost and what it took share a line.
+        val both = context.getString(R.string.details_budget) + "/" + context.getString(R.string.details_revenue)
+        rule.onNodeWithText(both).assertExists()
+        rule.onNodeWithText("\$165M/\$2.92B").assertExists()
+        assertEquals("soon", cinemaDay("soon", java.util.Locale.GERMANY))
+        assertEquals("16.09.2021", cinemaDay("2021-09-16", java.util.Locale.GERMANY))
+    }
+
+    @Test
+    fun `a film that took less than it cost made a loss, and a day from nowhere in particular stands alone`() {
+        rule.show { DetailsBody(TitleDetails(cinema = "2021-09-16", budget = 100_000_000, revenue = 50_000_000)) }
+        rule.onNodeWithText("Sep 16, 2021").assertExists()
+        // Said as a loss, the amount without a sign.
+        rule.onNodeWithText(context.getString(R.string.details_loss)).assertExists()
+        rule.onNodeWithText(context.getString(R.string.details_profit)).assertDoesNotExist()
+        rule.onNodeWithText("\$50M").assertExists()
+    }
+
+    @Test
+    fun `what a film cost and took to the dollar makes no profit line`() {
+        rule.show { DetailsBody(TitleDetails(budget = 100_000_000, revenue = 100_000_000)) }
+        rule.onNodeWithText(context.getString(R.string.details_profit)).assertDoesNotExist()
+        rule.onNodeWithText(context.getString(R.string.details_loss)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `either of what a film cost and took stands alone`() {
+        var details by mutableStateOf(TitleDetails(budget = 165_000_000))
+        rule.show { DetailsBody(details) }
+        rule.onNodeWithText(context.getString(R.string.details_budget)).assertExists()
+        rule.onNodeWithText("\$165M").assertExists()
+        details = TitleDetails(revenue = 402_027_830)
+        rule.onNodeWithText(context.getString(R.string.details_revenue)).assertExists()
+        rule.onNodeWithText("\$402M").assertExists()
+        rule.onNodeWithText(context.getString(R.string.details_budget)).assertDoesNotExist()
+        rule.onNodeWithText(context.getString(R.string.details_profit)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `the countries it was made in stand with the facts, and each row says how many it holds`() {
+        val details = TitleDetails(countries = listOf("United Kingdom", "USA"),
+            directors = listOf("Ridley Scott"), cast = listOf(CastMember("Sigourney Weaver"), CastMember("Jones")))
+        rule.show { DetailsBody(details) }
+        rule.onNodeWithText(context.getString(R.string.details_country)).assertExists()
+        rule.onNodeWithText("United Kingdom, USA").assertExists()
+        rule.onNodeWithText(context.getString(R.string.live_credit_cast) + " (2)").assertExists()
+        rule.onNodeWithText(context.getString(R.string.details_crew) + " (1)").assertExists()
+    }
+
+    @Test
+    fun `a cast the library holds more of says so beside its count`() {
+        rule.show { DetailsBody(TitleDetails(cast = listOf(CastMember("Actor")), castMore = true)) }
+        rule.onNodeWithText(context.getString(R.string.live_credit_cast) + " (1+)").assertExists()
+    }
+
+    @Test
+    fun `nothing unknown is said of a film`() {
+        rule.show { DetailsBody(TitleDetails(genres = listOf("Sci-Fi"))) }
+        for (heading in listOf(R.string.details_cinema, R.string.details_budget, R.string.details_revenue)) {
+            rule.onNodeWithText(context.getString(heading)).assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun `a card opens the person's TMDb page, or a search for their name`() {
+        val opened = mutableListOf<String>()
+        var failing = false
+        val handler = object : androidx.compose.ui.platform.UriHandler {
+            override fun openUri(uri: String) {
+                if (failing) throw android.content.ActivityNotFoundException()
+                opened += uri
+            }
+        }
+        val cast = listOf(CastMember("Zendaya", "Chani", tmdb = 505710), CastMember("Jean Dupont & Söhne"))
+        rule.show {
+            androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalUriHandler provides handler) {
+                DetailsBody(TitleDetails(cast = cast))
+            }
+        }
+        rule.onNodeWithText("Zendaya").performClick()
+        rule.onNodeWithText("Jean Dupont & Söhne").performClick()
+        assertEquals(listOf("https://www.themoviedb.org/person/505710",
+            "https://www.themoviedb.org/search/person?query=Jean%20Dupont%20%26%20S%C3%B6hne"), opened)
+        // A phone with nothing to open it in keeps the page.
+        failing = true
+        rule.onNodeWithText("Zendaya").performClick()
+        rule.onNodeWithText("Zendaya").assertExists()
+    }
+
+    @Test
     fun `seasons window handles missing shelf data and artwork settings`() {
         var show by mutableStateOf<LibraryShow?>(LibraryShow(7, "Dark", poster = "poster"))
         var pictures by mutableStateOf(true)

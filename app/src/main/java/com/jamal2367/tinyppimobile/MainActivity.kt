@@ -5,6 +5,8 @@ import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import com.jamal2367.tinyppimobile.util.InAppBrowser
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.activity.result.contract.ActivityResultContracts
@@ -231,6 +233,8 @@ class MainActivity : ComponentActivity() {
                             intensity = settings.adaptiveColorIntensity,
                         ) {
                         CompositionLocalProvider(
+                            // Web pages - a person's on TMDb - open over the app.
+                            LocalUriHandler provides remember { InAppBrowser(this@MainActivity) },
                             LocalCardFolds provides rememberCardFolds(container, settings),
                             LocalCardLayout provides rememberCardLayout(container, settings),
                             LocalShelfOrders provides rememberShelfOrders(container, settings),
