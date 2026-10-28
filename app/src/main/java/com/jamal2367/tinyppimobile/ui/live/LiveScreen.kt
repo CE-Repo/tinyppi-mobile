@@ -257,7 +257,7 @@ private fun LiveContent(
                 FOLD_PLOT -> item(key = id) {
                     PlotCard(plotTitle) {
                         if (opensDetails) {
-                            viewModel.openDetails(playingItem.target(snapshot.title))
+                            viewModel.openDetails(playingItem.target(snapshot.title), playing = snapshot)
                         } else {
                             viewModel.showPlayingDetails(snapshot)
                         }
