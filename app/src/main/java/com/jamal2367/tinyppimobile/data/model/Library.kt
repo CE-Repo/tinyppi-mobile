@@ -386,7 +386,11 @@ data class TitleDetails(
     val genres: List<String> = emptyList(),
     val directors: List<String> = emptyList(),
     val writers: List<String> = emptyList(),
-    /** Optional enriched crew; roles are the stable codes director and writer. */
+    /**
+     * Optional enriched crew: Kodi's directors and writers under the codes
+     * `director` and `writer`, then the rest of the crew the box's TMDb
+     * credits name, each [CastMember.role] their jobs as the box words them.
+     */
     val crew: List<CastMember> = emptyList(),
     val studios: List<String> = emptyList(),
     val countries: List<String> = emptyList(),
