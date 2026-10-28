@@ -12,6 +12,7 @@ import androidx.activity.ComponentDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -138,9 +139,10 @@ class WebPageTest {
     fun `the page stays as it was while what is around it changes`() {
         val browser = InAppBrowser()
         var around by mutableIntStateOf(0)
+        var host by mutableStateOf(browser)
         rule.show {
             Text("Around $around")
-            InAppBrowserHost(browser)
+            InAppBrowserHost(host)
         }
         rule.runOnIdle { browser.openUri(page) }
         rule.waitForIdle()
@@ -148,6 +150,14 @@ class WebPageTest {
         rule.runOnIdle { around++ }
         rule.waitForIdle()
         assertSame(shown, webView())
+        // Another browser with the same page open closes through itself.
+        val other = InAppBrowser().apply { openUri(page) }
+        rule.runOnIdle { host = other }
+        rule.waitForIdle()
+        rule.onNodeWithContentDescription(context.getString(R.string.details_close)).performClick()
+        rule.waitForIdle()
+        assertNull(other.page)
+        assertEquals(page, browser.page)
     }
 
     @Test
