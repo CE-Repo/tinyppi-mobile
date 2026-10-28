@@ -97,6 +97,9 @@ import com.jamal2367.tinyppimobile.ui.components.FormatBadge
 import com.jamal2367.tinyppimobile.ui.components.PosterImage
 import com.jamal2367.tinyppimobile.ui.components.withKeyTick
 import com.jamal2367.tinyppimobile.util.MediaUrls
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -692,13 +695,12 @@ private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server:
             modifier = Modifier
                 .size(CAST_WIDTH)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.secondaryContainer),
+                .background(placeholderBrush(person.name))
+                .testTag("credit-portrait"),
         ) {
-            Text(
-                text = person.name.take(1).uppercase(),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
+            // Under the portrait, and in its place where there is none or it
+            // cannot be read: a figure on a colour of the person's own.
+            PersonFigure(Modifier.matchParentSize().testTag("credit-placeholder"))
             val portrait = MediaUrls.portrait(server, person.thumbnail)
             if (portrait != null) {
                 AsyncImage(
@@ -729,6 +731,33 @@ private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server:
                 modifier = Modifier.fillMaxWidth().height(roleHeight),
             )
         }
+    }
+}
+
+/**
+ * The colours a person without a portrait stands on, two to a gradient; each
+ * person always gets the same pair, picked by their name.
+ */
+private val PLACEHOLDER_COLOURS = listOf(
+    0xFF1D3557 to 0xFFE63946, 0xFF0B3D2E to 0xFF3CA87A, 0xFF2B1055 to 0xFFD53369,
+    0xFF3A1C08 to 0xFFF4A259, 0xFF0F2027 to 0xFF2C7A99, 0xFF42275A to 0xFFB06AB3,
+    0xFF141E30 to 0xFF4A7AB0, 0xFF5C2A09 to 0xFFE0B050, 0xFF1F1C2C to 0xFF928DAB,
+    0xFF093028 to 0xFF3CA87A, 0xFF3E0E12 to 0xFFC0392B, 0xFF16222A to 0xFF4A8BA3,
+)
+
+internal fun placeholderBrush(name: String): Brush {
+    val (from, to) = PLACEHOLDER_COLOURS[Math.floorMod(name.hashCode(), PLACEHOLDER_COLOURS.size)]
+    return Brush.linearGradient(listOf(Color(from), Color(to)))
+}
+
+/** A head and shoulders in pale outline, the same shape at any size. */
+@Composable
+private fun PersonFigure(modifier: Modifier) {
+    Canvas(modifier) {
+        val unit = size.minDimension / 300f
+        val figure = Color.White.copy(alpha = 0.55f)
+        drawCircle(figure, radius = 58f * unit, center = Offset(150f * unit, 118f * unit))
+        drawOval(figure, topLeft = Offset(45f * unit, 198f * unit), size = Size(210f * unit, 184f * unit))
     }
 }
 

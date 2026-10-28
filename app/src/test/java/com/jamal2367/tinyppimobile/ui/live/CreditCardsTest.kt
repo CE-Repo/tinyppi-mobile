@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
@@ -53,7 +54,7 @@ class CreditCardsTest {
         assertEquals(1, rule.onAllNodesWithTag("credit-card").fetchSemanticsNodes().size)
         rule.onNodeWithText("Actor").assertExists()
         rule.onNodeWithText("Character").assertExists()
-        rule.onNodeWithText("A").assertExists()
+        rule.onNodeWithTag("credit-placeholder", useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -62,14 +63,14 @@ class CreditCardsTest {
         var server by mutableStateOf<com.jamal2367.tinyppimobile.data.prefs.ServerConfig?>(null)
         rule.show { DetailsBody(details, server) }
         rule.onNodeWithText("Ana").assertExists()
-        rule.onNodeWithText("A").assertExists()
+        rule.onNodeWithTag("credit-placeholder", useUnmergedTree = true).assertExists()
         server = com.jamal2367.tinyppimobile.testing.Screens.box
         rule.waitForIdle()
         rule.onNodeWithText("Ana").assertExists()
         details = TitleDetails(cast = listOf(CastMember("Bea", "", "portrait")))
         rule.waitForIdle()
         rule.onNodeWithText("Bea").assertExists()
-        rule.onNodeWithText("B").assertExists()
+        rule.onNodeWithTag("credit-placeholder", useUnmergedTree = true).assertExists()
         server = null
         rule.waitForIdle()
         rule.onNodeWithText("Bea").assertExists()
@@ -129,7 +130,7 @@ class CreditCardsTest {
         assertEquals(1, cards.map { it.height }.distinct().size)
         for ((index, name) in names.withIndex()) {
             val card = cards[index]
-            val initial = rule.onNodeWithText(name.take(1), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            val initial = rule.onAllNodesWithTag("credit-portrait", useUnmergedTree = true)[index].fetchSemanticsNode().boundsInRoot
             val lastText = if (index < 2) roles[index] else crewRoles[index - 2]
             val last = rule.onNodeWithText(lastText, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
             val contentTop = initial.center.y - card.width / 2
