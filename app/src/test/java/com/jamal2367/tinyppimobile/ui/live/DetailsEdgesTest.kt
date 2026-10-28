@@ -158,10 +158,24 @@ class DetailsEdgesTest {
         rule.show { DetailsBody(details) }
         rule.onNodeWithText(context.getString(R.string.details_cinema)).assertExists()
         rule.onNodeWithText("Sep 16, 2021").assertExists()
-        rule.onNodeWithText("\$165M").assertExists()
-        rule.onNodeWithText("\$2.92B").assertExists()
+        // What it cost and what it took share a line.
+        val both = context.getString(R.string.details_budget) + "/" + context.getString(R.string.details_revenue)
+        rule.onNodeWithText(both).assertExists()
+        rule.onNodeWithText("\$165M/\$2.92B").assertExists()
         assertEquals("soon", cinemaDay("soon", java.util.Locale.GERMANY))
         assertEquals("16.09.2021", cinemaDay("2021-09-16", java.util.Locale.GERMANY))
+    }
+
+    @Test
+    fun `either of what a film cost and took stands alone`() {
+        var details by mutableStateOf(TitleDetails(budget = 165_000_000))
+        rule.show { DetailsBody(details) }
+        rule.onNodeWithText(context.getString(R.string.details_budget)).assertExists()
+        rule.onNodeWithText("\$165M").assertExists()
+        details = TitleDetails(revenue = 402_027_830)
+        rule.onNodeWithText(context.getString(R.string.details_revenue)).assertExists()
+        rule.onNodeWithText("\$402M").assertExists()
+        rule.onNodeWithText(context.getString(R.string.details_budget)).assertDoesNotExist()
     }
 
     @Test

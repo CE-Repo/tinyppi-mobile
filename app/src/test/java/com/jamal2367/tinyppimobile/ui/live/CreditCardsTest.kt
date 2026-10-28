@@ -129,12 +129,12 @@ class CreditCardsTest {
         assertEquals(1, cards.map { it.height }.distinct().size)
         for ((index, name) in names.withIndex()) {
             val card = cards[index]
-            val initial = rule.onNodeWithText(name.take(1)).fetchSemanticsNode().boundsInRoot
+            val initial = rule.onNodeWithText(name.take(1), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
             val lastText = if (index < 2) roles[index] else crewRoles[index - 2]
-            val last = rule.onNodeWithText(lastText).fetchSemanticsNode().boundsInRoot
+            val last = rule.onNodeWithText(lastText, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
             val contentTop = initial.center.y - card.width / 2
             assertEquals("square portrait at top: $name", card.top, contentTop, 1f)
-            val nameBox = rule.onNodeWithText(name).fetchSemanticsNode().boundsInRoot
+            val nameBox = rule.onNodeWithText(name, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
             val pictureBottom = initial.center.y + card.width / 2
             assertEquals("name below portrait: $name", pictureBottom + card.width * 12f / 160f, nameBox.top, 1f)
             assertEquals("name left aligned: $name", card.left, nameBox.left, 1f)
@@ -143,7 +143,7 @@ class CreditCardsTest {
         }
         for (text in names + crewRoles + roles) {
             val layouts = mutableListOf<TextLayoutResult>()
-            rule.onNodeWithText(text).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            rule.onNodeWithText(text, useUnmergedTree = true).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
             assertTrue(text, layouts.isNotEmpty())
             assertFalse("full text: $text", layouts.single().hasVisualOverflow)
         }

@@ -66,7 +66,7 @@
     <string name="details_studio">Studio</string>
     <string name="details_cinema">Kinostart</string>
     <string name="details_budget">Budget</string>
-    <string name="details_revenue">Einspielergebnis</string>
+    <string name="details_revenue">Eingespielt</string>
     <string name="details_dollars">%1$s $</string>
     <string name="details_person_page">Auf TMDb öffnen</string>
     <string name="details_ratings">Bewertungen</string>

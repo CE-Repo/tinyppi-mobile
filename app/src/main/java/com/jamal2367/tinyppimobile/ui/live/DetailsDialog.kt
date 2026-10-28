@@ -518,12 +518,17 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
         }
     }
     val locale = LocalConfiguration.current.locales[0]
+    // What it cost and what it took share a line - "Budget/Box office" over
+    // "$165M/$402M" - or whichever of the two is known.
+    val money = listOf(
+        stringResource(R.string.details_budget) to dollars(details.budget, locale),
+        stringResource(R.string.details_revenue) to dollars(details.revenue, locale),
+    ).mapNotNull { (heading, amount) -> amount?.let { heading to it } }
     val facts = listOf(
         stringResource(R.string.details_genre) to details.genres,
         stringResource(R.string.details_studio) to details.studios,
         stringResource(R.string.details_cinema) to listOfNotNull(details.cinema.ifEmpty { null }?.let { cinemaDay(it, locale) }),
-        stringResource(R.string.details_budget) to listOfNotNull(dollars(details.budget, locale)),
-        stringResource(R.string.details_revenue) to listOfNotNull(dollars(details.revenue, locale)),
+        money.joinToString("/") { it.first } to listOfNotNull(money.joinToString("/") { it.second }.ifEmpty { null }),
     ).filter { it.second.isNotEmpty() }
     if (facts.isNotEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
