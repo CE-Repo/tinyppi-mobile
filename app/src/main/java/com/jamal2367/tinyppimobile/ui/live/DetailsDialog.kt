@@ -188,7 +188,7 @@ internal fun DetailsDialog(
         MediaUrls.details(pictures, state.target, if (it.poster.isNotEmpty()) "poster" else "thumb", it.poster.ifEmpty { it.thumb })
     }
     // The dialog's window puts the platform's own link handler back - the
-    // browser - so the app's (the in-app page, see InAppBrowser) is handed in.
+    // browser - so the app's (a Custom Tab, see InAppBrowser) is handed in.
     val links = LocalUriHandler.current
     Dialog(
         onDismissRequest = onDismiss,

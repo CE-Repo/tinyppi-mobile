@@ -70,7 +70,6 @@
     <string name="details_revenue">Eingespielt</string>
     <string name="details_dollars">%1$s $</string>
     <string name="details_person_page">Auf TMDb öffnen</string>
-    <string name="web_open_in_browser">Im Browser öffnen</string>
     <string name="details_ratings">Bewertungen</string>
     <string name="shelf_sort">Sortierung: %1$s</string>
     <string name="sort_title">Titel</string>

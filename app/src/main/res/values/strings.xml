@@ -75,7 +75,6 @@
     <string name="details_revenue">Box office</string>
     <string name="details_dollars">$%1$s</string>
     <string name="details_person_page">Open on TMDb</string>
-    <string name="web_open_in_browser">Open in browser</string>
     <string name="details_ratings">Ratings</string>
     <string name="shelf_sort">Sort: %1$s</string>
     <string name="sort_title">Title</string>
