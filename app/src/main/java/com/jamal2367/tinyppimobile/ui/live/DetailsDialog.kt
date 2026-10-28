@@ -537,7 +537,7 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
         stringResource(R.string.details_revenue) to dollars(details.revenue, locale),
     ).mapNotNull { (heading, amount) -> amount?.let { heading to it } }
     val made = details.revenue - details.budget
-    val profit = if (made < 0) dollars(-made, locale)?.let { "-$it" } else dollars(made, locale)
+    val profit = dollars(kotlin.math.abs(made), locale)?.let { if (made < 0) "-$it" else it }
     val facts = listOf(
         stringResource(R.string.details_genre) to details.genres,
         stringResource(R.string.details_studio) to details.studios,
