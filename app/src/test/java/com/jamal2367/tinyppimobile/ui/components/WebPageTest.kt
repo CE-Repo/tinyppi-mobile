@@ -9,6 +9,10 @@ import android.view.ViewGroup
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.activity.ComponentDialog
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -19,6 +23,7 @@ import com.jamal2367.tinyppimobile.testing.Screens.show
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -127,5 +132,35 @@ class WebPageTest {
         shadowOf(view).setCanGoBack(false)
         rule.runOnIdle { dialog().onBackPressedDispatcher.onBackPressed() }
         assertEquals(1, closed)
+    }
+
+    @Test
+    fun `the page stays as it was while what is around it changes`() {
+        val browser = InAppBrowser()
+        var around by mutableIntStateOf(0)
+        rule.show {
+            Text("Around $around")
+            InAppBrowserHost(browser)
+        }
+        rule.runOnIdle { browser.openUri(page) }
+        rule.waitForIdle()
+        val shown = webView()
+        rule.runOnIdle { around++ }
+        rule.waitForIdle()
+        assertSame(shown, webView())
+    }
+
+    @Test
+    fun `a page given a new way to close keeps its view`() {
+        var around by mutableIntStateOf(0)
+        val first: () -> Unit = {}
+        val second: () -> Unit = {}
+        rule.show { WebPage(page, if (around % 2 == 0) first else second) }
+        rule.waitForIdle()
+        val shown = webView()
+        rule.runOnIdle { around++ }
+        rule.waitForIdle()
+        assertSame(shown, webView())
+        assertEquals(page, shadowOf(shown).lastLoadedUrl)
     }
 }
