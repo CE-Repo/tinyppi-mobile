@@ -69,6 +69,11 @@
     <string name="details_crew">Crew</string>
     <string name="details_writer">Writer</string>
     <string name="details_studio">Studio</string>
+    <string name="details_cinema">In cinemas</string>
+    <string name="details_budget">Budget</string>
+    <string name="details_revenue">Box office</string>
+    <string name="details_dollars">$%1$s</string>
+    <string name="details_person_page">Open on TMDb</string>
     <string name="details_ratings">Ratings</string>
     <string name="shelf_sort">Sort: %1$s</string>
     <string name="sort_title">Title</string>

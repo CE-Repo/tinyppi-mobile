@@ -152,6 +152,53 @@ class DetailsEdgesTest {
         rule.onNodeWithText("Actor 12").assertExists()
     }
     @Test
+    fun `a film's cinema release, budget and takings follow its names`() {
+        val details = TitleDetails(genres = listOf("Sci-Fi"), cinema = "2021-09-16",
+            budget = 165_000_000, revenue = 2_923_706_026)
+        rule.show { DetailsBody(details) }
+        rule.onNodeWithText(context.getString(R.string.details_cinema)).assertExists()
+        rule.onNodeWithText("Sep 16, 2021").assertExists()
+        rule.onNodeWithText("\$165M").assertExists()
+        rule.onNodeWithText("\$2.92B").assertExists()
+        assertEquals("soon", cinemaDay("soon", java.util.Locale.GERMANY))
+        assertEquals("16.09.2021", cinemaDay("2021-09-16", java.util.Locale.GERMANY))
+    }
+
+    @Test
+    fun `nothing unknown is said of a film`() {
+        rule.show { DetailsBody(TitleDetails(genres = listOf("Sci-Fi"))) }
+        for (heading in listOf(R.string.details_cinema, R.string.details_budget, R.string.details_revenue)) {
+            rule.onNodeWithText(context.getString(heading)).assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun `a card opens the person's TMDb page, or a search for their name`() {
+        val opened = mutableListOf<String>()
+        var failing = false
+        val handler = object : androidx.compose.ui.platform.UriHandler {
+            override fun openUri(uri: String) {
+                if (failing) throw android.content.ActivityNotFoundException()
+                opened += uri
+            }
+        }
+        val cast = listOf(CastMember("Zendaya", "Chani", tmdb = 505710), CastMember("Jean Dupont & Söhne"))
+        rule.show {
+            androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalUriHandler provides handler) {
+                DetailsBody(TitleDetails(cast = cast))
+            }
+        }
+        rule.onNodeWithText("Zendaya").performClick()
+        rule.onNodeWithText("Jean Dupont & Söhne").performClick()
+        assertEquals(listOf("https://www.themoviedb.org/person/505710",
+            "https://www.themoviedb.org/search/person?query=Jean%20Dupont%20%26%20S%C3%B6hne"), opened)
+        // A phone with nothing to open it in keeps the page.
+        failing = true
+        rule.onNodeWithText("Zendaya").performClick()
+        rule.onNodeWithText("Zendaya").assertExists()
+    }
+
+    @Test
     fun `seasons window handles missing shelf data and artwork settings`() {
         var show by mutableStateOf<LibraryShow?>(LibraryShow(7, "Dark", poster = "poster"))
         var pictures by mutableStateOf(true)

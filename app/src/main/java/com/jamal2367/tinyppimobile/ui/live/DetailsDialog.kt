@@ -97,6 +97,16 @@ import com.jamal2367.tinyppimobile.ui.components.FormatBadge
 import com.jamal2367.tinyppimobile.ui.components.PosterImage
 import com.jamal2367.tinyppimobile.ui.components.withKeyTick
 import com.jamal2367.tinyppimobile.util.MediaUrls
+import android.icu.text.CompactDecimalFormat
+import android.net.Uri
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalUriHandler
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import java.time.format.FormatStyle
+import java.util.Locale
 
 /**
  * A title whose details were asked for, and where reading them has got to:
@@ -507,9 +517,13 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
             }
         }
     }
+    val locale = LocalConfiguration.current.locales[0]
     val facts = listOf(
         stringResource(R.string.details_genre) to details.genres,
         stringResource(R.string.details_studio) to details.studios,
+        stringResource(R.string.details_cinema) to listOfNotNull(details.cinema.ifEmpty { null }?.let { cinemaDay(it, locale) }),
+        stringResource(R.string.details_budget) to listOfNotNull(dollars(details.budget, locale)),
+        stringResource(R.string.details_revenue) to listOfNotNull(dollars(details.revenue, locale)),
     ).filter { it.second.isNotEmpty() }
     if (facts.isNotEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
@@ -526,6 +540,31 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
     if (details.cast.isNotEmpty()) Cast(details.cast, details.castMore, stringResource(R.string.live_credit_cast), server, people)
     if (crew.isNotEmpty()) Cast(crew, false, stringResource(R.string.details_crew), server, people)
 }
+
+/** "2021-09-16" as the reader writes a day; the day itself where it is none. */
+internal fun cinemaDay(day: String, locale: Locale): String = try {
+    LocalDate.parse(day).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale))
+} catch (_: DateTimeParseException) {
+    day
+}
+
+/** Whole US dollars, short - "165 Mio. $", "$165M" - or null for none. */
+@Composable
+private fun dollars(amount: Long, locale: Locale): String? {
+    if (amount <= 0) return null
+    val short = CompactDecimalFormat.getInstance(locale, CompactDecimalFormat.CompactStyle.SHORT)
+        .apply { maximumSignificantDigits = 3 }
+        .format(amount)
+    return stringResource(R.string.details_dollars, short)
+}
+
+/**
+ * A person's page on TMDb, with everything they have made: by their id where
+ * the box found it in the title's credits, otherwise TMDb's search for their name.
+ */
+internal fun personPage(person: CastMember): String =
+    if (person.tmdb > 0) "https://www.themoviedb.org/person/${person.tmdb}"
+    else "https://www.themoviedb.org/search/person?query=" + Uri.encode(person.name)
 
 /** One fact: the same bold heading as the other details sections. */
 @Composable
@@ -611,11 +650,17 @@ internal fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
 
 @Composable
 private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server: ServerConfig?) {
+    // The card is the way to the person's page on TMDb.
+    val uriHandler = LocalUriHandler.current
     Column(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top,
         modifier = Modifier
             .width(CAST_WIDTH)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClickLabel = stringResource(R.string.details_person_page)) {
+                runCatching { uriHandler.openUri(personPage(person)) }
+            }
             .height(CAST_WIDTH + 12.dp + nameHeight + if (roleHeight > 0.dp) 4.dp + roleHeight else 0.dp)
             .testTag("credit-card"),
     ) {
