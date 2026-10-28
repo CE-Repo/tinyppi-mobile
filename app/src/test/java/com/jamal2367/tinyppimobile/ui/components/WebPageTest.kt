@@ -67,6 +67,12 @@ class WebPageTest {
         // Until the page has a title, its address stands in for it.
         rule.onNodeWithText(page).assertExists()
         rule.onNodeWithText("www.themoviedb.org").assertExists()
+        // Another link while it is open puts that page up in its place.
+        val other = "https://www.themoviedb.org/person/5081"
+        rule.runOnIdle { browser.openUri(other) }
+        rule.waitForIdle()
+        assertEquals(other, shadowOf(webView()).lastLoadedUrl)
+        rule.onNodeWithText(other).assertExists()
         rule.onNodeWithContentDescription(context.getString(R.string.details_close)).performClick()
         rule.waitForIdle()
         assertNull(browser.page)
