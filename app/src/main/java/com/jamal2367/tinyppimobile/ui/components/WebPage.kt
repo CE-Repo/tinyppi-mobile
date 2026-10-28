@@ -26,6 +26,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -124,11 +125,14 @@ internal fun WebPage(url: String, onClose: () -> Unit) {
                 if (progress in 1..99) {
                     LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth())
                 }
-                AndroidView(
-                    factory = { view },
-                    onRelease = { it.destroy() },
-                    modifier = Modifier.fillMaxSize(),
-                )
+                // A new page is a new view, not the old one kept.
+                key(view) {
+                    AndroidView(
+                        factory = { view },
+                        onRelease = { it.destroy() },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
             }
         }
     }
