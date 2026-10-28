@@ -3,6 +3,7 @@
 package com.jamal2367.tinyppimobile.ui.live
 
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.DialogWindowProvider
@@ -186,14 +187,19 @@ internal fun DetailsDialog(
     val poster = details?.let {
         MediaUrls.details(pictures, state.target, if (it.poster.isNotEmpty()) "poster" else "thumb", it.poster.ifEmpty { it.thumb })
     }
+    // The dialog's window puts the platform's own link handler back - the
+    // browser - so the app's (the in-app page, see InAppBrowser) is handed in.
+    val links = LocalUriHandler.current
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         DisableDialogWindowAnimations()
-        MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
-            ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
-                DetailsPages(state, pictures, actions, over)
+        CompositionLocalProvider(LocalUriHandler provides links) {
+            MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
+                ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
+                    DetailsPages(state, pictures, actions, over)
+                }
             }
         }
     }
