@@ -568,9 +568,8 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
         })
     } else details.directors.map { CastMember(it, directorRole) } +
         details.writers.map { CastMember(it, writerRole) }
-    val people = crew + details.cast
-    if (details.cast.isNotEmpty()) Cast(details.cast, details.castMore, stringResource(R.string.live_credit_cast), server, people)
-    if (crew.isNotEmpty()) Cast(crew, false, stringResource(R.string.details_crew), server, people)
+    if (details.cast.isNotEmpty()) Cast(details.cast, details.castMore, stringResource(R.string.live_credit_cast), server)
+    if (crew.isNotEmpty()) Cast(crew, false, stringResource(R.string.details_crew), server)
 }
 
 /** "2021-09-16" as the reader writes a day; the day itself where it is none. */
@@ -618,31 +617,25 @@ private fun Fact(heading: String, names: String) {
  * ellipsis at the end where the library holds more.
  */
 @Composable
-private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server: ServerConfig?, sizing: List<CastMember>) {
+private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server: ServerConfig?) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
     val nameStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
     val roleStyle = MaterialTheme.typography.labelMedium
     val textWidth = with(density) { CAST_WIDTH.roundToPx() }
+    val gap = with(density) { 4.dp.roundToPx() }
     // Measure the whole row so scrolling to a longer name never changes its
-    // height. The same slots keep names and roles aligned without truncation.
-    val heights = remember(sizing, measurer, nameStyle, roleStyle, textWidth) {
+    // height: the tallest name and role together, the role right under its name.
+    val textHeight = remember(cast, measurer, nameStyle, roleStyle, textWidth, gap) {
         val constraints = Constraints(maxWidth = textWidth)
         val nameMinimum = measurer.measure("A", nameStyle, constraints = constraints).size.height
-        val nameHeight = sizing.fold(0) { height, person ->
-            maxOf(height, measurer.measure(person.name, nameStyle, constraints = constraints).size.height)
-        }.coerceAtLeast(nameMinimum)
-        val roles = sizing.map { it.role }.filter { it.isNotEmpty() }
-        val roleHeight = if (roles.isEmpty()) 0 else {
-            val roleMinimum = measurer.measure("A", roleStyle, constraints = constraints).size.height
-            roles.fold(0) { height, role ->
-                maxOf(height, measurer.measure(role, roleStyle, constraints = constraints).size.height)
-            }.coerceAtLeast(roleMinimum)
+        cast.fold(nameMinimum) { height, person ->
+            val name = measurer.measure(person.name, nameStyle, constraints = constraints).size.height
+            val role = if (person.role.isEmpty()) 0
+                else gap + measurer.measure(person.role, roleStyle, constraints = constraints).size.height
+            maxOf(height, name + role)
         }
-        nameHeight to roleHeight
-    }
-    val nameHeight = with(density) { heights.first.toDp() }
-    val roleHeight = with(density) { heights.second.toDp() }
+    }.let { with(density) { it.toDp() } }
     // Portraits have no text line-box inset; match the facts' visible breathing room.
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         // How many there are, beside the heading: "Cast (24)", "(20+)" where
@@ -664,7 +657,7 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server:
             contentPadding = PaddingValues(horizontal = PAGE_EDGE),
             modifier = Modifier.bleed(PAGE_EDGE),
         ) {
-            items(cast) { person -> CastCard(person, nameHeight, roleHeight, server) }
+            items(cast) { person -> CastCard(person, textHeight, server) }
             if (more) {
                 item { Text("…", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 24.dp)) }
             }
@@ -689,7 +682,7 @@ internal fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
 }
 
 @Composable
-private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server: ServerConfig?) {
+private fun CastCard(person: CastMember, textHeight: Dp, server: ServerConfig?) {
     // The card is the way to the person's page on TMDb.
     val uriHandler = LocalUriHandler.current
     Column(
@@ -701,7 +694,7 @@ private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server:
             .clickable(onClickLabel = stringResource(R.string.details_person_page)) {
                 runCatching { uriHandler.openUri(personPage(person)) }
             }
-            .height(CAST_WIDTH + 12.dp + nameHeight + if (roleHeight > 0.dp) 4.dp + roleHeight else 0.dp)
+            .height(CAST_WIDTH + 12.dp + textHeight)
             .testTag("credit-card"),
     ) {
         Box(
@@ -735,14 +728,14 @@ private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server:
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Start,
-                modifier = Modifier.fillMaxWidth().height(nameHeight),
+                modifier = Modifier.fillMaxWidth(),
             )
             if (person.role.isNotEmpty()) Text(
                 text = person.role,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Start,
-                modifier = Modifier.fillMaxWidth().height(roleHeight),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }

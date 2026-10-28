@@ -126,8 +126,10 @@ class CreditCardsTest {
         val cards = rule.onAllNodesWithTag("credit-card").fetchSemanticsNodes().map { it.boundsInRoot }
         assertEquals(4, cards.size)
         assertEquals(1, cards.map { it.width }.distinct().size)
+        // Each row keeps one height; the crew row needs no room for the cast's long role.
         assertEquals(cards[0].height, cards[1].height, 0f)
-        assertEquals(1, cards.map { it.height }.distinct().size)
+        assertEquals(cards[2].height, cards[3].height, 0f)
+        assertTrue("crew row sized by its own credits", cards[2].height < cards[0].height)
         for ((index, name) in names.withIndex()) {
             val card = cards[index]
             val initial = rule.onAllNodesWithTag("credit-portrait", useUnmergedTree = true)[index].fetchSemanticsNode().boundsInRoot
@@ -141,6 +143,7 @@ class CreditCardsTest {
             assertEquals("name left aligned: $name", card.left, nameBox.left, 1f)
             assertEquals("role left aligned: $name", card.left, last.left, 1f)
             assertTrue("role after name: $name", last.top >= nameBox.bottom)
+            assertEquals("role right under name: $name", nameBox.bottom + card.width * 4f / 144f, last.top, 1f)
         }
         for (text in names + crewRoles + roles) {
             val layouts = mutableListOf<TextLayoutResult>()
