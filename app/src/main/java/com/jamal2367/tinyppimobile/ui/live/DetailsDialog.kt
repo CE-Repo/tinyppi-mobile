@@ -537,7 +537,7 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
         stringResource(R.string.details_revenue) to dollars(details.revenue, locale),
     ).mapNotNull { (heading, amount) -> amount?.let { heading to it } }
     val made = details.revenue - details.budget
-    val profit = dollars(kotlin.math.abs(made), locale)?.let { if (made < 0) "-$it" else it }
+    val profit = dollars(kotlin.math.abs(made), locale)
     val facts = listOf(
         stringResource(R.string.details_genre) to details.genres,
         stringResource(R.string.details_studio) to details.studios,
@@ -546,8 +546,10 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
             details.cinema.ifEmpty { null }?.let { cinemaDay(it, locale) + details.cinemaCountry.ifEmpty { null }?.let { " ($it)" }.orEmpty() },
         ),
         money.joinToString("/") { it.first } to listOfNotNull(money.joinToString("/") { it.second }.ifEmpty { null }),
-        // What it took less what it cost, where both are known: a loss below nothing.
-        stringResource(R.string.details_profit) to listOfNotNull(profit.takeIf { money.size == 2 }),
+        // What it took less what it cost, where both are known: its profit,
+        // or what it lost under that name.
+        stringResource(if (made < 0) R.string.details_loss else R.string.details_profit) to
+            listOfNotNull(profit.takeIf { money.size == 2 }),
     ).filter { it.second.isNotEmpty() }
     if (facts.isNotEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {

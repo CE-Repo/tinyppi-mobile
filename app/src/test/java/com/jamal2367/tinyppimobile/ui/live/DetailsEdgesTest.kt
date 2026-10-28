@@ -172,15 +172,19 @@ class DetailsEdgesTest {
 
     @Test
     fun `a film that took less than it cost made a loss, and a day from nowhere in particular stands alone`() {
-        rule.show { DetailsBody(TitleDetails(cinema = "2021-09-16", budget = 200_000_000, revenue = 150_000_000)) }
+        rule.show { DetailsBody(TitleDetails(cinema = "2021-09-16", budget = 100_000_000, revenue = 50_000_000)) }
         rule.onNodeWithText("Sep 16, 2021").assertExists()
-        rule.onNodeWithText("-\$50M").assertExists()
+        // Said as a loss, the amount without a sign.
+        rule.onNodeWithText(context.getString(R.string.details_loss)).assertExists()
+        rule.onNodeWithText(context.getString(R.string.details_profit)).assertDoesNotExist()
+        rule.onNodeWithText("\$50M").assertExists()
     }
 
     @Test
     fun `what a film cost and took to the dollar makes no profit line`() {
         rule.show { DetailsBody(TitleDetails(budget = 100_000_000, revenue = 100_000_000)) }
         rule.onNodeWithText(context.getString(R.string.details_profit)).assertDoesNotExist()
+        rule.onNodeWithText(context.getString(R.string.details_loss)).assertDoesNotExist()
     }
 
     @Test

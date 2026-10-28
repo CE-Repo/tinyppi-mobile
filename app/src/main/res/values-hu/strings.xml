@@ -69,6 +69,7 @@
     <string name="details_budget">Költségvetés</string>
     <string name="details_revenue">Bevétel</string>
     <string name="details_profit">Nyereség</string>
+    <string name="details_loss">Veszteség</string>
     <string name="details_dollars">%1$s USD</string>
     <string name="details_person_page">Megnyitás a TMDb-n</string>
     <string name="details_ratings">Értékelések</string>
