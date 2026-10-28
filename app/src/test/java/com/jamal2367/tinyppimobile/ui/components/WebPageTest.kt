@@ -174,4 +174,26 @@ class WebPageTest {
         assertSame(shown, webView())
         assertEquals(page, shadowOf(shown).lastLoadedUrl)
     }
+
+    @Test
+    fun `a tap on a cast card on the details page opens the page in the app, not the browser`() {
+        val browser = InAppBrowser()
+        val film = com.jamal2367.tinyppimobile.data.model.MarkTarget(com.jamal2367.tinyppimobile.data.model.MarkTarget.Kind.MOVIE, 2, "Oppenheimer")
+        val details = com.jamal2367.tinyppimobile.data.model.TitleDetails(
+            cast = listOf(com.jamal2367.tinyppimobile.data.model.CastMember("Cillian Murphy", "J. Robert Oppenheimer", tmdb = 2037)),
+        )
+        rule.show {
+            androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalUriHandler provides browser) {
+                com.jamal2367.tinyppimobile.ui.live.DetailsDialog(
+                    com.jamal2367.tinyppimobile.ui.live.DetailsUiState(film, details), null, false, null,
+                ) {}
+                InAppBrowserHost(browser)
+            }
+        }
+        rule.onNodeWithText("Cillian Murphy").performClick()
+        rule.waitForIdle()
+        assertEquals(page, browser.page)
+        assertEquals(page, shadowOf(webView()).lastLoadedUrl)
+        assertNull(nextStarted())
+    }
 }
