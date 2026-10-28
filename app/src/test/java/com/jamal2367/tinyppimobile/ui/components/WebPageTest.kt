@@ -151,7 +151,8 @@ class WebPageTest {
         rule.waitForIdle()
         assertSame(shown, webView())
         // Another browser with the same page open closes through itself.
-        val other = InAppBrowser().apply { openUri(page) }
+        val other = InAppBrowser()
+        other.openUri(page)
         rule.runOnIdle { host = other }
         rule.waitForIdle()
         rule.onNodeWithContentDescription(context.getString(R.string.details_close)).performClick()
