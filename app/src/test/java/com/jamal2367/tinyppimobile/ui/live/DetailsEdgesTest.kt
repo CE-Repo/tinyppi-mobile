@@ -179,6 +179,23 @@ class DetailsEdgesTest {
     }
 
     @Test
+    fun `the countries it was made in stand with the facts, and each row says how many it holds`() {
+        val details = TitleDetails(countries = listOf("United Kingdom", "USA"),
+            directors = listOf("Ridley Scott"), cast = listOf(CastMember("Sigourney Weaver"), CastMember("Jones")))
+        rule.show { DetailsBody(details) }
+        rule.onNodeWithText(context.getString(R.string.details_country)).assertExists()
+        rule.onNodeWithText("United Kingdom, USA").assertExists()
+        rule.onNodeWithText(context.getString(R.string.live_credit_cast) + " (2)").assertExists()
+        rule.onNodeWithText(context.getString(R.string.details_crew) + " (1)").assertExists()
+    }
+
+    @Test
+    fun `a cast the library holds more of says so beside its count`() {
+        rule.show { DetailsBody(TitleDetails(cast = listOf(CastMember("Actor")), castMore = true)) }
+        rule.onNodeWithText(context.getString(R.string.live_credit_cast) + " (1+)").assertExists()
+    }
+
+    @Test
     fun `nothing unknown is said of a film`() {
         rule.show { DetailsBody(TitleDetails(genres = listOf("Sci-Fi"))) }
         for (heading in listOf(R.string.details_cinema, R.string.details_budget, R.string.details_revenue)) {

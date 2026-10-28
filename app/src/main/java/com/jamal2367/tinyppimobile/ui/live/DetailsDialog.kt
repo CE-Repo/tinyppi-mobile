@@ -97,6 +97,9 @@ import com.jamal2367.tinyppimobile.ui.components.FormatBadge
 import com.jamal2367.tinyppimobile.ui.components.PosterImage
 import com.jamal2367.tinyppimobile.ui.components.withKeyTick
 import com.jamal2367.tinyppimobile.util.MediaUrls
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import android.icu.text.CompactDecimalFormat
 import android.net.Uri
 import androidx.compose.foundation.clickable
@@ -527,6 +530,7 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
     val facts = listOf(
         stringResource(R.string.details_genre) to details.genres,
         stringResource(R.string.details_studio) to details.studios,
+        stringResource(R.string.details_country) to details.countries,
         stringResource(R.string.details_cinema) to listOfNotNull(details.cinema.ifEmpty { null }?.let { cinemaDay(it, locale) }),
         money.joinToString("/") { it.first } to listOfNotNull(money.joinToString("/") { it.second }.ifEmpty { null }),
     ).filter { it.second.isNotEmpty() }
@@ -618,8 +622,16 @@ private fun Cast(cast: List<CastMember>, more: Boolean, heading: String, server:
     val roleHeight = with(density) { heights.second.toDp() }
     // Portraits have no text line-box inset; match the facts' visible breathing room.
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // How many there are, beside the heading: "Cast (24)", "(20+)" where
+        // the library holds more than the row shows.
+        val muted = MaterialTheme.colorScheme.onSurfaceVariant
         Text(
-            text = heading,
+            text = buildAnnotatedString {
+                append(heading)
+                withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = muted)) {
+                    append(" (${cast.size}${if (more) "+" else ""})")
+                }
+            },
             style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp),
             fontWeight = FontWeight.Bold,
         )
@@ -718,7 +730,7 @@ private fun CastCard(person: CastMember, nameHeight: Dp, roleHeight: Dp, server:
 internal val PAGE_EDGE = 20.dp
 private val HERO_HEIGHT = 300.dp
 private val POSTER_WIDTH = 104.dp
-private val CAST_WIDTH = 160.dp
+private val CAST_WIDTH = 144.dp
 
 private val ACTION_HEIGHT = 48.dp
 

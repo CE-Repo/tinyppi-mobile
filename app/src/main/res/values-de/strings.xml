@@ -64,6 +64,7 @@
     <string name="details_crew">Filmteam</string>
     <string name="details_writer">Drehbuch</string>
     <string name="details_studio">Studio</string>
+    <string name="details_country">Produktionsland</string>
     <string name="details_cinema">Kinostart</string>
     <string name="details_budget">Budget</string>
     <string name="details_revenue">Eingespielt</string>

@@ -64,6 +64,7 @@
     <string name="details_crew">Stáb</string>
     <string name="details_writer">Forgatókönyv</string>
     <string name="details_studio">Stúdió</string>
+    <string name="details_country">Gyártó ország</string>
     <string name="details_cinema">Mozibemutató</string>
     <string name="details_budget">Költségvetés</string>
     <string name="details_revenue">Bevétel</string>

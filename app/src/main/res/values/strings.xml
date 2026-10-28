@@ -69,6 +69,7 @@
     <string name="details_crew">Crew</string>
     <string name="details_writer">Writer</string>
     <string name="details_studio">Studio</string>
+    <string name="details_country">Production country</string>
     <string name="details_cinema">In cinemas</string>
     <string name="details_budget">Budget</string>
     <string name="details_revenue">Box office</string>

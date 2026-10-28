@@ -136,7 +136,7 @@ class CreditCardsTest {
             assertEquals("square portrait at top: $name", card.top, contentTop, 1f)
             val nameBox = rule.onNodeWithText(name, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
             val pictureBottom = initial.center.y + card.width / 2
-            assertEquals("name below portrait: $name", pictureBottom + card.width * 12f / 160f, nameBox.top, 1f)
+            assertEquals("name below portrait: $name", pictureBottom + card.width * 12f / 144f, nameBox.top, 1f)
             assertEquals("name left aligned: $name", card.left, nameBox.left, 1f)
             assertEquals("role left aligned: $name", card.left, last.left, 1f)
             assertTrue("role after name: $name", last.top >= nameBox.bottom)
