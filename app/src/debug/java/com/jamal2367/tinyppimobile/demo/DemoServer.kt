@@ -851,7 +851,7 @@ object DemoServer {
             film.credits.cast.forEachIndexed { index, name ->
                 add(buildJsonObject {
                     put("name", name); put("role", film.credits.roles.getOrNull(index).orEmpty())
-                    if (tmdb != null) person(name)
+                    person(name)
                 })
             }
         }
