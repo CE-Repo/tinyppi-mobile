@@ -867,7 +867,8 @@ object DemoServer {
                 }
             }
             putJsonArray("countries") { tmdb.countries.forEach { add(it) } }
-            put("cinema", tmdb.cinema); put("budget", tmdb.budget); put("revenue", tmdb.revenue)
+            put("cinema", tmdb.cinema); put("cinema_country", "DE")
+            put("budget", tmdb.budget); put("revenue", tmdb.revenue)
         }
         putJsonArray("ratings") { filmRatings(film).forEach { add(rating(it)) } }
         put("video", FILM_VIDEO[film.id % FILM_VIDEO.size])

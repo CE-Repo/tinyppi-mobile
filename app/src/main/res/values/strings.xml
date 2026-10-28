@@ -73,6 +73,7 @@
     <string name="details_cinema">In cinemas</string>
     <string name="details_budget">Budget</string>
     <string name="details_revenue">Box office</string>
+    <string name="details_profit">Profit</string>
     <string name="details_dollars">$%1$s</string>
     <string name="details_person_page">Open on TMDb</string>
     <string name="details_ratings">Ratings</string>

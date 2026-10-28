@@ -153,17 +153,34 @@ class DetailsEdgesTest {
     }
     @Test
     fun `a film's cinema release, budget and takings follow its names`() {
-        val details = TitleDetails(genres = listOf("Sci-Fi"), cinema = "2021-09-16",
+        val details = TitleDetails(genres = listOf("Sci-Fi"), cinema = "2021-09-16", cinemaCountry = "DE",
             budget = 165_000_000, revenue = 2_923_706_026)
         rule.show { DetailsBody(details) }
         rule.onNodeWithText(context.getString(R.string.details_cinema)).assertExists()
-        rule.onNodeWithText("Sep 16, 2021").assertExists()
+        // The day with the country it is the first in cinemas of.
+        rule.onNodeWithText("Sep 16, 2021 (DE)").assertExists()
+        // And what it made, where both are known.
+        rule.onNodeWithText(context.getString(R.string.details_profit)).assertExists()
+        rule.onNodeWithText("\$2.76B").assertExists()
         // What it cost and what it took share a line.
         val both = context.getString(R.string.details_budget) + "/" + context.getString(R.string.details_revenue)
         rule.onNodeWithText(both).assertExists()
         rule.onNodeWithText("\$165M/\$2.92B").assertExists()
         assertEquals("soon", cinemaDay("soon", java.util.Locale.GERMANY))
         assertEquals("16.09.2021", cinemaDay("2021-09-16", java.util.Locale.GERMANY))
+    }
+
+    @Test
+    fun `a film that took less than it cost made a loss, and a day from nowhere in particular stands alone`() {
+        rule.show { DetailsBody(TitleDetails(cinema = "2021-09-16", budget = 200_000_000, revenue = 150_000_000)) }
+        rule.onNodeWithText("Sep 16, 2021").assertExists()
+        rule.onNodeWithText("-\$50M").assertExists()
+    }
+
+    @Test
+    fun `what a film cost and took to the dollar makes no profit line`() {
+        rule.show { DetailsBody(TitleDetails(budget = 100_000_000, revenue = 100_000_000)) }
+        rule.onNodeWithText(context.getString(R.string.details_profit)).assertDoesNotExist()
     }
 
     @Test
@@ -176,6 +193,7 @@ class DetailsEdgesTest {
         rule.onNodeWithText(context.getString(R.string.details_revenue)).assertExists()
         rule.onNodeWithText("\$402M").assertExists()
         rule.onNodeWithText(context.getString(R.string.details_budget)).assertDoesNotExist()
+        rule.onNodeWithText(context.getString(R.string.details_profit)).assertDoesNotExist()
     }
 
     @Test

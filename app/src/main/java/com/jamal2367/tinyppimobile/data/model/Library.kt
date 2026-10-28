@@ -365,6 +365,8 @@ data class TitleDetails(
      * where unknown.
      */
     val cinema: String = "",
+    /** The country [cinema] is the first day in cinemas of (`DE`); empty where it is none in particular. */
+    @SerialName("cinema_country") val cinemaCountry: String = "",
     val budget: Long = 0,
     val revenue: Long = 0,
     /** The age rating as the scraper wrote it, and its mark and level (see [MediaInfo.age]). */
