@@ -17,7 +17,16 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.runtime.DontMemoize
 import androidx.compose.foundation.border
 import androidx.compose.runtime.rememberUpdatedState
@@ -45,7 +54,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -180,7 +188,10 @@ internal class DetailsActions(
  *
  * [onRelated] opens a title of the library the page leads on to - a film of
  * its series, one TMDb recommends - in place of this one; without it, those
- * cards lead nowhere but to TMDb.
+ * cards lead nowhere but to TMDb. A page that takes another's place turns
+ * like a page of the app: [forward], the new one slides in over the old
+ * from the end; back, the top one slides away to the end over the one
+ * under it.
  */
 @Composable
 internal fun DetailsDialog(
@@ -192,6 +203,7 @@ internal fun DetailsDialog(
     intensity: Float = 1f,
     over: (@Composable () -> Unit)? = null,
     onRelated: ((RelatedTitle) -> Unit)? = null,
+    forward: Boolean = true,
     onDismiss: () -> Unit,
 ) {
     val pictures = if (showArtwork) server else null
@@ -210,7 +222,7 @@ internal fun DetailsDialog(
         CompositionLocalProvider(LocalUriHandler provides links) {
             MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
                 ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
-                    DetailsPages(state, pictures, actions, over, onRelated)
+                    DetailsPages(state, pictures, actions, over, onRelated, forward)
                 }
             }
         }
@@ -225,9 +237,12 @@ internal fun DisableDialogWindowAnimations() {
 }
 
 /**
- * The details, or the page they have given way to ([over]). The switch is
- * immediate so moving between details and seasons never waits for an
- * animation to finish.
+ * The details, or the page they have given way to ([over]). The switch to
+ * and from the seasons is immediate, so moving between details and seasons
+ * never waits for an animation to finish; one title's page giving way to
+ * another's turns (see [pageTurn]), each page with its keys and its own
+ * scrolling, kept while the window is open: the seasons, or a page led on
+ * to, left for a page find it where it was.
  */
 @Composable
 private fun DetailsPages(
@@ -236,12 +251,51 @@ private fun DetailsPages(
     actions: DetailsActions?,
     over: (@Composable () -> Unit)?,
     onRelated: ((RelatedTitle) -> Unit)?,
+    forward: Boolean,
 ) {
-    val scroll = rememberScrollState()
-    // A new title in the same window - one the page led on to - starts at its top.
-    LaunchedEffect(state.target) { scroll.scrollTo(0) }
-    if (over != null) over() else DetailsPage(state, pictures, actions, scroll, onRelated)
+    val scrolls = remember { mutableMapOf<MarkTarget, ScrollState>() }
+    if (over != null) {
+        over()
+        return
+    }
+    AnimatedContent(
+        targetState = state to actions,
+        contentKey = { (page, _) -> page.target },
+        transitionSpec = { pageTurn(forward) },
+        label = "details-page",
+    ) { (page, keys) ->
+        DetailsPage(page, pictures, keys, scrolls.getOrPut(page.target) { ScrollState(0) }, onRelated)
+    }
 }
+
+/** How long a page takes to turn, and how it moves: quickly away, gently to rest. */
+private const val PAGE_TURN_MS = 380
+private val PAGE_EASING = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+
+/**
+ * One page turning to the next. The page on top moves the whole width -
+ * coming in from the end going forward, going out to the end going back -
+ * while the page under it moves a quarter of the way and dims a little, as
+ * pages of the app do: the new title over the one it was opened from, and
+ * back the other way. The end is the right, or the left in a language
+ * written from right to left.
+ */
+private fun AnimatedContentTransitionScope<*>.pageTurn(forward: Boolean): ContentTransform {
+    val spatial = tween<IntOffset>(PAGE_TURN_MS, easing = PAGE_EASING)
+    val effects = tween<Float>(PAGE_TURN_MS, easing = PAGE_EASING)
+    val towards = if (forward) SlideDirection.Start else SlideDirection.End
+    val top = { full: Int -> full }
+    val under = { full: Int -> full / 4 }
+    val enter = slideIntoContainer(towards, spatial, if (forward) top else under) +
+        fadeIn(effects, initialAlpha = if (forward) 1f else UNDER_ALPHA)
+    val exit = slideOutOfContainer(towards, spatial, if (forward) under else top) +
+        fadeOut(effects, targetAlpha = if (forward) UNDER_ALPHA else 1f)
+    // The page that moves the whole width is the one on top.
+    return (enter togetherWith exit).apply { targetContentZIndex = if (forward) 1f else -1f }
+}
+
+/** How far the page under a turning one dims. */
+private const val UNDER_ALPHA = 0.6f
 
 @Composable
 private fun DetailsPage(
@@ -1009,6 +1063,8 @@ internal fun DetailsPage(
     // The page gone back to, with the actions it had: the screen's own are
     // the last title's it opened.
     var back by remember { mutableStateOf<LiveViewModel.DetailsBack?>(null) }
+    // Which way the last page turned: on to a title, or back from one.
+    var forward by remember { mutableStateOf(true) }
     val page = open?.takeIf { LocalIsCurrentPage.current } ?: return
     val restored = back?.takeIf { it.page.target == page.target }
     val shown = if (restored != null) restored.actions as DetailsActions? else actions
@@ -1025,14 +1081,17 @@ internal fun DetailsPage(
         over = over,
         // The page stays behind the one it leads on to ...
         onRelated = { title ->
+            forward = true
             viewModel.keepDetails(shown)
             related(title)
         },
+        forward = forward,
         // ... and back, from there, goes back to it; from the first page,
         // or from the seasons a show's page gave way to, as before.
         onDismiss = {
             val previous = if (over == null) viewModel.backDetails() else null
             back = previous
+            forward = previous == null
             if (previous == null) onDismiss()
         },
     )

@@ -281,4 +281,34 @@ class RelatedTitlesTest {
         rule.waitForIdle()
         assertEquals(listOf(1, 3), opened)
     }
+
+    @Test
+    fun `a page turns to the next one and back again`() {
+        val fake = FakeLive()
+        fake.playing()
+        fake.api.details = { kind, id ->
+            if (id == 1) TitleDetails(kind = kind, id = id, plot = "First plot.", recommended = listOf(RelatedTitle("movie", 5, "Next one", id = 5)))
+            else TitleDetails(kind = kind, id = id, plot = "Plot $id.")
+        }
+        rule.show { DetailsShown(fake.viewModel, actions = null) }
+        rule.runOnIdle { fake.viewModel.openDetails(MarkTarget(MarkTarget.Kind.MOVIE, 1, "First")) }
+        rule.waitUntil { has("Next one") }
+        rule.mainClock.autoAdvance = false
+        cards()[0].performClick()
+        // Mid-turn, both pages are there; once it has turned, only the new one.
+        rule.mainClock.advanceTimeUntil(3_000) { has("Plot 5.") && has("First plot.") }
+        rule.mainClock.advanceTimeBy(1_000)
+        assertTrue(has("Plot 5."))
+        assertFalse(has("First plot."))
+        // Back turns the other way, to the page as it was.
+        rule.runOnIdle {
+            (org.robolectric.shadows.ShadowDialog.getShownDialogs().last { it.isShowing } as androidx.activity.ComponentDialog)
+                .onBackPressedDispatcher.onBackPressed()
+        }
+        rule.mainClock.advanceTimeUntil(3_000) { has("Plot 5.") && has("First plot.") }
+        rule.mainClock.advanceTimeBy(1_000)
+        assertTrue(has("First plot."))
+        assertFalse(has("Plot 5."))
+        rule.mainClock.autoAdvance = true
+    }
 }
