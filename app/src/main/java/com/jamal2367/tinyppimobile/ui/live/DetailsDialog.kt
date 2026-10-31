@@ -5,6 +5,8 @@ package com.jamal2367.tinyppimobile.ui.live
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.geometry.Offset
@@ -1004,19 +1006,34 @@ internal fun DetailsPage(
     onDismiss: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // The page gone back to, with the actions it had: the screen's own are
+    // the last title's it opened.
+    var back by remember { mutableStateOf<LiveViewModel.DetailsBack?>(null) }
+    val page = open?.takeIf { LocalIsCurrentPage.current } ?: return
+    val restored = back?.takeIf { it.page.target == page.target }
+    val shown = if (restored != null) restored.actions as DetailsActions? else actions
     // Where the screen has no way of its own, a title the page leads on to
     // opens as the overview's does: its details, with nothing to press.
-    val related = onRelated ?: { title: RelatedTitle -> viewModel.openDetails(title.markTarget()) }
-    val page = open?.takeIf { LocalIsCurrentPage.current } ?: return
+    val related = onRelated ?: @DontMemoize { title: RelatedTitle -> viewModel.openDetails(title.markTarget()) }
     DetailsDialog(
         state = page,
         server = state.live.server,
         showArtwork = state.settings.showArtwork,
-        actions = actions,
+        actions = shown,
         adaptive = state.settings.adaptiveColor,
         intensity = state.settings.adaptiveColorIntensity,
         over = over,
-        onRelated = related,
-        onDismiss = onDismiss,
+        // The page stays behind the one it leads on to ...
+        onRelated = { title ->
+            viewModel.keepDetails(shown)
+            related(title)
+        },
+        // ... and back, from there, goes back to it; from the first page,
+        // or from the seasons a show's page gave way to, as before.
+        onDismiss = {
+            val previous = if (over == null) viewModel.backDetails() else null
+            back = previous
+            if (previous == null) onDismiss()
+        },
     )
 }

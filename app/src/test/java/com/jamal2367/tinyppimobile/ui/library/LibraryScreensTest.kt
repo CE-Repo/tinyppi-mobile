@@ -837,6 +837,11 @@ class LibraryScreensTest {
 
     private fun related(index: Int) = rule.onAllNodesWithTag("related-card")[index]
 
+    /** The phone's back, on the window in front. */
+    private fun back() = rule.runOnIdle {
+        (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+    }
+
     @Test
     fun `a film's series and recommendations open the library's own pages, with their keys`() {
         fake.api.details = { kind, id ->
@@ -860,6 +865,21 @@ class LibraryScreensTest {
         assertEquals(MarkTarget(MarkTarget.Kind.MOVIE, 2, "Heat"), fake.viewModel.details.value?.target)
         assertTrue(has(str(R.string.title_play)))
         assertTrue(said(str(R.string.mark_unwatched)))
+        // Back goes back to the page it was led on from, as it was and with
+        // its own keys, reading nothing again; from there, back closes.
+        assertEquals(2, fake.api.count("details"))
+        back()
+        rule.waitUntil { has("Dune's plot.") }
+        assertEquals(MarkTarget(MarkTarget.Kind.MOVIE, 1, "Dune"), fake.viewModel.details.value?.target)
+        assertTrue(has(str(R.string.title_resume)))
+        assertEquals(2, fake.api.count("details"))
+        back()
+        rule.waitForIdle()
+        assertEquals(null, fake.viewModel.details.value)
+        text("Dune").performClick()
+        rule.waitUntil { has("Dune's plot.") }
+        related(1).performClick()
+        rule.waitUntil { has("Plot 2.") }
         rule.onNodeWithText(str(R.string.title_play)).performClick()
         settle()
         assertEquals(1, fake.api.count("play"))
@@ -887,15 +907,23 @@ class LibraryScreensTest {
         related(0).performClick()
         rule.waitUntil { has("Plot 8.") }
         assertEquals(MarkTarget(MarkTarget.Kind.SHOW, 8, "Chernobyl"), fake.viewModel.details.value?.target)
+        // Back goes back to the show it was led on from, and on again.
+        back()
+        rule.waitUntil { has("Dark's plot.") }
+        related(0).performClick()
+        rule.waitUntil { has("Plot 8.") }
         // Its key opens its seasons, as the tile's page does.
         rule.onNodeWithText(str(R.string.title_open)).performClick()
         rule.waitUntil { said(str(R.string.series_back)) }
-        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        // Back from the seasons leaves them for the show's page, as before ...
+        back()
         rule.waitUntil { has("Plot 8.") }
-        rule.runOnIdle {
-            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
-        }
+        // ... and from there goes back to the show it was led on from, then closes.
+        back()
+        rule.waitUntil { has("Dark's plot.") }
+        back()
         rule.waitForIdle()
+        assertEquals(null, fake.viewModel.details.value)
         text("Dark").performClick()
         rule.waitUntil { has("Dark's plot.") }
         related(1).performClick()

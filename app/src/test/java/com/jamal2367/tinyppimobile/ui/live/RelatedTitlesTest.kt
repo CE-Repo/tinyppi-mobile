@@ -240,6 +240,10 @@ class RelatedTitlesTest {
         rule.waitUntil { has("Plot 5") }
         assertEquals(MarkTarget(MarkTarget.Kind.MOVIE, 5, "Next one"), fake.viewModel.details.value?.target)
         assertFalse(has(str(R.string.title_play)))
+        // Back to the page it was led on from, then closed.
+        rule.runOnIdle { assertEquals(1, fake.viewModel.backDetails()?.page?.target?.id) }
+        rule.waitUntil { has("Next one") }
+        rule.runOnIdle { assertNull(fake.viewModel.backDetails()) }
     }
 
     @Test
