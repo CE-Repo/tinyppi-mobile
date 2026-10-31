@@ -28,6 +28,10 @@ import com.jamal2367.tinyppimobile.testing.Screens
 import com.jamal2367.tinyppimobile.testing.Screens.show
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.onAllNodesWithTag
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -210,5 +214,37 @@ class LiveScreenTest {
         rule.onAllNodesWithText(str(R.string.cards_move_down)).fetchSemanticsNodes()
         rule.onNodeWithText(str(R.string.cards_done)).performClick()
         assertEquals(null, cards.editing)
+    }
+
+    @Test
+    fun `the playing card stands on the title's landscape picture, where asked for`() {
+        val backdrop = { rule.onAllNodesWithTag("card-backdrop", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        val pictured = Screens.film.copy(art = com.jamal2367.tinyppimobile.data.model.ArtTags(poster = "p1", fanart = "f1"))
+        fake.playing(pictured)
+        var accent by mutableStateOf<androidx.compose.ui.graphics.Color?>(null)
+        rule.show(CardState()) {
+            androidx.compose.runtime.CompositionLocalProvider(com.jamal2367.tinyppimobile.ui.theme.LocalArtworkAccent provides accent) {
+                LiveScreen(onOpenSettings = { settingsOpened++ }, viewModel = fake.viewModel)
+            }
+        }
+        rule.waitForIdle()
+        // Off by default: the card wears its poster's colour.
+        assertTrue(!backdrop())
+        fake.settings.value = fake.settings.value.copy(liveBackdrop = true)
+        rule.waitForIdle()
+        assertTrue(backdrop())
+        // Over the colour, where there is one, while the picture loads.
+        accent = androidx.compose.ui.graphics.Color.Red
+        rule.waitForIdle()
+        assertTrue(backdrop())
+        // A title with no landscape picture keeps the colour; so does one with
+        // pictures switched off altogether.
+        fake.playing(pictured.copy(art = com.jamal2367.tinyppimobile.data.model.ArtTags(poster = "p1")))
+        rule.waitForIdle()
+        assertTrue(!backdrop())
+        fake.playing(pictured)
+        fake.settings.value = fake.settings.value.copy(showArtwork = false)
+        rule.waitForIdle()
+        assertTrue(!backdrop())
     }
 }

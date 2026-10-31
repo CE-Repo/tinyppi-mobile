@@ -377,6 +377,51 @@ class LiveViewModelTest {
     }
 
     @Test
+    fun `a page led on to goes back to the one it came from, the playing title's still that`() = runTest(dispatcher) {
+        val vm = viewModel()
+        watch(vm)
+        api.details = { kind, id -> TitleDetails(kind = kind, id = id, plot = "Plot $id.") }
+        // Nothing open, nothing to keep or go back to.
+        vm.keepDetails("nothing")
+        assertNull(vm.backDetails())
+        val heat = Snapshot(playing = true, title = "Heat", media = MediaInfo(item = PlayingItem("movie", 2)))
+        live.value = LiveState(snapshot = heat)
+        vm.openDetails(PlayingItem("movie", 2).target("Heat"), playing = heat)
+        advanceUntilIdle()
+        vm.keepDetails("heat's keys")
+        vm.openDetails(MarkTarget(MarkTarget.Kind.MOVIE, 5, "Sicario"))
+        advanceUntilIdle()
+        assertEquals("Plot 5.", vm.details.value?.details?.plot)
+        // A read still out for the page left is let go of.
+        val gate = CompletableDeferred<Unit>()
+        api.details = { kind, id -> gate.await(); TitleDetails(kind = kind, id = id, plot = "Late.") }
+        vm.keepDetails("sicario's keys")
+        vm.openDetails(MarkTarget(MarkTarget.Kind.MOVIE, 6, "Arrival"))
+        val back = vm.backDetails()!!
+        assertEquals("sicario's keys", back.actions)
+        gate.complete(Unit)
+        advanceUntilIdle()
+        assertEquals("Plot 5.", vm.details.value?.details?.plot)
+        assertEquals("heat's keys", vm.backDetails()!!.actions)
+        assertEquals("Plot 2.", vm.details.value?.details?.plot)
+        assertNull(vm.backDetails())
+        // Back on the playing title's page, it goes when the title does.
+        live.value = LiveState(snapshot = heat.copy(media = MediaInfo(item = PlayingItem("movie", 1))))
+        advanceUntilIdle()
+        assertNull(vm.details.value)
+        // A trail is let go of when the page closes, or a title is opened anew.
+        api.details = { kind, id -> TitleDetails(kind = kind, id = id) }
+        vm.openDetails(MarkTarget(MarkTarget.Kind.MOVIE, 1, "Dune"))
+        vm.keepDetails(null)
+        vm.closeDetails()
+        vm.openDetails(MarkTarget(MarkTarget.Kind.MOVIE, 3, "Blade Runner"))
+        assertNull(vm.backDetails())
+        vm.keepDetails(null)
+        vm.showPlayingDetails(heat)
+        assertNull(vm.backDetails())
+    }
+
+    @Test
     fun `a box that cannot be reached is asked again next time`() = runTest(dispatcher) {
         var fail = true
         api.library = { if (fail) throw ApiFailure.Unreachable(null, true, null) else Library(listOf(blade)) }

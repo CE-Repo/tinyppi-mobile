@@ -564,6 +564,14 @@ private fun AppearanceCard(settings: AppSettings, viewModel: SettingsViewModel) 
             checked = settings.showArtwork,
             onCheckedChange = viewModel::setShowArtwork,
         )
+        // Greyed out without posters, as the colour below is: it is a picture too.
+        SwitchRow(
+            label = stringResource(R.string.settings_live_backdrop),
+            description = stringResource(R.string.settings_live_backdrop_desc),
+            checked = settings.liveBackdrop && settings.showArtwork,
+            onCheckedChange = viewModel::setLiveBackdrop,
+            enabled = settings.showArtwork,
+        )
         SwitchRow(
             label = stringResource(R.string.settings_chapters),
             description = stringResource(R.string.settings_chapters_desc),

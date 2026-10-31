@@ -172,6 +172,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { repository.setShowChapters(enabled) }
     }
 
+    fun setLiveBackdrop(enabled: Boolean) {
+        viewModelScope.launch { repository.setLiveBackdrop(enabled) }
+    }
+
     fun setAdaptiveColor(enabled: Boolean) {
         viewModelScope.launch { repository.setAdaptiveColor(enabled) }
     }

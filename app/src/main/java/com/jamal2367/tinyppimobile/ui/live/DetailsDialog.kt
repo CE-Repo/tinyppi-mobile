@@ -5,6 +5,8 @@ package com.jamal2367.tinyppimobile.ui.live
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.geometry.Offset
@@ -15,6 +17,24 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.runtime.DontMemoize
+import androidx.compose.foundation.border
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage
@@ -40,7 +60,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -92,6 +111,8 @@ import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.CastMember
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
+import com.jamal2367.tinyppimobile.data.model.Airing
+import com.jamal2367.tinyppimobile.data.model.RelatedTitle
 import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
@@ -170,6 +191,18 @@ internal class DetailsActions(
  *
  * [over] is a page the details give way to in the same window - a show's
  * seasons - rather than another window opening on top of the shelf.
+ *
+ * [onRelated] opens a title of the library the page leads on to - a film of
+ * its series, one TMDb recommends - in place of this one; without it, those
+ * cards lead nowhere but to TMDb. A page that takes another's place turns
+ * like a page of the app: [forward], the new one slides in over the old
+ * from the end; back, the top one slides away to the end over the one
+ * under it.
+ *
+ * [visible], where given, is whether the page is open: it slides in from
+ * the end over a dimming scrim as it opens, and away to the end as it
+ * closes, while the caller keeps it shown (see [DetailsPage]). Without it
+ * the page simply stands there.
  */
 @Composable
 internal fun DetailsDialog(
@@ -180,6 +213,9 @@ internal fun DetailsDialog(
     adaptive: Boolean = false,
     intensity: Float = 1f,
     over: (@Composable () -> Unit)? = null,
+    onRelated: ((RelatedTitle) -> Unit)? = null,
+    forward: Boolean = true,
+    visible: MutableTransitionState<Boolean>? = null,
     onDismiss: () -> Unit,
 ) {
     val pictures = if (showArtwork) server else null
@@ -195,27 +231,67 @@ internal fun DetailsDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         DisableDialogWindowAnimations()
-        CompositionLocalProvider(LocalUriHandler provides links) {
-            MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
-                ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
-                    DetailsPages(state, pictures, actions, over)
+        val pages = @Composable {
+            CompositionLocalProvider(LocalUriHandler provides links) {
+                MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
+                    ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
+                        DetailsPages(state, pictures, actions, over, onRelated, forward)
+                    }
                 }
             }
         }
+        if (visible == null) pages() else SlidingPage(visible, pages)
     }
 }
 
-/** Keep every full-screen details window free of platform enter/exit animations. */
+/**
+ * A page that slides in from the end as [visible] turns true and away to
+ * the end as it turns false, over a scrim that dims what is under it -
+ * the screen the page was opened from - as the page comes and lifts as it
+ * goes: the same turn a page led on to makes (see [pageTurn]).
+ */
+@Composable
+private fun SlidingPage(visible: MutableTransitionState<Boolean>, page: @Composable () -> Unit) {
+    // The end is the right, or the left in a language written from right to left.
+    val end = if (LocalLayoutDirection.current == LayoutDirection.Ltr) 1 else -1
+    val spatial = tween<IntOffset>(PAGE_TURN_MS, easing = PAGE_EASING)
+    val effects = tween<Float>(PAGE_TURN_MS, easing = PAGE_EASING)
+    Box(Modifier.fillMaxSize()) {
+        AnimatedVisibility(visibleState = visible, enter = fadeIn(effects), exit = fadeOut(effects)) {
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = SCRIM_ALPHA)).testTag("details-scrim"))
+        }
+        AnimatedVisibility(
+            visibleState = visible,
+            enter = slideInHorizontally(spatial) { it * end },
+            exit = slideOutHorizontally(spatial) { it * end },
+        ) { page() }
+    }
+}
+
+/** How dark the screen under a page opening over it turns. */
+private const val SCRIM_ALPHA = 0.32f
+
+/**
+ * Keep every full-screen details window free of platform enter/exit
+ * animations and of the platform's dimming: the pages make their own (see
+ * [SlidingPage]).
+ */
 @Composable
 internal fun DisableDialogWindowAnimations() {
     val window = (LocalView.current.parent as DialogWindowProvider).window
-    SideEffect { window.setWindowAnimations(0) }
+    SideEffect {
+        window.setWindowAnimations(0)
+        window.setDimAmount(0f)
+    }
 }
 
 /**
- * The details, or the page they have given way to ([over]). The switch is
- * immediate so moving between details and seasons never waits for an
- * animation to finish.
+ * The details, or the page they have given way to ([over]). The switch to
+ * and from the seasons is immediate, so moving between details and seasons
+ * never waits for an animation to finish; one title's page giving way to
+ * another's turns (see [pageTurn]), each page with its keys and its own
+ * scrolling, kept while the window is open: the seasons, or a page led on
+ * to, left for a page find it where it was.
  */
 @Composable
 private fun DetailsPages(
@@ -223,13 +299,61 @@ private fun DetailsPages(
     pictures: ServerConfig?,
     actions: DetailsActions?,
     over: (@Composable () -> Unit)?,
+    onRelated: ((RelatedTitle) -> Unit)?,
+    forward: Boolean,
 ) {
-    val scroll = rememberScrollState()
-    if (over != null) over() else DetailsPage(state, pictures, actions, scroll)
+    val scrolls = remember { mutableMapOf<MarkTarget, ScrollState>() }
+    if (over != null) {
+        over()
+        return
+    }
+    AnimatedContent(
+        targetState = state to actions,
+        contentKey = { (page, _) -> page.target },
+        transitionSpec = { pageTurn(forward) },
+        label = "details-page",
+    ) { (page, keys) ->
+        DetailsPage(page, pictures, keys, scrolls.getOrPut(page.target) { ScrollState(0) }, onRelated)
+    }
 }
 
+/** How long a page takes to turn, and how it moves: quickly away, gently to rest. */
+private const val PAGE_TURN_MS = 380
+private val PAGE_EASING = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+
+/**
+ * One page turning to the next. The page on top moves the whole width -
+ * coming in from the end going forward, going out to the end going back -
+ * while the page under it moves a quarter of the way and dims a little, as
+ * pages of the app do: the new title over the one it was opened from, and
+ * back the other way. The end is the right, or the left in a language
+ * written from right to left.
+ */
+private fun AnimatedContentTransitionScope<*>.pageTurn(forward: Boolean): ContentTransform {
+    val spatial = tween<IntOffset>(PAGE_TURN_MS, easing = PAGE_EASING)
+    val effects = tween<Float>(PAGE_TURN_MS, easing = PAGE_EASING)
+    val towards = if (forward) SlideDirection.Start else SlideDirection.End
+    val top = { full: Int -> full }
+    val under = { full: Int -> full / 4 }
+    val enter = slideIntoContainer(towards, spatial, if (forward) top else under) +
+        fadeIn(effects, initialAlpha = if (forward) 1f else UNDER_ALPHA)
+    val exit = slideOutOfContainer(towards, spatial, if (forward) under else top) +
+        fadeOut(effects, targetAlpha = if (forward) UNDER_ALPHA else 1f)
+    // The page that moves the whole width is the one on top.
+    return (enter togetherWith exit).apply { targetContentZIndex = if (forward) 1f else -1f }
+}
+
+/** How far the page under a turning one dims. */
+private const val UNDER_ALPHA = 0.6f
+
 @Composable
-private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: DetailsActions?, scroll: ScrollState) {
+private fun DetailsPage(
+    state: DetailsUiState,
+    server: ServerConfig?,
+    actions: DetailsActions?,
+    scroll: ScrollState,
+    onRelated: ((RelatedTitle) -> Unit)?,
+) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         val details = state.details
         Column(modifier = Modifier.verticalScroll(scroll)) {
@@ -248,7 +372,7 @@ private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: D
                 )
                 state.actionError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 if (details != null) {
-                    DetailsBody(details, server)
+                    DetailsBody(details, server, onRelated)
                 } else if (state.failed) {
                     Text(
                         text = stringResource(R.string.details_failed),
@@ -493,7 +617,11 @@ private fun Heading(
  * playing title says, in the same words and the same shapes.
  */
 @Composable
-internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
+internal fun DetailsBody(
+    details: TitleDetails,
+    server: ServerConfig? = null,
+    onRelated: ((RelatedTitle) -> Unit)? = null,
+) {
     val rated = MediaInfo(
         ratings = details.ratings,
         mpaa = details.mpaa,
@@ -550,7 +678,7 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
         // or what it lost under that name.
         stringResource(if (made < 0) R.string.details_loss else R.string.details_profit) to
             listOfNotNull(profit.takeIf { money.size == 2 }),
-    ).filter { it.second.isNotEmpty() }
+    ).plus(showFacts(details, locale)).filter { it.second.isNotEmpty() }
     if (facts.isNotEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
             for ((heading, names) in facts) Fact(heading, names.joinToString(", "))
@@ -570,6 +698,169 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
         details.writers.map { CastMember(it, writerRole) }
     if (details.cast.isNotEmpty()) Cast(details.cast, details.castMore, stringResource(R.string.live_credit_cast), server)
     if (crew.isNotEmpty()) Cast(crew, false, stringResource(R.string.details_crew), server)
+    details.collection?.let { Related(it.name, it.parts, server, onRelated) }
+    Related(stringResource(R.string.details_recommended), details.recommended, server, onRelated)
+}
+
+/**
+ * A series' run on TMDb: its state, who airs it, how many seasons and
+ * episodes there are in all - "Seasons/Episodes" over "5/62", where TMDb
+ * knows both - and the next episode to air and the last aired,
+ * "S03E01 · Its title · 16 Jan 2027". Nothing for a film.
+ */
+@Composable
+private fun showFacts(details: TitleDetails, locale: Locale): List<Pair<String, List<String>>> {
+    val status = when (details.status) {
+        "returning" -> stringResource(R.string.details_status_returning)
+        "ended" -> stringResource(R.string.details_status_ended)
+        "canceled" -> stringResource(R.string.details_status_canceled)
+        "production" -> stringResource(R.string.details_status_production)
+        "planned" -> stringResource(R.string.details_status_planned)
+        "pilot" -> stringResource(R.string.details_status_pilot)
+        else -> details.status
+    }
+    val sized = details.tmdbSeasons > 0 && details.tmdbEpisodes > 0
+    return listOf(
+        stringResource(R.string.details_status) to listOfNotNull(status.ifEmpty { null }),
+        stringResource(R.string.details_network) to details.networks,
+        stringResource(R.string.details_seasons_episodes) to
+            listOfNotNull("${details.tmdbSeasons}/${details.tmdbEpisodes}".takeIf { sized }),
+        stringResource(R.string.details_next_episode) to listOfNotNull(details.nextEpisode?.let { airing(it, locale) }),
+        stringResource(R.string.details_last_episode) to listOfNotNull(details.lastEpisode?.let { airing(it, locale) }),
+    )
+}
+
+/** "S03E01 · Its title · 16 Jan 2027", each part where it is known. */
+internal fun airing(episode: Airing, locale: Locale): String =
+    listOf(episode.code, episode.title, episode.date.ifEmpty { null }?.let { cinemaDay(it, locale) }.orEmpty())
+        .filter { it.isNotEmpty() }
+        .joinToString(" \u00b7 ")
+
+/**
+ * Titles the page leads on to, under [heading] with how many there are: a
+ * row of poster cards, as the cast's portraits are, each with its name and
+ * year. One the library holds opens its own page ([onRelated]); one it does
+ * not, marked TMDb, its page on TMDb; the page's own title, marked, neither.
+ * Nothing where there are none.
+ */
+@Composable
+private fun Related(heading: String, titles: List<RelatedTitle>, server: ServerConfig?, onRelated: ((RelatedTitle) -> Unit)?) {
+    if (titles.isEmpty()) return
+    val density = LocalDensity.current
+    val measurer = rememberTextMeasurer()
+    val nameStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+    val yearStyle = MaterialTheme.typography.labelMedium
+    val width = with(density) { CAST_WIDTH.roundToPx() }
+    val gap = with(density) { 4.dp.roundToPx() }
+    // As the cast's: the row is as tall as its tallest name and year.
+    val textHeight = remember(titles, measurer, nameStyle, yearStyle, width, gap) {
+        val constraints = Constraints(maxWidth = width)
+        val year = gap + measurer.measure("0000", yearStyle, constraints = constraints).size.height
+        titles.fold(0) { height, title ->
+            maxOf(height, measurer.measure(title.title, nameStyle, constraints = constraints).size.height)
+        } + year
+    }.let { with(density) { it.toDp() } }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.testTag("related-row")) {
+        val muted = MaterialTheme.colorScheme.onSurfaceVariant
+        Text(
+            text = buildAnnotatedString {
+                append(heading)
+                withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = muted)) {
+                    append(" (${titles.size})")
+                }
+            },
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp),
+            fontWeight = FontWeight.Bold,
+        )
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = PAGE_EDGE),
+            modifier = Modifier.bleed(PAGE_EDGE),
+        ) {
+            items(titles) { title -> RelatedCard(title, textHeight, server, onRelated) }
+        }
+    }
+}
+
+@Composable
+private fun RelatedCard(title: RelatedTitle, textHeight: Dp, server: ServerConfig?, onRelated: ((RelatedTitle) -> Unit)?) {
+    val uriHandler = LocalUriHandler.current
+    val press: (() -> Unit)? = when {
+        title.current -> null
+        // Built afresh each time: a cached callback only adds compiler-generated branches.
+        title.held -> onRelated?.let { open ->
+            val toPage: () -> Unit = @DontMemoize { open(title) }
+            toPage
+        }
+        else -> {
+            val toTmdb: () -> Unit = @DontMemoize { runCatching { uriHandler.openUri(title.page) } }
+            toTmdb
+        }
+    }
+    val label = stringResource(if (title.held) R.string.details_open_related else R.string.details_on_tmdb)
+    Column(
+        modifier = Modifier
+            .width(CAST_WIDTH)
+            .clip(RoundedCornerShape(8.dp))
+            .then(if (press != null) Modifier.clickable(onClickLabel = label, onClick = press) else Modifier)
+            .height(RELATED_HEIGHT + 12.dp + textHeight)
+            .testTag("related-card"),
+    ) {
+        Box(
+            modifier = Modifier
+                .width(CAST_WIDTH)
+                .height(RELATED_HEIGHT)
+                .clip(RoundedCornerShape(8.dp))
+                .background(placeholderBrush(title.title))
+                .then(
+                    if (title.current) {
+                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+                    } else {
+                        Modifier
+                    },
+                ),
+        ) {
+            MediaUrls.related(server, title)?.let { poster ->
+                AsyncImage(
+                    model = poster,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize(),
+                )
+            }
+            val mark = when {
+                title.current -> stringResource(R.string.details_this_film)
+                title.held -> ""
+                else -> "TMDb"
+            }
+            if (mark.isNotEmpty()) {
+                Text(
+                    text = mark,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(6.dp)
+                        .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .testTag("related-mark"),
+                )
+            }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 12.dp)) {
+            Text(text = title.title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            if (title.year > 0) {
+                Text(
+                    text = title.year.toString(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
 }
 
 /** "2021-09-16" as the reader writes a day; the day itself where it is none. */
@@ -773,6 +1064,8 @@ internal val PAGE_EDGE = 20.dp
 private val HERO_HEIGHT = 300.dp
 private val POSTER_WIDTH = 104.dp
 private val CAST_WIDTH = 144.dp
+/** A related title's poster, two by three as a poster stands. */
+private val RELATED_HEIGHT = 216.dp
 
 private val ACTION_HEIGHT = 48.dp
 
@@ -783,7 +1076,12 @@ private val ACTION_HEIGHT = 48.dp
  * question's first answers, where the page was opened from one.
  */
 @Composable
-internal fun DetailsShown(viewModel: LiveViewModel, actions: DetailsActions?, except: MarkTarget.Kind? = null) {
+internal fun DetailsShown(
+    viewModel: LiveViewModel,
+    actions: DetailsActions?,
+    except: MarkTarget.Kind? = null,
+    onRelated: ((RelatedTitle) -> Unit)? = null,
+) {
     val details by viewModel.details.collectAsStateWithLifecycle()
     // A kind the screen shows in a place of its own (see SeriesScreen).
     DetailsPage(
@@ -791,6 +1089,7 @@ internal fun DetailsShown(viewModel: LiveViewModel, actions: DetailsActions?, ex
         details?.takeIf { it.target.kind != except },
         actions,
         over = null,
+        onRelated = onRelated,
         onDismiss = viewModel::closeDetails,
     )
 }
@@ -806,18 +1105,58 @@ internal fun DetailsPage(
     open: DetailsUiState?,
     actions: DetailsActions?,
     over: (@Composable () -> Unit)?,
+    onRelated: ((RelatedTitle) -> Unit)?,
     onDismiss: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val page = open?.takeIf { LocalIsCurrentPage.current } ?: return
+    // The page gone back to, with the actions it had: the screen's own are
+    // the last title's it opened.
+    var back by remember { mutableStateOf<LiveViewModel.DetailsBack?>(null) }
+    // Which way the last page turned: on to a title, or back from one.
+    var forward by remember { mutableStateOf(true) }
+    // Whether the page is open, which it slides in and away by; and the
+    // page last open, shown while it slides away once closed.
+    val showing = remember { MutableTransitionState(false) }
+    var last by remember { mutableStateOf<DetailsUiState?>(null) }
+    SideEffect {
+        showing.targetState = open != null
+        if (open != null) last = open
+    }
+    // On a page not in front - another tab - it is gone at once.
+    if (!LocalIsCurrentPage.current) {
+        SideEffect { if (open == null) last = null }
+        return
+    }
+    // A page sliding away counts as shown until it is gone.
+    val page = open ?: last?.takeIf { showing.currentState } ?: return
+    val restored = back?.takeIf { it.page.target == page.target }
+    val shown = if (restored != null) restored.actions as DetailsActions? else actions
+    // Where the screen has no way of its own, a title the page leads on to
+    // opens as the overview's does: its details, with nothing to press.
+    val related = onRelated ?: @DontMemoize { title: RelatedTitle -> viewModel.openDetails(title.markTarget()) }
     DetailsDialog(
         state = page,
         server = state.live.server,
         showArtwork = state.settings.showArtwork,
-        actions = actions,
+        actions = shown,
         adaptive = state.settings.adaptiveColor,
         intensity = state.settings.adaptiveColorIntensity,
         over = over,
-        onDismiss = onDismiss,
+        // The page stays behind the one it leads on to ...
+        onRelated = { title ->
+            forward = true
+            viewModel.keepDetails(shown)
+            related(title)
+        },
+        forward = forward,
+        visible = showing,
+        // ... and back, from there, goes back to it; from the first page,
+        // or from the seasons a show's page gave way to, as before.
+        onDismiss = {
+            val previous = if (over == null) viewModel.backDetails() else null
+            back = previous
+            forward = previous == null
+            if (previous == null) onDismiss()
+        },
     )
 }

@@ -95,6 +95,9 @@ The token is upper-cased as it is typed: the add-on mints it out of an alphabet
 with no `I`, `O`, `0` or `1` in it, because a token is read off a television and
 typed on a phone.
 
+The settings, tokens included, stay on the phone: they are left out of Android's
+cloud backup and of the transfer to a new phone, so a box is set up again there.
+
 Two things in the add-on's own settings decide what the app can show:
 
 - **Control** — off, the transport row and the VS10 buttons are not drawn at
@@ -143,7 +146,10 @@ The title with its poster, its year and genre (its first two) and under them
 its studio (only the first, with no "…"; an episode's is its show's), the
 source and output badges, the video and audio formats named in badges of
 their own, the progress, and — on a box that allows it — the transport row,
-the track pickers and the VS10 conversions.
+the track pickers and the VS10 conversions. The card is washed in the colour
+of the poster; with **Backdrop on the live card** switched on in the settings
+(off by default) it stands on the title's landscape picture instead, darkened
+towards its foot as the top of a details page is.
 
 Under the card of what is playing, the **Overview** card: its heading and an
 arrow, nothing more. A tap on it opens the playing title's details page (see
@@ -315,7 +321,19 @@ the same layout as the Overview card. The page runs the whole screen, top to
 bottom, and where the app takes its colour from what is playing, the page takes
 its own from the title's poster: its keys are in that title's colour. A box
 that cannot answer says so on the page. A series cannot be
-played, so its first option is **Open**, which shows its episodes. Marking is
+played, so its first option is **Open**, which shows its episodes.
+
+Where the box has a **TMDb API key**, the page also leads on: a film's
+**series** as a row of posters in release order, the film itself marked, and
+under **More like this in your library** the films or series of your own
+library that TMDb recommends after it. A tap on a title the library holds
+opens **its own page** in place of this one, with its keys; one it does not
+hold, marked *TMDb*, opens **its page on TMDb** in the in-app browser.
+**Back** on a page opened this way goes back to the page it was opened from,
+as it was; only back on the first page closes the details. A
+series' facts add whether it goes on, ended or was cancelled, who airs it,
+how many seasons and episodes there are in all, and the next episode to air
+and the last aired. Marking is
 written into Kodi's own library — a series marked either way is every episode
 of it — and every shelf is read again at once, so the tick and the unwatched
 cards show what the library now holds.

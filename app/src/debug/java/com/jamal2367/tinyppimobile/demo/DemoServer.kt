@@ -1,5 +1,6 @@
 package com.jamal2367.tinyppimobile.demo
 
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import android.content.Context
@@ -99,6 +100,9 @@ object DemoServer {
             "Princess Irulan", "Rabban", "Emperor Shaddam IV", "Lady Margot Fenring",
         ),
     )
+
+    /** The film the playing one follows in its series, which the library holds too. */
+    private const val DUNE = 25
 
     /** The show that wears an Emmy and a TV age rating on its details. */
     private const val SHOGUN = 103
@@ -310,6 +314,51 @@ object DemoServer {
         Film(22, "The Martian", 2015, 144, 8.0, "Science Fiction", watched = true),
         Film(23, "Parasite", 2019, 132, 8.5, "Thriller"),
         Film(24, "Inception", 2010, 148, 8.8, "Science Fiction", watched = true),
+        // The first part of the playing film's series, so its row has a film
+        // of the library to lead to as well as ones only TMDb has.
+        Film(DUNE, "Dune", 2021, 155, 8.0, "Science Fiction", watched = true),
+    )
+
+    /* --- What TMDb adds: a film's series, recommendations, a show's run ------ */
+
+    /** A film of a series: one of the library's ([film]), or one only TMDb has. */
+    private class Part(val tmdb: Int, val film: Int = 0, val title: String = "", val year: Int = 0)
+
+    private class FilmSeries(val name: String, val parts: List<Part>)
+
+    private val duneSeries = FilmSeries(
+        "Dune Collection",
+        listOf(Part(438631, film = DUNE), Part(693134, film = 1), Part(1170608, title = "Dune: Part Three", year = 2026)),
+    )
+
+    /** The series each film is part of on TMDb. */
+    private val filmSeries = mapOf(
+        1 to duneSeries,
+        DUNE to duneSeries,
+        3 to FilmSeries("Blade Runner Collection", listOf(Part(78, title = "Blade Runner", year = 1982), Part(335984, film = 3))),
+    )
+
+    /** The library's films and shows TMDb recommends after each, best first. */
+    private val filmPicks = mapOf(1 to listOf(DUNE, 3, 6, 8, 20), DUNE to listOf(1, 3, 6), 2 to listOf(24, 5, 9))
+    private val showPicks = mapOf(101 to listOf(107, 106, 108), 104 to listOf(103, 102), 106 to listOf(101, 107))
+
+    /**
+     * A show's run as TMDb tells it: its state, who airs it, how many seasons
+     * and episodes there are in all, the next episode - [nextInDays] from
+     * today, so it is always still to come - and the last aired.
+     */
+    private class Run(
+        val status: String, val network: String, val seasons: Int, val episodes: Int,
+        val next: Pair<Int, Int>? = null, val nextTitle: String = "", val nextInDays: Long = 0,
+        val last: Pair<Int, Int>? = null, val lastAired: String = "",
+    )
+
+    private val runs = mapOf(
+        101 to Run("returning", "Apple TV+", 2, 19, last = 2 to 10, lastAired = "2025-03-21"),
+        104 to Run("ended", "Disney+", 2, 24, last = 2 to 12, lastAired = "2025-05-13"),
+        106 to Run("ended", "Netflix", 3, 26, last = 3 to 8, lastAired = "2020-06-27"),
+        108 to Run("returning", "Prime Video", 2, 16, next = 2 to 6, nextTitle = "The Other Player", nextInDays = 5, last = 2 to 5),
+        109 to Run("ended", "HBO", 1, 5),
     )
 
     private val shows = listOf(
@@ -820,6 +869,12 @@ object DemoServer {
                     put("mpaa", "TV-MA"); put("age", "tv_ma"); put("age_level", "MA")
                     put("awards", awardsJson(listOf(DemoAward("emmy", listOf("Outstanding Drama Series (2024)"), 7))))
                 }
+                runs[show.id]?.let { putRun(it) }
+                showPicks[show.id]?.let { picks ->
+                    putJsonArray("recommended") {
+                        picks.forEach { id -> shows.first { it.id == id }.let { add(related("tvshow", it.id, it.title, it.year, "show-${it.id}")) } }
+                    }
+                }
             }
         }
         val id = query["episodeid"]?.toIntOrNull() ?: return null
@@ -871,10 +926,57 @@ object DemoServer {
             put("budget", tmdb.budget); put("revenue", tmdb.revenue)
         }
         putJsonArray("ratings") { filmRatings(film).forEach { add(rating(it)) } }
+        filmSeries[film.id]?.let { put("collection", seriesJson(it, film.id)) }
+        filmPicks[film.id]?.let { picks ->
+            putJsonArray("recommended") { picks.forEach { id -> add(relatedFilm(films.first { it.id == id })) } }
+        }
         put("video", FILM_VIDEO[film.id % FILM_VIDEO.size])
         if (film.id % FILM_VIDEO.size == 0) put("dv_profile", DV_PROFILES[film.id % DV_PROFILES.size])
         put("resolution", if (film.id % 3 == 0) "1080p" else "2160p")
         put("audio", FILM_AUDIO[film.id % FILM_AUDIO.size])
+    }
+
+    /** A film's series, the library's films as it has them and the others as TMDb does, [current] marked. */
+    private fun seriesJson(series: FilmSeries, current: Int) = buildJsonObject {
+        put("name", series.name)
+        putJsonArray("parts") {
+            series.parts.forEach { part ->
+                val film = films.firstOrNull { it.id == part.film }
+                val entry = if (film != null) relatedFilm(film, part.tmdb) else buildJsonObject {
+                    put("kind", "movie"); put("tmdb", part.tmdb); put("title", part.title); put("year", part.year)
+                    put("portrait", "tmdb-${part.tmdb}")
+                }
+                add(if (part.film == current) JsonObject(entry + ("current" to JsonPrimitive(true))) else entry)
+            }
+        }
+    }
+
+    /** A film of the library, as a details page leads on to it; its TMDb id made up where the demo has none. */
+    private fun relatedFilm(film: Film, tmdb: Int = 900_000 + film.id) =
+        related("movie", film.id, film.title, film.year, "movie-${film.id}", tmdb)
+
+    private fun related(kind: String, id: Int, title: String, year: Int, poster: String, tmdb: Int = 900_000 + id) =
+        buildJsonObject {
+            put("kind", kind); put("tmdb", tmdb); put("id", id); put("title", title); put("year", year); put("poster", poster)
+        }
+
+    /** A show's run, as the add-on adds it from TMDb. */
+    private fun kotlinx.serialization.json.JsonObjectBuilder.putRun(run: Run) {
+        put("status", run.status)
+        putJsonArray("networks") { add(run.network) }
+        put("tmdb_seasons", run.seasons); put("tmdb_episodes", run.episodes)
+        run.next?.let { (season, episode) ->
+            putJsonObject("next_episode") {
+                put("season", season); put("episode", episode); put("title", run.nextTitle)
+                put("date", LocalDate.now().plusDays(run.nextInDays).toString())
+            }
+        }
+        run.last?.let { (season, episode) ->
+            putJsonObject("last_episode") {
+                put("season", season); put("episode", episode)
+                if (run.lastAired.isNotEmpty()) put("date", run.lastAired)
+            }
+        }
     }
 
     private fun awardsJson(awards: List<DemoAward>) = buildJsonArray {
@@ -1003,7 +1105,9 @@ object DemoServer {
     )
 
     private fun picture(query: Map<String, String>): ByteArray {
-        query["portrait"]?.let { return portrait(it) }
+        // TMDb's poster of a film the library does not hold comes as a
+        // portrait tag too, and is drawn as a poster.
+        query["portrait"]?.takeIf { query["kind"] != "poster" }?.let { return portrait(it) }
         val kind = query["kind"] ?: "poster"
         val tag = query["v"] ?: "x"
         return art.getOrPut("$kind/$tag") {
@@ -1056,6 +1160,7 @@ object DemoServer {
             tag.startsWith("movie-") -> films.firstOrNull { it.id == id }?.title
             tag.startsWith("show-") || tag.startsWith("fanart-") -> shows.firstOrNull { it.id == id }?.title
             tag.startsWith("thumb-") -> "S%02dE%02d".format(id / 100 % 10, id % 100)
+            tag.startsWith("tmdb-") -> filmSeries.values.flatMap { it.parts }.firstOrNull { it.tmdb == id }?.title
             else -> null
         } ?: "TinyPPI"
     }

@@ -51,6 +51,8 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setShowChapters(enabled: Boolean) = edit { it[KEY_SHOW_CHAPTERS] = enabled }
 
+    suspend fun setLiveBackdrop(enabled: Boolean) = edit { it[KEY_LIVE_BACKDROP] = enabled }
+
     suspend fun setAdaptiveColor(enabled: Boolean) = edit { it[KEY_ADAPTIVE_COLOR] = enabled }
 
     suspend fun setAdaptiveColorIntensity(intensity: Float) = edit {
@@ -144,6 +146,7 @@ class SettingsRepository(private val context: Context) {
         volumeKeys = this[KEY_VOLUME_KEYS] ?: true,
         showArtwork = this[KEY_SHOW_ARTWORK] ?: true,
         showChapters = this[KEY_SHOW_CHAPTERS] ?: true,
+        liveBackdrop = this[KEY_LIVE_BACKDROP] ?: false,
         adaptiveColor = this[KEY_ADAPTIVE_COLOR] ?: true,
         adaptiveColorIntensity = (this[KEY_ADAPTIVE_COLOR_INTENSITY] ?: 1f)
             .coerceIn(0.5f, 1f),
@@ -196,6 +199,7 @@ class SettingsRepository(private val context: Context) {
         val KEY_VOLUME_KEYS = booleanPreferencesKey("volume_keys")
         val KEY_SHOW_ARTWORK = booleanPreferencesKey("show_artwork")
         val KEY_SHOW_CHAPTERS = booleanPreferencesKey("show_chapters")
+        val KEY_LIVE_BACKDROP = booleanPreferencesKey("live_backdrop")
         val KEY_ADAPTIVE_COLOR = booleanPreferencesKey("adaptive_color")
         val KEY_ADAPTIVE_COLOR_INTENSITY = floatPreferencesKey("adaptive_color_intensity")
         val KEY_CARD_FOLDS = stringSetPreferencesKey("card_folds")

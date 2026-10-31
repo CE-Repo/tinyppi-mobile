@@ -129,6 +129,16 @@ data class AppSettings(
      */
     val showChapters: Boolean = true,
     /**
+     * Whether the live card stands on the landscape picture of what is
+     * playing - its fanart, as the top of a details page does - rather than
+     * on the wash of its poster's colour.
+     *
+     * Off by default: the wash is the card as it has always looked, and a
+     * second, larger picture per title is the reader's to ask for. It follows
+     * [showArtwork], which turns every picture off.
+     */
+    val liveBackdrop: Boolean = false,
+    /**
      * Whether the app paints itself in the colour of what is playing.
      *
      * On by default, and read off the poster - so it follows [showArtwork]:

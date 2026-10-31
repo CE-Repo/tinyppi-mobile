@@ -6,6 +6,7 @@ import com.jamal2367.tinyppimobile.data.model.LibraryEpisode
 import com.jamal2367.tinyppimobile.data.model.LibraryFilm
 import com.jamal2367.tinyppimobile.data.model.LibraryShow
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
+import com.jamal2367.tinyppimobile.data.model.RelatedTitle
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import java.net.URLEncoder
 
@@ -132,6 +133,18 @@ object MediaUrls {
         val box = server ?: return null
         val picture = tag.takeIf { it.isNotBlank() }?.encoded() ?: return null
         return "${box.baseUrl}/api/art?kind=thumb&portrait=$picture&v=$picture"
+    }
+
+    /**
+     * The poster of a title a details page leads on to: the library's own
+     * where it holds the title, else TMDb's through the box (a portrait tag,
+     * see [portrait]); null where it has neither.
+     */
+    fun related(server: ServerConfig?, title: RelatedTitle): String? {
+        if (title.held) return shelfArt(server, "poster", if (title.isShow) "tvshowid" else "movieid", title.id, title.poster)
+        val box = server ?: return null
+        val picture = title.portrait.takeIf { it.isNotBlank() }?.encoded() ?: return null
+        return "${box.baseUrl}/api/art?kind=poster&portrait=$picture&v=$picture"
     }
 
     /** One picture of the playing title, by its kind and tag; null without a tag. */

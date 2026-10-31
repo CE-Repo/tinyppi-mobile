@@ -369,6 +369,22 @@ data class TitleDetails(
     @SerialName("cinema_country") val cinemaCountry: String = "",
     val budget: Long = 0,
     val revenue: Long = 0,
+    /** A film's series on TMDb, with the film itself among its parts; null where it is in none. */
+    val collection: FilmSeries? = null,
+    /** Titles of the library, of this one's kind, that TMDb recommends after it. */
+    val recommended: List<RelatedTitle> = emptyList(),
+    /**
+     * A series' state on TMDb - `returning`, `ended`, `canceled`,
+     * `production`, `planned` or `pilot` - who airs it, how many seasons and
+     * episodes there are in all, and the episodes either side of today;
+     * empty, 0 and null where TMDb does not say.
+     */
+    val status: String = "",
+    val networks: List<String> = emptyList(),
+    @SerialName("tmdb_seasons") val tmdbSeasons: Int = 0,
+    @SerialName("tmdb_episodes") val tmdbEpisodes: Int = 0,
+    @SerialName("next_episode") val nextEpisode: Airing? = null,
+    @SerialName("last_episode") val lastEpisode: Airing? = null,
     /** The age rating as the scraper wrote it, and its mark and level (see [MediaInfo.age]). */
     val mpaa: String = "",
     val age: String = "",
@@ -413,6 +429,48 @@ data class TitleDetails(
     val resolution: String = "",
     val audio: String = "",
 )
+
+/** The film series a film belongs to on TMDb, its films in release order. */
+@Serializable
+data class FilmSeries(val name: String = "", val parts: List<RelatedTitle> = emptyList())
+
+/**
+ * A title a details page leads on to: a film of its series, or one TMDb
+ * recommends. One the library holds has its library [id] and the tag of its
+ * [poster], and opens its own details; one it does not, [id] 0 and TMDb's
+ * poster as a [portrait] tag, and opens its page on TMDb. [current] marks the
+ * title the page is about, in its own series.
+ */
+@Serializable
+data class RelatedTitle(
+    /** `movie` or `tvshow`. */
+    val kind: String = "",
+    val tmdb: Int = 0,
+    val title: String = "",
+    val year: Int = 0,
+    val id: Int = 0,
+    val poster: String = "",
+    val portrait: String = "",
+    val current: Boolean = false,
+) {
+    val isShow: Boolean get() = kind == "tvshow"
+
+    /** Whether the library holds it, and a press opens its own details. */
+    val held: Boolean get() = id > 0
+
+    /** Its page on TMDb. */
+    val page: String get() = "https://www.themoviedb.org/${if (isShow) "tv" else "movie"}/$tmdb"
+
+    fun markTarget(): MarkTarget =
+        MarkTarget(if (isShow) MarkTarget.Kind.SHOW else MarkTarget.Kind.MOVIE, id, title)
+}
+
+/** An episode TMDb dates: the next of a series to air, or the last aired. */
+@Serializable
+data class Airing(val season: Int = 0, val episode: Int = 0, val date: String = "", val title: String = "") {
+    /** S03E01, as an episode row writes it. */
+    val code: String get() = "S%02dE%02d".format(season, episode)
+}
 
 /**
  * One of the cast, and who they played; [role] is empty where none is known.

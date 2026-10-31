@@ -384,7 +384,7 @@ class LiveViewModel(
      */
     val underDetails: StateFlow<DetailsUiState?> = _underDetails.asStateFlow()
 
-    private var detailsRead: Job? = null
+    private var detailsRead: Job = Job()
 
     /**
      * What was playing when the open details were opened from the overview
@@ -397,12 +397,52 @@ class LiveViewModel(
     private var opening: Job? = null
 
     /**
+     * A page the open details were led on to from (see [keepDetails]): the
+     * page as it was, whether it was the playing title's, and the actions
+     * the screen gave it - the screen's own, which the view model only holds.
+     */
+    class DetailsBack internal constructor(val page: DetailsUiState, internal val playing: String?, val actions: Any?)
+
+    /** The pages the open details were led on to from, the last on top. */
+    private val detailsBack = ArrayDeque<DetailsBack>()
+
+    /** Whether the next [openDetails] is a title led on to, which keeps [detailsBack]. */
+    private var leadingOn = false
+
+    /**
+     * Keep the open page, with the [actions] it shows, before a title it
+     * leads on to opens in its place, so going back finds it as it was (see
+     * [backDetails]). Nothing while no page is open.
+     */
+    fun keepDetails(actions: Any?) {
+        val page = _details.value ?: return
+        detailsBack.addLast(DetailsBack(page, detailsPlaying, actions))
+        leadingOn = true
+    }
+
+    /**
+     * The page the open details were led on to from, back in front as it
+     * was, with nothing to read again; null where they were led on to from
+     * none, and should close instead.
+     */
+    fun backDetails(): DetailsBack? {
+        val back = detailsBack.removeLastOrNull() ?: return null
+        detailsRead.cancel()
+        detailsPlaying = back.playing
+        _details.value = back.page
+        return back
+    }
+
+    /**
      * Read everything the library holds about one title, for the dialog that
      * shows it. A failure is the dialog's to show rather than a line along
      * the bottom of the screen.
      */
     fun openDetails(target: MarkTarget, playing: Snapshot? = null) {
-        detailsRead?.cancel()
+        // A title opened anew starts a new trail; one led on to adds to it.
+        if (!leadingOn) detailsBack.clear()
+        leadingOn = false
+        detailsRead.cancel()
         detailsPlaying = playing?.let(::playingKey)
         _details.value = DetailsUiState(target)
         detailsRead = viewModelScope.launch {
@@ -427,7 +467,8 @@ class LiveViewModel(
      * `MediaUrls.details`), and there is nothing to play or mark.
      */
     fun showPlayingDetails(snapshot: Snapshot) {
-        detailsRead?.cancel()
+        detailsBack.clear()
+        detailsRead.cancel()
         val media = snapshot.media
         val kind = if (media.item.kind == "episode") MarkTarget.Kind.EPISODE else MarkTarget.Kind.MOVIE
         detailsPlaying = playingKey(snapshot)
@@ -446,7 +487,9 @@ class LiveViewModel(
 
     /** Close the details, letting go of a read still out. */
     fun closeDetails() {
-        detailsRead?.cancel()
+        detailsBack.clear()
+        leadingOn = false
+        detailsRead.cancel()
         detailsPlaying = null
         _details.value = null
     }

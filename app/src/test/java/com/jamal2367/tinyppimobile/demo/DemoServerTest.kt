@@ -90,7 +90,7 @@ class DemoServerTest {
         assertEquals("DV-LL", snapshot["vs10"]!!.jsonObject["output"]!!.jsonPrimitive.content)
 
         // The library and its rows.
-        assertEquals(24, json("/api/library")["count"]!!.jsonPrimitive.int)
+        assertEquals(25, json("/api/library")["count"]!!.jsonPrimitive.int)
         assertEquals(9, json("/api/series")["count"]!!.jsonPrimitive.int)
         assertEquals(18, json("/api/episodes?tvshowid=101")["count"]!!.jsonPrimitive.int)
         assertEquals(24, json("/api/episodes?tvshowid=102&x")["count"]!!.jsonPrimitive.int.let { it + 8 })
@@ -148,8 +148,47 @@ class DemoServerTest {
             assertEquals(unknown, 404, get("/api/details?$unknown").first)
         }
 
-        // Pictures of every kind, drawn once and then served again.
+        // Where a details page leads on to: the playing film's series, the
+        // library's own parts as the library has them and the others as TMDb
+        // does, the film itself marked; the recommendations; a show's run.
+        val dune = json("/api/details?movieid=1")
+        val parts = dune["collection"]!!.jsonObject["parts"]!!.jsonArray.map { it.jsonObject }
+        assertEquals("Dune Collection", dune["collection"]!!.jsonObject["name"]!!.jsonPrimitive.content)
+        assertEquals(listOf("Dune", "Dune: Part Two", "Dune: Part Three"), parts.map { it["title"]!!.jsonPrimitive.content })
+        assertEquals(listOf(25, 1), parts.take(2).map { it["id"]!!.jsonPrimitive.int })
+        assertEquals(438631, parts[0]["tmdb"]!!.jsonPrimitive.int)
+        assertEquals(null, parts[0]["current"])
+        assertTrue(parts[1]["current"]!!.jsonPrimitive.boolean)
+        assertEquals(null, parts[2]["id"])
+        assertEquals("tmdb-1170608", parts[2]["portrait"]!!.jsonPrimitive.content)
+        assertEquals(
+            listOf(25, 3, 6, 8, 20),
+            dune["recommended"]!!.jsonArray.map { it.jsonObject["id"]!!.jsonPrimitive.int },
+        )
+        assertEquals(900_003, dune["recommended"]!!.jsonArray[1].jsonObject["tmdb"]!!.jsonPrimitive.int)
+        assertTrue(json("/api/details?movieid=25")["collection"]!!.jsonObject["parts"]!!.jsonArray[0].jsonObject["current"]!!.jsonPrimitive.boolean)
+        assertEquals("Blade Runner", json("/api/details?movieid=3")["collection"]!!.jsonObject["parts"]!!.jsonArray[0].jsonObject["title"]!!.jsonPrimitive.content)
+        assertEquals(null, json("/api/details?movieid=4")["collection"])
+        assertEquals(null, json("/api/details?movieid=4")["recommended"])
+        val severance = json("/api/details?tvshowid=101")
+        assertEquals("returning", severance["status"]!!.jsonPrimitive.content)
+        assertEquals("Apple TV+", severance["networks"]!!.jsonArray.single().jsonPrimitive.content)
+        assertEquals(19, severance["tmdb_episodes"]!!.jsonPrimitive.int)
+        assertEquals(null, severance["next_episode"])
+        assertEquals("2025-03-21", severance["last_episode"]!!.jsonObject["date"]!!.jsonPrimitive.content)
+        assertEquals(listOf(107, 106, 108), severance["recommended"]!!.jsonArray.map { it.jsonObject["id"]!!.jsonPrimitive.int })
+        val fallout = json("/api/details?tvshowid=108")
+        // The next episode is always still to come.
+        assertTrue(fallout["next_episode"]!!.jsonObject["date"]!!.jsonPrimitive.content > java.time.LocalDate.now().toString())
+        assertEquals(null, fallout["last_episode"]!!.jsonObject["date"])
+        assertEquals(null, json("/api/details?tvshowid=109")["last_episode"])
+        assertEquals(null, json("/api/details?tvshowid=102")["status"])
+        assertEquals(null, json("/api/details?tvshowid=102")["recommended"])
+
+        // Pictures of every kind, drawn once and then served again; TMDb's
+        // poster of a film the library does not hold as a poster.
         for (query in listOf(
+            "kind=poster&portrait=tmdb-1170608&v=tmdb-1170608", "kind=poster&portrait=tmdb-1&v=tmdb-1",
             "kind=poster&v=movie-1", "kind=poster&v=movie-1", "kind=poster&v=movie-21",
             "kind=fanart&v=fanart-101", "kind=thumb&v=thumb-101102", "kind=poster&v=show-103",
             "kind=poster&v=movie-999", "kind=poster&v=other-1", "kind=poster&v=show-999", "kind=fanart&v=fanart-999", "kind=poster&v=plain", "v=x", "",
