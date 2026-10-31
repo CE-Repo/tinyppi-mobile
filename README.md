@@ -325,7 +325,9 @@ Where the box has a **TMDb API key**, the page also leads on: a film's
 under **More like this in your library** the films or series of your own
 library that TMDb recommends after it. A tap on a title the library holds
 opens **its own page** in place of this one, with its keys; one it does not
-hold, marked *TMDb*, opens **its page on TMDb** in the in-app browser. A
+hold, marked *TMDb*, opens **its page on TMDb** in the in-app browser.
+**Back** on a page opened this way goes back to the page it was opened from,
+as it was; only back on the first page closes the details. A
 series' facts add whether it goes on, ended or was cancelled, who airs it,
 how many seasons and episodes there are in all, and the next episode to air
 and the last aired. Marking is
