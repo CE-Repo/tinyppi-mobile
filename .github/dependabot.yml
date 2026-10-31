@@ -1,0 +1,29 @@
+# Keeps the pinned tooling current: the workflows' actions (pinned to commit
+# hashes) and the libraries and plugins in gradle/libs.versions.toml, once a
+# month and each ecosystem in one pull request.
+#
+# The versions the catalogue holds back on purpose are left alone here, each
+# for the reason written beside it there; the hold is lifted in both places
+# at once.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      gradle:
+        patterns: ["*"]
+    ignore:
+      # Kotlin past 2.4.10 compiles suspend calls JaCoCo 0.8.15 cannot see run.
+      - dependency-name: "org.jetbrains.kotlin*"
+      # Held to the coroutines the lifecycle libraries bring.
+      - dependency-name: "org.jetbrains.kotlinx:kotlinx-coroutines-test"

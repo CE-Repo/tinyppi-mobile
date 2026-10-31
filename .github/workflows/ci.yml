@@ -1,6 +1,10 @@
 name: CI
 
+# A push is tested as well as a pull request, so a commit straight onto main
+# is not the one change that never meets the tests. (The release build in
+# android.yml stays a button.)
 on:
+  push:
   pull_request:
   workflow_dispatch:
 
@@ -11,20 +15,24 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Actions are pinned to the commit a tag named when it was picked, since a
+# tag can be moved; Dependabot (.github/dependabot.yml) proposes the next one.
+# The runner names its Ubuntu release rather than ubuntu-latest, which moves
+# to a new release on GitHub's schedule; a move is then a change of its own.
 jobs:
   verify:
     name: Unit tests, coverage and lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad  # v6.1.0
         with:
           distribution: temurin
           java-version: "21"
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c  # v6.4.1
         with:
           cache-provider: basic
-      - uses: android-actions/setup-android@v4
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd  # v4.0.4
         with:
           packages: "platforms;android-37.0 build-tools;37.0.0"
       - name: Unit tests and coverage gate
@@ -34,14 +42,14 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew assembleDebug --stacktrace
       - name: Upload debug APK
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: tinyppi-mobile-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Upload reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: ci-reports
           path: |
