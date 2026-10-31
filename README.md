@@ -95,6 +95,9 @@ The token is upper-cased as it is typed: the add-on mints it out of an alphabet
 with no `I`, `O`, `0` or `1` in it, because a token is read off a television and
 typed on a phone.
 
+The settings, tokens included, stay on the phone: they are left out of Android's
+cloud backup and of the transfer to a new phone, so a box is set up again there.
+
 Two things in the add-on's own settings decide what the app can show:
 
 - **Control** — off, the transport row and the VS10 buttons are not drawn at

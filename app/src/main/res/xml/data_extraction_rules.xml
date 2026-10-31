@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    What Android 12 and later may copy off the phone. The settings hold each
+    box's token, which grants reading and, with Control on, switching the box;
+    a cloud backup or a transfer to a new phone would carry it to wherever the
+    copy ends up. Nothing in them is costly to type in again, so none of them
+    leaves: not in a backup, and not in a device-to-device transfer either,
+    which `android:allowBackup="false"` alone does not stop from Android 12 on.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="datastore/" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="datastore/" />
+    </device-transfer>
+</data-extraction-rules>
