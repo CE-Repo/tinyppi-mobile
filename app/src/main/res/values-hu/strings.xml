@@ -271,6 +271,8 @@
     <string name="settings_theme_dark">Sötét</string>
     <string name="settings_artwork">Film poszter mutatása</string>
     <string name="settings_artwork_desc">A lejátszott film poszterének lekérése. Csak annak a címnek van posztere, amelyet a médiatár is tartalmaz.</string>
+    <string name="settings_live_backdrop">Háttérkép az élő kártyán</string>
+    <string name="settings_live_backdrop_desc">Az élő kártya a lejátszott cím fekvő képét mutatja háttérként, mint a részletek oldal teteje, a poszter színátmenete helyett. Csak a médiatárban szereplő címnek van ilyen.</string>
     <string name="settings_chapters">Fejezetjelölők</string>
     <string name="settings_chapters_desc">Pontok a folyamatjelző sávon, ahol az egyes fejezetek kezdődnek, fölötte az éppen futó fejezet. Húzáskor a csúszka rájuk ugrik.</string>
     <string name="settings_adaptive_color">Adaptív színek</string>

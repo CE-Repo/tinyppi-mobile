@@ -34,6 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
+import coil3.compose.AsyncImage
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -68,6 +71,11 @@ import com.jamal2367.tinyppimobile.ui.theme.accentText
  * The brush goes on the inside: the card clips to its own shape, so a gradient
  * laid there follows the rounded corners without being told about them.
  *
+ * A card given a [backdrop] - a picture's address - stands on that picture
+ * over the whole card, darkened by a scrim of the card's own colour that
+ * deepens towards the foot, so what is written on it reads; the brush, if
+ * any, shows while the picture loads or where it cannot be read.
+ *
  * Every card is outlined. The cards are the only thing on these screens and
  * they are stacked one under the next in the same colour as each other - a
  * hairline is what says where one ends and the next begins, on a dark theme
@@ -80,6 +88,7 @@ fun SectionCard(
     foldId: String? = null,
     foldOpenByDefault: Boolean = true,
     containerBrush: Brush? = null,
+    backdrop: String? = null,
     trailing: (@Composable () -> Unit)? = null,
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
@@ -108,11 +117,9 @@ fun SectionCard(
         // where a card ends, and a coloured one says rather more.
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
-        Column(
-            modifier = Modifier
-                .then(if (containerBrush != null) Modifier.background(containerBrush) else Modifier)
-                .padding(16.dp),
-        ) {
+        Box(modifier = if (containerBrush != null) Modifier.background(containerBrush) else Modifier) {
+        if (backdrop != null) CardBackdrop(backdrop, Modifier.matchParentSize())
+        Column(modifier = Modifier.padding(16.dp)) {
             if (heading) {
                 SectionHeading(
                     title = title,
@@ -134,6 +141,36 @@ fun SectionCard(
                 )
             }
         }
+        }
+    }
+}
+
+/**
+ * A card's picture: cropped to fill the card, under a scrim of the card's own
+ * colour - lighter at the top, where the picture shows most, and solid at the
+ * foot - the way the top of a details page darkens towards its heading.
+ */
+@Composable
+private fun CardBackdrop(url: String, modifier: Modifier) {
+    val ground = MaterialTheme.colorScheme.surfaceContainerLow
+    Box(modifier = modifier.testTag("card-backdrop")) {
+        AsyncImage(
+            model = url,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize(),
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        0f to ground.copy(alpha = 0.45f),
+                        0.5f to ground.copy(alpha = 0.75f),
+                        1f to ground.copy(alpha = 0.96f),
+                    ),
+                ),
+        )
     }
 }
 

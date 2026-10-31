@@ -276,6 +276,8 @@
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_artwork">Show artwork</string>
     <string name="settings_artwork_desc">Fetch the poster of what is playing. Only a title with a library entry has one.</string>
+    <string name="settings_live_backdrop">Backdrop on the live card</string>
+    <string name="settings_live_backdrop_desc">The live card stands on the landscape picture of what is playing, as the top of a details page does, instead of its poster’s colour. Only a title with a library entry has one.</string>
     <string name="settings_chapters">Chapter markers</string>
     <string name="settings_chapters_desc">Dots on the progress bar where each chapter starts, with the chapter playing named over it. A drag snaps onto them.</string>
     <string name="settings_adaptive_color">Adaptive colours</string>

@@ -271,6 +271,8 @@
     <string name="settings_theme_dark">Dunkel</string>
     <string name="settings_artwork">Cover anzeigen</string>
     <string name="settings_artwork_desc">Das Poster des laufenden Titels laden. Nur ein Titel mit Bibliothekseintrag hat eines.</string>
+    <string name="settings_live_backdrop">Hintergrundbild in der Live-Karte</string>
+    <string name="settings_live_backdrop_desc">Die Live-Karte zeigt das Querformatbild des laufenden Titels als Hintergrund, wie oben auf der Detailseite, statt des Farbverlaufs aus dem Poster. Nur ein Titel mit Bibliothekseintrag hat eines.</string>
     <string name="settings_chapters">Kapitelmarken</string>
     <string name="settings_chapters_desc">Punkte auf dem Fortschrittsbalken, wo jedes Kapitel beginnt, darüber das laufende Kapitel. Beim Ziehen rastet der Regler an ihnen ein.</string>
     <string name="settings_adaptive_color">Adaptive Farben</string>

@@ -29,6 +29,7 @@ import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -145,6 +146,10 @@ class SettingsScreenTest {
         until { settings().adaptiveColorIntensity == 1f }
         rule.onNodeWithText(str(R.string.settings_adaptive_color)).performClick()
         until { !settings().adaptiveColor }
+        // Off by default, and the reader's to turn on.
+        assertTrue(!settings().liveBackdrop)
+        rule.onNodeWithText(str(R.string.settings_live_backdrop)).performClick()
+        until { settings().liveBackdrop }
         rule.onNodeWithText(str(R.string.settings_artwork)).performClick()
         until { !settings().showArtwork }
         rule.onNodeWithText(str(R.string.settings_chapters)).performClick()

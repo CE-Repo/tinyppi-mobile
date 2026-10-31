@@ -73,6 +73,10 @@ fun LiveScreen(
     val poster = state.snapshot
         ?.takeIf { state.settings.showArtwork }
         ?.let { MediaUrls.art(state.live.server, it.art, MediaUrls.ArtKind.POSTER) }
+    // The landscape picture the live card stands on, where the reader asked for it.
+    val backdrop = state.snapshot
+        ?.takeIf { state.settings.showArtwork && state.settings.liveBackdrop }
+        ?.let { MediaUrls.art(state.live.server, it.art, MediaUrls.ArtKind.FANART) }
 
     Scaffold(
         snackbarHost = {
@@ -126,6 +130,7 @@ fun LiveScreen(
                     connection = state.live.connection,
                     serverLabel = state.live.server?.label,
                     poster = poster,
+                    backdrop = backdrop,
                     showArtwork = state.settings.showArtwork,
                     showChapters = state.settings.showChapters,
                     canControl = state.canControlPlayback,
@@ -143,6 +148,7 @@ private fun LiveContent(
     connection: LiveState.Connection,
     serverLabel: String?,
     poster: String?,
+    backdrop: String?,
     showArtwork: Boolean,
     showChapters: Boolean,
     canControl: Boolean,
@@ -208,6 +214,7 @@ private fun LiveContent(
                 connection = connection,
                 serverLabel = serverLabel,
                 poster = poster,
+                backdrop = backdrop,
                 showArtwork = showArtwork,
                 canControl = canControl,
                 viewModel = viewModel,

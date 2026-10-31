@@ -85,6 +85,11 @@ import com.jamal2367.tinyppimobile.util.SourceLabel
  * of it: an outline around the card as well would fence the colour in, and the
  * point of a wash is that it has no edge.
  *
+ * Where the reader asks for it, the card stands on the landscape picture of
+ * what is playing instead ([backdrop]) - its fanart, as the top of a details
+ * page does - darkened towards the foot so the title, the badges and the bar
+ * read on it.
+ *
  * The two badges are the point of the card and of the add-on itself: what the
  * file is, and what the box is turning it into on the way out. They sit side by
  * side so the answer to "is this being converted" is a glance rather than a
@@ -99,6 +104,7 @@ internal fun NowPlayingCard(
     poster: String?,
     showArtwork: Boolean,
     canControl: Boolean,
+    backdrop: String?,
     viewModel: LiveViewModel,
     showChapters: Boolean,
 ) {
@@ -131,6 +137,7 @@ internal fun NowPlayingCard(
                 }
             },
         containerBrush = accent?.let { artworkGradient(it, container) },
+        backdrop = backdrop,
     ) {
         // The first row of the card rather than a pill above it. It was always
         // about the same thing the card is - this box, this title - and it

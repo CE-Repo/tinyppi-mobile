@@ -146,7 +146,10 @@ The title with its poster, its year and genre (its first two) and under them
 its studio (only the first, with no "…"; an episode's is its show's), the
 source and output badges, the video and audio formats named in badges of
 their own, the progress, and — on a box that allows it — the transport row,
-the track pickers and the VS10 conversions.
+the track pickers and the VS10 conversions. The card is washed in the colour
+of the poster; with **Backdrop on the live card** switched on in the settings
+(off by default) it stands on the title's landscape picture instead, darkened
+towards its foot as the top of a details page is.
 
 Under the card of what is playing, the **Overview** card: its heading and an
 arrow, nothing more. A tap on it opens the playing title's details page (see
