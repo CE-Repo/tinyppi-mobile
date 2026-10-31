@@ -311,4 +311,77 @@ class RelatedTitlesTest {
         assertFalse(has("Plot 5."))
         rule.mainClock.autoAdvance = true
     }
+
+    private fun scrim() = rule.onAllNodesWithTag("details-scrim").fetchSemanticsNodes().isNotEmpty()
+
+    /** A box with one film to open, and the details page over it. */
+    private fun opening(current: () -> Boolean = { true }): FakeLive {
+        val fake = FakeLive()
+        fake.playing()
+        fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, plot = "Plot $id.") }
+        rule.show {
+            CompositionLocalProvider(com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage provides current()) {
+                DetailsShown(fake.viewModel, actions = null)
+            }
+        }
+        return fake
+    }
+
+    @Test
+    fun `the page slides in as it opens and away as it closes, over a scrim`() {
+        val fake = opening()
+        rule.mainClock.autoAdvance = false
+        rule.runOnIdle { fake.viewModel.openDetails(MarkTarget(MarkTarget.Kind.MOVIE, 1, "First")) }
+        rule.mainClock.advanceTimeUntil(3_000) { has("Plot 1.") && scrim() }
+        rule.mainClock.advanceTimeBy(1_000)
+        assertTrue(has("Plot 1."))
+        // Closed, it is still there while it slides away, then gone.
+        rule.runOnIdle { fake.viewModel.closeDetails() }
+        rule.mainClock.advanceTimeBy(100)
+        assertTrue(has("Plot 1."))
+        rule.mainClock.advanceTimeBy(1_000)
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertFalse(has("Plot 1."))
+        assertFalse(scrim())
+    }
+
+    @Test
+    fun `in a language written from right to left, it slides in from the left`() {
+        val fake = FakeLive()
+        fake.playing()
+        fake.api.details = { kind, id -> TitleDetails(kind = kind, id = id, plot = "Plot $id.") }
+        rule.show {
+            CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Rtl) {
+                DetailsShown(fake.viewModel, actions = null)
+            }
+        }
+        rule.runOnIdle { fake.viewModel.openDetails(MarkTarget(MarkTarget.Kind.MOVIE, 1, "First")) }
+        rule.waitUntil { has("Plot 1.") }
+        rule.runOnIdle { fake.viewModel.closeDetails() }
+        rule.waitForIdle()
+        assertFalse(has("Plot 1."))
+    }
+
+    @Test
+    fun `on a page not in front it is gone at once, and closed there it stays closed`() {
+        var current by mutableStateOf(true)
+        val fake = opening { current }
+        rule.runOnIdle { fake.viewModel.openDetails(MarkTarget(MarkTarget.Kind.MOVIE, 1, "First")) }
+        rule.waitUntil { has("Plot 1.") }
+        current = false
+        rule.waitForIdle()
+        assertFalse(has("Plot 1."))
+        // Still open, it is there again on coming back ...
+        current = true
+        rule.waitUntil { has("Plot 1.") }
+        // ... and closed meanwhile, it is not.
+        current = false
+        rule.waitForIdle()
+        rule.runOnIdle { fake.viewModel.closeDetails() }
+        rule.waitForIdle()
+        current = true
+        rule.waitForIdle()
+        assertFalse(has("Plot 1."))
+    }
 }

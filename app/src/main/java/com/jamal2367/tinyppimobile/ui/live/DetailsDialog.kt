@@ -18,6 +18,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.animation.ContentTransform
@@ -192,6 +198,11 @@ internal class DetailsActions(
  * like a page of the app: [forward], the new one slides in over the old
  * from the end; back, the top one slides away to the end over the one
  * under it.
+ *
+ * [visible], where given, is whether the page is open: it slides in from
+ * the end over a dimming scrim as it opens, and away to the end as it
+ * closes, while the caller keeps it shown (see [DetailsPage]). Without it
+ * the page simply stands there.
  */
 @Composable
 internal fun DetailsDialog(
@@ -204,6 +215,7 @@ internal fun DetailsDialog(
     over: (@Composable () -> Unit)? = null,
     onRelated: ((RelatedTitle) -> Unit)? = null,
     forward: Boolean = true,
+    visible: MutableTransitionState<Boolean>? = null,
     onDismiss: () -> Unit,
 ) {
     val pictures = if (showArtwork) server else null
@@ -219,21 +231,58 @@ internal fun DetailsDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         DisableDialogWindowAnimations()
-        CompositionLocalProvider(LocalUriHandler provides links) {
-            MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
-                ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
-                    DetailsPages(state, pictures, actions, over, onRelated, forward)
+        val pages = @Composable {
+            CompositionLocalProvider(LocalUriHandler provides links) {
+                MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
+                    ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
+                        DetailsPages(state, pictures, actions, over, onRelated, forward)
+                    }
                 }
             }
         }
+        if (visible == null) pages() else SlidingPage(visible, pages)
     }
 }
 
-/** Keep every full-screen details window free of platform enter/exit animations. */
+/**
+ * A page that slides in from the end as [visible] turns true and away to
+ * the end as it turns false, over a scrim that dims what is under it -
+ * the screen the page was opened from - as the page comes and lifts as it
+ * goes: the same turn a page led on to makes (see [pageTurn]).
+ */
+@Composable
+private fun SlidingPage(visible: MutableTransitionState<Boolean>, page: @Composable () -> Unit) {
+    // The end is the right, or the left in a language written from right to left.
+    val end = if (LocalLayoutDirection.current == LayoutDirection.Ltr) 1 else -1
+    val spatial = tween<IntOffset>(PAGE_TURN_MS, easing = PAGE_EASING)
+    val effects = tween<Float>(PAGE_TURN_MS, easing = PAGE_EASING)
+    Box(Modifier.fillMaxSize()) {
+        AnimatedVisibility(visibleState = visible, enter = fadeIn(effects), exit = fadeOut(effects)) {
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = SCRIM_ALPHA)).testTag("details-scrim"))
+        }
+        AnimatedVisibility(
+            visibleState = visible,
+            enter = slideInHorizontally(spatial) { it * end },
+            exit = slideOutHorizontally(spatial) { it * end },
+        ) { page() }
+    }
+}
+
+/** How dark the screen under a page opening over it turns. */
+private const val SCRIM_ALPHA = 0.32f
+
+/**
+ * Keep every full-screen details window free of platform enter/exit
+ * animations and of the platform's dimming: the pages make their own (see
+ * [SlidingPage]).
+ */
 @Composable
 internal fun DisableDialogWindowAnimations() {
     val window = (LocalView.current.parent as DialogWindowProvider).window
-    SideEffect { window.setWindowAnimations(0) }
+    SideEffect {
+        window.setWindowAnimations(0)
+        window.setDimAmount(0f)
+    }
 }
 
 /**
@@ -1065,7 +1114,21 @@ internal fun DetailsPage(
     var back by remember { mutableStateOf<LiveViewModel.DetailsBack?>(null) }
     // Which way the last page turned: on to a title, or back from one.
     var forward by remember { mutableStateOf(true) }
-    val page = open?.takeIf { LocalIsCurrentPage.current } ?: return
+    // Whether the page is open, which it slides in and away by; and the
+    // page last open, shown while it slides away once closed.
+    val showing = remember { MutableTransitionState(false) }
+    var last by remember { mutableStateOf<DetailsUiState?>(null) }
+    SideEffect {
+        showing.targetState = open != null
+        if (open != null) last = open
+    }
+    // On a page not in front - another tab - it is gone at once.
+    if (!LocalIsCurrentPage.current) {
+        SideEffect { if (open == null) last = null }
+        return
+    }
+    // A page sliding away counts as shown until it is gone.
+    val page = open ?: last?.takeIf { showing.currentState } ?: return
     val restored = back?.takeIf { it.page.target == page.target }
     val shown = if (restored != null) restored.actions as DetailsActions? else actions
     // Where the screen has no way of its own, a title the page leads on to
@@ -1086,6 +1149,7 @@ internal fun DetailsPage(
             related(title)
         },
         forward = forward,
+        visible = showing,
         // ... and back, from there, goes back to it; from the first page,
         // or from the seasons a show's page gave way to, as before.
         onDismiss = {
