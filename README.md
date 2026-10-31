@@ -318,7 +318,17 @@ the same layout as the Overview card. The page runs the whole screen, top to
 bottom, and where the app takes its colour from what is playing, the page takes
 its own from the title's poster: its keys are in that title's colour. A box
 that cannot answer says so on the page. A series cannot be
-played, so its first option is **Open**, which shows its episodes. Marking is
+played, so its first option is **Open**, which shows its episodes.
+
+Where the box has a **TMDb API key**, the page also leads on: a film's
+**series** as a row of posters in release order, the film itself marked, and
+under **More like this in your library** the films or series of your own
+library that TMDb recommends after it. A tap on a title the library holds
+opens **its own page** in place of this one, with its keys; one it does not
+hold, marked *TMDb*, opens **its page on TMDb** in the in-app browser. A
+series' facts add whether it goes on, ended or was cancelled, who airs it,
+how many seasons and episodes there are in all, and the next episode to air
+and the last aired. Marking is
 written into Kodi's own library — a series marked either way is every episode
 of it — and every shelf is read again at once, so the tick and the unwatched
 cards show what the library now holds.

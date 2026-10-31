@@ -200,7 +200,6 @@ fun FilmsScreen(
         detailed = question.detailsActions(viewModel)
         viewModel.openDetails(question.target)
     }
-    DetailsShown(viewModel, detailed)
     val detailsContinue: (ContinueItem) -> Unit = { item ->
         val question = TitleQuestion(item.markTarget(), if (item.resume > 0) R.string.title_resume else R.string.title_play, resumable = item.resume > 0) { fromStart ->
             viewModel.playContinuing(item, fromStart)
@@ -215,6 +214,15 @@ fun FilmsScreen(
             watched = film.watched,
         ) { fromStart -> viewModel.playFilm(film, fromStart) })
     }
+    // A film of the library another film's page leads on to - of its series,
+    // or one TMDb recommends - opens as its tile would, with its keys.
+    DetailsShown(viewModel, detailed, onRelated = { title ->
+        val film = library.films.firstOrNull { it.id == title.id }
+        if (film != null) detailsFilm(film) else {
+            detailed = null
+            viewModel.openDetails(title.markTarget())
+        }
+    })
 
     Shelf(
         configured = state.isConfigured,
@@ -527,6 +535,15 @@ fun SeriesScreen(
         showPage,
         showActions,
         over = seasons,
+        // A series of the library TMDb recommends after this one opens as
+        // its tile would, in this one's place.
+        onRelated = { title ->
+            val show = series.shows.firstOrNull { it.id == title.id }
+            if (show != null) detailsShow(show) else {
+                showActions = null
+                viewModel.openDetails(title.markTarget())
+            }
+        },
         onDismiss = if (seasons != null) leaveShow else viewModel::closeDetails,
     )
     // A show open with no page of its own under it has a window of its own.

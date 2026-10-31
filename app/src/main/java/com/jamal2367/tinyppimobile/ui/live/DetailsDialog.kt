@@ -15,6 +15,9 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DontMemoize
+import androidx.compose.foundation.border
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import com.jamal2367.tinyppimobile.ui.navigation.LocalIsCurrentPage
@@ -92,6 +95,8 @@ import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.CastMember
 import com.jamal2367.tinyppimobile.data.model.MarkTarget
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
+import com.jamal2367.tinyppimobile.data.model.Airing
+import com.jamal2367.tinyppimobile.data.model.RelatedTitle
 import com.jamal2367.tinyppimobile.data.model.TitleDetails
 import com.jamal2367.tinyppimobile.data.prefs.ServerConfig
 import com.jamal2367.tinyppimobile.ui.components.FormatBadge
@@ -170,6 +175,10 @@ internal class DetailsActions(
  *
  * [over] is a page the details give way to in the same window - a show's
  * seasons - rather than another window opening on top of the shelf.
+ *
+ * [onRelated] opens a title of the library the page leads on to - a film of
+ * its series, one TMDb recommends - in place of this one; without it, those
+ * cards lead nowhere but to TMDb.
  */
 @Composable
 internal fun DetailsDialog(
@@ -180,6 +189,7 @@ internal fun DetailsDialog(
     adaptive: Boolean = false,
     intensity: Float = 1f,
     over: (@Composable () -> Unit)? = null,
+    onRelated: ((RelatedTitle) -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     val pictures = if (showArtwork) server else null
@@ -198,7 +208,7 @@ internal fun DetailsDialog(
         CompositionLocalProvider(LocalUriHandler provides links) {
             MaterialTheme(colorScheme = LocalBaseColorScheme.current ?: MaterialTheme.colorScheme) {
                 ArtworkAccentTheme(rememberArtworkAccent(poster.takeIf { adaptive }), intensity) {
-                    DetailsPages(state, pictures, actions, over)
+                    DetailsPages(state, pictures, actions, over, onRelated)
                 }
             }
         }
@@ -223,13 +233,22 @@ private fun DetailsPages(
     pictures: ServerConfig?,
     actions: DetailsActions?,
     over: (@Composable () -> Unit)?,
+    onRelated: ((RelatedTitle) -> Unit)?,
 ) {
     val scroll = rememberScrollState()
-    if (over != null) over() else DetailsPage(state, pictures, actions, scroll)
+    // A new title in the same window - one the page led on to - starts at its top.
+    LaunchedEffect(state.target) { scroll.scrollTo(0) }
+    if (over != null) over() else DetailsPage(state, pictures, actions, scroll, onRelated)
 }
 
 @Composable
-private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: DetailsActions?, scroll: ScrollState) {
+private fun DetailsPage(
+    state: DetailsUiState,
+    server: ServerConfig?,
+    actions: DetailsActions?,
+    scroll: ScrollState,
+    onRelated: ((RelatedTitle) -> Unit)?,
+) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         val details = state.details
         Column(modifier = Modifier.verticalScroll(scroll)) {
@@ -248,7 +267,7 @@ private fun DetailsPage(state: DetailsUiState, server: ServerConfig?, actions: D
                 )
                 state.actionError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 if (details != null) {
-                    DetailsBody(details, server)
+                    DetailsBody(details, server, onRelated)
                 } else if (state.failed) {
                     Text(
                         text = stringResource(R.string.details_failed),
@@ -493,7 +512,11 @@ private fun Heading(
  * playing title says, in the same words and the same shapes.
  */
 @Composable
-internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
+internal fun DetailsBody(
+    details: TitleDetails,
+    server: ServerConfig? = null,
+    onRelated: ((RelatedTitle) -> Unit)? = null,
+) {
     val rated = MediaInfo(
         ratings = details.ratings,
         mpaa = details.mpaa,
@@ -550,7 +573,7 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
         // or what it lost under that name.
         stringResource(if (made < 0) R.string.details_loss else R.string.details_profit) to
             listOfNotNull(profit.takeIf { money.size == 2 }),
-    ).filter { it.second.isNotEmpty() }
+    ).plus(showFacts(details, locale)).filter { it.second.isNotEmpty() }
     if (facts.isNotEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
             for ((heading, names) in facts) Fact(heading, names.joinToString(", "))
@@ -570,6 +593,169 @@ internal fun DetailsBody(details: TitleDetails, server: ServerConfig? = null) {
         details.writers.map { CastMember(it, writerRole) }
     if (details.cast.isNotEmpty()) Cast(details.cast, details.castMore, stringResource(R.string.live_credit_cast), server)
     if (crew.isNotEmpty()) Cast(crew, false, stringResource(R.string.details_crew), server)
+    details.collection?.let { Related(it.name, it.parts, server, onRelated) }
+    Related(stringResource(R.string.details_recommended), details.recommended, server, onRelated)
+}
+
+/**
+ * A series' run on TMDb: its state, who airs it, how many seasons and
+ * episodes there are in all - "Seasons/Episodes" over "5/62", where TMDb
+ * knows both - and the next episode to air and the last aired,
+ * "S03E01 · Its title · 16 Jan 2027". Nothing for a film.
+ */
+@Composable
+private fun showFacts(details: TitleDetails, locale: Locale): List<Pair<String, List<String>>> {
+    val status = when (details.status) {
+        "returning" -> stringResource(R.string.details_status_returning)
+        "ended" -> stringResource(R.string.details_status_ended)
+        "canceled" -> stringResource(R.string.details_status_canceled)
+        "production" -> stringResource(R.string.details_status_production)
+        "planned" -> stringResource(R.string.details_status_planned)
+        "pilot" -> stringResource(R.string.details_status_pilot)
+        else -> details.status
+    }
+    val sized = details.tmdbSeasons > 0 && details.tmdbEpisodes > 0
+    return listOf(
+        stringResource(R.string.details_status) to listOfNotNull(status.ifEmpty { null }),
+        stringResource(R.string.details_network) to details.networks,
+        stringResource(R.string.details_seasons_episodes) to
+            listOfNotNull("${details.tmdbSeasons}/${details.tmdbEpisodes}".takeIf { sized }),
+        stringResource(R.string.details_next_episode) to listOfNotNull(details.nextEpisode?.let { airing(it, locale) }),
+        stringResource(R.string.details_last_episode) to listOfNotNull(details.lastEpisode?.let { airing(it, locale) }),
+    )
+}
+
+/** "S03E01 · Its title · 16 Jan 2027", each part where it is known. */
+internal fun airing(episode: Airing, locale: Locale): String =
+    listOf(episode.code, episode.title, episode.date.ifEmpty { null }?.let { cinemaDay(it, locale) }.orEmpty())
+        .filter { it.isNotEmpty() }
+        .joinToString(" \u00b7 ")
+
+/**
+ * Titles the page leads on to, under [heading] with how many there are: a
+ * row of poster cards, as the cast's portraits are, each with its name and
+ * year. One the library holds opens its own page ([onRelated]); one it does
+ * not, marked TMDb, its page on TMDb; the page's own title, marked, neither.
+ * Nothing where there are none.
+ */
+@Composable
+private fun Related(heading: String, titles: List<RelatedTitle>, server: ServerConfig?, onRelated: ((RelatedTitle) -> Unit)?) {
+    if (titles.isEmpty()) return
+    val density = LocalDensity.current
+    val measurer = rememberTextMeasurer()
+    val nameStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+    val yearStyle = MaterialTheme.typography.labelMedium
+    val width = with(density) { CAST_WIDTH.roundToPx() }
+    val gap = with(density) { 4.dp.roundToPx() }
+    // As the cast's: the row is as tall as its tallest name and year.
+    val textHeight = remember(titles, measurer, nameStyle, yearStyle, width, gap) {
+        val constraints = Constraints(maxWidth = width)
+        val year = gap + measurer.measure("0000", yearStyle, constraints = constraints).size.height
+        titles.fold(0) { height, title ->
+            maxOf(height, measurer.measure(title.title, nameStyle, constraints = constraints).size.height)
+        } + year
+    }.let { with(density) { it.toDp() } }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.testTag("related-row")) {
+        val muted = MaterialTheme.colorScheme.onSurfaceVariant
+        Text(
+            text = buildAnnotatedString {
+                append(heading)
+                withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = muted)) {
+                    append(" (${titles.size})")
+                }
+            },
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp),
+            fontWeight = FontWeight.Bold,
+        )
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = PAGE_EDGE),
+            modifier = Modifier.bleed(PAGE_EDGE),
+        ) {
+            items(titles) { title -> RelatedCard(title, textHeight, server, onRelated) }
+        }
+    }
+}
+
+@Composable
+private fun RelatedCard(title: RelatedTitle, textHeight: Dp, server: ServerConfig?, onRelated: ((RelatedTitle) -> Unit)?) {
+    val uriHandler = LocalUriHandler.current
+    val press: (() -> Unit)? = when {
+        title.current -> null
+        // Built afresh each time: a cached callback only adds compiler-generated branches.
+        title.held -> onRelated?.let { open ->
+            val toPage: () -> Unit = @DontMemoize { open(title) }
+            toPage
+        }
+        else -> {
+            val toTmdb: () -> Unit = @DontMemoize { runCatching { uriHandler.openUri(title.page) } }
+            toTmdb
+        }
+    }
+    val label = stringResource(if (title.held) R.string.details_open_related else R.string.details_on_tmdb)
+    Column(
+        modifier = Modifier
+            .width(CAST_WIDTH)
+            .clip(RoundedCornerShape(8.dp))
+            .then(if (press != null) Modifier.clickable(onClickLabel = label, onClick = press) else Modifier)
+            .height(RELATED_HEIGHT + 12.dp + textHeight)
+            .testTag("related-card"),
+    ) {
+        Box(
+            modifier = Modifier
+                .width(CAST_WIDTH)
+                .height(RELATED_HEIGHT)
+                .clip(RoundedCornerShape(8.dp))
+                .background(placeholderBrush(title.title))
+                .then(
+                    if (title.current) {
+                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+                    } else {
+                        Modifier
+                    },
+                ),
+        ) {
+            MediaUrls.related(server, title)?.let { poster ->
+                AsyncImage(
+                    model = poster,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize(),
+                )
+            }
+            val mark = when {
+                title.current -> stringResource(R.string.details_this_film)
+                title.held -> ""
+                else -> "TMDb"
+            }
+            if (mark.isNotEmpty()) {
+                Text(
+                    text = mark,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(6.dp)
+                        .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .testTag("related-mark"),
+                )
+            }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 12.dp)) {
+            Text(text = title.title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            if (title.year > 0) {
+                Text(
+                    text = title.year.toString(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
 }
 
 /** "2021-09-16" as the reader writes a day; the day itself where it is none. */
@@ -773,6 +959,8 @@ internal val PAGE_EDGE = 20.dp
 private val HERO_HEIGHT = 300.dp
 private val POSTER_WIDTH = 104.dp
 private val CAST_WIDTH = 144.dp
+/** A related title's poster, two by three as a poster stands. */
+private val RELATED_HEIGHT = 216.dp
 
 private val ACTION_HEIGHT = 48.dp
 
@@ -783,7 +971,12 @@ private val ACTION_HEIGHT = 48.dp
  * question's first answers, where the page was opened from one.
  */
 @Composable
-internal fun DetailsShown(viewModel: LiveViewModel, actions: DetailsActions?, except: MarkTarget.Kind? = null) {
+internal fun DetailsShown(
+    viewModel: LiveViewModel,
+    actions: DetailsActions?,
+    except: MarkTarget.Kind? = null,
+    onRelated: ((RelatedTitle) -> Unit)? = null,
+) {
     val details by viewModel.details.collectAsStateWithLifecycle()
     // A kind the screen shows in a place of its own (see SeriesScreen).
     DetailsPage(
@@ -791,6 +984,7 @@ internal fun DetailsShown(viewModel: LiveViewModel, actions: DetailsActions?, ex
         details?.takeIf { it.target.kind != except },
         actions,
         over = null,
+        onRelated = onRelated,
         onDismiss = viewModel::closeDetails,
     )
 }
@@ -806,9 +1000,13 @@ internal fun DetailsPage(
     open: DetailsUiState?,
     actions: DetailsActions?,
     over: (@Composable () -> Unit)?,
+    onRelated: ((RelatedTitle) -> Unit)?,
     onDismiss: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Where the screen has no way of its own, a title the page leads on to
+    // opens as the overview's does: its details, with nothing to press.
+    val related = onRelated ?: { title: RelatedTitle -> viewModel.openDetails(title.markTarget()) }
     val page = open?.takeIf { LocalIsCurrentPage.current } ?: return
     DetailsDialog(
         state = page,
@@ -818,6 +1016,7 @@ internal fun DetailsPage(
         adaptive = state.settings.adaptiveColor,
         intensity = state.settings.adaptiveColorIntensity,
         over = over,
+        onRelated = related,
         onDismiss = onDismiss,
     )
 }

@@ -47,6 +47,10 @@ import com.jamal2367.tinyppimobile.data.model.Snapshot
 import com.jamal2367.tinyppimobile.data.model.SourceRating
 import com.jamal2367.tinyppimobile.data.model.CastMember
 import com.jamal2367.tinyppimobile.data.model.TitleDetails
+import com.jamal2367.tinyppimobile.data.model.FilmSeries
+import com.jamal2367.tinyppimobile.data.model.MarkTarget
+import com.jamal2367.tinyppimobile.data.model.RelatedTitle
+import androidx.compose.ui.test.onAllNodesWithTag
 import com.jamal2367.tinyppimobile.data.prefs.AppSettings
 import com.jamal2367.tinyppimobile.data.remote.ApiFailure
 import com.jamal2367.tinyppimobile.data.repository.LiveState
@@ -830,4 +834,72 @@ class LibraryScreensTest {
         rule.waitUntil { fake.viewModel.series.value.open == null }
     }
 
+
+    private fun related(index: Int) = rule.onAllNodesWithTag("related-card")[index]
+
+    @Test
+    fun `a film's series and recommendations open the library's own pages, with their keys`() {
+        fake.api.details = { kind, id ->
+            if (id == 1) TitleDetails(
+                kind = kind, id = id, title = "Dune", plot = "Dune's plot.",
+                collection = FilmSeries("Dune Collection", listOf(
+                    RelatedTitle("movie", 10, "Dune", 2024, 1, current = true),
+                    RelatedTitle("movie", 11, "Heat", 1995, 2, "p2"),
+                    RelatedTitle("movie", 13, "Elsewhere", id = 99),
+                )),
+                recommended = listOf(RelatedTitle("movie", 14, "Arrival", 2016, 4, "p4")),
+            ) else TitleDetails(kind = kind, id = id, plot = "Plot $id.")
+        }
+        showFilms()
+        rule.waitUntil { has("Gravity") }
+        text("Dune").performClick()
+        rule.waitUntil { has("Dune's plot.") }
+        // A film of the shelf: its page in this one's place, with its keys.
+        related(1).performClick()
+        rule.waitUntil { has("Plot 2.") }
+        assertEquals(MarkTarget(MarkTarget.Kind.MOVIE, 2, "Heat"), fake.viewModel.details.value?.target)
+        assertTrue(has(str(R.string.title_play)))
+        assertTrue(said(str(R.string.mark_unwatched)))
+        rule.onNodeWithText(str(R.string.title_play)).performClick()
+        settle()
+        assertEquals(1, fake.api.count("play"))
+        // One the shelf does not hold: its page, with nothing to press.
+        text("Dune").performClick()
+        rule.waitUntil { has("Dune's plot.") }
+        related(2).performClick()
+        rule.waitUntil { has("Plot 99.") }
+        assertTrue(!has(str(R.string.title_play)) && !has(str(R.string.title_resume)))
+    }
+
+    @Test
+    fun `a series the library holds that TMDb recommends opens as its tile would`() {
+        fake.api.details = { kind, id ->
+            if (id == 7) TitleDetails(
+                kind = kind, id = id, title = "Dark", plot = "Dark's plot.", status = "ended",
+                recommended = listOf(RelatedTitle("tvshow", 80, "Chernobyl", 2019, 8, "s8"), RelatedTitle("tvshow", 50, "Gone", id = 50)),
+            ) else TitleDetails(kind = kind, id = id, plot = "Plot $id.")
+        }
+        showSeries()
+        rule.waitUntil { has("Chernobyl") }
+        text("Dark").performClick()
+        rule.waitUntil { has("Dark's plot.") }
+        assertTrue(has(str(R.string.details_status_ended)))
+        related(0).performClick()
+        rule.waitUntil { has("Plot 8.") }
+        assertEquals(MarkTarget(MarkTarget.Kind.SHOW, 8, "Chernobyl"), fake.viewModel.details.value?.target)
+        // Its key opens its seasons, as the tile's page does.
+        rule.onNodeWithText(str(R.string.title_open)).performClick()
+        rule.waitUntil { said(str(R.string.series_back)) }
+        rule.onNodeWithContentDescription(str(R.string.series_back)).performClick()
+        rule.waitUntil { has("Plot 8.") }
+        rule.runOnIdle {
+            (ShadowDialog.getShownDialogs().last { it.isShowing } as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+        }
+        rule.waitForIdle()
+        text("Dark").performClick()
+        rule.waitUntil { has("Dark's plot.") }
+        related(1).performClick()
+        rule.waitUntil { has("Plot 50.") }
+        assertTrue(!has(str(R.string.title_open)))
+    }
 }
