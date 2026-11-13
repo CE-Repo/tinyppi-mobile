@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.double
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.long
@@ -210,6 +211,23 @@ class DemoServerTest {
         command("seek", "\"x\"")
         command("seek_percent", 50)
         command("seek_percent")
+        // The film opens up into an IMAX scene for the last third of every
+        // forty-five seconds, and the row and the letterbox follow it.
+        fun aspectRow() = state()["groups"]!!.jsonArray.first().jsonObject["rows"]!!.jsonArray
+            .map { it.jsonObject }.single { it["id"]!!.jsonPrimitive.content == "video.32223" }
+        command("seek_percent", 0)
+        var scene = state()
+        assertFalse(scene["metrics"]!!.jsonObject["imax_scene"]!!.jsonPrimitive.boolean)
+        assertEquals(138, scene["metrics"]!!.jsonObject["bars"]!!.jsonArray.last().jsonPrimitive.int)
+        assertEquals("2.39:1", aspectRow()["value"]!!.jsonPrimitive.content)
+        assertEquals("(IMAX)", aspectRow()["detail"]!!.jsonPrimitive.content)
+        command("seek", 32)
+        scene = state()
+        assertTrue(scene["metrics"]!!.jsonObject["imax_scene"]!!.jsonPrimitive.boolean)
+        assertEquals(1.90, scene["metrics"]!!.jsonObject["aspect"]!!.jsonPrimitive.double, 0.001)
+        assertEquals(69, scene["metrics"]!!.jsonObject["bars"]!!.jsonArray.last().jsonPrimitive.int)
+        assertEquals("1.90:1", aspectRow()["value"]!!.jsonPrimitive.content)
+        assertEquals("(IMAX)", aspectRow()["detail"]!!.jsonPrimitive.content)
         // The chapters: twelve named ones for the film, stepped through and jumped to.
         var chapters = state()["chapters"]!!.jsonArray
         assertEquals(12, chapters.size)
@@ -313,6 +331,14 @@ class DemoServerTest {
         post("/api/play", """{"movieid":999}""")
         post("/api/play", """{"episodeid":102203}""")
         assertEquals("2", state()["media"]!!.jsonObject["season"]!!.jsonPrimitive.content)
+        // An episode is no IMAX cut: no mark behind its aspect ratio, and no scene to light it.
+        command("seek", 32)
+        assertFalse(state()["metrics"]!!.jsonObject["imax_scene"]!!.jsonPrimitive.boolean)
+        assertEquals(
+            "",
+            state()["groups"]!!.jsonArray.first().jsonObject["rows"]!!.jsonArray.map { it.jsonObject }
+                .single { it["id"]!!.jsonPrimitive.content == "video.32223" }["detail"]!!.jsonPrimitive.content,
+        )
         // An episode: a plot and no slogan, its own score and its show's age rating.
         assertEquals("", state()["media"]!!.jsonObject["tagline"]!!.jsonPrimitive.content)
         assertEquals("tvdb", state()["media"]!!.jsonObject["ratings"]!!.jsonArray.single().jsonObject["source"]!!.jsonPrimitive.content)

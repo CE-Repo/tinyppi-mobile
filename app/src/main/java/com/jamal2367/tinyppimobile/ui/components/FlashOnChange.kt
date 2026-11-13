@@ -55,6 +55,23 @@ fun Modifier.flashOnChange(value: Any?): Modifier {
         lit = false
     }
 
+    return wash(lit)
+}
+
+/**
+ * Keep this lit for as long as [lit] holds.
+ *
+ * The same wash a changed reading gets, held rather than let go: an IMAX
+ * scene lasts minutes, and a mark that lit up for the quarter second its
+ * start took would say that something happened and not that it still is.
+ * The add-on's overlay and its dashboard hold theirs the same way.
+ */
+@Composable
+fun Modifier.litWhile(lit: Boolean): Modifier = wash(lit)
+
+/** The accent behind the text, risen quickly and faded slowly. */
+@Composable
+private fun Modifier.wash(lit: Boolean): Modifier {
     val accent = MaterialTheme.colorScheme.accentText
     val wash by animateColorAsState(
         targetValue = if (lit) accent.copy(alpha = LIT_ALPHA) else Color.Transparent,

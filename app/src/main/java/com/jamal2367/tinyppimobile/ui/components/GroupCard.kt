@@ -32,9 +32,13 @@ import com.jamal2367.tinyppimobile.ui.theme.accentText
  * a tab between the two made a reader cross the app to answer a question the
  * poster had raised - so they are the foot of that screen now, under the
  * transport and the conversions.
+ *
+ * [imaxScene] is the one thing told to a card beside its rows: the IMAX mark
+ * behind the aspect ratio stays lit while the film shows one of its IMAX
+ * scenes, as it does on the overlay and on the add-on's dashboard.
  */
 @Composable
-fun GroupCard(group: InfoGroup) {
+fun GroupCard(group: InfoGroup, imaxScene: Boolean = false) {
     // A row the box sent with nothing in it is dropped here rather than inside
     // the row: a rule is drawn between one row and the next, and a row that
     // draws nothing would leave its rule behind.
@@ -55,6 +59,7 @@ fun GroupCard(group: InfoGroup) {
                 label = row.label,
                 value = row.value,
                 detail = row.detail,
+                detailLit = imaxScene && row.id == ASPECT_ROW,
             )
         }
     }
@@ -73,10 +78,11 @@ fun GroupCard(group: InfoGroup) {
  * larger one from looking dropped.
  *
  * The reading itself lights up as it moves, where it is one of the two that
- * move at all - see [movesWithThePicture].
+ * move at all - see [movesWithThePicture]. The extra stays lit for as long as
+ * [detailLit] says so - see [litWhile].
  */
 @Composable
-private fun ReadingRow(label: String, value: String, detail: String) {
+private fun ReadingRow(label: String, value: String, detail: String, detailLit: Boolean) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -115,7 +121,9 @@ private fun ReadingRow(label: String, value: String, detail: String) {
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.accentText,
                     textAlign = TextAlign.End,
-                    modifier = Modifier.alignByBaseline(),
+                    modifier = Modifier
+                        .alignByBaseline()
+                        .litWhile(detailLit),
                 )
             }
         }
@@ -138,3 +146,11 @@ private fun ReadingRow(label: String, value: String, detail: String) {
  */
 private fun String.movesWithThePicture(): Boolean =
     startsWith("L1 Lum", ignoreCase = true) || startsWith("L1 PQ", ignoreCase = true)
+
+/**
+ * The aspect ratio's row, whose extra is the IMAX mark.
+ *
+ * By id here, unlike the L1 rows: the label is translated by the box,
+ * and the add-on's dashboard finds the row by this same id.
+ */
+private const val ASPECT_ROW = "video.32223"

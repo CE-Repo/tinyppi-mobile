@@ -292,7 +292,7 @@ private fun LiveContent(
                 // the box is doing with it - and an answer a tab away is an
                 // answer nobody goes and gets.
                 // Every other id on the screen is one of the groups.
-                else -> item(key = id) { GroupCard(groups.getValue(id)) }
+                else -> item(key = id) { GroupCard(groups.getValue(id), imaxScene = snapshot.metrics.imaxScene) }
             }
         }
     }

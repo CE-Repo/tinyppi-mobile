@@ -15,6 +15,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -23,6 +25,8 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.data.model.History
+import com.jamal2367.tinyppimobile.data.model.InfoGroup
+import com.jamal2367.tinyppimobile.data.model.InfoRowData
 import com.jamal2367.tinyppimobile.data.prefs.ChartRange
 import com.jamal2367.tinyppimobile.data.prefs.ThemeMode
 import com.jamal2367.tinyppimobile.testing.CardState
@@ -122,6 +126,46 @@ class ComponentsTest {
         draw()
         rule.mainClock.advanceTimeBy(1_000)
         draw()
+    }
+
+    @Test
+    fun `the IMAX mark stays lit for as long as the IMAX scene lasts`() {
+        var scene by mutableStateOf(false)
+        var rows by mutableStateOf(
+            listOf(
+                InfoRowData(id = "video.32223", label = "Aspect ratio", value = "2.39:1", detail = "(IMAX)"),
+                InfoRowData(id = "video.32221", label = "Pixel format", value = "YUV 4:2:0", detail = "(TV-led)"),
+            ),
+        )
+        rule.setContent {
+            TinyPpiTheme(themeMode = ThemeMode.DARK) {
+                CardState().Provide { GroupCard(InfoGroup(id = "video", title = "Video", rows = rows), imaxScene = scene) }
+            }
+        }
+        fun pixels(): List<Int> {
+            rule.waitForIdle()
+            val map = rule.onRoot().captureToImage().toPixelMap()
+            return List(map.width * map.height) { map[it % map.width, it / map.width].toArgb() }
+        }
+
+        val dark = pixels()
+        scene = true
+        rule.mainClock.advanceTimeBy(1_000)
+        val lit = pixels()
+        assertNotEquals(dark, lit)
+        // Held, where a changed reading would long have faded.
+        rule.mainClock.advanceTimeBy(5_000)
+        assertEquals(lit, pixels())
+        scene = false
+        rule.mainClock.advanceTimeBy(1_000)
+        assertEquals(dark, pixels())
+
+        // Only the aspect ratio's own row: another row's extra is left alone.
+        rows = rows.drop(1)
+        val plain = pixels()
+        scene = true
+        rule.mainClock.advanceTimeBy(1_000)
+        assertEquals(plain, pixels())
     }
 
     @Test

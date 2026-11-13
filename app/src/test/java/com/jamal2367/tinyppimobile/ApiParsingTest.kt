@@ -58,6 +58,7 @@ class ApiParsingTest {
         assertFalse(snapshot.playing)
         assertTrue(snapshot.groups.isEmpty())
         assertTrue(snapshot.metrics.l1.isEmpty)
+        assertFalse(snapshot.metrics.imaxScene)
         assertFalse(snapshot.last.isPresent)
         assertFalse(snapshot.isConverting)
     }
@@ -87,7 +88,8 @@ class ApiParsingTest {
              "hdr_type":"dolbyvision","effective":"dolbyvision","output_type":"hdr10",
              "time":"0:12:03","duration":"2:35:00","finish":"21:47",
              "metrics":{"l1":{"min":0.0,"max":1200.5,"avg":98.0},"bars":[0.0,0.0,138.0,138.0],
-                        "frame":{"w":3840,"h":2160},"aspect":2.39,"fps_in":23.976,"fps_drop":0.0,
+                        "frame":{"w":3840,"h":2160},"aspect":2.39,"imax_scene":true,
+                        "fps_in":23.976,"fps_drop":0.0,
                         "fps_out":23.976,"progress":7.8,"cpu":31.0,"cpu_temp":58.0,
                         "memory":42.0,"cache":100.0},
              "groups":[{"id":"video","title":"Video","rows":[
@@ -111,6 +113,8 @@ class ApiParsingTest {
         assertEquals(1, snapshot.groups.size)
         assertEquals("Display mode", snapshot.groups[0].rows[0].label)
         assertEquals(1200.5, snapshot.metrics.l1.max!!, 0.001)
+        // What keeps the IMAX mark lit behind the aspect ratio.
+        assertTrue(snapshot.metrics.imaxScene)
         assertEquals(72, snapshot.controls.volume)
         assertTrue(snapshot.control)
         // Printed as the box wrote it: the bar under the title shows this

@@ -58,6 +58,10 @@ import kotlin.math.sin
 object DemoServer {
     private const val TAG = "DemoServer"
     private const val PORT = 8099
+
+    /** How often the pretend film opens up into an IMAX scene, and for how long, in seconds. */
+    private const val IMAX_CYCLE = 45
+    private const val IMAX_SCENE = 15
     private val ADDED_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
     /** What the film the box starts on says about itself. */
@@ -484,6 +488,17 @@ object DemoServer {
 
     private fun averageAt(t: Double): Double = (peakAt(t) * 0.18 + 12 * sin(t / 5.0)).coerceAtLeast(3.0)
 
+    /**
+     * Whether the film is in one of its IMAX scenes at [t].
+     *
+     * The last fifteen seconds of every forty-five, so that somebody trying
+     * the app out sees the mark light up and go out again without waiting for
+     * a real film's first IMAX scene. Films only: an episode is not an IMAX
+     * cut and its row carries no mark.
+     */
+    private fun imaxSceneAt(t: Double): Boolean =
+        playingShow.isBlank() && t.toInt() % IMAX_CYCLE >= IMAX_CYCLE - IMAX_SCENE
+
     private fun clock(seconds: Double): String {
         val s = seconds.toInt()
         return String.format(Locale.ROOT, "%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60)
@@ -544,6 +559,11 @@ object DemoServer {
         }
         val t = positionSeconds
         val output = vs10Output
+        // The picture opens up from scope to 1.90:1 for an IMAX scene, and the
+        // letterbox the RPU declares shrinks with it.
+        val imaxScene = imaxSceneAt(t)
+        val aspect = if (imaxScene) 1.90 else 2.39
+        val bar = if (imaxScene) 69 else 138
         buildJsonObject {
             put("seq", seq)
             put("playing", true)
@@ -566,9 +586,11 @@ object DemoServer {
                     put("max", peakAt(t))
                     put("avg", averageAt(t))
                 }
-                putJsonArray("bars") { add(JsonPrimitive(0)); add(JsonPrimitive(0)); add(JsonPrimitive(138)); add(JsonPrimitive(138)) }
+                putJsonArray("bars") { add(JsonPrimitive(0)); add(JsonPrimitive(0)); add(JsonPrimitive(bar)); add(JsonPrimitive(bar)) }
                 putJsonObject("frame") { put("w", 3840); put("h", 2160) }
-                put("aspect", 2.39)
+                put("aspect", aspect)
+                // What lights the IMAX mark behind the aspect ratio's row.
+                put("imax_scene", imaxScene)
                 put("fps_in", 23.976)
                 put("fps_drop", 0.0)
                 put("fps_out", 23.976)
@@ -584,6 +606,11 @@ object DemoServer {
                     row("video.32001", "Video codec", "HEVC Main 10", ""),
                     row("video.32002", "Dolby Vision", "Profile 7.6 FEL", "(CMv4.0)"),
                     row("video.32099", "Bit depth", "12 bit", "(dv)"),
+                    // The add-on's own id for the row: the app finds the IMAX mark by it.
+                    row(
+                        "video.32223", "Aspect ratio", String.format(Locale.ROOT, "%.2f:1", aspect),
+                        if (playingShow.isBlank()) "(IMAX)" else "",
+                    ),
                     row("video.32003", "Bitrate", "${(58 + 14 * sin(t / 4.0)).toInt()} Mbit/s", ""),
                     row("video.32004", "Mastering display", "1000 nits", "(P3-D65)"),
                     row("video.32005", "MaxCLL / MaxFALL", "1000 / 268 nits", ""),

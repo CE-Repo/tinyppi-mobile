@@ -158,6 +158,8 @@ data class Metrics(
     /** The coded frame [bars] are offsets into. */
     val frame: Frame? = null,
     val aspect: Double? = null,
+    /** An IMAX film is showing one of its taller IMAX scenes. */
+    @SerialName("imax_scene") val imaxScene: Boolean = false,
     @SerialName("fps_in") val fpsIn: Double? = null,
     @SerialName("fps_drop") val fpsDrop: Double? = null,
     @SerialName("fps_out") val fpsOut: Double? = null,
