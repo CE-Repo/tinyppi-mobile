@@ -1,6 +1,7 @@
 package com.jamal2367.tinyppimobile.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.HorizontalDivider
@@ -73,7 +74,8 @@ fun GroupCard(group: InfoGroup) {
  * larger one from looking dropped.
  *
  * The reading itself lights up as it moves, where it is one of the two that
- * move at all - see [movesWithThePicture].
+ * move at all - see [movesWithThePicture] - and the pair lights up together
+ * when an IMAX scene begins or ends - see [namesImax].
  */
 @Composable
 private fun ReadingRow(label: String, value: String, detail: String) {
@@ -88,39 +90,63 @@ private fun ReadingRow(label: String, value: String, detail: String) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(0.9f),
         )
-        Row(
+        // Boxed so the pair is only as wide as what it says: the wash of an
+        // IMAX switch is drawn behind the two of them, not behind the empty
+        // half of the card to their left.
+        Box(
             modifier = Modifier.weight(1.1f),
-            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
+            contentAlignment = Alignment.TopEnd,
         ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.End,
-                modifier = Modifier
-                    .alignByBaseline()
-                    // Yields to the extra beside it rather than pushing it off
-                    // the card: a long value wraps in the room that is left.
-                    .weight(1f, fill = false)
-                    .then(
-                        if (label.movesWithThePicture()) {
-                            Modifier.flashOnChange(value)
-                        } else {
-                            Modifier
-                        }
-                    ),
-            )
-            if (detail.isNotBlank()) {
+            Row(
+                modifier = Modifier.flashOnChange(detail.namesImax()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
                 Text(
-                    text = detail,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.accentText,
+                    text = value,
+                    style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.End,
-                    modifier = Modifier.alignByBaseline(),
+                    modifier = Modifier
+                        .alignByBaseline()
+                        // Yields to the extra beside it rather than pushing it
+                        // off the card: a long value wraps in the room that is
+                        // left.
+                        .weight(1f, fill = false)
+                        .then(
+                            if (label.movesWithThePicture()) {
+                                Modifier.flashOnChange(value)
+                            } else {
+                                Modifier
+                            }
+                        ),
                 )
+                if (detail.isNotBlank()) {
+                    Text(
+                        text = detail,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.accentText,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.alignByBaseline(),
+                    )
+                }
             }
         }
     }
 }
+
+/**
+ * Whether the extra beside a reading is the IMAX mark.
+ *
+ * The add-on prints `(IMAX)` or `(IMAX Enhanced)` behind the aspect ratio only
+ * while a recognised film plays one of its IMAX scenes, and the format's name
+ * - `(Scope)`, say - during its regular framing. So this turning over is an
+ * IMAX scene beginning or ending, and the whole row lights up for it the way
+ * the overlay's does. A ratio that changes without the mark changing, one
+ * format to another, is not lit.
+ *
+ * Looked for in what the extra says rather than on the row's name, as the
+ * badges are: the label is translated and `IMAX` is not.
+ */
+private fun String.namesImax(): Boolean = contains("IMAX", ignoreCase = true)
 
 /**
  * Whether a reading changes with the frame on screen rather than with the file.

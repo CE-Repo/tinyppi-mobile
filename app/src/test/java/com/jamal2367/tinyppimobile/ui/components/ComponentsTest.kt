@@ -23,6 +23,8 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.jamal2367.tinyppimobile.data.model.History
+import com.jamal2367.tinyppimobile.data.model.InfoGroup
+import com.jamal2367.tinyppimobile.data.model.InfoRowData
 import com.jamal2367.tinyppimobile.data.prefs.ChartRange
 import com.jamal2367.tinyppimobile.data.prefs.ThemeMode
 import com.jamal2367.tinyppimobile.testing.CardState
@@ -122,6 +124,26 @@ class ComponentsTest {
         draw()
         rule.mainClock.advanceTimeBy(1_000)
         draw()
+    }
+
+    @Test
+    fun `the aspect ratio row lights up when an IMAX scene begins or ends`() {
+        var row by mutableStateOf(InfoRowData("video.32223", "Aspect ratio", "2.39:1", "(Scope)"))
+        rule.setContent {
+            TinyPpiTheme {
+                GroupCard(InfoGroup(id = "video", title = "Video", rows = listOf(row)))
+            }
+        }
+        draw()
+        row = row.copy(value = "1.90:1", detail = "(IMAX)")
+        rule.mainClock.advanceTimeBy(120)
+        draw()
+        rule.onNodeWithText("(IMAX)").assertIsDisplayed()
+        rule.mainClock.advanceTimeBy(1_000)
+        row = row.copy(value = "2.39:1", detail = "(Scope)")
+        rule.mainClock.advanceTimeBy(120)
+        draw()
+        rule.onNodeWithText("(Scope)").assertIsDisplayed()
     }
 
     @Test
