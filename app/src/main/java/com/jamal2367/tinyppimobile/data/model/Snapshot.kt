@@ -407,6 +407,17 @@ data class Award(
 )
 
 /**
+ * How many awards a title won and was nominated for in all, the small ones
+ * with the big, as the add-on has IMDb's count from OMDb (see `web/omdb.py`
+ * there); both 0 where the box sent none.
+ */
+@Serializable
+data class AwardsTotal(
+    val won: Int = 0,
+    val nominated: Int = 0,
+)
+
+/**
  * One source's rating of the playing title, out of ten: `imdb`, `tmdb`,
  * `trakt`, `tvdb`, `metacritic`, or whatever else an NFO named.
  */

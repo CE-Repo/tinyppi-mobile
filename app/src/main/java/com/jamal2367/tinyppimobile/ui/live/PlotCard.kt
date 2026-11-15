@@ -51,6 +51,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -65,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.Award
+import com.jamal2367.tinyppimobile.data.model.AwardsTotal
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
 import com.jamal2367.tinyppimobile.data.model.SourceRating
 import com.jamal2367.tinyppimobile.ui.components.LocalCardLayout
@@ -237,17 +239,29 @@ internal fun RatingRow(media: MediaInfo) {
     }
 }
 
-/** Separate ratings and awards; sections without shields are omitted. */
+/**
+ * Separate ratings and awards; sections without shields are omitted - but
+ * for the awards where every one is counted ([total]), which then stand for
+ * their count alone.
+ */
 @Composable
-internal fun RatingGroups(media: MediaInfo) {
+internal fun RatingGroups(media: MediaInfo, total: AwardsTotal = AwardsTotal()) {
     val hasRatings = media.ratings.isNotEmpty() || media.mpaa.isNotBlank() || media.userRating > 0 || media.top250 > 0
     val awards = media.awards.filter { it.award in AWARD_MARKS }
-    if (!hasRatings && awards.isEmpty()) return
+    val counted = awardsTotalText(total)
+    if (!hasRatings && awards.isEmpty() && counted.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
         if (hasRatings) RatingGroup(stringResource(R.string.details_ratings), media.copy(awards = emptyList()))
-        if (awards.isNotEmpty()) {
+        if (awards.isNotEmpty() || counted.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                RatingGroup(stringResource(R.string.details_awards), MediaInfo(awards = awards))
+                // Without one of the big awards the heading stands over the count alone.
+                RatingGroup(stringResource(R.string.details_awards), MediaInfo(awards = awards), awards.isNotEmpty())
+                // What the title has, not a footnote like the hint under it.
+                if (counted.isNotEmpty()) Text(
+                    text = counted,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
                 if (awards.any { it.won.isEmpty() }) Text(
                     text = stringResource(R.string.details_award_hint),
                     style = MaterialTheme.typography.bodySmall,
@@ -258,12 +272,29 @@ internal fun RatingGroups(media: MediaInfo) {
     }
 }
 
+/**
+ * Every award counted, in words: "4 wins & 7 nominations in total", or ""
+ * where the box sent no count.
+ */
 @Composable
-private fun RatingGroup(title: String, media: MediaInfo) {
+private fun awardsTotalText(total: AwardsTotal): String {
+    val parts = listOfNotNull(
+        if (total.won > 0) pluralStringResource(R.plurals.details_awards_wins, total.won, total.won) else null,
+        if (total.nominated > 0) {
+            pluralStringResource(R.plurals.details_awards_nominations, total.nominated, total.nominated)
+        } else {
+            null
+        },
+    )
+    return if (parts.isEmpty()) "" else stringResource(R.string.details_awards_total, parts.joinToString(" & "))
+}
+
+@Composable
+private fun RatingGroup(title: String, media: MediaInfo, shields: Boolean = true) {
     // Shields have no text line-box inset; give them the facts' visible breathing room.
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(text = title, style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp), fontWeight = FontWeight.Bold)
-        RatingRow(media)
+        if (shields) RatingRow(media)
     }
 }
 

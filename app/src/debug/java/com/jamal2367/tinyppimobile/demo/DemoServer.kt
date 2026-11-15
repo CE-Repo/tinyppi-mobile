@@ -192,6 +192,8 @@ object DemoServer {
         val mpaa: String = "", val age: String = "", val ageLevel: String = "", val top250: Int = 0,
         val mine: Int = 0, val credits: Credits = Credits(), val awards: List<DemoAward> = emptyList(),
         val tmdb: FromTmdb? = null,
+        /** Every award it won and was nominated for, counted, as a box with an OMDb key sends it. */
+        val awardsWon: Int = 0, val awardsNominated: Int = 0,
     )
 
     /** One house's score, out of ten; [certified] for Rotten Tomatoes' seals. */
@@ -231,6 +233,7 @@ object DemoServer {
             1, "Dune: Part Two", 2024, 166, 8.5, "Science Fiction", resumeMinutes = 71, tagline = DUNE_TAGLINE,
             plot = DUNE_PLOT, mpaa = DUNE_MPAA, age = DUNE_AGE, ageLevel = DUNE_AGE_LEVEL, top250 = DUNE_TOP250,
             mine = DUNE_MINE, credits = DUNE_CREDITS, awards = DUNE_AWARDS,
+            awardsWon = 45, awardsNominated = 80,
             tmdb = FromTmdb(
                 countries = listOf("United States of America", "Canada"), cinema = "2024-02-29",
                 budget = 190_000_000, revenue = 714_844_358,
@@ -896,6 +899,10 @@ object DemoServer {
         put("age", film.age); put("age_level", film.ageLevel)
         // The same awards the overview card shows for the film.
         put("awards", awardsJson(film.awards))
+        // And every award counted, under them, where the box has the count.
+        if (film.awardsWon > 0 || film.awardsNominated > 0) {
+            putJsonObject("awards_total") { put("won", film.awardsWon); put("nominated", film.awardsNominated) }
+        }
         put("poster", "movie-${film.id}"); put("fanart", "fanart-${film.id}")
         putJsonArray("genres") { add(film.genre) }
         putJsonArray("directors") { film.credits.directors.forEach { add(it) } }

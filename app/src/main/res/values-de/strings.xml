@@ -330,5 +330,14 @@
 
     <string name="details_awards">Auszeichnungen</string>
     <string name="details_award_hint">Abgedunkelte Symbole kennzeichnen Nominierungen.</string>
+    <plurals name="details_awards_wins">
+        <item quantity="one">%1$d Gewinn</item>
+        <item quantity="other">%1$d Gewinne</item>
+    </plurals>
+    <plurals name="details_awards_nominations">
+        <item quantity="one">%1$d Nominierung</item>
+        <item quantity="other">%1$d Nominierungen</item>
+    </plurals>
+    <string name="details_awards_total">%1$s insgesamt</string>
     <string name="details_description">Beschreibung</string>
 </resources>

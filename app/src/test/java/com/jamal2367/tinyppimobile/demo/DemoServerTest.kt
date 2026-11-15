@@ -140,6 +140,10 @@ class DemoServerTest {
         assertEquals("tv_ma", shogun["age"]!!.jsonPrimitive.content)
         assertEquals("emmy", shogun["awards"]!!.jsonArray.single().jsonObject["award"]!!.jsonPrimitive.content)
         assertEquals(null, json("/api/details?tvshowid=101")["awards"])
+        // Every award counted, for the film the box has the count of.
+        val counted = json("/api/details?movieid=1")["awards_total"]!!.jsonObject
+        assertEquals(listOf(45, 80), listOf("won", "nominated").map { counted[it]!!.jsonPrimitive.int })
+        assertEquals(null, json("/api/details?movieid=3")["awards_total"])
         assertEquals("tvshow", json("/api/details?tvshowid=101")["kind"]!!.jsonPrimitive.content)
         assertEquals("Severance", json("/api/details?episodeid=101102")["show"]!!.jsonPrimitive.content)
         assertEquals("1080p", json("/api/details?movieid=3")["resolution"]!!.jsonPrimitive.content)

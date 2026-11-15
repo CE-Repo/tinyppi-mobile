@@ -176,7 +176,10 @@ plain plate — or, where the add-on was given an MDBList API key, every one
 MDBList gathers for a film (Letterboxd, Rotten Tomatoes' Popcornmeter,
 Metacritic's users, Roger Ebert and MyAnimeList among them, each with a mark
 of its own), your own rating behind a heart and the place in the IMDb Top
-250, which the add-on reads off IMDb's current chart. A screen reader hears
+250, which the add-on reads off IMDb's current chart. Where the add-on was
+given an OMDb API key, a title's details count every award it won and was
+nominated for under the shields of the big ones ("4 wins & 7 nominations in
+total"). A screen reader hears
 each shield as one sentence ("IMDb 8.5"), and a tap or a long press on one
 shows over it for a moment whose it is ("IMDb"), for a mark you do not know. An episode is rated on its own and carries its show's
 age rating. The slogan only ever stands

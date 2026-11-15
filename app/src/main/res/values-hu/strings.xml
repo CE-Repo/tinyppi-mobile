@@ -330,5 +330,14 @@
 
     <string name="details_awards">Díjak</string>
     <string name="details_award_hint">A halványított ikonok jelöléseket mutatnak.</string>
+    <plurals name="details_awards_wins">
+        <item quantity="one">%1$d díj</item>
+        <item quantity="other">%1$d díj</item>
+    </plurals>
+    <plurals name="details_awards_nominations">
+        <item quantity="one">%1$d jelölés</item>
+        <item quantity="other">%1$d jelölés</item>
+    </plurals>
+    <string name="details_awards_total">összesen %1$s</string>
     <string name="details_description">Leírás</string>
 </resources>

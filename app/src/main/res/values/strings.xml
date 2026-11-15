@@ -337,5 +337,14 @@
 
     <string name="details_awards">Awards</string>
     <string name="details_award_hint">Dimmed icons indicate nominations.</string>
+    <plurals name="details_awards_wins">
+        <item quantity="one">%1$d win</item>
+        <item quantity="other">%1$d wins</item>
+    </plurals>
+    <plurals name="details_awards_nominations">
+        <item quantity="one">%1$d nomination</item>
+        <item quantity="other">%1$d nominations</item>
+    </plurals>
+    <string name="details_awards_total">%1$s in total</string>
     <string name="details_description">Description</string>
 </resources>
