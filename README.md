@@ -176,7 +176,9 @@ plain plate — or, where the add-on was given an MDBList API key, every one
 MDBList gathers for a film (Letterboxd, Rotten Tomatoes' Popcornmeter,
 Metacritic's users, Roger Ebert and MyAnimeList among them, each with a mark
 of its own), your own rating behind a heart and the place in the IMDb Top
-250, which the add-on reads off IMDb's current chart. Where the add-on was
+250, which the add-on reads off IMDb's current chart. A tap on a shield says
+whose it is and, on a line of its own, how many voted; an award's says every
+category it won, a line each. Where the add-on was
 given an OMDb API key, a title's details count every award it won and was
 nominated for under the shields of the big ones ("4 wins & 7 nominations in
 total"). A screen reader hears
