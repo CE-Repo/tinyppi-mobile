@@ -34,7 +34,7 @@ class RatingGroupsTest {
         val awards = context.getString(R.string.details_awards)
         val hint = context.getString(R.string.details_award_hint)
         var media by mutableStateOf(MediaInfo())
-        rule.show { RatingGroups(media) }
+        rule.show { RatingGroups(media, AwardsTotal()) }
         rule.onNodeWithText(ratings).assertDoesNotExist()
         rule.onNodeWithText(awards).assertDoesNotExist()
         for (onlyRating in listOf(

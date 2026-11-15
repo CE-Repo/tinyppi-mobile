@@ -245,7 +245,7 @@ internal fun RatingRow(media: MediaInfo) {
  * their count alone.
  */
 @Composable
-internal fun RatingGroups(media: MediaInfo, total: AwardsTotal = AwardsTotal()) {
+internal fun RatingGroups(media: MediaInfo, total: AwardsTotal) {
     val hasRatings = media.ratings.isNotEmpty() || media.mpaa.isNotBlank() || media.userRating > 0 || media.top250 > 0
     val awards = media.awards.filter { it.award in AWARD_MARKS }
     val counted = awardsTotalText(total)
