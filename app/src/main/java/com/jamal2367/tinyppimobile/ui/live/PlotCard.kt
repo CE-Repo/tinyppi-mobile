@@ -29,6 +29,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Surface
@@ -51,6 +52,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -65,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jamal2367.tinyppimobile.R
 import com.jamal2367.tinyppimobile.data.model.Award
+import com.jamal2367.tinyppimobile.data.model.AwardsTotal
 import com.jamal2367.tinyppimobile.data.model.MediaInfo
 import com.jamal2367.tinyppimobile.data.model.SourceRating
 import com.jamal2367.tinyppimobile.ui.components.LocalCardLayout
@@ -73,6 +76,7 @@ import com.jamal2367.tinyppimobile.ui.components.SectionHeading
 import com.jamal2367.tinyppimobile.ui.components.withKeyTick
 import com.jamal2367.tinyppimobile.ui.theme.TinyPpiTheme
 import com.jamal2367.tinyppimobile.util.Formatters
+import java.text.NumberFormat
 import java.util.Locale
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -174,7 +178,8 @@ internal fun RatingRow(media: MediaInfo) {
             if (plate != null) {
                 RatingShield(
                     spoken = said,
-                    named = boardOf(media.age),
+                    named = listOf(boardOf(media.age)),
+                    quiet = emptyList(),
                     value = media.ageLevel.trim(),
                     tall = tall,
                     ground = plate.ground,
@@ -184,7 +189,8 @@ internal fun RatingRow(media: MediaInfo) {
             } else {
                 RatingShield(
                     spoken = said,
-                    named = said,
+                    named = listOf(said),
+                    quiet = emptyList(),
                     value = said,
                     tall = tall,
                     ground = colours.surfaceContainerHigh,
@@ -201,7 +207,9 @@ internal fun RatingRow(media: MediaInfo) {
             val named = if (certificate != null) "$name · $certificate" else name
             RatingShield(
                 spoken = "$named $value".trim(),
-                named = named,
+                // A line each: whose it is, what certified it, how many voted.
+                named = listOfNotNull(name, certificate),
+                quiet = votesSaid(entry.votes),
                 value = value,
                 tall = tall,
                 ground = mark?.ground ?: colours.surfaceContainerHigh,
@@ -216,7 +224,8 @@ internal fun RatingRow(media: MediaInfo) {
             // says it is theirs and not a house's.
             RatingShield(
                 spoken = "${stringResource(R.string.live_rating_mine)} $value",
-                named = stringResource(R.string.live_rating_mine),
+                named = listOf(stringResource(R.string.live_rating_mine)),
+                quiet = emptyList(),
                 value = value,
                 tall = tall,
                 ground = colours.primary,
@@ -226,7 +235,8 @@ internal fun RatingRow(media: MediaInfo) {
         if (media.top250 > 0) {
             RatingShield(
                 spoken = stringResource(R.string.live_rating_top250, media.top250),
-                named = "IMDb Top 250",
+                named = listOf("IMDb Top 250"),
+                quiet = emptyList(),
                 value = "#${media.top250}",
                 tall = tall,
                 ground = TOP250.ground,
@@ -237,17 +247,29 @@ internal fun RatingRow(media: MediaInfo) {
     }
 }
 
-/** Separate ratings and awards; sections without shields are omitted. */
+/**
+ * Separate ratings and awards; sections without shields are omitted - but
+ * for the awards where every one is counted ([total]), which then stand for
+ * their count alone.
+ */
 @Composable
-internal fun RatingGroups(media: MediaInfo) {
+internal fun RatingGroups(media: MediaInfo, total: AwardsTotal) {
     val hasRatings = media.ratings.isNotEmpty() || media.mpaa.isNotBlank() || media.userRating > 0 || media.top250 > 0
     val awards = media.awards.filter { it.award in AWARD_MARKS }
-    if (!hasRatings && awards.isEmpty()) return
+    val counted = awardsTotalText(total)
+    if (!hasRatings && awards.isEmpty() && counted.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
         if (hasRatings) RatingGroup(stringResource(R.string.details_ratings), media.copy(awards = emptyList()))
-        if (awards.isNotEmpty()) {
+        if (awards.isNotEmpty() || counted.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                RatingGroup(stringResource(R.string.details_awards), MediaInfo(awards = awards))
+                // Without one of the big awards the heading stands over the count alone.
+                RatingGroup(stringResource(R.string.details_awards), MediaInfo(awards = awards), awards.isNotEmpty())
+                // What the title has, not a footnote like the hint under it.
+                if (counted.isNotEmpty()) Text(
+                    text = counted,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
                 if (awards.any { it.won.isEmpty() }) Text(
                     text = stringResource(R.string.details_award_hint),
                     style = MaterialTheme.typography.bodySmall,
@@ -258,12 +280,29 @@ internal fun RatingGroups(media: MediaInfo) {
     }
 }
 
+/**
+ * Every award counted, in words: "4 wins & 7 nominations in total", or ""
+ * where the box sent no count.
+ */
 @Composable
-private fun RatingGroup(title: String, media: MediaInfo) {
+private fun awardsTotalText(total: AwardsTotal): String {
+    val parts = listOfNotNull(
+        if (total.won > 0) pluralStringResource(R.plurals.details_awards_wins, total.won, total.won) else null,
+        if (total.nominated > 0) {
+            pluralStringResource(R.plurals.details_awards_nominations, total.nominated, total.nominated)
+        } else {
+            null
+        },
+    )
+    return if (parts.isEmpty()) "" else stringResource(R.string.details_awards_total, parts.joinToString(" & "))
+}
+
+@Composable
+private fun RatingGroup(title: String, media: MediaInfo, shields: Boolean = true) {
     // Shields have no text line-box inset; give them the facts' visible breathing room.
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(text = title, style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, lineHeight = 26.sp), fontWeight = FontWeight.Bold)
-        RatingRow(media)
+        if (shields) RatingRow(media)
     }
 }
 
@@ -271,7 +310,7 @@ private fun RatingGroup(title: String, media: MediaInfo) {
  * One of the big awards: a drawing of what it hands out on its own ground,
  * like a house's mark, and beside it how many it won - or, where it won
  * none, how many it was nominated for, with the mark dimmed. The coloured
- * edge stays visible for both wins and nominations. A tap shows what it won it for. One there is
+ * edge stays visible for both wins and nominations. A tap shows what it won it for, a line each. One there is
  * no drawing of is left out.
  */
 @Composable
@@ -282,11 +321,9 @@ private fun AwardShield(award: Award, tall: Dp) {
     val more = if (award.nominated > 0) stringResource(R.string.live_award_nominated, award.nominated) else ""
     RatingShield(
         spoken = "$name ${if (won > 0) stringResource(R.string.live_award_won, won) else more}",
-        named = if (won > 0) {
-            listOf("$name: ${award.won.joinToString(", ")}", more).filter { it.isNotEmpty() }.joinToString(" · ")
-        } else {
-            "$name · $more"
-        },
+        // A line each: the award, every category it won, how many more nominations.
+        named = listOf(name) + award.won,
+        quiet = listOf(more).filter { it.isNotEmpty() },
         value = (if (won > 0) won else award.nominated).toString(),
         tall = tall,
         ground = if (won > 0) mark.ground else mark.ground.copy(alpha = NOMINEE_ALPHA),
@@ -407,7 +444,8 @@ private fun sourceName(entry: SourceRating): String =
 @Composable
 private fun RatingShield(
     spoken: String,
-    named: String,
+    named: List<String>,
+    quiet: List<String>,
     value: String,
     tall: Dp,
     ground: Color,
@@ -421,7 +459,7 @@ private fun RatingShield(
     val scope = rememberCoroutineScope()
     TooltipBox(
         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-        tooltip = { PlainTooltip { Text(named) } },
+        tooltip = { PlainTooltip { TipLines(named, quiet) } },
         state = told,
     ) {
         Shield(spoken, value, tall, ground, hue, inset, side) {
@@ -431,6 +469,35 @@ private fun RatingShield(
             }
         }
     }
+}
+
+/**
+ * What a tap on a shield says, a line each: whose it is, standing out, what
+ * belongs to it ([named]) and, quieter, what is counted ([quiet]) - how many
+ * voted, how many more nominations.
+ */
+@Composable
+private fun TipLines(named: List<String>, quiet: List<String>) {
+    Column {
+        named.forEachIndexed { index, line ->
+            Text(text = line, fontWeight = if (index == 0) FontWeight.SemiBold else FontWeight.Normal)
+        }
+        quiet.forEach { line -> Text(text = line, color = LocalContentColor.current.copy(alpha = QUIET_ALPHA)) }
+    }
+}
+
+/** How far a tooltip's counted lines are dimmed. */
+private const val QUIET_ALPHA = 0.7f
+
+/**
+ * How many voted, in the reader's figures ("612,345 votes"), as the one
+ * quiet line of a score's tooltip; none where the source gave no count.
+ */
+@Composable
+private fun votesSaid(votes: Int): List<String> = if (votes > 0) {
+    listOf(pluralStringResource(R.plurals.live_rating_votes, votes, NumberFormat.getIntegerInstance().format(votes)))
+} else {
+    emptyList()
 }
 
 /** The shield itself: [side] and the figure, a tap away from its words. */

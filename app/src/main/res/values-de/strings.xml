@@ -175,6 +175,10 @@
     <string name="live_rating_top250">Top 250 · Platz %1$d</string>
     <string name="live_award_won">%1$d gewonnen</string>
     <string name="live_award_nominated">%1$d nominiert</string>
+    <plurals name="live_rating_votes">
+        <item quantity="one">%1$s Stimme</item>
+        <item quantity="other">%1$s Stimmen</item>
+    </plurals>
     <string name="live_credit_director">Regisseur</string>
     <string name="live_credit_cast">Darsteller</string>
 
@@ -330,5 +334,14 @@
 
     <string name="details_awards">Auszeichnungen</string>
     <string name="details_award_hint">Abgedunkelte Symbole kennzeichnen Nominierungen.</string>
+    <plurals name="details_awards_wins">
+        <item quantity="one">%1$d Gewinn</item>
+        <item quantity="other">%1$d Gewinne</item>
+    </plurals>
+    <plurals name="details_awards_nominations">
+        <item quantity="one">%1$d Nominierung</item>
+        <item quantity="other">%1$d Nominierungen</item>
+    </plurals>
+    <string name="details_awards_total">%1$s insgesamt</string>
     <string name="details_description">Beschreibung</string>
 </resources>

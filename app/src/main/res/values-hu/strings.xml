@@ -175,6 +175,10 @@
     <string name="live_rating_top250">Top 250 · %1$d. hely</string>
     <string name="live_award_won">%1$d díj</string>
     <string name="live_award_nominated">%1$d jelölés</string>
+    <plurals name="live_rating_votes">
+        <item quantity="one">%1$s szavazat</item>
+        <item quantity="other">%1$s szavazat</item>
+    </plurals>
     <string name="live_credit_director">Rendező</string>
     <string name="live_credit_cast">Szereplők</string>
 
@@ -330,5 +334,14 @@
 
     <string name="details_awards">Díjak</string>
     <string name="details_award_hint">A halványított ikonok jelöléseket mutatnak.</string>
+    <plurals name="details_awards_wins">
+        <item quantity="one">%1$d díj</item>
+        <item quantity="other">%1$d díj</item>
+    </plurals>
+    <plurals name="details_awards_nominations">
+        <item quantity="one">%1$d jelölés</item>
+        <item quantity="other">%1$d jelölés</item>
+    </plurals>
+    <string name="details_awards_total">összesen %1$s</string>
     <string name="details_description">Leírás</string>
 </resources>

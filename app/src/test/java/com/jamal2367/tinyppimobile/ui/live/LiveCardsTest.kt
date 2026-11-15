@@ -397,7 +397,7 @@ class LiveCardsTest {
         showRatings()
         // Each pill is heard as one sentence; the drawing and the figures are not heard apart.
         for (said in listOf(
-            // How many voted is neither shown nor heard.
+            // How many voted is not heard, and stands on no shield.
             "IMDb 8.5",
             "TMDb 8.2",
             // Certified Fresh is heard; Verified Hot is not, where it was not given.
@@ -425,9 +425,33 @@ class LiveCardsTest {
         rule.onNodeWithContentDescription("Filmaffinity 8.9").performClick()
         rule.until { seen("Filmaffinity") }
         assertEquals(false, seen("Filmaffinity 8.9"))
+        // Under its name, on a line of its own, how many voted.
+        val votes = { n: Int, figures: String ->
+            context.resources.getQuantityString(R.plurals.live_rating_votes, n, figures)
+        }
+        assertEquals("3 votes", votes(3, "3"))
+        assertEquals(true, seen(votes(3, "3")))
+        val name = rule.onNodeWithText("Filmaffinity").fetchSemanticsNode().boundsInRoot
+        val counted = rule.onNodeWithText(votes(3, "3")).fetchSemanticsNode().boundsInRoot
+        assertEquals(true, counted.top >= name.bottom)
         // And only for a moment.
         rule.mainClock.advanceTimeBy(5_000)
         rule.until { !seen("Filmaffinity") }
+        // In the reader's figures, and one vote is one.
+        rule.onNodeWithContentDescription("IMDb 8.5").performClick()
+        rule.until { seen(votes(612_345, "612,345")) }
+        assertEquals(true, seen("IMDb"))
+        rule.mainClock.advanceTimeBy(5_000)
+        rule.onNodeWithContentDescription("TMDb 8.2").performClick()
+        rule.until { seen("1 vote") }
+        rule.mainClock.advanceTimeBy(5_000)
+        // What certified it has a line of its own too; a source that gave no count has none.
+        rule.onNodeWithContentDescription("Rotten Tomatoes · Certified Fresh 9.2").performClick()
+        rule.until { seen("Certified Fresh") }
+        assertEquals(true, seen("Rotten Tomatoes"))
+        assertEquals(false, seen(votes(0, "0")))
+        rule.mainClock.advanceTimeBy(5_000)
+        rule.until { !seen("Certified Fresh") }
         // The age rating first: on the first line, before the first score.
         val imdb = rule.onNodeWithContentDescription("IMDb 8.5").fetchSemanticsNode().boundsInRoot
         val age = rule.onNodeWithContentDescription("FSK 12").fetchSemanticsNode().boundsInRoot
@@ -531,13 +555,18 @@ class LiveCardsTest {
         assertEquals(true, rule.onAllNodesWithContentDescription("cesar", substring = true).fetchSemanticsNodes().isEmpty())
         // A tap says what it won it for, and how many more it was nominated for.
         rule.onNodeWithContentDescription("Oscar ${won(1)}").performClick()
-        rule.until { seen("Oscar: Visual Effects (2015) · ${nominated(4)}") }
+        // A line each: the award, every category it won, how many more nominations.
+        rule.until { seen("Oscar") && seen("Visual Effects (2015)") && seen(nominated(4)) }
+        val lines = listOf("Oscar", "Visual Effects (2015)", nominated(4))
+            .map { rule.onNodeWithText(it).fetchSemanticsNode().boundsInRoot }
+        assertEquals(lines.sortedBy { it.top }, lines)
+        assertEquals(true, lines[1].top >= lines[0].bottom && lines[2].top >= lines[1].bottom)
         rule.mainClock.advanceTimeBy(5_000)
         rule.onNodeWithContentDescription("BAFTA ${won(2)}").performClick()
-        rule.until { seen("BAFTA: Film (2015), Score (2015)") }
+        rule.until { seen("BAFTA") && seen("Film (2015)") && seen("Score (2015)") }
         rule.mainClock.advanceTimeBy(5_000)
         rule.onNodeWithContentDescription("Golden Globe ${nominated(1)}").performClick()
-        rule.until { seen("Golden Globe · ${nominated(1)}") }
+        rule.until { seen("Golden Globe") && seen(nominated(1)) }
     }
 
     @Test

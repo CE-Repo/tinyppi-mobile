@@ -401,6 +401,12 @@ data class TitleDetails(
     val top250: Int = 0,
     /** The big awards it - or an episode's show - won or was nominated for. */
     val awards: List<Award> = emptyList(),
+    /**
+     * Every award it - or an episode's show - won and was nominated for,
+     * counted; sent by a box that was given an OMDb API key, with the details
+     * of an opened title alone.
+     */
+    @SerialName("awards_total") val awardsTotal: AwardsTotal = AwardsTotal(),
     val genres: List<String> = emptyList(),
     val directors: List<String> = emptyList(),
     val writers: List<String> = emptyList(),

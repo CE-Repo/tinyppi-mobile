@@ -631,7 +631,7 @@ internal fun DetailsBody(
         top250 = details.top250,
         awards = details.awards,
     )
-    RatingGroups(rated)
+    RatingGroups(rated, details.awardsTotal)
     if (details.tagline.isNotEmpty() || details.plot.isNotEmpty()) {
         // The slogan's compact italic line needs more room than the body-text facts.
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
